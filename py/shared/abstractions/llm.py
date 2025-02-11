@@ -144,6 +144,7 @@ class Message(R2RSerializable):
     function_call: Optional[dict[str, Any]] = None
     tool_calls: Optional[list[dict[str, Any]]] = None
     tool_call_id: Optional[str] = None
+    metadata: Optional[dict[str, Any]] = None
 
     class Config:
         populate_by_name = True

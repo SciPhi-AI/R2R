@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+from deprecated import deprecated
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
@@ -23,7 +24,7 @@ class Citation(BaseModel):
     index: int = Field(
         ..., description="Citation bracket index after re-labeling"
     )
-    oldIndex: Optional[int] = Field(
+    rawIndex: Optional[int] = Field(
         None, description="Original citation bracket index before re-labeling"
     )
     startIndex: Optional[int] = Field(
@@ -44,10 +45,10 @@ class Citation(BaseModel):
         None,
         description="End offset for the snippet region around the bracket",
     )
-    snippet: Optional[str] = Field(
-        None,
-        description="Sentence-based snippet or text chunk containing this bracket reference",
-    )
+    # snippet: Optional[str] = Field(
+    #     None,
+    #     description="Sentence-based snippet or text chunk containing this bracket reference",
+    # )
 
     # Mapped source fields
     sourceType: Optional[str] = Field(
@@ -82,12 +83,12 @@ class Citation(BaseModel):
         json_schema_extra = {
             "example": {
                 "index": 1,
-                "oldIndex": 9,
+                "rawIndex": 9,
                 "startIndex": 393,
                 "endIndex": 396,
                 "snippetStartIndex": 320,
                 "snippetEndIndex": 418,
-                "snippet": "some line referencing the bracket [1]",
+                # "snippet": "some line referencing the bracket [1]",
                 "sourceType": "chunk",
                 "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
                 "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
@@ -121,22 +122,21 @@ class RAGResponse(BaseModel):
         description="Additional data returned by the LLM provider",
     )
 
+    # Provide a deprecated alias property.
+    @property
+    @deprecated(version="3.4.1", reason="Use 'generated_answer' instead")
+    def completion(self) -> str:
+        return self.generated_answer
+
+    @completion.setter
+    @deprecated(version="3.4.1", reason="Use 'generated_answer' instead")
+    def completion(self, value: str):
+        self.generated_answer = value
+
     class Config:
         json_schema_extra = {
             "example": {
-                "completion": {
-                    "id": "chatcmpl-example123",
-                    "choices": [
-                        {
-                            "finish_reason": "stop",
-                            "index": 0,
-                            "message": {
-                                "content": "Paris is the capital of France.",
-                                "role": "assistant",
-                            },
-                        }
-                    ],
-                },
+                "generated_answer": {"The capital of France is Paris."},
                 "search_results": {
                     "chunk_search_results": [],
                     "graph_search_results": [],
@@ -154,7 +154,18 @@ class RAGResponse(BaseModel):
                         }
                     ]
                 },
-                "metadata": {},
+                "metadata": {
+                    "id": "chatcmpl-example123",
+                    "choices": [
+                        {
+                            "finish_reason": "stop",
+                            "index": 0,
+                            "message": {
+                                "role": "assistant",
+                            },
+                        }
+                    ],
+                },
             }
         }
 

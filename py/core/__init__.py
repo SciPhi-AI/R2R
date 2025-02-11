@@ -33,6 +33,7 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 __all__ = [
     "R2RAgent",
     "R2RStreamingAgent",
+    "SearchResultsCollector",
     "R2RRAGAgent",
     "R2RStreamingRAGAgent",
     "R2RStreamingReasoningRAGAgent",
@@ -65,6 +66,7 @@ __all__ = [
     "ChunkSearchSettings",
     "GraphSearchSettings",
     "ChunkSearchResult",
+    "WebSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

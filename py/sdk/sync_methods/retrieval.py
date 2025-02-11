@@ -1,4 +1,5 @@
-from typing import Any, AsyncGenerator, Optional
+import uuid
+from typing import Any, AsyncGenerator, Optional, Union
 
 from shared.api.models import (
     WrappedAgentResponse,
@@ -168,7 +169,7 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-        conversation_id: Optional[str] = None,
+        conversation_id: Optional[Union[str, uuid.UUID]] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
         use_extended_prompt: Optional[bool] = True,
@@ -197,7 +198,7 @@ class RetrievalSDK:
             "search_settings": search_settings,
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
-            "conversation_id": conversation_id,
+            "conversation_id": str(conversation_id),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
             "use_extended_prompt": use_extended_prompt,

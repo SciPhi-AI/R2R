@@ -13,6 +13,7 @@ from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RStreamingReasoningRAGAgent,
+    SearchResultsCollector,
 )
 from core.agent.rag import (
     GeminiXMLToolsStreamingReasoningRAGAgent,
@@ -33,10 +34,10 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
+    extract_citations,
     format_search_results_for_llm,
     format_search_results_for_stream,
-    my_extract_citations,
-    my_map_citations_to_sources,
+    map_citations_to_collector,
     reassign_citations_in_order,
 )
 from core.base.api.models import RAGResponse, User
@@ -51,6 +52,27 @@ logger = logging.getLogger()
 
 
 import tiktoken
+
+
+def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
+    dumped = []
+    for source_type, result_obj, _ in collector.get_all_results():
+        # Try to convert the result_obj to a dict.
+        if hasattr(result_obj, "model_dump"):
+            result_dict = result_obj.model_dump()
+        elif hasattr(result_obj, "dict"):
+            result_dict = result_obj.dict()
+        else:
+            result_dict = (
+                result_obj  # Fallback if no conversion method is available
+            )
+        dumped.append(
+            {
+                "source_type": source_type,
+                "result": result_dict,
+            }
+        )
+    return dumped
 
 
 def tokens_count_for_message(message, encoding):
@@ -485,8 +507,12 @@ class RetrievalService(Service):
                 search_results_dict
             )
 
+            collector = SearchResultsCollector()
+            collector.add_aggregate_result(aggregated_results)
             # 2) Build context from search results
-            context_str = format_search_results_for_llm(aggregated_results)
+            context_str = format_search_results_for_llm(
+                aggregated_results, collector
+            )
 
             # 3) Prepare your message payload
             system_prompt_name = system_prompt_name or "system"
@@ -523,17 +549,25 @@ class RetrievalService(Service):
             llm_text_response = response.choices[0].message.content
 
             # 2) detect citations as the LLM wrote them
-            raw_citations = my_extract_citations(llm_text_response)
+            raw_citations = extract_citations(llm_text_response)
 
             # 3) re-map them in ascending order => new_text has sequential references [1], [2], ...
             re_labeled_text, new_citations = reassign_citations_in_order(
                 llm_text_response, raw_citations
             )
 
+            collector = SearchResultsCollector()
+            collector.add_aggregate_result(aggregated_results)
+
             # 4) map to sources
-            mapped_citations = my_map_citations_to_sources(
-                new_citations, aggregated_results
+            mapped_citations = map_citations_to_collector(
+                new_citations, collector
             )
+
+            metadata = response.dict()
+            metadata["choices"][0]["message"].pop(
+                "content", None
+            )  # remove content from metadata
 
             # 5) Build final RAG response
             #    If you want to return the newly-labeled text to the user, do so:
@@ -541,7 +575,7 @@ class RetrievalService(Service):
                 generated_answer=re_labeled_text,  # or "generated_answer" if you prefer
                 search_results=aggregated_results,
                 citations=mapped_citations,
-                metadata={},
+                metadata=metadata,
             )
             return rag_response
 
@@ -911,16 +945,44 @@ class RetrievalService(Service):
                     role="assistant", content=str(results[-1])
                 )
 
-            input_tokens = num_tokens_from_messages(results[:-1])
-            output_tokens = num_tokens_from_messages([results[-1]])
+            if hasattr(agent, "search_results_collector"):
+                collector = agent.search_results_collector
+            else:
+                collector = SearchResultsCollector()  # or fallback if needed
 
+            # Suppose your final assistant text is:
+            raw_text = assistant_message.content or ""
+
+            # Step (1) - detect citations [2], [8], etc.
+            raw_citations = extract_citations(raw_text)
+
+            # Step (2) - re-map them in ascending order => new_text has [1], [2], [3], ...
+            re_labeled_text, new_citations = reassign_citations_in_order(
+                raw_text, raw_citations
+            )
+
+            # Step (3) - map them to the aggregator-based search results
+            mapped_citations = map_citations_to_collector(
+                new_citations, agent.search_results_collector
+            )
+
+            # Overwrite final text in the conversation
+            assistant_message.content = re_labeled_text
+
+            # Then store the mapped citations if you wish:
+            citations_data = [c.model_dump() for c in mapped_citations]
+
+            # 4) Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(
                 conversation_id=conversation_id,
                 content=assistant_message,
                 parent_id=message_id,
                 metadata={
-                    "input_tokens": input_tokens,
-                    "output_tokens": output_tokens,
+                    "citations": citations_data,
+                    # You can also store the entire collector or just dump the underlying results
+                    "aggregated_search_result": json.dumps(
+                        dump_collector(collector)
+                    ),
                 },
             )
             if needs_conversation_name:
@@ -948,7 +1010,19 @@ class RetrievalService(Service):
                     )
 
             return {
-                "messages": results,
+                "messages": [
+                    Message(
+                        role="assistant",
+                        content=assistant_message.content,
+                        metadata={
+                            "citations": citations_data,
+                            # You can also store the entire collector or just dump the underlying results
+                            "aggregated_search_result": json.dumps(
+                                dump_collector(collector)
+                            ),
+                        },
+                    )
+                ],
                 "conversation_id": str(
                     conversation_id
                 ),  # Ensure it's a string

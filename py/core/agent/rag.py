@@ -4,7 +4,7 @@ import logging
 import random
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, AsyncGenerator, Callable, Optional
+from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
 from google.genai.errors import ServerError
@@ -34,6 +34,53 @@ from core.providers import (
 logger = logging.getLogger(__name__)
 
 COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
+
+
+class SearchResultsCollector:
+    """
+    Collects search results in the form (source_type, result_obj, aggregator_index).
+    aggregator_index increments globally so that the nth item appended
+    is always aggregator_index == n, across the entire conversation.
+    """
+
+    def __init__(self):
+        # We'll store a list of (source_type, result_obj, agg_idx).
+        self._results_in_order: list[Tuple[str, Any, int]] = []
+        self._next_index = 1  # 1-based indexing
+
+    def add_aggregate_result(self, agg: "AggregateSearchResult"):
+        """
+        Flatten the chunk_search_results, graph_search_results, web_search_results,
+        and context_document_results, each assigned a unique aggregator index.
+        """
+        if agg.chunk_search_results:
+            for c in agg.chunk_search_results:
+                self._results_in_order.append(("chunk", c, self._next_index))
+                self._next_index += 1
+
+        if agg.graph_search_results:
+            for g in agg.graph_search_results:
+                self._results_in_order.append(("graph", g, self._next_index))
+                self._next_index += 1
+
+        if agg.web_search_results:
+            for w in agg.web_search_results:
+                self._results_in_order.append(("web", w, self._next_index))
+                self._next_index += 1
+
+        if agg.context_document_results:
+            for cd in agg.context_document_results:
+                self._results_in_order.append(
+                    ("contextDoc", cd, self._next_index)
+                )
+                self._next_index += 1
+
+    def get_all_results(self) -> list[Tuple[str, Any, int]]:
+        """
+        Return list of (source_type, result_obj, aggregator_index),
+        in the order appended.
+        """
+        return self._results_in_order
 
 
 def num_tokens(text, model="gpt-4o"):
@@ -71,6 +118,7 @@ class RAGAgentMixin:
         self.content_method = content_method
         self.max_tool_context_length = max_tool_context_length
         self.max_context_window_tokens = max_context_window_tokens
+        self.search_results_collector = SearchResultsCollector()
         super().__init__(*args, **kwargs)
 
     def _register_tools(self):
@@ -134,19 +182,25 @@ class RAGAgentMixin:
                 "No local_search_method provided to RAGAgentMixin."
             )
 
-        response = await self.local_search_method(
+        raw_response = await self.local_search_method(
             query=query, search_settings=self.search_settings
         )
 
-        if isinstance(response, AggregateSearchResult):
-            return response
+        if isinstance(raw_response, AggregateSearchResult):
+            agg = raw_response
+        else:
+            agg = AggregateSearchResult(
+                chunk_search_results=raw_response.get(
+                    "chunk_search_results", []
+                ),
+                graph_search_results=raw_response.get(
+                    "graph_search_results", []
+                ),
+            )
 
-        # If it's a dict, convert the response dict to an AggregateSearchResult
-        return AggregateSearchResult(
-            chunk_search_results=response.get("chunk_search_results", []),
-            graph_search_results=response.get("graph_search_results", []),
-            web_search_results=None,
-        )
+        # 1) Store them so that we can do final citations later
+        self.search_results_collector.add_aggregate_result(agg)
+        return agg
 
     # 2) Local Context
     def content(self) -> Tool:
@@ -260,13 +314,15 @@ class RAGAgentMixin:
             )
 
         # Return them in the new aggregator field
-        return AggregateSearchResult(
+        agg = AggregateSearchResult(
             # We won't put them in chunk_search_results:
             chunk_search_results=None,
             graph_search_results=None,
             web_search_results=None,
             context_document_results=context_document_results,
         )
+        self.search_results_collector.add_aggregate_result(agg)
+        return agg
 
     # Web Search Tool
     def web_search(self) -> Tool:
@@ -308,11 +364,13 @@ class RAGAgentMixin:
         raw_results = serper_client.get_raw(query)
         web_response = WebSearchResponse.from_serper_results(raw_results)
 
-        return AggregateSearchResult(
+        agg = AggregateSearchResult(
             chunk_search_results=None,
             graph_search_results=None,
             web_search_results=web_response.organic_results,
         )
+        self.search_results_collector.add_aggregate_result(agg)
+        return agg
 
     # 4) Utility format methods for search results
     def format_search_results_for_stream(
@@ -323,7 +381,9 @@ class RAGAgentMixin:
     def format_search_results_for_llm(
         self, results: AggregateSearchResult
     ) -> str:
-        context = format_search_results_for_llm(results)
+        context = format_search_results_for_llm(
+            results, self.search_results_collector
+        )
         context_tokens = num_tokens(context) + 1
         frac_to_return = self.max_tool_context_length / (
             num_tokens(context) + 1
