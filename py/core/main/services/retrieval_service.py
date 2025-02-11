@@ -55,21 +55,24 @@ logger = logging.getLogger()
 import tiktoken
 
 
-def convert_uuids(obj):
-    """
-    Recursively convert UUID instances within the object into strings.
-    Handles dict, list, tuple, and set.
-    """
+def convert_nonserializable_objects(obj):
     if isinstance(obj, dict):
-        return {k: convert_uuids(v) for k, v in obj.items()}
+        new_obj = {}
+        for key, value in obj.items():
+            # Convert key to string if it is a UUID or not already a string.
+            new_key = str(key) if not isinstance(key, str) else key
+            new_obj[new_key] = convert_nonserializable_objects(value)
+        return new_obj
     elif isinstance(obj, list):
-        return [convert_uuids(item) for item in obj]
+        return [convert_nonserializable_objects(item) for item in obj]
     elif isinstance(obj, tuple):
-        return tuple(convert_uuids(item) for item in obj)
+        return tuple(convert_nonserializable_objects(item) for item in obj)
     elif isinstance(obj, set):
-        return {convert_uuids(item) for item in obj}
+        return {convert_nonserializable_objects(item) for item in obj}
     elif isinstance(obj, uuid.UUID):
         return str(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()  # Convert datetime to ISO formatted string
     else:
         return obj
 
@@ -88,7 +91,7 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
             )
 
         # Use the recursive conversion on the entire dictionary
-        result_dict = convert_uuids(result_dict)
+        result_dict = convert_nonserializable_objects(result_dict)
 
         dumped.append(
             {
