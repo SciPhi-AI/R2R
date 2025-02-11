@@ -55,6 +55,7 @@ from shared.abstractions.search import (
     SearchMode,
     SearchSettings,
     WebSearchResponse,
+    WebSearchResult,
     select_search_filters,
 )
 from shared.abstractions.user import Token, TokenData, User
@@ -125,6 +126,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
+    "WebSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

@@ -39,6 +39,7 @@ from core.base import (
     finalize_citations_with_collector,
     format_search_results_for_llm,
     format_search_results_for_stream,
+    map_citations_to_collector,
     map_citations_to_sources,
     reassign_citations_in_order,
     to_async_generator,
@@ -59,7 +60,7 @@ import tiktoken
 
 def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
     dumped = []
-    for source_type, result_obj in collector.get_all_results():
+    for source_type, result_obj, _ in collector.get_all_results():
         # Try to convert the result_obj to a dict.
         if hasattr(result_obj, "model_dump"):
             result_dict = result_obj.model_dump()
@@ -506,13 +507,16 @@ class RetrievalService(Service):
         try:
             # 1) Do the search
             search_results_dict = await self.search(query, search_settings)
-            print("search_results_dict = ", search_results_dict)
             aggregated_results = AggregateSearchResult.from_dict(
                 search_results_dict
             )
 
+            collector = SearchResultsCollector()
+            collector.add_aggregate_result(aggregated_results)
             # 2) Build context from search results
-            context_str = format_search_results_for_llm(aggregated_results)
+            context_str = format_search_results_for_llm(
+                aggregated_results, collector
+            )
 
             # 3) Prepare your message payload
             system_prompt_name = system_prompt_name or "system"
@@ -947,17 +951,27 @@ class RetrievalService(Service):
             else:
                 collector = SearchResultsCollector()  # or fallback if needed
 
-            # 1) finalize citations
+            # Suppose your final assistant text is:
             raw_text = assistant_message.content or ""
-            relabeled_text, citations = (
-                await finalize_citations_with_collector(raw_text, collector)
+
+            # Step (1) - detect citations [2], [8], etc.
+            raw_citations = extract_citations(raw_text)
+
+            # Step (2) - re-map them in ascending order => new_text has [1], [2], [3], ...
+            re_labeled_text, new_citations = reassign_citations_in_order(
+                raw_text, raw_citations
             )
 
-            # 2) Overwrite the assistant message content with the bracket references re-labeled
-            assistant_message.content = relabeled_text
+            # Step (3) - map them to the aggregator-based search results
+            mapped_citations = map_citations_to_collector(
+                new_citations, agent.search_results_collector
+            )
 
-            # 3) Convert the Citation objects to JSON-friendly dicts
-            citations_data = [c.model_dump() for c in citations]
+            # Overwrite final text in the conversation
+            assistant_message.content = re_labeled_text
+
+            # Then store the mapped citations if you wish:
+            citations_data = [c.model_dump() for c in mapped_citations]
 
             # 4) Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(

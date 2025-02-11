@@ -4,7 +4,7 @@ import logging
 import random
 import re
 import xml.etree.ElementTree as ET
-from typing import Any, AsyncGenerator, Callable, Optional
+from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
 from google.genai.errors import ServerError
@@ -37,38 +37,48 @@ COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed comp
 
 
 class SearchResultsCollector:
-    def __init__(self):
-        # We'll store (source_type, result_obj) pairs in the exact order they arrive
-        self._results_in_order = []
+    """
+    Collects search results in the form (source_type, result_obj, aggregator_index).
+    aggregator_index increments globally so that the nth item appended
+    is always aggregator_index == n, across the entire conversation.
+    """
 
-    def add_aggregate_result(self, agg: AggregateSearchResult):
+    def __init__(self):
+        # We'll store a list of (source_type, result_obj, agg_idx).
+        self._results_in_order: list[Tuple[str, Any, int]] = []
+        self._next_index = 1  # 1-based indexing
+
+    def add_aggregate_result(self, agg: "AggregateSearchResult"):
         """
-        Flatten the chunk/graph/web/context results from 'agg' and store them
-        in our master list in that same order.
+        Flatten the chunk_search_results, graph_search_results, web_search_results,
+        and context_document_results, each assigned a unique aggregator index.
         """
-        # 1) chunk_search_results
         if agg.chunk_search_results:
             for c in agg.chunk_search_results:
-                self._results_in_order.append(("chunk", c))
+                self._results_in_order.append(("chunk", c, self._next_index))
+                self._next_index += 1
 
-        # 2) graph_search_results
         if agg.graph_search_results:
             for g in agg.graph_search_results:
-                self._results_in_order.append(("graph", g))
+                self._results_in_order.append(("graph", g, self._next_index))
+                self._next_index += 1
 
-        # 3) web_search_results
         if agg.web_search_results:
             for w in agg.web_search_results:
-                self._results_in_order.append(("web", w))
+                self._results_in_order.append(("web", w, self._next_index))
+                self._next_index += 1
 
-        # 4) context_document_results
         if agg.context_document_results:
             for cd in agg.context_document_results:
-                self._results_in_order.append(("contextDoc", cd))
+                self._results_in_order.append(
+                    ("contextDoc", cd, self._next_index)
+                )
+                self._next_index += 1
 
-    def get_all_results(self):
+    def get_all_results(self) -> list[Tuple[str, Any, int]]:
         """
-        Return the entire flat list of (source_type, result_obj) in the order added.
+        Return list of (source_type, result_obj, aggregator_index),
+        in the order appended.
         """
         return self._results_in_order
 
@@ -371,7 +381,9 @@ class RAGAgentMixin:
     def format_search_results_for_llm(
         self, results: AggregateSearchResult
     ) -> str:
-        context = format_search_results_for_llm(results)
+        context = format_search_results_for_llm(
+            results, self.search_results_collector
+        )
         context_tokens = num_tokens(context) + 1
         frac_to_return = self.max_tool_context_length / (
             num_tokens(context) + 1

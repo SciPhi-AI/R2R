@@ -445,6 +445,12 @@ class RetrievalRouterV3(BaseRouterV3):
             "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
+            deprecated=True,
+        )
+        @self.router.post(
+            "/retrieval/rag_agent",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="RAG-powered Conversational Agent",
             openapi_extra={
                 "x-codeSamples": [
                     {

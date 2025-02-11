@@ -25,7 +25,7 @@ class Citation(BaseModel):
     index: int = Field(
         ..., description="Citation bracket index after re-labeling"
     )
-    oldIndex: Optional[int] = Field(
+    rawIndex: Optional[int] = Field(
         None, description="Original citation bracket index before re-labeling"
     )
     startIndex: Optional[int] = Field(
@@ -84,7 +84,7 @@ class Citation(BaseModel):
         json_schema_extra = {
             "example": {
                 "index": 1,
-                "oldIndex": 9,
+                "rawIndex": 9,
                 "startIndex": 393,
                 "endIndex": 396,
                 "snippetStartIndex": 320,
