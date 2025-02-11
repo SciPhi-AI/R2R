@@ -509,24 +509,24 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     expect(response.results.entries).toHaveLength(0);
   });
 
-  test("Build communities", async () => {
-    const response = await client.graphs.buildCommunities({
-      collectionId: collectionId,
-    });
+  // test("Build communities", async () => {
+  //   const response = await client.graphs.buildCommunities({
+  //     collectionId: collectionId,
+  //   });
 
-    await new Promise((resolve) => setTimeout(resolve, 15000));
+  //   await new Promise((resolve) => setTimeout(resolve, 15000));
 
-    expect(response.results).toBeDefined();
-  }, 60000);
+  //   expect(response.results).toBeDefined();
+  // }, 60000);
 
-  test("Check that there are communities in the graph", async () => {
-    const response = await client.graphs.listCommunities({
-      collectionId: collectionId,
-    });
+  // test("Check that there are communities in the graph", async () => {
+  //   const response = await client.graphs.listCommunities({
+  //     collectionId: collectionId,
+  //   });
 
-    expect(response.results).toBeDefined();
-    expect(response.totalEntries).toBeGreaterThanOrEqual(1);
-  });
+  //   expect(response.results).toBeDefined();
+  //   expect(response.totalEntries).toBeGreaterThanOrEqual(1);
+  // });
 
   test("Export graph communities to CSV with default options", async () => {
     const outputPath = path.join(

@@ -38,7 +38,6 @@ from core.base import (
     my_extract_citations,
     my_map_citations_to_sources,
     reassign_citations_in_order,
-    to_async_generator,
 )
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event

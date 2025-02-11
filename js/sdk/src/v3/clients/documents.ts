@@ -696,9 +696,12 @@ export class DocumentsClient {
    *                - ingestionMode: If provided, passes the ingestion mode (e.g. "hi-res") to the create() method.
    * @returns {Promise<WrappedIngestionResponse>} The ingestion response.
    */
-  async createSample(options?: { ingestionMode?: "hi-res" | "fast" | "custom" }): Promise<WrappedIngestionResponse> {
+  async createSample(options?: {
+    ingestionMode?: "hi-res" | "fast" | "custom";
+  }): Promise<WrappedIngestionResponse> {
     // Define the sample file URL.
-    const sampleFileUrl = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf";
+    const sampleFileUrl =
+      "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf";
     const parsedUrl = new URL(sampleFileUrl);
     const filename = parsedUrl.pathname.split("/").pop() || "sample.txt";
 

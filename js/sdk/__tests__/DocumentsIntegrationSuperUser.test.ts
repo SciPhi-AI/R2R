@@ -17,6 +17,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   let documentId: string;
   let documentId2: string;
   let documentId3: string;
+  let documentId4: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -78,6 +79,16 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     documentId3 = response.results.documentId;
   });
 
+  test("Create a document in 'fast' ingestion mode", async () => {
+    const response = await client.documents.create({
+      raw_text: "A document with 'fast' ingestion mode.",
+      ingestionMode: "fast",
+    });
+
+    expect(response.results.documentId).toBeDefined();
+    documentId4 = response.results.documentId;
+  });
+
   test("Create a document from an invalid JSON file", async () => {
     await expect(
       client.documents.create({
@@ -104,6 +115,20 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     expect(response.results.createdAt).toBeDefined();
     expect(response.results.updatedAt).toBeDefined();
     expect(response.results.summary).toBeDefined();
+  });
+
+  test("Retrieve 'fast' ingestion document", async () => {
+    const response = await client.documents.retrieve({
+      id: documentId4,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(documentId4);
+    expect(response.results.ingestionStatus).toBe("success");
+    expect(response.results.extractionStatus).toBe("pending");
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.summary).toBeNull();
   });
 
   test("List documents with no parameters", async () => {
@@ -362,6 +387,14 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Delete another document with URL", async () => {
     const response = await client.documents.delete({
       id: documentId3,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Delete document with 'fast' ingestion mode", async () => {
+    const response = await client.documents.delete({
+      id: documentId4,
     });
 
     expect(response.results).toBeDefined();
