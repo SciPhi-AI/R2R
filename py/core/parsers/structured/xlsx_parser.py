@@ -2,6 +2,10 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
+import networkx as nx
+import numpy as np
+from openpyxl import load_workbook
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -22,14 +26,7 @@ class XLSXParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            from openpyxl import load_workbook
-
-            self.load_workbook = load_workbook
-        except ImportError:
-            raise ValueError(
-                "Error, `openpyxl` is required to run `XLSXParser`. Please install it using `pip install openpyxl`."
-            )
+        self.load_workbook = load_workbook
 
     async def ingest(
         self, data: bytes, *args, **kwargs
@@ -53,19 +50,9 @@ class XLSXParserAdvanced(AsyncParser[str | bytes]):
     ):
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            import networkx as nx
-            import numpy as np
-            from openpyxl import load_workbook
-
-            self.nx = nx
-            self.np = np
-            self.load_workbook = load_workbook
-
-        except ImportError:
-            raise ValueError(
-                "Error, `networkx` and `numpy` are required to run `XLSXParserAdvanced`. Please install them using `pip install networkx numpy`."
-            )
+        self.nx = nx
+        self.np = np
+        self.load_workbook = load_workbook
 
     def connected_components(self, arr):
         g = self.nx.grid_2d_graph(len(arr), len(arr[0]))

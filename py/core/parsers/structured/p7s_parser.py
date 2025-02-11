@@ -6,6 +6,10 @@ from datetime import datetime
 from email.message import Message
 from typing import AsyncGenerator
 
+from cryptography import x509
+from cryptography.hazmat.primitives.serialization import pkcs7
+from cryptography.x509.oid import NameOID
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -28,20 +32,9 @@ class P7SParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            from cryptography import x509
-            from cryptography.hazmat.primitives.serialization import pkcs7
-            from cryptography.x509.oid import NameOID
-
-            self.x509 = x509
-            self.pkcs7 = pkcs7
-            self.NameOID = NameOID
-        except ImportError:
-            raise ImportError(
-                "Error: 'cryptography' is required to run P7SParser. "
-                "Please install it using pip: pip install cryptography"
-            )
+        self.x509 = x509
+        self.pkcs7 = pkcs7
+        self.NameOID = NameOID
 
     def _format_datetime(self, dt: datetime) -> str:
         """Format datetime in a readable way."""

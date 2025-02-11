@@ -2,6 +2,8 @@
 import logging
 from typing import AsyncGenerator
 
+import epub
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -24,16 +26,7 @@ class EPUBParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            import epub
-
-            self.epub = epub
-        except ImportError:
-            raise ImportError(
-                "Error: 'epub' is required to run EPUBParser. "
-                "Please install it using pip: pip install epub"
-            )
+        self.epub = epub
 
     def _safe_get_metadata(self, book, field: str) -> str | None:
         """Safely extract metadata field from epub book."""

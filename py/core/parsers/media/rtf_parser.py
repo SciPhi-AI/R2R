@@ -1,6 +1,8 @@
 # type: ignore
 from typing import AsyncGenerator
 
+from striprtf.striprtf import rtf_to_text
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,16 +23,7 @@ class RTFParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            from striprtf.striprtf import rtf_to_text
-
-            self.striprtf = rtf_to_text
-        except ImportError:
-            raise ImportError(
-                "Error: 'striprtf' is required to run RTFParser. "
-                "Please install it using pip: pip install striprtf"
-            )
+        self.striprtf = rtf_to_text
 
     async def ingest(
         self, data: str | bytes, **kwargs

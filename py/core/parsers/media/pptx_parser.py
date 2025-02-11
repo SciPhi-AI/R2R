@@ -2,6 +2,8 @@
 from io import BytesIO
 from typing import AsyncGenerator
 
+from pptx import Presentation
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -22,14 +24,7 @@ class PPTXParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            from pptx import Presentation
-
-            self.Presentation = Presentation
-        except ImportError:
-            raise ValueError(
-                "Error, `python-pptx` is required to run `PPTXParser`. Please install it using `pip install python-pptx`."
-            )
+        self.Presentation = Presentation
 
     async def ingest(self, data: str | bytes, **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest PPT data and yield text from each slide."""

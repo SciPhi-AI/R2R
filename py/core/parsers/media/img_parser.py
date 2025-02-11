@@ -4,6 +4,9 @@ import logging
 from io import BytesIO
 from typing import AsyncGenerator
 
+import pillow_heif
+from PIL import Image
+
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -26,21 +29,9 @@ class ImageParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
         self.vision_prompt_text = None
-
-        try:
-            import pillow_heif  # for HEIC support
-            from litellm import supports_vision
-            from PIL import Image
-
-            self.supports_vision = supports_vision
-            self.Image = Image
-            self.pillow_heif = pillow_heif
-            self.pillow_heif.register_heif_opener()
-        except ImportError as e:
-            logger.error(f"Failed to import required packages: {str(e)}")
-            raise ImportError(
-                "Please install the required packages: litellm, Pillow, pillow-heif"
-            )
+        self.Image = Image
+        self.pillow_heif = pillow_heif
+        self.pillow_heif.register_heif_opener()
 
     def _is_heic(self, data: bytes) -> bool:
         """More robust HEIC detection using magic numbers and patterns."""
