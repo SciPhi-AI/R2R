@@ -107,9 +107,9 @@ class Citation(BaseModel):
 
 
 class RAGResponse(BaseModel):
-    generated_answer: str = Field(
-        ..., description="The generated completion from the RAG process"
-    )
+    # generated_answer: str = Field(
+    #     ..., description="The generated completion from the RAG process"
+    # )
     search_results: AggregateSearchResult = Field(
         ..., description="The search results used for the RAG process"
     )
@@ -121,17 +121,11 @@ class RAGResponse(BaseModel):
         default_factory=dict,
         description="Additional data returned by the LLM provider",
     )
-
-    # Provide a deprecated alias property.
-    @property
-    @deprecated(version="3.4.1", reason="Use 'generated_answer' instead")
-    def completion(self) -> str:
-        return self.generated_answer
-
-    @completion.setter
-    @deprecated(version="3.4.1", reason="Use 'generated_answer' instead")
-    def completion(self, value: str):
-        self.generated_answer = value
+    completion: str = Field(
+        ...,
+        description="The generated completion from the RAG process",
+        deprecated=True,
+    )
 
     class Config:
         json_schema_extra = {
