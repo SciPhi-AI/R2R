@@ -124,7 +124,7 @@ class RAGResponse(BaseModel):
     completion: str = Field(
         ...,
         description="The generated completion from the RAG process",
-        deprecated=True,
+        # deprecated=True,
     )
 
     class Config:
