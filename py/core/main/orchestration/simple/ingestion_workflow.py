@@ -77,10 +77,11 @@ def simple_ingestion_factory(service: IngestionService):
                 total_tokens += count_tokens_for_text(text_data)
             document_info.total_tokens = total_tokens
 
-            await service.update_document_status(
-                document_info, status=IngestionStatus.AUGMENTING
-            )
-            await service.augment_document_info(document_info, extractions)
+            if not ingestion_config.get("skip_document_summary", False):
+                await service.update_document_status(
+                    document_info, status=IngestionStatus.AUGMENTING
+                )
+                await service.augment_document_info(document_info, extractions)
 
             await service.update_document_status(
                 document_info, status=IngestionStatus.EMBEDDING

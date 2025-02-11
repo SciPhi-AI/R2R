@@ -16,7 +16,6 @@ from .base_utils import (
     my_extract_citations,
     my_map_citations_to_sources,
     reassign_citations_in_order,
-    to_async_generator,
     validate_uuid,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
@@ -38,7 +37,6 @@ __all__ = [
     # Other
     "increment_version",
     "decrement_version",
-    "to_async_generator",
     "validate_uuid",
     "deep_update",
     # Text splitter

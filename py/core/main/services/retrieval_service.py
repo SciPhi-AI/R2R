@@ -38,7 +38,6 @@ from core.base import (
     my_extract_citations,
     my_map_citations_to_sources,
     reassign_citations_in_order,
-    to_async_generator,
 )
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -462,8 +461,8 @@ class RetrievalService(Service):
         query: str,
         rag_generation_config: GenerationConfig,
         search_settings: SearchSettings = SearchSettings(),
-        system_prompt_name: str = None,
-        task_prompt_name: str = None,
+        system_prompt_name: str | None = None,
+        task_prompt_name: str | None = None,
         *args,
         **kwargs,
     ) -> RAGResponse:

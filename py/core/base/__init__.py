@@ -109,7 +109,6 @@ __all__ = [
     ## UTILS
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
-    "to_async_generator",
     "format_search_results_for_llm",
     "format_search_results_for_stream",
     "validate_uuid",

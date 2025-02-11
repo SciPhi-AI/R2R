@@ -8,9 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     AsyncGenerator,
-    Dict,
     Iterable,
-    List,
     Optional,
     Tuple,
     TypeVar,
@@ -70,7 +68,7 @@ def _expand_citation_span_to_sentence(
     return (sentence_start, sentence_end)
 
 
-def my_extract_citations(text: str) -> List["Citation"]:
+def my_extract_citations(text: str) -> list["Citation"]:
     """
     Parse the LLM-generated text and extract bracket references [n].
     For each bracket, also expand around the bracket to capture
@@ -79,7 +77,7 @@ def my_extract_citations(text: str) -> List["Citation"]:
     from ..api.models.retrieval.responses import Citation
 
     pattern = r"\[(\d+)\]"
-    citations: List[Citation] = []
+    citations: list[Citation] = []
 
     for match in re.finditer(pattern, text):
         bracket_index = int(match.group(1))
@@ -107,8 +105,8 @@ def my_extract_citations(text: str) -> List["Citation"]:
 
 
 def reassign_citations_in_order(
-    text: str, citations: List["Citation"]
-) -> Tuple[str, List["Citation"]]:
+    text: str, citations: list["Citation"]
+) -> Tuple[str, list["Citation"]]:
     """
     Sort citations by startIndex, assign them new indices [1..N], then
     replace the original bracket references in the text in-place. Re-extract
@@ -156,7 +154,7 @@ def reassign_citations_in_order(
 
     # Merge snippet data & build final typed list in ascending order
     labeled_asc = sorted(labeled_citations, key=lambda x: x["newIndex"])
-    updated_citations: List[Citation] = []
+    updated_citations: list[Citation] = []
     for item in labeled_asc:
         new_idx = item["newIndex"]
         old_idx = item["oldIndex"]
@@ -183,8 +181,8 @@ def reassign_citations_in_order(
 
 
 def my_map_citations_to_sources(
-    citations: List["Citation"], aggregated: AggregateSearchResult
-) -> List["Citation"]:
+    citations: list["Citation"], aggregated: AggregateSearchResult
+) -> list["Citation"]:
     """
     Given typed citations (with snippet info) and an aggregated search result,
     map each bracket index to the corresponding source object (chunk, graph, web, context).
@@ -206,7 +204,7 @@ def my_map_citations_to_sources(
         for cdoc in aggregated.context_document_results:
             flat_source_list.append((cdoc, "contextDoc"))
 
-    mapped_citations: List[Citation] = []
+    mapped_citations: list[Citation] = []
 
     for cit in citations:
         idx = cit.index
@@ -471,13 +469,6 @@ def generate_entity_document_id() -> UUID:
     """
     generation_time = datetime.now().isoformat()
     return _generate_id_from_label(f"entity-{generation_time}")
-
-
-async def to_async_generator(
-    iterable: Iterable[Any],
-) -> AsyncGenerator[Any, None]:
-    for item in iterable:
-        yield item
 
 
 def increment_version(version: str) -> str:

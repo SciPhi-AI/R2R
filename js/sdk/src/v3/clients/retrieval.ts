@@ -326,10 +326,14 @@ export class RetrievalClient {
 
     if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
       return this.streamReasoningAgent(data);
-  } else {
-      return await this.client.makeRequest("POST", "retrieval/reasoning_agent", {
+    } else {
+      return await this.client.makeRequest(
+        "POST",
+        "retrieval/reasoning_agent",
+        {
           data: data,
-      });
+        },
+      );
     }
   }
 

@@ -46,7 +46,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     port: int
     db_name: str
     connection_string: str
-    dimension: int
+    dimension: int | float
     conn: Optional[Any]
 
     crypto_provider: "CryptoProviderType"
@@ -72,7 +72,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     def __init__(
         self,
         config: DatabaseConfig,
-        dimension: int,
+        dimension: int | float,
         crypto_provider: "BCryptCryptoProvider | NaClCryptoProvider",
         quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
         *args,
