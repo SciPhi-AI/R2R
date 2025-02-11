@@ -107,24 +107,24 @@ class Citation(BaseModel):
 
 
 class RAGResponse(BaseModel):
-    generated_answer: str = Field(
-        ..., description="The generated completion from the RAG process"
-    )
+    # generated_answer: str = Field(
+    #     ..., description="The generated completion from the RAG process"
+    # )
     search_results: AggregateSearchResult = Field(
         ..., description="The search results used for the RAG process"
     )
-    citations: Optional[list[Citation]] = Field(
-        None,
-        description="Structured citation metadata, if you do citation extraction.",
-    )
-    metadata: dict = Field(
-        default_factory=dict,
-        description="Additional data returned by the LLM provider",
-    )
+    # citations: Optional[list[Citation]] = Field(
+    #     None,
+    #     description="Structured citation metadata, if you do citation extraction.",
+    # )
+    # metadata: dict = Field(
+    #     default_factory=dict,
+    #     description="Additional data returned by the LLM provider",
+    # )
     completion: str = Field(
         ...,
         description="The generated completion from the RAG process",
-        deprecated=True,
+        # deprecated=True,
     )
 
     class Config:
