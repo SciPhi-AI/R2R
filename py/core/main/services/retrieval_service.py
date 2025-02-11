@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import time
+import uuid
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Optional
@@ -54,10 +55,29 @@ logger = logging.getLogger()
 import tiktoken
 
 
+def convert_uuids(obj):
+    """
+    Recursively convert UUID instances within the object into strings.
+    Handles dict, list, tuple, and set.
+    """
+    if isinstance(obj, dict):
+        return {k: convert_uuids(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_uuids(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_uuids(item) for item in obj)
+    elif isinstance(obj, set):
+        return {convert_uuids(item) for item in obj}
+    elif isinstance(obj, uuid.UUID):
+        return str(obj)
+    else:
+        return obj
+
+
 def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
     dumped = []
     for source_type, result_obj, _ in collector.get_all_results():
-        # Try to convert the result_obj to a dict.
+        # Get the dictionary from the result object
         if hasattr(result_obj, "model_dump"):
             result_dict = result_obj.model_dump()
         elif hasattr(result_obj, "dict"):
@@ -66,6 +86,10 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
             result_dict = (
                 result_obj  # Fallback if no conversion method is available
             )
+
+        # Use the recursive conversion on the entire dictionary
+        result_dict = convert_uuids(result_dict)
+
         dumped.append(
             {
                 "source_type": source_type,
@@ -974,7 +998,7 @@ class RetrievalService(Service):
 
             # 4) Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(
-                conversation_id=conversation_id,
+                conversation_id=str(conversation_id),
                 content=assistant_message,
                 parent_id=message_id,
                 metadata={
@@ -985,6 +1009,7 @@ class RetrievalService(Service):
                     ),
                 },
             )
+
             if needs_conversation_name:
                 conversation_name = None
                 try:
