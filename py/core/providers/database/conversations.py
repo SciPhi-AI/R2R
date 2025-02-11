@@ -1,6 +1,7 @@
 import csv
 import json
 import tempfile
+from datetime import datetime
 from typing import IO, Any, Optional
 from uuid import UUID, uuid4
 
@@ -13,6 +14,26 @@ from shared.api.models.management.responses import (
 )
 
 from .base import PostgresConnectionManager
+
+
+def _json_default(obj: Any) -> str:
+    """Default handler for objects not serializable by the standard json encoder."""
+    if isinstance(obj, datetime):
+        # Return ISO8601 string
+        return obj.isoformat()
+    elif isinstance(obj, UUID):
+        # Convert UUID to string
+        return str(obj)
+    # If you have other special types, handle them here...
+    # e.g. decimal.Decimal -> str(obj)
+
+    # If we get here, raise an error or just default to string:
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+
+def safe_dumps(obj: Any) -> str:
+    """Wrap `json.dumps` with a default that serializes UUID and datetime."""
+    return json.dumps(obj, default=_json_default)
 
 
 class PostgresConversationsHandler(Handler):
@@ -157,7 +178,7 @@ class PostgresConversationsHandler(Handler):
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
     ) -> MessageResponse:
-        # Check if conversation exists
+        # 1) Validate that conversation and parent exist, as before
         conv_check_query = f"""
             SELECT 1 FROM {self._get_table_name("conversations")}
             WHERE id = $1
@@ -171,7 +192,6 @@ class PostgresConversationsHandler(Handler):
                 message=f"Conversation {conversation_id} not found.",
             )
 
-        # Check parent message if provided
         if parent_id:
             parent_check_query = f"""
                 SELECT 1 FROM {self._get_table_name("messages")}
@@ -186,9 +206,10 @@ class PostgresConversationsHandler(Handler):
                     message=f"Parent message {parent_id} not found in conversation {conversation_id}.",
                 )
 
+        # 2) Convert the content & metadata to JSON strings in a safe manner
         message_id = uuid4()
-        content_str = json.dumps(content.model_dump())
-        metadata_str = json.dumps(metadata or {})
+        content_str = safe_dumps(content.model_dump())  # <-- use safe_dumps
+        metadata_str = safe_dumps(metadata or {})
 
         query = f"""
             INSERT INTO {self._get_table_name("messages")}

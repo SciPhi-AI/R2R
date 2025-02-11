@@ -841,7 +841,7 @@ class DocumentsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
-            include_summary_embeddings: int = Query(
+            include_summary_embeddings: bool = Query(
                 False,
                 description="Specifies whether or not to include embeddings of each document summary.",
             ),
