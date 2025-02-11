@@ -107,9 +107,9 @@ class Citation(BaseModel):
 
 
 class RAGResponse(BaseModel):
-    # generated_answer: str = Field(
-    #     ..., description="The generated completion from the RAG process"
-    # )
+    generated_answer: str = Field(
+        ..., description="The generated completion from the RAG process"
+    )
     search_results: AggregateSearchResult = Field(
         ..., description="The search results used for the RAG process"
     )
