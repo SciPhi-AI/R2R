@@ -326,3 +326,31 @@ class CollectionsSDK:
         )
 
         return WrappedGenericMessageResponse(**response_dict)
+
+    def retrieve_by_name(
+        self, name: str, owner_id: Optional[str] = None
+    ) -> WrappedCollectionResponse:
+        """
+        Retrieve a collection by its name.
+
+        For non-superusers, the backend will use the authenticated user's ID.
+        For superusers, the caller must supply an owner_id to restrict the search.
+
+        Args:
+            name (str): The name of the collection to retrieve.
+            owner_id (Optional[str]): The owner ID to restrict the search. Required for superusers.
+
+        Returns:
+            WrappedCollectionResponse
+        """
+        query_params: dict[str, Any] = {}
+        if owner_id is not None:
+            query_params["owner_id"] = owner_id
+
+        response_dict = self.client._make_request(
+            "GET",
+            f"collections/name/{name}",
+            params=query_params,
+            version="v3",
+        )
+        return WrappedCollectionResponse(**response_dict)

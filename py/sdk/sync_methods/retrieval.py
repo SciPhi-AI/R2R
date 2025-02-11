@@ -198,7 +198,9 @@ class RetrievalSDK:
             "search_settings": search_settings,
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
-            "conversation_id": str(conversation_id),
+            "conversation_id": (
+                str(conversation_id) if conversation_id else None
+            ),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
             "use_extended_prompt": use_extended_prompt,
@@ -257,7 +259,9 @@ class RetrievalSDK:
 
         data: dict[str, Any] = {
             "rag_generation_config": rag_generation_config or {},
-            "conversation_id": conversation_id,
+            "conversation_id": (
+                str(conversation_id) if conversation_id else None
+            ),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
         }

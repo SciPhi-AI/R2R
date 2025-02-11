@@ -1233,3 +1233,50 @@ class CollectionsRouter(BaseRouterV3):
                 "message": "Graph created successfully.",
                 "task_id": None,
             }
+
+        @self.router.get(
+            "/collections/name/{collection_name}",
+            summary="Get a collection by name",
+            dependencies=[Depends(self.rate_limit_dependency)],
+        )
+        @self.base_endpoint
+        async def get_collection_by_name(
+            collection_name: str = Path(
+                ..., description="The name of the collection"
+            ),
+            owner_id: Optional[UUID] = Query(
+                None,
+                description="(Superuser only) Specify the owner_id to retrieve a collection by name",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedCollectionResponse:
+            """
+            Retrieve a collection by its (owner_id, name) combination.
+            The authenticated user can only fetch collections they own,
+            or, if superuser, from anyone.
+            """
+            if auth_user.is_superuser:
+                if not owner_id:
+                    owner_id = auth_user.id
+            else:
+                owner_id = auth_user.id
+
+            # If not superuser, fetch by (owner_id, name). Otherwise, maybe pass `owner_id=None`.
+            # Decide on the logic for superusers.
+            if not owner_id:  # is_superuser
+                # If you want superusers to do /collections/name/<string>?owner_id=...
+                # just parse it from the query. For now, let's say it's not implemented.
+                raise R2RException(
+                    "Superuser must specify an owner_id to fetch by name.", 400
+                )
+
+            collection = await self.providers.database.collections_handler.get_collection_by_name(
+                owner_id, collection_name
+            )
+            if not collection:
+                raise R2RException("Collection not found.", 404)
+
+            # Now, authorize the 'view' action just in case:
+            # e.g. await authorize_collection_action(auth_user, collection.id, CollectionAction.VIEW, self.services)
+
+            return collection
