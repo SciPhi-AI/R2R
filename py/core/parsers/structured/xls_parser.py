@@ -1,6 +1,10 @@
 # type: ignore
 from typing import AsyncGenerator
 
+import networkx as nx
+import numpy as np
+import xlrd
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,15 +25,7 @@ class XLSParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            import xlrd
-
-            self.xlrd = xlrd
-        except ImportError:
-            raise ImportError(
-                "Error: 'xlrd' is required to run XLSParser. "
-                "Please install it using pip: pip install xlrd"
-            )
+        self.xlrd = xlrd
 
     async def ingest(
         self, data: bytes, *args, **kwargs
@@ -75,19 +71,9 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
     ):
         self.llm_provider = llm_provider
         self.config = config
-        try:
-            import networkx as nx
-            import numpy as np
-            import xlrd
-
-            self.nx = nx
-            self.np = np
-            self.xlrd = xlrd
-        except ImportError:
-            raise ImportError(
-                "Error: 'networkx', 'numpy', and 'xlrd' are required to run XLSParserAdvanced. "
-                "Please install them using pip: pip install networkx numpy xlrd"
-            )
+        self.nx = nx
+        self.np = np
+        self.xlrd = xlrd
 
     def connected_components(self, arr):
         g = self.nx.grid_2d_graph(len(arr), len(arr[0]))

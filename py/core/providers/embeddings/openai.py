@@ -2,6 +2,7 @@ import logging
 import os
 from typing import Any
 
+import tiktoken
 from openai import AsyncOpenAI, AuthenticationError, OpenAI
 from openai._types import NOT_GIVEN
 
@@ -234,12 +235,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         return results[:limit]
 
     def tokenize_string(self, text: str, model: str) -> list[int]:
-        try:
-            import tiktoken
-        except ImportError as e:
-            raise ValueError(
-                "Must download tiktoken library to run `tokenize_string`."
-            ) from e
         if model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(f"OpenAI embedding model {model} not supported.")
         encoding = tiktoken.get_encoding(

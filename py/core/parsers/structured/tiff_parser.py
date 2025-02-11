@@ -4,6 +4,8 @@ import logging
 from io import BytesIO
 from typing import AsyncGenerator
 
+from PIL import Image
+
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -28,15 +30,7 @@ class TIFFParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
         self.vision_prompt_text = None
-
-        try:
-            from litellm import supports_vision
-            from PIL import Image
-
-            self.supports_vision = supports_vision
-            self.Image = Image
-        except ImportError:
-            raise ImportError("Required packages not available.")
+        self.Image = Image
 
     async def _convert_tiff_to_jpeg(self, data: bytes) -> bytes:
         """Convert TIFF image to JPEG format."""

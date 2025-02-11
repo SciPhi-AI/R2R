@@ -1,6 +1,8 @@
 # type: ignore
 from typing import AsyncGenerator
 
+import extract_msg
+
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
     CompletionProvider,
@@ -21,16 +23,7 @@ class MSGParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-
-        try:
-            import extract_msg
-
-            self.extract_msg = extract_msg
-        except ImportError:
-            raise ImportError(
-                "Error: 'extract-msg' is required to run MSGParser. "
-                "Please install it using pip: pip install extract-msg"
-            )
+        self.extract_msg = extract_msg
 
     async def ingest(
         self, data: str | bytes, **kwargs

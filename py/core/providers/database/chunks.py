@@ -25,7 +25,6 @@ from core.base import (
 
 from .base import PostgresConnectionManager
 from .filters import apply_filters
-from .vecs.exc import ArgError, FilterError
 
 logger = logging.getLogger()
 from core.base.utils import _decorate_vector_type
@@ -775,7 +774,7 @@ class PostgresChunksHandler(Handler):
             index_name (str, optional): The name of the index to create. Defaults to None.
             concurrently (bool, optional): Whether to create the index concurrently. Defaults to True.
         Raises:
-            ArgError: If an invalid index method is used, or if *replace* is False and an index already exists.
+            ValueError: If an invalid index method is used, or if *replace* is False and an index already exists.
         """
 
         if table_name == VectorTableName.CHUNKS:
@@ -807,21 +806,21 @@ class PostgresChunksHandler(Handler):
             )
             col_name = "embedding"
         else:
-            raise ArgError("invalid table name")
+            raise ValueError("invalid table name")
 
         if index_method not in (
             IndexMethod.ivfflat,
             IndexMethod.hnsw,
             IndexMethod.auto,
         ):
-            raise ArgError("invalid index method")
+            raise ValueError("invalid index method")
 
         if index_arguments:
             # Disallow case where user submits index arguments but uses the
             # IndexMethod.auto index (index build arguments should only be
             # used with a specific index)
             if index_method == IndexMethod.auto:
-                raise ArgError(
+                raise ValueError(
                     "Index build parameters are not allowed when using the IndexMethod.auto index."
                 )
             # Disallow case where user specifies one index type but submits
@@ -833,7 +832,7 @@ class PostgresChunksHandler(Handler):
                 isinstance(index_arguments, IndexArgsIVFFlat)
                 and index_method != IndexMethod.ivfflat
             ):
-                raise ArgError(
+                raise ValueError(
                     f"{index_arguments.__class__.__name__} build parameters were supplied but {index_method} index was specified."
                 )
 
@@ -845,7 +844,7 @@ class PostgresChunksHandler(Handler):
         )
 
         if ops is None:
-            raise ArgError("Unknown index measure")
+            raise ValueError("Unknown index measure")
 
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
@@ -977,7 +976,7 @@ class PostgresChunksHandler(Handler):
             concurrently (bool): Whether to drop the index concurrently
 
         Raises:
-            ArgError: If table name is invalid or index doesn't exist
+            ValueError: If table name is invalid or index doesn't exist
             Exception: If index deletion fails
         """
         # Validate table name and get column name
@@ -1000,7 +999,7 @@ class PostgresChunksHandler(Handler):
             )
             col_name = "description_embedding"
         else:
-            raise ArgError("invalid table name")
+            raise ValueError("invalid table name")
 
         # Extract schema and base table name
         schema_name, base_table_name = table_name_str.split(".")
@@ -1020,7 +1019,7 @@ class PostgresChunksHandler(Handler):
         )
 
         if not result:
-            raise ArgError(
+            raise ValueError(
                 f"Vector index '{index_name}' does not exist on table {table_name_str}"
             )
 
