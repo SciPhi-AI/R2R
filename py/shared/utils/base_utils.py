@@ -65,168 +65,6 @@ def reorder_collector_to_match_final_brackets(
     collector._results_in_order = [x for x in new_list if x is not None]
 
 
-async def finalize_citations_with_collector(
-    raw_text: str, collector
-) -> Tuple[str, list["Citation"]]:
-    """
-    1) Regex parse bracket references like [9].
-    2) Each bracket # => 'old_ref'.
-    3) Build a map old_ref -> new_ref (1..N) in ascending order of unique old_refs.
-    4) Replace them in the text.
-    5) For each bracket occurrence, find aggregator item # = old_ref, build Citation object.
-    """
-    from ..api.models.retrieval.responses import Citation
-
-    if not raw_text:
-        return raw_text, []
-
-    pattern = re.compile(r"\[(\d+)\]")
-    matches = list(pattern.finditer(raw_text))
-    if not matches:
-        return raw_text, []
-
-    bracket_occurrences = []
-    for m in matches:
-        old_ref_str = m.group(1)
-        old_ref_int = int(old_ref_str)
-        bracket_occurrences.append(
-            {
-                "old_ref": old_ref_int,
-                "start_index": m.start(),
-                "end_index": m.end(),
-            }
-        )
-
-    # Unique bracket refs, sorted ascending
-    unique_old_refs = sorted({occ["old_ref"] for occ in bracket_occurrences})
-    old_to_new = {}
-    for i, old_ref in enumerate(unique_old_refs, start=1):
-        old_to_new[old_ref] = i
-
-    # We produce final citations in the *order the LLM text used them*,
-    # i.e. bracket_occurrences order.
-    # We'll look up aggregator items in get_all_results().
-    all_items = (
-        collector.get_all_results()
-    )  # => (source_type, result_obj, agg_idx)
-    final_citations = []
-
-    for occ in bracket_occurrences:
-        old_ref = occ["old_ref"]
-        new_ref = old_to_new[old_ref]
-        s_i = occ["start_index"]
-        e_i = occ["end_index"]
-
-        # Find aggregator item whose aggregator_index == old_ref
-        matched_item = None
-        for stype, obj, agg_idx in all_items:
-            if agg_idx == old_ref:
-                matched_item = (stype, obj)
-                break
-
-        if matched_item:
-            (source_type, result_obj) = matched_item
-            # Build a citation
-            c = Citation(
-                index=new_ref,
-                rawIndex=old_ref,
-                startIndex=s_i,
-                endIndex=e_i,
-                sourceType=source_type,
-                doc_id=str(getattr(result_obj, "document_id", None)),
-                text=getattr(result_obj, "text", None),
-                metadata=getattr(result_obj, "metadata", {}),
-            )
-        else:
-            # aggregator item # not found => partial citation
-            c = Citation(
-                index=new_ref,
-                rawIndex=old_ref,
-                startIndex=s_i,
-                endIndex=e_i,
-                sourceType="unknown",
-            )
-        final_citations.append(c)
-
-    # Now relabel the text with bracket [old_ref] => [new_ref].
-    def reindex(match):
-        old_str = match.group(1)
-        old_int = int(old_str)
-        new_int = old_to_new[old_int]
-        return f"[{new_int}]"
-
-    relabeled_text = pattern.sub(reindex, raw_text)
-    return relabeled_text, final_citations
-
-
-# def map_citations_to_collector(
-#     citations: List["Citation"], collector: Any  # "SearchResultsCollector"
-# ) -> List["Citation"]:
-#     """
-#     For each Citation [i], find the i-th `(source_type, result_obj)` from
-#     collector.get_all_results(), then attach the relevant metadata into
-#     Citation. For example, if source_type == 'chunk', store the chunk’s text, score, etc.
-#     """
-#     results_in_order = (
-#         collector.get_all_results()
-#     )  # list of (source_type, result_obj)
-#     updated_citations = []
-
-#     for cit in citations:
-#         # bracket index is 1-based, so i-th bracket => index-1 in the list
-#         idx_0 = cit.index - 1
-#         if idx_0 < 0 or idx_0 >= len(results_in_order):
-#             # out of range => skip
-#             updated_citations.append(cit)
-#             continue
-
-#         source_type, source_obj, agg_index = results_in_order[idx_0]
-
-#         # Create a copy so as not to mutate the original
-#         updated = cit.copy(update={"sourceType": source_type})
-
-#         # Fill out chunk-based metadata
-#         if source_type == "chunk":
-#             updated.id = str(source_obj.id)
-#             updated.document_id = str(source_obj.document_id)
-#             updated.owner_id = (
-#                 str(source_obj.owner_id) if source_obj.owner_id else None
-#             )
-#             updated.collection_ids = [
-#                 str(cid) for cid in source_obj.collection_ids
-#             ]
-#             updated.score = source_obj.score
-#             updated.text = source_obj.text
-#             updated.metadata = dict(source_obj.metadata)
-
-#         elif source_type == "graph":
-#             updated.score = source_obj.score
-#             updated.metadata = dict(source_obj.metadata)
-#             if source_obj.content:
-#                 updated.metadata["graphContent"] = (
-#                     source_obj.content.model_dump()
-#                 )
-
-#         elif source_type == "web":
-#             updated.metadata = {
-#                 "link": source_obj.link,
-#                 "title": source_obj.title,
-#                 # "snippet": source_obj.snippet,
-#                 "position": source_obj.position,
-#             }
-
-#         elif source_type == "contextDoc":
-#             updated.metadata = {
-#                 "document": source_obj.document,
-#                 "chunks": source_obj.chunks,
-#             }
-
-#         # Add or modify more fields as needed...
-#         updated_citations.append(updated)
-
-#     return updated_citations
-
-
 def map_citations_to_collector(
     citations: List["Citation"],
     collector: Any,  # "SearchResultsCollector"
@@ -295,7 +133,7 @@ def map_citations_to_collector(
         else:
             # aggregator index not found => out-of-range or unknown
             updated = cit.copy()
-            updated.sourceType = "unknown"
+            updated.sourceType = None
             mapped_citations.append(updated)
 
     return mapped_citations
@@ -336,44 +174,6 @@ def _expand_citation_span_to_sentence(
     return (sentence_start, sentence_end)
 
 
-# def extract_citations(text: str) -> List["Citation"]:
-#     """
-#     Parse the LLM-generated text and extract bracket references [n].
-#     For each bracket, also expand around the bracket to capture
-#     a sentence-based snippet if possible.
-#     """
-#     from ..api.models.retrieval.responses import Citation
-
-#     pattern = r"\[(\d+)\]"
-#     citations: List[Citation] = []
-
-#     for match in re.finditer(pattern, text):
-#         bracket_index = int(match.group(1))
-#         bracket_start = match.start()
-#         bracket_end = match.end()
-
-#         # Expand to sentence boundaries
-#         snippet_start, snippet_end = _expand_citation_span_to_sentence(
-#             text, bracket_start, bracket_end
-#         )
-#         snippet_text = text[snippet_start:snippet_end]
-
-#         # Build a typed Citation object
-#         citation = Citation(
-#             index=bracket_index,
-#             startIndex=bracket_start,
-#             endIndex=bracket_end,
-#             snippetStartIndex=snippet_start,
-#             snippetEndIndex=snippet_end,
-#             # snippet=snippet_text,
-#         )
-#         citations.append(citation)
-
-#     return citations
-
-CITATION_PATTERN = re.compile(r"\[(\d+)\]")
-
-
 def extract_citations(text: str) -> List["Citation"]:
     """
     Find bracket references like [3], [10], etc. Return a list of Citation objects
@@ -381,6 +181,8 @@ def extract_citations(text: str) -> List["Citation"]:
     that to 'rawIndex' to avoid confusion.
     """
     from ..api.models.retrieval.responses import Citation
+
+    CITATION_PATTERN = re.compile(r"\[(\d+)\]")
 
     citations = []
     for match in CITATION_PATTERN.finditer(text):
@@ -635,30 +437,6 @@ def map_citations_to_sources(
         mapped_citations.append(updated_cit)
 
     return mapped_citations
-
-
-async def finalize_citations_in_message(
-    raw_text: str,
-    search_results: AggregateSearchResult,
-) -> tuple[str, list["Citation"]]:
-    """
-    1) Extract bracket references from the raw LLM text,
-    2) Re-label them in ascending order,
-    3) Build structured Citation objects mapped to the underlying chunk/graph data,
-    4) Return (relabeled_text, citations).
-    """
-    # 1) detect citations [1], [2], ...
-    raw_citations = extract_citations(raw_text)
-
-    # 2) re-map them in ascending order => new_text has sequential references [1], [2], ...
-    relabeled_text, new_citations = reassign_citations_in_order(
-        raw_text, raw_citations
-    )
-
-    # 3) map to sources in the `AggregateSearchResult`
-    mapped_citations = map_citations_to_sources(new_citations, search_results)
-
-    return relabeled_text, mapped_citations
 
 
 def format_search_results_for_llm(

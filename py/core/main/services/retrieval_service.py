@@ -35,14 +35,10 @@ from core.base import (
     R2RException,
     SearchSettings,
     extract_citations,
-    finalize_citations_in_message,
-    finalize_citations_with_collector,
     format_search_results_for_llm,
     format_search_results_for_stream,
     map_citations_to_collector,
-    map_citations_to_sources,
     reassign_citations_in_order,
-    to_async_generator,
 )
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -560,9 +556,12 @@ class RetrievalService(Service):
                 llm_text_response, raw_citations
             )
 
+            collector = SearchResultsCollector()
+            collector.add_aggregate_result(aggregated_results)
+
             # 4) map to sources
-            mapped_citations = map_citations_to_sources(
-                new_citations, aggregated_results
+            mapped_citations = map_citations_to_collector(
+                new_citations, collector
             )
 
             metadata = response.dict()

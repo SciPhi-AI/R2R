@@ -20,10 +20,8 @@ from core.base import (
     GraphSearchResult,
     WebSearchResult,
     extract_citations,
-    finalize_citations_in_message,
     generate_id,
     map_citations_to_collector,
-    map_citations_to_sources,
     reassign_citations_in_order,
 )
 
@@ -96,7 +94,10 @@ def test_no_citations_found(empty_aggregate):
     assert new_text == text  # no changes
     assert len(new_citations) == 0
 
-    mapped = map_citations_to_sources(new_citations, empty_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(empty_aggregate)
+
+    mapped = map_citations_to_collector(new_citations, collector)
     assert len(mapped) == 0
 
 
@@ -115,7 +116,10 @@ def test_single_citation_basic(empty_aggregate):
     assert len(new_citations) == 1
     # snippet might or might not be exactly the entire text, depending on your sentence logic
 
-    mapped = map_citations_to_sources(new_citations, empty_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(empty_aggregate)
+
+    mapped = map_citations_to_collector(new_citations, collector)
     # out-of-range => placeholders
     assert mapped[0].sourceType is None
     assert mapped[0].id is None
@@ -137,7 +141,10 @@ def test_multiple_citations_in_order(small_aggregate):
     )  # They remain [1], [2], [3], no re-labelling needed
     assert [c.index for c in new_citations] == [1, 2, 3]
 
-    mapped = map_citations_to_sources(new_citations, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_citations, collector)
     # check that bracket #1 => chunk-1, bracket #2 => chunk-2, bracket #3 => chunk-3
     assert mapped[0].id == str(generate_id("chunk-1"))
     assert mapped[1].id == str(generate_id("chunk-2"))
@@ -164,11 +171,25 @@ def test_descending_citations(small_aggregate):
         "[3]" not in new_text[: new_text.find("[1]")]
     )  # ensure the order is correct
 
-    mapped = map_citations_to_sources(new_cits, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_cits, collector)
     # Now bracket #1 => chunk-1, #2 => chunk-2, #3 => chunk-3
-    assert mapped[0].id == str(generate_id("chunk-1"))
-    assert mapped[1].id == str(generate_id("chunk-2"))
-    assert mapped[2].id == str(generate_id("chunk-3"))
+
+    # So let's confirm that mapped[0] is indeed chunk #3:
+    assert mapped[0].sourceType == "chunk"
+    assert (
+        mapped[0].text == "Sample chunk text #3"
+    )  # or check .metadata["title"] == "Doc3.pdf"
+
+    # The second bracket => aggregator #2 => chunk #2
+    assert mapped[1].sourceType == "chunk"
+    assert mapped[1].text == "Sample chunk text #2"
+
+    # The third bracket => aggregator #1 => chunk #1
+    assert mapped[2].sourceType == "chunk"
+    assert mapped[2].text == "Sample chunk text #1"
 
 
 def test_out_of_range_brackets(small_aggregate):
@@ -188,7 +209,10 @@ def test_out_of_range_brackets(small_aggregate):
     # If the code re-labeled them strictly in ascending order, it might produce:
     # "We talk about chunk #1 [1], chunk #2 [2], and chunk #5 [3]."
     # It's fine as long as we are consistent.
-    mapped = map_citations_to_sources(new_cits, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_cits, collector)
 
     # We only have 3 chunk results, so bracket #3 (originally [5]) => chunk #3
     # or if your code doesn't re-label that far, you might have placeholders
@@ -224,7 +248,10 @@ def test_zero_brackets_still_converts(small_aggregate):
     # Re-labeled => [1] or something
     assert "[1]" in new_text
 
-    mapped = map_citations_to_sources(new_cits, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_cits, collector)
     # bracket #1 => chunk1 if you have it, or placeholders
     if len(mapped) == 1:
         assert mapped[0].index == 1
@@ -263,7 +290,10 @@ def test_all_upper_bound(small_aggregate):
     # Should remain "[1], [2], [3], [4], [5]" if code sees them are already ascending
     assert new_text == text
 
-    mapped = map_citations_to_sources(new_cits, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_cits, collector)
     # Only 3 chunk results => bracket #4, #5 => placeholders
     assert mapped[3].sourceType is None
     assert mapped[4].sourceType is None
@@ -308,7 +338,10 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
         # Also confirm rawIndex=2 for all occurrences
         assert cit.rawIndex == 2
 
-    mapped = map_citations_to_sources(new_citations, empty_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(empty_aggregate)
+
+    mapped = map_citations_to_collector(new_citations, collector)
     # out-of-range => placeholders
     for mc in mapped:
         assert mc.sourceType is None
@@ -366,7 +399,10 @@ def test_repeated_bracket_ref_with_two_values(small_aggregate):
         c.index == found_3[0].index for c in found_3
     ), "All oldRef=3 must share the same final index"
 
-    mapped = map_citations_to_sources(new_cits, small_aggregate)
+    collector = SearchResultsCollector()
+    collector.add_aggregate_result(small_aggregate)
+
+    mapped = map_citations_to_collector(new_cits, collector)
     # bracket #1 => chunk1, bracket #2 => chunk2 (for example), or it might skip
     # The key is that repeated references to oldRef=3 all map to the same chunk or placeholders.
 
