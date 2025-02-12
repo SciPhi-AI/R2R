@@ -672,9 +672,6 @@ class RetrievalService(Service):
                         if not token_text:
                             continue
 
-                        # Keep track of old end-of-string
-                        old_length = len(partial_buffer)
-
                         # Append new text
                         partial_buffer += token_text
 
@@ -688,7 +685,7 @@ class RetrievalService(Service):
 
                         # Now look for bracket patterns in the newly added substring
                         for match in bracket_pattern.finditer(
-                            partial_buffer, old_length
+                            partial_buffer, parse_position
                         ):
                             bracket_str = match.group(1)  # e.g. "1"
                             bracket_num = int(bracket_str)
@@ -697,7 +694,7 @@ class RetrievalService(Service):
                                 citation_evt = {
                                     "id": f"cit_{bracket_num}",
                                     "object": "rag.citation",
-                                    "data": {"rawIndex": bracket_num},
+                                    "rawIndex": bracket_num,
                                 }
                                 async for line in _yield_sse_event(
                                     "citation", citation_evt
@@ -706,6 +703,9 @@ class RetrievalService(Service):
                                         f"[DEBUG] SSE line (citation): {line}"
                                     )
                                     yield line
+
+                            # Advance parse_position so we do not repeatedly match this bracket
+                            parse_position = match.end()
 
                         # SSE partial text => 'message' event
                         message_evt = {
@@ -744,10 +744,8 @@ class RetrievalService(Service):
                     final_ans_evt = {
                         "id": "msg_final",
                         "object": "rag.final_answer",
-                        "data": {
-                            "generated_answer": re_text,
-                            "citations": [c.model_dump() for c in mapped_cits],
-                        },
+                        "generated_answer": re_text,
+                        "citations": [c.model_dump() for c in mapped_cits],
                     }
                     async for line in _yield_sse_event(
                         "final_answer", final_ans_evt

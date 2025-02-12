@@ -14,7 +14,6 @@ from ..models import (
     SearchMode,
     SearchSettings,
 )
-
 from ..sync_methods.retrieval import (
     agent_arg_parser,
     completion_arg_parser,

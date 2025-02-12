@@ -1,8 +1,6 @@
 import json
 import uuid
-from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Union
-
-from pydantic import BaseModel
+from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base.api.models import (
     CitationData,
@@ -62,12 +60,16 @@ def parse_rag_event(raw: dict):
     elif event_type == "citation":
         return CitationEvent(
             event=event_type,
-            data=CitationData(**data_obj),
+            data=CitationData(
+                **data_obj
+            ),  # TODO - Fix this so it is not keyed by "data"
         )
     elif event_type == "final_answer":
         return FinalAnswerEvent(
             event=event_type,
-            data=FinalAnswerData(**data_obj["data"]),
+            data=FinalAnswerData(
+                **data_obj
+            ),  # TODO - Fix this so it is not keyed by "data"
         )
     else:
         return UnknownEvent(
