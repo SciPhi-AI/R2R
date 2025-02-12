@@ -625,14 +625,13 @@ class RetrievalService(Service):
                 )
                 return rag_response
 
-            # ========== Streaming path ==========
             async def sse_generator() -> AsyncGenerator[str, None]:
                 """
                 Yields SSE lines in the following sequence:
                 • "search_results" event => aggregator
                 • "message" events => streaming partial tokens from the LLM
-                • "citation" events => whenever a new bracket `[N]` is detected
-                • "final_answer" event => final re-labeled text + mapped citations
+                • "citation" events => whenever a new bracket "[N]" is found
+                • "final_answer" with re-labeled text + mapped citations
                 • "done"
                 """
 
@@ -649,38 +648,50 @@ class RetrievalService(Service):
                     logger.debug(f"[DEBUG] SSE line (search_results): {line}")
                     yield line
 
-                # 2) Prepare for partial tokens
+                # This pattern captures something like "[1]", "[ 2]", "[3   ]", etc.
+                # If your model truly never adds spaces, you can keep r"\[(\d+)\]".
+                # But if you see partial matches with spaces, loosen it up slightly:
+                bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
+
+                # Keep track of entire text so far
                 partial_buffer = ""
-                bracket_pattern = re.compile(
-                    r"\[(\d+)\]"
-                )  # captures bracketed digits, e.g. [5]
+                # We'll track how much we've already scanned for new citations
+                parse_position = 0
+                # Keep track of brackets we've already announced
                 seen_brackets = set()
 
-                # This is your streamed completion call
+                # 2) Stream partial text from the LLM
                 llm_stream = self.providers.llm.aget_completion_stream(
                     messages=messages,
                     generation_config=rag_generation_config,
                 )
 
                 try:
-                    # 3) Iterate over the streamed chunks
                     async for chunk in llm_stream:
                         token_text = chunk.choices[0].delta.content or ""
                         if not token_text:
                             continue
 
-                        # Only search the newly added substring
+                        # Keep track of old end-of-string
                         old_length = len(partial_buffer)
+
+                        # Append new text
                         partial_buffer += token_text
 
-                        # Detect [N] references in the new text
+                        # Debug: log what we just got
+                        logger.debug(
+                            f"[DEBUG] Got new token_text='{token_text}'"
+                        )
+                        logger.debug(
+                            f"[DEBUG] partial_buffer='{partial_buffer}'"
+                        )
+
+                        # Now look for bracket patterns in the newly added substring
                         for match in bracket_pattern.finditer(
                             partial_buffer, old_length
                         ):
-                            bracket_str = match.group(1)  # The "1" in "[1]"
-                            bracket_num = int(
-                                bracket_str
-                            )  # Convert to integer
+                            bracket_str = match.group(1)  # e.g. "1"
+                            bracket_num = int(bracket_str)
                             if bracket_num not in seen_brackets:
                                 seen_brackets.add(bracket_num)
                                 citation_evt = {
@@ -696,7 +707,7 @@ class RetrievalService(Service):
                                     )
                                     yield line
 
-                        # 4) Send the partial token as a 'message' event
+                        # SSE partial text => 'message' event
                         message_evt = {
                             "id": "msg_1",
                             "object": "thread.message.delta",
@@ -718,7 +729,7 @@ class RetrievalService(Service):
                             logger.debug(f"[DEBUG] SSE line (message): {line}")
                             yield line
 
-                    # 5) Once the LLM is done, parse the entire partial_buffer for final citations
+                    # 3) Once all chunks are processed, do final re-labeling
                     raw_cits = extract_citations(partial_buffer)
                     re_text, new_cits = reassign_citations_in_order(
                         partial_buffer, raw_cits
@@ -729,7 +740,7 @@ class RetrievalService(Service):
                         new_cits, final_coll
                     )
 
-                    # 6) Send the final answer + citations
+                    # 4) Send the 'final_answer'
                     final_ans_evt = {
                         "id": "msg_final",
                         "object": "rag.final_answer",
@@ -746,13 +757,142 @@ class RetrievalService(Service):
                         )
                         yield line
 
-                    # 7) Indicate the stream is done
+                    # 5) Indicate the stream is done
                     yield "event: done\n"
                     yield "data: [DONE]\n\n"
 
                 except Exception as e:
                     logger.error(f"Error streaming RAG: {e}")
                     raise
+
+            # # ========== Streaming path ==========
+            # async def sse_generator() -> AsyncGenerator[str, None]:
+            #     """
+            #     Yields SSE lines in the following sequence:
+            #     • "search_results" event => aggregator
+            #     • "message" events => streaming partial tokens from the LLM
+            #     • "citation" events => whenever a new bracket `[N]` is detected
+            #     • "final_answer" event => final re-labeled text + mapped citations
+            #     • "done"
+            #     """
+
+            #     # 1) Send the initial 'search_results' event
+            #     results_dict = aggregated_results.as_dict()
+            #     search_evt = {
+            #         "id": "run_1",
+            #         "object": "rag.search_results",
+            #         "data": results_dict,
+            #     }
+            #     async for line in _yield_sse_event(
+            #         "search_results", search_evt
+            #     ):
+            #         logger.debug(f"[DEBUG] SSE line (search_results): {line}")
+            #         yield line
+
+            #     # 2) Prepare for partial tokens
+            #     partial_buffer = ""
+            #     bracket_pattern = re.compile(
+            #         r"\[(\d+)\]"
+            #     )  # captures bracketed digits, e.g. [5]
+            #     seen_brackets = set()
+
+            #     # This is your streamed completion call
+            #     llm_stream = self.providers.llm.aget_completion_stream(
+            #         messages=messages,
+            #         generation_config=rag_generation_config,
+            #     )
+
+            #     try:
+            #         # 3) Iterate over the streamed chunks
+            #         async for chunk in llm_stream:
+            #             token_text = chunk.choices[0].delta.content or ""
+            #             if not token_text:
+            #                 continue
+
+            #             # Only search the newly added substring
+            #             old_length = len(partial_buffer)
+            #             partial_buffer += token_text
+
+            #             # Detect [N] references in the new text
+            #             for match in bracket_pattern.finditer(
+            #                 partial_buffer, old_length
+            #             ):
+            #                 bracket_str = match.group(1)  # The "1" in "[1]"
+            #                 bracket_num = int(
+            #                     bracket_str
+            #                 )  # Convert to integer
+            #                 if bracket_num not in seen_brackets:
+            #                     seen_brackets.add(bracket_num)
+            #                     citation_evt = {
+            #                         "id": f"cit_{bracket_num}",
+            #                         "object": "rag.citation",
+            #                         "data": {"rawIndex": bracket_num},
+            #                     }
+            #                     async for line in _yield_sse_event(
+            #                         "citation", citation_evt
+            #                     ):
+            #                         logger.debug(
+            #                             f"[DEBUG] SSE line (citation): {line}"
+            #                         )
+            #                         yield line
+
+            #             # 4) Send the partial token as a 'message' event
+            #             message_evt = {
+            #                 "id": "msg_1",
+            #                 "object": "thread.message.delta",
+            #                 "delta": {
+            #                     "content": [
+            #                         {
+            #                             "type": "text",
+            #                             "text": {
+            #                                 "value": token_text,
+            #                                 "annotations": [],
+            #                             },
+            #                         }
+            #                     ]
+            #                 },
+            #             }
+            #             async for line in _yield_sse_event(
+            #                 "message", message_evt
+            #             ):
+            #                 logger.debug(f"[DEBUG] SSE line (message): {line}")
+            #                 yield line
+
+            #         # 5) Once the LLM is done, parse the entire partial_buffer for final citations
+            #         raw_cits = extract_citations(partial_buffer)
+            #         re_text, new_cits = reassign_citations_in_order(
+            #             partial_buffer, raw_cits
+            #         )
+            #         final_coll = SearchResultsCollector()
+            #         final_coll.add_aggregate_result(aggregated_results)
+            #         mapped_cits = map_citations_to_collector(
+            #             new_cits, final_coll
+            #         )
+
+            #         # 6) Send the final answer + citations
+            #         final_ans_evt = {
+            #             "id": "msg_final",
+            #             "object": "rag.final_answer",
+            #             "data": {
+            #                 "generated_answer": re_text,
+            #                 "citations": [c.model_dump() for c in mapped_cits],
+            #             },
+            #         }
+            #         async for line in _yield_sse_event(
+            #             "final_answer", final_ans_evt
+            #         ):
+            #             logger.debug(
+            #                 f"[DEBUG] SSE line (final_answer): {line}"
+            #             )
+            #             yield line
+
+            #         # 7) Indicate the stream is done
+            #         yield "event: done\n"
+            #         yield "data: [DONE]\n\n"
+
+            #     except Exception as e:
+            #         logger.error(f"Error streaming RAG: {e}")
+            #         raise
 
             # async def sse_generator() -> AsyncGenerator[str, None]:
             #     """
