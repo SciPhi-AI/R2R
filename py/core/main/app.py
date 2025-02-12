@@ -19,7 +19,7 @@ from .api.v3.graph_router import GraphRouter
 from .api.v3.indices_router import IndicesRouter
 from .api.v3.logs_router import LogsRouter
 from .api.v3.prompts_router import PromptsRouter
-from .api.v3.retrieval_router import RetrievalRouterV3
+from .api.v3.retrieval_router import RetrievalRouter
 from .api.v3.system_router import SystemRouter
 from .api.v3.users_router import UsersRouter
 from .config import R2RConfig
@@ -41,7 +41,7 @@ class R2RApp:
         indices_router: IndicesRouter,
         logs_router: LogsRouter,
         prompts_router: PromptsRouter,
-        retrieval_router_v3: RetrievalRouterV3,
+        retrieval_router: RetrievalRouter,
         system_router: SystemRouter,
         users_router: UsersRouter,
     ):
@@ -58,7 +58,7 @@ class R2RApp:
         self.logs_router = logs_router
         self.orchestration_provider = orchestration_provider
         self.prompts_router = prompts_router
-        self.retrieval_router_v3 = retrieval_router_v3
+        self.retrieval_router = retrieval_router
         self.system_router = system_router
         self.users_router = users_router
 
@@ -86,7 +86,7 @@ class R2RApp:
         self.app.include_router(self.indices_router, prefix="/v3")
         self.app.include_router(self.logs_router, prefix="/v3")
         self.app.include_router(self.prompts_router, prefix="/v3")
-        self.app.include_router(self.retrieval_router_v3, prefix="/v3")
+        self.app.include_router(self.retrieval_router, prefix="/v3")
         self.app.include_router(self.system_router, prefix="/v3")
         self.app.include_router(self.users_router, prefix="/v3")
 

@@ -17,6 +17,8 @@ from core.base import (
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -42,11 +44,11 @@ def merge_search_settings(
     return SearchSettings(**base_dict)
 
 
-class RetrievalRouterV3(BaseRouterV3):
+class RetrievalRouter(BaseRouterV3):
     def __init__(
         self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
-        logging.info("Initializing RetrievalRouterV3")
+        logging.info("Initializing RetrievalRouter")
         super().__init__(providers, services, config)
 
     def _register_workflows(self):
@@ -996,8 +998,7 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
-        ):
-            # FIXME: Needs a proper return type
+        ) -> WrappedLLMChatCompletion:
             """
             Generate completions for a list of messages.
 
@@ -1075,8 +1076,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Text to generate embeddings for",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            # FIXME: Needs a proper return type
+        ) -> WrappedEmbeddingResponse:
             """
             Generate embeddings for the provided text using the specified model.
 

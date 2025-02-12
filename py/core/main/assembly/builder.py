@@ -10,7 +10,7 @@ from ..api.v3.graph_router import GraphRouter
 from ..api.v3.indices_router import IndicesRouter
 from ..api.v3.logs_router import LogsRouter
 from ..api.v3.prompts_router import PromptsRouter
-from ..api.v3.retrieval_router import RetrievalRouterV3
+from ..api.v3.retrieval_router import RetrievalRouter
 from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
@@ -90,7 +90,7 @@ class R2RBuilder:
                 services=services,
                 config=self.config,
             ).get_router(),
-            "retrieval_router_v3": RetrievalRouterV3(
+            "retrieval_router": RetrievalRouter(
                 providers=providers,
                 services=services,
                 config=self.config,

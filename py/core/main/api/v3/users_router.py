@@ -631,7 +631,7 @@ class UsersRouter(BaseRouterV3):
             current_password: str = Body(..., description="Current password"),
             new_password: str = Body(..., description="New password"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> GenericMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """Change the authenticated user's password."""
             result = await self.services.auth.change_password(
                 auth_user, current_password, new_password
