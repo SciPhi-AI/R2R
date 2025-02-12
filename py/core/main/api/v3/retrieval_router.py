@@ -422,7 +422,7 @@ class RetrievalRouterV3(BaseRouterV3):
             )
 
             if rag_generation_config.stream:
-
+                # ========== Streaming path ==========
                 async def stream_generator():
                     try:
                         async for chunk in response:
@@ -439,6 +439,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     stream_generator(), media_type="text/event-stream"
                 )  # type: ignore
             else:
+                # ========== Non-streaming path ==========
                 return response
 
         @self.router.post(

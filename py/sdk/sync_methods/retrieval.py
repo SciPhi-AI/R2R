@@ -1,5 +1,8 @@
+import json
 import uuid
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, AsyncGenerator, Dict, List, Literal, Optional, Union
+
+from pydantic import BaseModel
 
 from shared.api.models import (
     WrappedAgentResponse,
@@ -14,6 +17,130 @@ from ..models import (
     SearchMode,
     SearchSettings,
 )
+
+
+# A generic base model for SSE events
+class SSEEventBase(BaseModel):
+    event: str
+    data: Dict[str, Any]
+
+
+# Model for the search results event
+class SearchResultsData(BaseModel):
+    id: str
+    object: str
+    data: Dict[
+        str, Any
+    ]  # You can replace Dict[str, Any] with a more specific type if available
+
+
+class SearchResultsEvent(SSEEventBase):
+    event: Literal["search_results"]
+    data: SearchResultsData
+
+
+# Model for message events (partial tokens)
+class MessageDelta(BaseModel):
+    type: str
+    text: Dict[str, Any]  # Adjust if you have a more specific structure
+
+
+class MessageData(BaseModel):
+    id: str
+    object: str
+    delta: Dict[str, List[MessageDelta]]  # This reflects your nested structure
+
+
+class MessageEvent(SSEEventBase):
+    event: Literal["message"]
+    data: MessageData
+
+
+# Model for citation events
+class CitationData(BaseModel):
+    rawIndex: int
+
+
+class CitationEvent(SSEEventBase):
+    event: Literal["citation"]
+    data: CitationData
+
+
+# Model for the final answer event
+class FinalAnswerData(BaseModel):
+    generated_answer: str
+    citations: List[Dict[str, Any]]  # refine if you have a citation model
+
+
+class FinalAnswerEvent(SSEEventBase):
+    event: Literal["final_answer"]
+    data: FinalAnswerData
+
+
+# Optionally, define a fallback model for unrecognized events
+class UnknownEvent(SSEEventBase):
+    pass
+
+
+# Create a union type for all RAG events
+RAGEvent = Union[
+    SearchResultsEvent,
+    MessageEvent,
+    CitationEvent,
+    FinalAnswerEvent,
+    UnknownEvent,
+]
+
+
+def parse_rag_event(raw: dict):
+    """
+    raw is something like:
+      {
+        "event": "search_results",
+        "data": "{\"id\":\"run_1\",\"object\":\"rag.search_results\", \"data\":{...}}"
+      }
+    """
+    event_type = raw.get("event", "unknown")
+    # Then branch on event_type:
+    if event_type == "done":
+        return None
+
+    # The SSE data is a JSON string, so parse it:
+    data_str = raw.get("data", "")
+    try:
+        data_obj = json.loads(data_str)  # Now we have a dict
+    except json.JSONDecodeError as e:
+        print("JSON parse error:", e)
+        print("Raw string was:", repr(data_str))
+        # Raise or return something
+        raise
+
+    if event_type == "search_results":
+        return SearchResultsEvent(
+            event=event_type,
+            data=SearchResultsData(**data_obj),
+        )
+    elif event_type == "message":
+        return MessageEvent(
+            event=event_type,
+            data=MessageData(**data_obj),
+        )
+    elif event_type == "citation":
+        return CitationEvent(
+            event=event_type,
+            data=CitationData(**data_obj),
+        )
+    elif event_type == "final_answer":
+        print("final answer data obj = ", data_obj)
+        return FinalAnswerEvent(
+            event=event_type,
+            data=FinalAnswerData(**data_obj["data"]),
+        )
+    else:
+        return UnknownEvent(
+            event=event_type,
+            data=data_obj,
+        )
 
 
 class RetrievalSDK:
@@ -145,12 +272,14 @@ class RetrievalSDK:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return self.client._make_streaming_request(
+            raw_stream = self.client._make_streaming_request(
                 "POST",
                 "retrieval/rag",
                 json=data,
                 version="v3",
             )
+            # Wrap the raw stream to parse each event
+            return (parse_rag_event(event) for event in raw_stream)
 
         response_dict = self.client._make_request(
             "POST",
