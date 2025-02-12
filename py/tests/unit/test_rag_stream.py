@@ -1,7 +1,142 @@
 import asyncio
+import json
 import re
 
 import pytest
+
+
+class CitationRelabeler:
+    """
+    Dynamically assign ascending newIndex values (1,2,3,...) to
+    any previously unseen bracket oldRef like [12].
+    Allows rewriting text from e.g. [12] to [1].
+    """
+
+    def __init__(self):
+        self._old_to_new = {}
+        self._next_new_index = 1
+
+    def get_or_assign_newref(self, old_ref: int) -> int:
+        """Assign or return a stable new index for this old_ref."""
+        if old_ref not in self._old_to_new:
+            self._old_to_new[old_ref] = self._next_new_index
+            self._next_new_index += 1
+        return self._old_to_new[old_ref]
+
+    def rewrite_with_newrefs(self, text: str) -> str:
+        """
+        Replace any bracket references [ 12 ] with their newly assigned bracket [1], etc.
+        """
+        bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
+
+        def _sub(match):
+            old_str = match.group(1)
+            old_int = int(old_str)
+            new_ref = self.get_or_assign_newref(old_int)
+            return f"[{new_ref}]"
+
+        return bracket_pattern.sub(_sub, text)
+
+    def get_mapping(self) -> dict[int, int]:
+        """Return a copy of the old->new mapping."""
+        return dict(self._old_to_new)
+
+
+async def mock_rag_sse_generator_with_relabeling(chunks):
+    """
+    Simulates a streaming SSE generator that:
+     - Streams partial text in "message" events,
+     - Dynamically re-labels bracket references on the fly,
+     - Emits a "citation" event the first time it sees a new bracket,
+     - Produces a final fully-labeled text in "final_answer".
+    """
+
+    bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
+    relabeler = CitationRelabeler()
+    partial_text_buffer = ""
+
+    seen_old_refs = set()
+
+    # 1) "search_results" event
+    search_evt = {
+        "id": "run_1",
+        "object": "rag.search_results",
+        "data": {"dummy_search_data": "example"},
+    }
+    yield _format_sse_event("search_results", search_evt)
+
+    # 2) Stream each chunk
+    for token_text in chunks:
+        # Append raw text to our overall buffer
+        partial_text_buffer += token_text
+
+        # Identify any new bracket references in the raw text
+        # We'll do a quick finditer over just the newly arrived substring,
+        # or you can do it over the entire buffer and keep a parse_position pointer.
+        # For simplicity, let's just do it for the entire partial_text_buffer:
+        for match in bracket_pattern.finditer(partial_text_buffer):
+            old_ref = int(match.group(1))
+            if old_ref not in seen_old_refs:
+                seen_old_refs.add(old_ref)
+                # Fire a 'citation' event
+                citation_evt = {
+                    "id": f"cit_{old_ref}",
+                    "object": "rag.citation",
+                    "data": {"rawIndex": old_ref},
+                }
+                yield _format_sse_event("citation", citation_evt)
+
+        # Next, produce the portion of text we haven't yet emitted, but re-labeled.
+        # For simplicity: rewrite *just* this new token_text with new refs, then emit it.
+        rewritten = relabeler.rewrite_with_newrefs(token_text)
+
+        # Now yield SSE "message" with the *re-labeled* partial text
+        message_evt = {
+            "id": "msg_1",
+            "object": "thread.message.delta",
+            "delta": {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": {"value": rewritten, "annotations": []},
+                    }
+                ]
+            },
+        }
+        yield _format_sse_event("message", message_evt)
+
+    # 3) Final pass on the entire buffer
+    final_text = relabeler.rewrite_with_newrefs(partial_text_buffer)
+
+    # Example final citations array:
+    # We'll parse the final_text to see the bracket references
+    # (now that they are all re-labeled to [1], [2], [3], ...).
+    # This just demonstrates how you'd do it. In real usage, you'd
+    # also map them to aggregator sources, etc.
+    bracket_pattern_new = re.compile(r"\[(\d+)\]")
+    found = []
+    for match in bracket_pattern_new.finditer(final_text):
+        new_idx = int(match.group(1))
+        found.append(new_idx)
+
+    # 4) final_answer event with the final text
+    final_ans_evt = {
+        "id": "msg_final",
+        "object": "rag.final_answer",
+        "generated_answer": final_text,
+        "citations": [{"rawIndex": i, "index": i} for i in sorted(set(found))],
+    }
+    yield _format_sse_event("final_answer", final_ans_evt)
+
+    # 5) done
+    yield "event: done\ndata: [DONE]\n\n"
+
+
+def _format_sse_event(event_name: str, payload: dict) -> str:
+    """
+    Re-use from your existing code; produce a single SSE event string.
+    """
+    return f"event: {event_name}\ndata: {json.dumps(payload)}\n\n"
 
 
 # ----------------------------------------------------------------------
@@ -462,3 +597,163 @@ async def test_sse_complex_mixed():
 
     done_evt = [e for e in events if e.startswith("event: done")]
     assert len(done_evt) == 1
+
+
+@pytest.mark.asyncio
+async def test_sse_relabeling_simple():
+    """
+    Test that we re-label a single bracket [5] into [1] mid-stream,
+    and the final answer also has [1].
+    """
+    chunks = ["Aristotle was an Ancient Greek philosopher [5]."]
+    events = []
+    async for evt in mock_rag_sse_generator_with_relabeling(chunks):
+        events.append(evt)
+
+    # We should see 'citation' event referencing rawIndex=5
+    citation_events = [e for e in events if e.startswith("event: citation")]
+    assert len(citation_events) == 1
+    assert '"rawIndex": 5' in citation_events[0]
+
+    # Now check the 'message' event(s) to ensure the text is [1] instead of [5]
+    message_events = [e for e in events if e.startswith("event: message")]
+    assert len(message_events) == 1
+    assert "[1]" in message_events[0], "We re-labeled [5] -> [1] mid-stream."
+
+    # Finally, check the final_answer event
+    final_events = [e for e in events if e.startswith("event: final_answer")]
+    assert len(final_events) == 1
+    # final text should contain [1], not [5]
+    assert "[1]" in final_events[0], "Final answer includes [1] as well."
+    assert "[5]" not in final_events[0], "Should not contain original bracket."
+
+    # Also confirm that citations array has newIndex=1
+    # We stored them as rawIndex=1, index=1 in this mock code.
+    assert '"index": 1' in final_events[0], "Citations have the final index=1"
+
+
+@pytest.mark.asyncio
+async def test_sse_relabeling_repeated_brackets():
+    """
+    If the user typed something with repeated references to [7],
+    we want them all to become [1], and only one 'citation' event is emitted.
+    """
+    chunks = [
+        "Text with repeated bracket [7], then again [7], then once more [7]!"
+    ]
+    events = []
+    async for evt in mock_rag_sse_generator_with_relabeling(chunks):
+        events.append(evt)
+
+    # Exactly one citation event for bracket #7
+    citation_events = [e for e in events if "event: citation" in e]
+    assert len(citation_events) == 1
+    assert '"rawIndex": 7' in citation_events[0]
+
+    # The "message" event text should show [1], [1], [1]
+    message_event = [e for e in events if e.startswith("event: message")][0]
+    assert message_event.count("[1]") == 3, (
+        "All three references to [7] should be replaced with [1]. "
+        f"Got: {message_event}"
+    )
+
+    # Final answer also has them re-labeled as [1]
+    final_event = [e for e in events if e.startswith("event: final_answer")][0]
+    assert final_event.count("[1]") == 3
+
+
+@pytest.mark.asyncio
+async def test_sse_relabeling_multiple_distinct_brackets():
+    """
+    If we see [9], [2], [9], [1] in the text, they should be labeled
+    in the order of first appearance -> [1], [2], then repeated [1], then next new => [3].
+    (But that's only if we want out-of-order oldRefs to be assigned newRefs strictly
+    by appearance. We'll see how the code actually does it.)
+    """
+    chunks = [
+        "Some text with bracket [9], then bracket [2], repeating [9] again, and finally [1]."
+    ]
+    events = []
+    async for evt in mock_rag_sse_generator_with_relabeling(chunks):
+        events.append(evt)
+
+    # We expect 3 distinct oldRefs discovered => 9, 2, 1
+    citation_events = [e for e in events if "event: citation" in e]
+    assert len(citation_events) == 3, f"Found citations: {citation_events}"
+    # Check rawIndex=9, rawIndex=2, rawIndex=1
+    raw_idxs = []
+    for ce in citation_events:
+        m = re.search(r'"rawIndex":\s*(\d+)', ce)
+        if m:
+            raw_idxs.append(int(m.group(1)))
+    raw_idxs.sort()
+    assert raw_idxs == [
+        1,
+        2,
+        9,
+    ], f"Unexpected raw indexes discovered: {raw_idxs}"
+
+    # The "message" event text:
+    # - The first bracket is oldRef=9 => newRef=1
+    # - Then oldRef=2 => newRef=2
+    # - Then repeated oldRef=9 => newRef=1 again
+    # - Then oldRef=1 => newRef=3, because it's the third distinct bracket
+    # (This behavior depends on how your relabeler is implemented. Ours will
+    #  assign bracket #9 => [1], bracket #2 => [2], bracket #1 => [3].)
+    message_event = [e for e in events if e.startswith("event: message")][0]
+    # Because there's only one chunk, we have only one "message" event.
+    # Let's check if it has something like "[1]", "[2]", "[1]", "[3]".
+    assert "[1]" in message_event, "First bracket is labeled [1]"
+    assert "[2]" in message_event, "Second bracket is labeled [2]"
+    assert (
+        message_event.count("[1]") == 2
+    ), "We see bracket #9 repeated => same new label"
+    assert (
+        "[3]" in message_event
+    ), "The final bracket [1] got assigned newRef=3"
+
+    # Final answer
+    final_event = [e for e in events if e.startswith("event: final_answer")][0]
+    # same logic
+    assert "[1]" in final_event
+    assert "[2]" in final_event
+    assert "[3]" in final_event
+
+
+@pytest.mark.asyncio
+async def test_sse_relabeling_split_across_chunks():
+    """
+    If a bracket [11] is split across chunks, we ensure we pick it up
+    only when fully recognized, then rewrite it to [1].
+    """
+    chunks = ["Aristotle [", "11", "] was a philosopher. Then we see [4]."]
+    events = []
+    async for evt in mock_rag_sse_generator_with_relabeling(chunks):
+        events.append(evt)
+
+    citation_events = [e for e in events if e.startswith("event: citation")]
+    # We expect bracket #11 and bracket #4 => 2 citations
+    assert len(citation_events) == 2
+    # Check raw indexes
+    rawset = set()
+    for c in citation_events:
+        m = re.search(r'"rawIndex":\s*(\d+)', c)
+        if m:
+            rawset.add(int(m.group(1)))
+    assert rawset == {4, 11}, f"Discovered raw bracket references: {rawset}"
+
+    # The message events (3 chunks => 3 message events).
+    # The first chunk has partial bracket "[", the second chunk has "11", the third chunk has "] was..."
+    # Actually, we see in chunk2 that partial_text_buffer => "Aristotle [11"
+    # but no trailing "]" yet, so the bracket might not be recognized fully until chunk3.
+    # Then chunk3 completes "[11]".
+    # Then we see [4] within chunk3 as well.
+    message_events = [e for e in events if e.startswith("event: message")]
+    assert len(message_events) == 3
+
+    # Final answer => we see them re-labeled as [1] (for oldRef=11) and [2] (for oldRef=4).
+    final_event = [e for e in events if e.startswith("event: final_answer")][0]
+    assert "[1]" in final_event
+    assert "[2]" in final_event
+    assert "[11]" not in final_event
+    assert "[4]" not in final_event
