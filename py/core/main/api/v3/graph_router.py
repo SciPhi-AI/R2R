@@ -485,7 +485,7 @@ class GraphRouter(BaseRouterV3):
                 None, description="An optional description of the graph"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedGraphResponse:
             """
             Update an existing graphs's configuration.
 
@@ -1748,7 +1748,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the community to delete.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedBooleanResponse:
             if (
                 not auth_user.is_superuser
                 and collection_id not in auth_user.graph_ids

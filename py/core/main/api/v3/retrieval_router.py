@@ -42,11 +42,11 @@ def merge_search_settings(
     return SearchSettings(**base_dict)
 
 
-class RetrievalRouterV3(BaseRouterV3):
+class RetrievalRouter(BaseRouterV3):
     def __init__(
         self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
-        logging.info("Initializing RetrievalRouterV3")
+        logging.info("Initializing RetrievalRouter")
         super().__init__(providers, services, config)
 
     def _register_workflows(self):

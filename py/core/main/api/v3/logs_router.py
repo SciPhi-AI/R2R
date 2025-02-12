@@ -7,6 +7,7 @@ import aiofiles
 from fastapi import Depends, WebSocket
 from fastapi.requests import Request
 from fastapi.templating import Jinja2Templates
+from starlette.templating import _TemplateResponse
 
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
@@ -102,7 +103,7 @@ class LogsRouter(BaseRouterV3):
             "/logs/viewer",
             dependencies=[Depends(self.rate_limit_dependency)],
         )
-        async def get_log_viewer(request: Request):
+        async def get_log_viewer(request: Request) -> _TemplateResponse:
             return self.templates.TemplateResponse(
                 "log_viewer.html", {"request": request}
             )
