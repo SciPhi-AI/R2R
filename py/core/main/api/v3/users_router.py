@@ -1708,6 +1708,7 @@ class UsersRouter(BaseRouterV3):
             return limits_info  # type: ignore
 
         @self.router.get("/users/oauth/google/authorize")
+        @self.base_endpoint
         async def google_authorize() -> WrappedGenericMessageResponse:
             """
             Redirect user to Google's OAuth 2.0 consent screen.
@@ -1729,6 +1730,7 @@ class UsersRouter(BaseRouterV3):
             return GenericMessageResponse(message=google_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/google/callback")
+        @self.base_endpoint
         async def google_callback(
             code: str = Query(...), state: str = Query(...)
         ) -> WrappedLoginResponse:
@@ -1780,14 +1782,14 @@ class UsersRouter(BaseRouterV3):
                 email=email,
             )
 
-        # =============== GITHUB OAUTH ===============
         @self.router.get("/users/oauth/github/authorize")
+        @self.base_endpoint
         async def github_authorize() -> WrappedGenericMessageResponse:
             """
             Redirect user to GitHub's OAuth consent screen.
             """
             state = "some_random_string_or_csrf_token"
-            scope = "read:user user:email"  # whatever scopes you need
+            scope = "read:user user:email"
 
             params = {
                 "client_id": self.github_client_id,
@@ -1799,6 +1801,7 @@ class UsersRouter(BaseRouterV3):
             return GenericMessageResponse(message=github_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/github/callback")
+        @self.base_endpoint
         async def github_callback(
             code: str = Query(...), state: str = Query(...)
         ) -> WrappedLoginResponse:
