@@ -1,7 +1,6 @@
 import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
-# Import the same models you use in your sync version
 from shared.api.models import (
     WrappedAgentResponse,
     WrappedRAGResponse,
@@ -16,8 +15,6 @@ from ..models import (
     SearchSettings,
 )
 
-# Import all the relevant shared logic from the sync module
-# (the same file or package where you placed them above)
 from ..sync_methods.retrieval import (
     agent_arg_parser,
     completion_arg_parser,

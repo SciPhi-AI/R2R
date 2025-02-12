@@ -13,7 +13,6 @@ from core.base.api.models import (
     MessageEvent,
     SearchResultsData,
     SearchResultsEvent,
-    SSEEventBase,
     UnknownEvent,
     WrappedAgentResponse,
     WrappedRAGResponse,
@@ -66,7 +65,6 @@ def parse_rag_event(raw: dict):
             data=CitationData(**data_obj),
         )
     elif event_type == "final_answer":
-        print("final answer data obj = ", data_obj)
         return FinalAnswerEvent(
             event=event_type,
             data=FinalAnswerData(**data_obj["data"]),
