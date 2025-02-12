@@ -55,7 +55,7 @@ class UsersRouter(BaseRouterV3):
     def _setup_routes(self):
         @self.router.post(
             "/users",
-            dependencies=[Depends(self.rate_limit_dependency)],
+            # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,
             openapi_extra={
                 "x-codeSamples": [
