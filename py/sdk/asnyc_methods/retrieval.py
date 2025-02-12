@@ -1,5 +1,7 @@
-from typing import Any, AsyncGenerator, Optional
+import uuid
+from typing import Any, AsyncGenerator, Optional, Union
 
+# Import the same models you use in your sync version
 from shared.api.models import (
     WrappedAgentResponse,
     WrappedRAGResponse,
@@ -14,10 +16,22 @@ from ..models import (
     SearchSettings,
 )
 
+# Import all the relevant shared logic from the sync module
+# (the same file or package where you placed them above)
+from ..sync_methods.retrieval import (
+    agent_arg_parser,
+    completion_arg_parser,
+    embedding_arg_parser,
+    parse_rag_event,
+    rag_arg_parser,
+    reasoning_agent_arg_parser,
+    search_arg_parser,
+)
+
 
 class RetrievalSDK:
     """
-    SDK for interacting with documents in the v3 API.
+    SDK for interacting with documents in the v3 API (Asynchronous).
     """
 
     def __init__(self, client):
@@ -30,35 +44,19 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
         """
-        Conduct a vector and/or graph search.
-
-        Args:
-            query (str): The query to search for.
-            search_settings (Optional[dict, SearchSettings]]): Vector search settings.
-
-        Returns:
-            WrappedSearchResponse
+        Conduct a vector and/or graph search (async).
         """
-        if search_mode and not isinstance(search_mode, str):
-            search_mode = search_mode.value
-
-        if search_settings and not isinstance(search_settings, dict):
-            search_settings = search_settings.model_dump()
-
-        data: dict[str, Any] = {
-            "query": query,
-            "search_settings": search_settings,
-        }
-        if search_mode:
-            data["search_mode"] = search_mode
-
+        payload = search_arg_parser(
+            query=query,
+            search_mode=search_mode,
+            search_settings=search_settings,
+        )
         response_dict = await self.client._make_request(
             "POST",
             "retrieval/search",
-            json=data,
+            json=payload,
             version="v3",
         )
-
         return WrappedSearchResponse(**response_dict)
 
     async def completion(
@@ -66,23 +64,14 @@ class RetrievalSDK:
         messages: list[dict | Message],
         generation_config: Optional[dict | GenerationConfig] = None,
     ):
-        # FIXME: Needs a proper return type
-        cast_messages: list[Message] = [
-            Message(**msg) if isinstance(msg, dict) else msg
-            for msg in messages
-        ]
-
-        if generation_config and not isinstance(generation_config, dict):
-            generation_config = generation_config.model_dump()
-
-        data: dict[str, Any] = {
-            "messages": [msg.model_dump() for msg in cast_messages],
-            "generation_config": generation_config,
-        }
+        """
+        Get a completion from the model (async).
+        """
+        payload = completion_arg_parser(messages, generation_config)
         return await self.client._make_request(
             "POST",
             "retrieval/completion",
-            json=data,
+            json=payload,
             version="v3",
         )
 
@@ -90,15 +79,14 @@ class RetrievalSDK:
         self,
         text: str,
     ):
-        # FIXME: Needs a proper return type
-        data: dict[str, Any] = {
-            "text": text,
-        }
-
+        """
+        Generate an embedding for given text (async).
+        """
+        payload = embedding_arg_parser(text)
         return await self.client._make_request(
             "POST",
             "retrieval/embedding",
-            data=data,
+            data=payload,  # or json=payload if your server expects JSON
             version="v3",
         )
 
@@ -112,52 +100,38 @@ class RetrievalSDK:
         include_title_if_available: Optional[bool] = False,
     ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
         """
-        Conducts a Retrieval Augmented Generation (RAG) search with the given query.
-
-        Args:
-            query (str): The query to search for.
-            rag_generation_config (Optional[dict | GenerationConfig]): RAG generation configuration.
-            search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
-            include_title_if_available (Optional[bool]): Include the title if available.
-
-        Returns:
-            WrappedRAGResponse | AsyncGenerator[RAGResponse, None]: The RAG response
+        Conducts a Retrieval Augmented Generation (RAG) search (async).
+        May return a `WrappedRAGResponse` or a streaming generator if `stream=True`.
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
-            rag_generation_config = rag_generation_config.model_dump()
-        if search_settings and not isinstance(search_settings, dict):
-            search_settings = search_settings.model_dump()
+        payload = rag_arg_parser(
+            query=query,
+            rag_generation_config=rag_generation_config,
+            search_mode=search_mode,
+            search_settings=search_settings,
+            task_prompt_override=task_prompt_override,
+            include_title_if_available=include_title_if_available,
+        )
 
-        data: dict[str, Any] = {
-            "query": query,
-            "rag_generation_config": rag_generation_config,
-            "search_settings": search_settings,
-            "task_prompt_override": task_prompt_override,
-            "include_title_if_available": include_title_if_available,
-        }
-        if search_mode:
-            data["search_mode"] = search_mode
-
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
+        if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
-            return self.client._make_streaming_request(
+            # Return an async streaming generator
+            raw_stream = self.client._make_streaming_request(
                 "POST",
                 "retrieval/rag",
-                json=data,
+                json=payload,
                 version="v3",
             )
+            # Wrap each raw SSE event with parse_rag_event
+            return (parse_rag_event(event) for event in raw_stream)
 
+        # Otherwise, request fully and parse response
         response_dict = await self.client._make_request(
             "POST",
             "retrieval/rag",
-            json=data,
+            json=payload,
             version="v3",
         )
-
         return WrappedRAGResponse(**response_dict)
 
     async def agent(
@@ -168,67 +142,45 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
-        conversation_id: Optional[str] = None,
+        conversation_id: Optional[Union[str, uuid.UUID]] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
-        use_system_context: Optional[bool] = True,
+        use_extended_prompt: Optional[bool] = True,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
         """
-        Performs a single turn in a conversation with a RAG agent.
-
-        Args:
-            message (Optional[dict | Message]): The message to send to the agent.
-            search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
-            include_title_if_available (Optional[bool]): Include the title if available.
-
-        Returns:
-            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
+        Performs a single turn in a conversation with a RAG agent (async).
+        May return a `WrappedAgentResponse` or a streaming generator if `stream=True`.
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
-            rag_generation_config = rag_generation_config.model_dump()
-        if search_settings and not isinstance(search_settings, dict):
-            search_settings = search_settings.model_dump()
+        payload = agent_arg_parser(
+            message=message,
+            rag_generation_config=rag_generation_config,
+            search_mode=search_mode,
+            search_settings=search_settings,
+            task_prompt_override=task_prompt_override,
+            include_title_if_available=include_title_if_available,
+            conversation_id=conversation_id,
+            tools=tools,
+            max_tool_context_length=max_tool_context_length,
+            use_extended_prompt=use_extended_prompt,
+        )
 
-        data: dict[str, Any] = {
-            "rag_generation_config": rag_generation_config or {},
-            "search_settings": search_settings,
-            "task_prompt_override": task_prompt_override,
-            "include_title_if_available": include_title_if_available,
-            "conversation_id": (
-                str(conversation_id) if conversation_id else None
-            ),
-            "tools": tools,
-            "max_tool_context_length": max_tool_context_length,
-            "use_system_context": use_system_context,
-        }
-        if search_mode:
-            data["search_mode"] = search_mode
-
-        if message:
-            cast_message: Message = (
-                Message(**message) if isinstance(message, dict) else message
-            )
-            data["message"] = cast_message.model_dump()
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
+        if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
+            # Return an async streaming generator
             return self.client._make_streaming_request(
                 "POST",
                 "retrieval/agent",
-                json=data,
+                json=payload,
                 version="v3",
             )
 
         response_dict = await self.client._make_request(
             "POST",
             "retrieval/agent",
-            json=data,
+            json=payload,
             version="v3",
         )
-
         return WrappedAgentResponse(**response_dict)
 
     async def reasoning_agent(
@@ -240,49 +192,31 @@ class RetrievalSDK:
         max_tool_context_length: Optional[int] = None,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
         """
-        Performs a single turn in a conversation with a RAG agent.
-
-        Args:
-            message (Optional[dict | Message]): The message to send to the agent.
-            search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
-            include_title_if_available (Optional[bool]): Include the title if available.
-
-        Returns:
-            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
+        Performs a single turn in a conversation with a RAG agent in Reasoning mode (async).
+        May return a `WrappedAgentResponse` or a streaming generator if `stream=True`.
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
-            rag_generation_config = rag_generation_config.model_dump()
+        payload = reasoning_agent_arg_parser(
+            message=message,
+            rag_generation_config=rag_generation_config,
+            conversation_id=conversation_id,
+            tools=tools,
+            max_tool_context_length=max_tool_context_length,
+        )
 
-        data: dict[str, Any] = {
-            "rag_generation_config": rag_generation_config or {},
-            "conversation_id": (
-                str(conversation_id) if conversation_id else None
-            ),
-            "tools": tools,
-            "max_tool_context_length": max_tool_context_length,
-        }
-
-        if message:
-            cast_message: Message = (
-                Message(**message) if isinstance(message, dict) else message
-            )
-            data["message"] = cast_message.model_dump()
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
+        if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
+            # Return an async streaming generator
             return self.client._make_streaming_request(
                 "POST",
                 "retrieval/reasoning_agent",
-                json=data,
+                json=payload,
                 version="v3",
             )
         else:
             return await self.client._make_request(
                 "POST",
                 "retrieval/reasoning_agent",
-                json=data,
+                json=payload,
                 version="v3",
             )

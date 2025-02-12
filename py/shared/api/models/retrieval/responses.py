@@ -1,6 +1,5 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional, Union
 
-from deprecated import deprecated
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
@@ -217,6 +216,79 @@ class DocumentSearchResult(BaseModel):
         ...,
         description="The score of the document",
     )
+
+
+# A generic base model for SSE events
+class SSEEventBase(BaseModel):
+    event: str
+    data: dict[str, Any]
+
+
+# Model for the search results event
+class SearchResultsData(BaseModel):
+    id: str
+    object: str
+    data: dict[
+        str, Any
+    ]  # You can replace Dict[str, Any] with a more specific type if available
+
+
+class SearchResultsEvent(SSEEventBase):
+    event: Literal["search_results"]
+    data: SearchResultsData
+
+
+# Model for message events (partial tokens)
+class MessageDelta(BaseModel):
+    type: str
+    text: dict[str, Any]  # Adjust if you have a more specific structure
+
+
+class MessageData(BaseModel):
+    id: str
+    object: str
+    delta: dict[str, list[MessageDelta]]  # This reflects your nested structure
+
+
+class MessageEvent(SSEEventBase):
+    event: Literal["message"]
+    data: MessageData
+
+
+# Model for citation events
+class CitationData(BaseModel):
+    rawIndex: int
+
+
+class CitationEvent(SSEEventBase):
+    event: Literal["citation"]
+    data: CitationData
+
+
+# Model for the final answer event
+class FinalAnswerData(BaseModel):
+    generated_answer: str
+    citations: list[dict[str, Any]]  # refine if you have a citation model
+
+
+class FinalAnswerEvent(SSEEventBase):
+    event: Literal["final_answer"]
+    data: FinalAnswerData
+
+
+# Optionally, define a fallback model for unrecognized events
+class UnknownEvent(SSEEventBase):
+    pass
+
+
+# Create a union type for all RAG events
+RAGEvent = Union[
+    SearchResultsEvent,
+    MessageEvent,
+    CitationEvent,
+    FinalAnswerEvent,
+    UnknownEvent,
+]
 
 
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]

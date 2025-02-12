@@ -65,7 +65,18 @@ from shared.api.models.retrieval.responses import (
     AgentResponse,
     AggregateSearchResult,
     Citation,
+    CitationData,
+    CitationEvent,
+    FinalAnswerData,
+    FinalAnswerEvent,
+    MessageData,
+    MessageDelta,
+    MessageEvent,
     RAGResponse,
+    SearchResultsData,
+    SearchResultsEvent,
+    SSEEventBase,
+    UnknownEvent,
     WrappedAgentResponse,
     WrappedDocumentSearchResponse,
     WrappedRAGResponse,
@@ -74,6 +85,18 @@ from shared.api.models.retrieval.responses import (
 )
 
 __all__ = [
+    # Generic Responses
+    "SSEEventBase",
+    "SearchResultsData",
+    "SearchResultsEvent",
+    "MessageDelta",
+    "MessageData",
+    "MessageEvent",
+    "CitationData",
+    "CitationEvent",
+    "FinalAnswerData",
+    "FinalAnswerEvent",
+    "UnknownEvent",
     # Auth Responses
     "GenericMessageResponse",
     "TokenResponse",
