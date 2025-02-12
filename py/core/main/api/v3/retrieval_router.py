@@ -17,6 +17,8 @@ from core.base import (
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -996,8 +998,7 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
-        ):
-            # FIXME: Needs a proper return type
+        ) -> WrappedLLMChatCompletion:
             """
             Generate completions for a list of messages.
 
@@ -1075,8 +1076,7 @@ class RetrievalRouter(BaseRouterV3):
                 description="Text to generate embeddings for",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            # FIXME: Needs a proper return type
+        ) -> WrappedEmbeddingResponse:
             """
             Generate embeddings for the provided text using the specified model.
 

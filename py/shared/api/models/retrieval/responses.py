@@ -1,11 +1,11 @@
 from typing import Any, Optional
 
-from deprecated import deprecated
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
+    LLMChatCompletion,
     Message,
 )
 from shared.abstractions.llm import LLMChatCompletion
@@ -227,3 +227,5 @@ WrappedSearchResponse = R2RResults[AggregateSearchResult]
 WrappedDocumentSearchResponse = R2RResults[list[DocumentResponse]]
 WrappedRAGResponse = R2RResults[RAGResponse]
 WrappedAgentResponse = R2RResults[AgentResponse]
+WrappedLLMChatCompletion = R2RResults[LLMChatCompletion]
+WrappedEmbeddingResponse = R2RResults[list[float]]

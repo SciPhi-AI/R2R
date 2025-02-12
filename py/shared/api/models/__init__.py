@@ -68,6 +68,8 @@ from shared.api.models.retrieval.responses import (
     RAGResponse,
     WrappedAgentResponse,
     WrappedDocumentSearchResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
     WrappedVectorSearchResponse,
@@ -150,4 +152,6 @@ __all__ = [
     "WrappedDocumentSearchResponse",
     "WrappedVectorSearchResponse",
     "WrappedAgentResponse",
+    "WrappedLLMChatCompletion",
+    "WrappedEmbeddingResponse",
 ]

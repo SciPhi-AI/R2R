@@ -2,6 +2,8 @@ from typing import Any, AsyncGenerator, Optional
 
 from shared.api.models import (
     WrappedAgentResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -65,8 +67,7 @@ class RetrievalSDK:
         self,
         messages: list[dict | Message],
         generation_config: Optional[dict | GenerationConfig] = None,
-    ):
-        # FIXME: Needs a proper return type
+    ) -> WrappedLLMChatCompletion:
         cast_messages: list[Message] = [
             Message(**msg) if isinstance(msg, dict) else msg
             for msg in messages
@@ -79,28 +80,31 @@ class RetrievalSDK:
             "messages": [msg.model_dump() for msg in cast_messages],
             "generation_config": generation_config,
         }
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "retrieval/completion",
             json=data,
             version="v3",
         )
 
+        return WrappedLLMChatCompletion(**response_dict)
+
     async def embedding(
         self,
         text: str,
-    ):
-        # FIXME: Needs a proper return type
+    ) -> WrappedEmbeddingResponse:
         data: dict[str, Any] = {
             "text": text,
         }
 
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "retrieval/embedding",
             data=data,
             version="v3",
         )
+
+        return WrappedEmbeddingResponse(**response_dict)
 
     async def rag(
         self,
