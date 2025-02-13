@@ -3,7 +3,6 @@ import json
 import logging
 import re
 import time
-import uuid
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional
@@ -20,12 +19,14 @@ from core import (
 from core.agent.rag import (
     GeminiXMLToolsStreamingReasoningRAGAgent,
     R2RXMLToolsStreamingReasoningRAGAgent,
+    dump_collector,
+    num_tokens_from_messages,
 )
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
+    CitationRelabeler,
     DocumentResponse,
-    EmbeddingPurpose,
     GenerationConfig,
     GraphCommunityResult,
     GraphEntityResult,
@@ -38,9 +39,9 @@ from core.base import (
     SearchSettings,
     extract_citations,
     format_search_results_for_llm,
-    format_search_results_for_stream,
     map_citations_to_collector,
     reassign_citations_in_order,
+    yield_sse_event,
 )
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -51,173 +52,6 @@ from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger()
-
-
-import tiktoken
-
-
-class CitationRelabeler:
-    """
-    Dynamically assign ascending newIndex values (1,2,3,...) to
-    any previously unseen bracket oldRef (e.g. [12] -> [1], [12] -> [1], [2], etc.).
-    """
-
-    def __init__(self):
-        self._oldref_to_newref = {}  # map oldRef -> newRef
-        self._next_new_ref = 1
-
-    def get_or_assign_newref(self, old_ref: int) -> int:
-        """
-        Return the stable newRef assigned to `old_ref`.
-        If we haven't seen `old_ref` before, assign the next available new index.
-        """
-        if old_ref not in self._oldref_to_newref:
-            self._oldref_to_newref[old_ref] = self._next_new_ref
-            self._next_new_ref += 1
-        return self._oldref_to_newref[old_ref]
-
-    def rewrite_with_newrefs(self, text: str) -> str:
-        """
-        Takes raw text (which may have brackets [ 3], [2], etc.) and
-        rewrites them into their newly assigned references [1], [2], ...
-
-        - If an oldRef is known, replace it with the correct newRef
-        - If it's unknown, assign a newRef and then replace
-        """
-        bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
-
-        def _replace(match):
-            old_str = match.group(1)  # "3" or " 2"
-            old_int = int(old_str)
-            new_ref = self.get_or_assign_newref(old_int)
-            return f"[{new_ref}]"
-
-        return bracket_pattern.sub(_replace, text)
-
-    def finalize_all_citations(self, text: str):
-        """
-        If you need to do a final pass at the very end, you can re-check
-        all the brackets to ensure they are correctly assigned. For text that
-        has placeholders or repeated references, it ensures they're correct.
-        """
-        return self.rewrite_with_newrefs(text)
-
-    def get_mapping(self) -> dict[int, int]:
-        """
-        Returns the old->new mapping dict for downstream usage.
-        """
-        return dict(self._oldref_to_newref)
-
-
-async def _yield_sse_event(event_name: str, payload: dict, chunk_size=1024):
-    """
-    Helper that yields a single SSE event in properly chunked lines.
-
-    e.g. event: event_name
-         data: (partial JSON 1)
-         data: (partial JSON 2)
-         ...
-         [blank line to end event]
-    """
-    import json
-
-    # SSE: first the "event: ..."
-    yield f"event: {event_name}\n"
-
-    # Convert payload to JSON
-    content_str = json.dumps(payload, default=str)
-
-    # data
-    yield f"data: {content_str}\n"
-
-    # blank line signals end of SSE event
-    yield "\n"
-
-
-def convert_nonserializable_objects(obj):
-    if isinstance(obj, dict):
-        new_obj = {}
-        for key, value in obj.items():
-            # Convert key to string if it is a UUID or not already a string.
-            new_key = str(key) if not isinstance(key, str) else key
-            new_obj[new_key] = convert_nonserializable_objects(value)
-        return new_obj
-    elif isinstance(obj, list):
-        return [convert_nonserializable_objects(item) for item in obj]
-    elif isinstance(obj, tuple):
-        return tuple(convert_nonserializable_objects(item) for item in obj)
-    elif isinstance(obj, set):
-        return {convert_nonserializable_objects(item) for item in obj}
-    elif isinstance(obj, uuid.UUID):
-        return str(obj)
-    elif isinstance(obj, datetime):
-        return obj.isoformat()  # Convert datetime to ISO formatted string
-    else:
-        return obj
-
-
-def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
-    dumped = []
-    for source_type, result_obj, _ in collector.get_all_results():
-        # Get the dictionary from the result object
-        if hasattr(result_obj, "model_dump"):
-            result_dict = result_obj.model_dump()
-        elif hasattr(result_obj, "dict"):
-            result_dict = result_obj.dict()
-        else:
-            result_dict = (
-                result_obj  # Fallback if no conversion method is available
-            )
-
-        # Use the recursive conversion on the entire dictionary
-        result_dict = convert_nonserializable_objects(result_dict)
-
-        dumped.append(
-            {
-                "source_type": source_type,
-                "result": result_dict,
-            }
-        )
-    return dumped
-
-
-def tokens_count_for_message(message, encoding):
-    """Return the number of tokens used by a single message."""
-    tokens_per_message = 3
-
-    num_tokens = 0
-    num_tokens += tokens_per_message
-    if message.get("function_call"):
-        num_tokens += len(encoding.encode(message["function_call"]["name"]))
-        num_tokens += len(
-            encoding.encode(message["function_call"]["arguments"])
-        )
-    elif message.get("tool_calls"):
-        for tool_call in message["tool_calls"]:
-            num_tokens += len(encoding.encode(tool_call["function"]["name"]))
-            num_tokens += len(
-                encoding.encode(tool_call["function"]["arguments"])
-            )
-    else:
-        num_tokens += len(encoding.encode(message["content"]))
-
-    return num_tokens
-
-
-def num_tokens_from_messages(messages, model="gpt-4o"):
-    """Return the number of tokens used by a list of messages for both user and assistant."""
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except KeyError:
-        logger.warning("Warning: model not found. Using cl100k_base encoding.")
-        encoding = tiktoken.get_encoding("cl100k_base")
-
-    tokens = 0
-    for i, message in enumerate(messages):
-        tokens += tokens_count_for_message(messages[i], encoding)
-
-        tokens += 3  # every reply is primed with assistant
-    return tokens
 
 
 class RetrievalService(Service):
@@ -961,13 +795,8 @@ class RetrievalService(Service):
                 search_settings.filters[f] = str(val)
 
         try:
-
-            print("search_settings = ", search_settings)
             # 2) Do the search => aggregator
             aggregated_results = await self.search(query, search_settings)
-            # aggregated_results = AggregateSearchResult.from_dict(
-            #     search_results_dict
-            # )
 
             # 3) Build "context" string from aggregator
             collector = SearchResultsCollector()
@@ -1042,7 +871,7 @@ class RetrievalService(Service):
                     "object": "rag.search_results",
                     "data": results_dict,
                 }
-                async for line in _yield_sse_event(
+                async for line in yield_sse_event(
                     "search_results", search_evt
                 ):
                     yield line
@@ -1098,10 +927,10 @@ class RetrievalService(Service):
                                 citation_evt = {
                                     "id": f"cit_{old_ref}",
                                     "object": "rag.citation",
-                                    "rawIndex": old_ref,
+                                    "raw_index": old_ref,
                                     "newIndex": new_ref,
                                 }
-                                async for line in _yield_sse_event(
+                                async for line in yield_sse_event(
                                     "citation", citation_evt
                                 ):
                                     yield line
@@ -1142,7 +971,7 @@ class RetrievalService(Service):
                                 ]
                             },
                         }
-                        async for line in _yield_sse_event(
+                        async for line in yield_sse_event(
                             "message", message_evt
                         ):
                             yield line
@@ -1162,7 +991,7 @@ class RetrievalService(Service):
                     # you can store that in relabeler’s data or do a more advanced approach.
                     # For now, we'll assume the final bracket is the final label.
 
-                    # We can at least fill the "rawIndex" with the same newIndex, or store them
+                    # We can at least fill the "raw_index" with the same newIndex, or store them
                     # in some separate approach.
                     # Then map them to aggregator.
                     # We'll do a direct approach here:
@@ -1174,14 +1003,14 @@ class RetrievalService(Service):
                         v: k for k, v in relabeler.get_mapping().items()
                     }
 
-                    # Now we can rewrite each final bracket's rawIndex to find the aggregator index.
+                    # Now we can rewrite each final bracket's raw_index to find the aggregator index.
                     for c in raw_cits:
                         new_idx = (
                             c.index
                         )  # e.g. the bracket we see in final text
                         # find old_ref
                         old_ref = new_to_old.get(new_idx, -1)
-                        c.rawIndex = old_ref
+                        c.raw_index = old_ref
 
                     final_coll = SearchResultsCollector()
                     final_coll.add_aggregate_result(aggregated_results)
@@ -1196,7 +1025,7 @@ class RetrievalService(Service):
                         "generated_answer": final_text,
                         "citations": [c.model_dump() for c in mapped_cits],
                     }
-                    async for line in _yield_sse_event(
+                    async for line in yield_sse_event(
                         "final_answer", final_ans_evt
                     ):
                         yield line
@@ -1210,146 +1039,6 @@ class RetrievalService(Service):
                     raise
 
             return sse_generator()
-
-            # async def sse_generator() -> AsyncGenerator[str, None]:
-            #     """
-            #     Yields SSE lines in the following sequence:
-            #     • "search_results" event => aggregator
-            #     • "message" events => streaming partial tokens from the LLM
-            #     • "citation" events => whenever a new bracket "[N]" is found
-            #     • "final_answer" with re-labeled text + mapped citations
-            #     • "done"
-            #     """
-
-            #     # 1) Send the initial 'search_results' event
-            #     results_dict = aggregated_results.as_dict()
-            #     search_evt = {
-            #         "id": "run_1",
-            #         "object": "rag.search_results",
-            #         "data": results_dict,
-            #     }
-            #     async for line in _yield_sse_event(
-            #         "search_results", search_evt
-            #     ):
-            #         logger.debug(f"[DEBUG] SSE line (search_results): {line}")
-            #         yield line
-
-            #     # This pattern captures something like "[1]", "[ 2]", "[3   ]", etc.
-            #     # If your model truly never adds spaces, you can keep r"\[(\d+)\]".
-            #     # But if you see partial matches with spaces, loosen it up slightly:
-            #     bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
-
-            #     # Keep track of entire text so far
-            #     partial_buffer = ""
-            #     # We'll track how much we've already scanned for new citations
-            #     parse_position = 0
-            #     # Keep track of brackets we've already announced
-            #     seen_brackets = set()
-
-            #     # 2) Stream partial text from the LLM
-            #     llm_stream = self.providers.llm.aget_completion_stream(
-            #         messages=messages,
-            #         generation_config=rag_generation_config,
-            #     )
-
-            #     try:
-            #         async for chunk in llm_stream:
-            #             token_text = chunk.choices[0].delta.content or ""
-            #             if not token_text:
-            #                 continue
-
-            #             # Append new text
-            #             partial_buffer += token_text
-
-            #             # Debug: log what we just got
-            #             logger.debug(
-            #                 f"[DEBUG] Got new token_text='{token_text}'"
-            #             )
-            #             logger.debug(
-            #                 f"[DEBUG] partial_buffer='{partial_buffer}'"
-            #             )
-
-            #             # Now look for bracket patterns in the newly added substring
-            #             for match in bracket_pattern.finditer(
-            #                 partial_buffer, parse_position
-            #             ):
-            #                 bracket_str = match.group(1)  # e.g. "1"
-            #                 bracket_num = int(bracket_str)
-            #                 if bracket_num not in seen_brackets:
-            #                     seen_brackets.add(bracket_num)
-            #                     citation_evt = {
-            #                         "id": f"cit_{bracket_num}",
-            #                         "object": "rag.citation",
-            #                         "rawIndex": bracket_num,
-            #                     }
-            #                     async for line in _yield_sse_event(
-            #                         "citation", citation_evt
-            #                     ):
-            #                         logger.debug(
-            #                             f"[DEBUG] SSE line (citation): {line}"
-            #                         )
-            #                         yield line
-
-            #                 # Advance parse_position so we do not repeatedly match this bracket
-            #                 parse_position = match.end()
-
-            #             # SSE partial text => 'message' event
-            #             message_evt = {
-            #                 "id": "msg_1",
-            #                 "object": "thread.message.delta",
-            #                 "delta": {
-            #                     "content": [
-            #                         {
-            #                             "type": "text",
-            #                             "text": {
-            #                                 "value": token_text,
-            #                                 "annotations": [],
-            #                             },
-            #                         }
-            #                     ]
-            #                 },
-            #             }
-            #             async for line in _yield_sse_event(
-            #                 "message", message_evt
-            #             ):
-            #                 logger.debug(f"[DEBUG] SSE line (message): {line}")
-            #                 yield line
-
-            #         # 3) Once all chunks are processed, do final re-labeling
-            #         raw_cits = extract_citations(partial_buffer)
-            #         re_text, new_cits = reassign_citations_in_order(
-            #             partial_buffer, raw_cits
-            #         )
-            #         final_coll = SearchResultsCollector()
-            #         final_coll.add_aggregate_result(aggregated_results)
-            #         mapped_cits = map_citations_to_collector(
-            #             new_cits, final_coll
-            #         )
-
-            #         # 4) Send the 'final_answer'
-            #         final_ans_evt = {
-            #             "id": "msg_final",
-            #             "object": "rag.final_answer",
-            #             "generated_answer": re_text,
-            #             "citations": [c.model_dump() for c in mapped_cits],
-            #         }
-            #         async for line in _yield_sse_event(
-            #             "final_answer", final_ans_evt
-            #         ):
-            #             logger.debug(
-            #                 f"[DEBUG] SSE line (final_answer): {line}"
-            #             )
-            #             yield line
-
-            #         # 5) Indicate the stream is done
-            #         yield "event: done\n"
-            #         yield "data: [DONE]\n\n"
-
-            #     except Exception as e:
-            #         logger.error(f"Error streaming RAG: {e}")
-            #         raise
-
-            # return sse_generator()
 
         except Exception as e:
             logger.error(f"Error in RAG: {e}")
@@ -1759,6 +1448,7 @@ class RetrievalService(Service):
                         content=assistant_message.content,
                         metadata={
                             "citations": citations_data,
+                            "tool_calls": agent.tool_call_results,
                             # You can also store the entire collector or just dump the underlying results
                             "aggregated_search_result": json.dumps(
                                 dump_collector(collector)

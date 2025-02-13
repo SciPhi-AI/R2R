@@ -82,7 +82,7 @@ async def mock_rag_sse_generator_with_relabeling(chunks):
                 citation_evt = {
                     "id": f"cit_{old_ref}",
                     "object": "rag.citation",
-                    "data": {"rawIndex": old_ref},
+                    "data": {"raw_index": old_ref},
                 }
                 yield _format_sse_event("citation", citation_evt)
 
@@ -124,7 +124,9 @@ async def mock_rag_sse_generator_with_relabeling(chunks):
         "id": "msg_final",
         "object": "rag.final_answer",
         "generated_answer": final_text,
-        "citations": [{"rawIndex": i, "index": i} for i in sorted(set(found))],
+        "citations": [
+            {"raw_index": i, "index": i} for i in sorted(set(found))
+        ],
     }
     yield _format_sse_event("final_answer", final_ans_evt)
 
@@ -179,7 +181,7 @@ async def mock_rag_sse_generator(chunks):
                 citation_evt = {
                     "id": f"cit_{bracket_num}",
                     "object": "rag.citation",
-                    "data": {"rawIndex": bracket_num},
+                    "data": {"raw_index": bracket_num},
                 }
                 yield _format_sse_event("citation", citation_evt)
 
@@ -221,7 +223,7 @@ async def mock_rag_sse_generator(chunks):
 def _format_sse_event(event_name: str, payload: dict) -> str:
     """
     Helper to produce a single SSE event as a multiline string.
-    This matches your `_yield_sse_event` approach, except we're
+    This matches your `yield_sse_event` approach, except we're
     returning a single string rather than yielding line-by-line.
     """
     import json
@@ -281,8 +283,8 @@ async def test_sse_single_bracket_one_chunk():
         len(citation_events) == 1
     ), f"Expected 1 citation event, got: {citation_events}"
     assert (
-        '"rawIndex": 1' in citation_events[0]
-    ), "The bracket was [1] => rawIndex=1"
+        '"raw_index": 1' in citation_events[0]
+    ), "The bracket was [1] => raw_index=1"
 
     # Check messages
     message_events = [e for e in events if e.startswith("event: message")]
@@ -319,7 +321,7 @@ async def test_sse_bracket_split_across_chunks():
     assert (
         len(citation_events) == 1
     ), f"Expected exactly 1 citation event, got: {citation_events}"
-    assert '"rawIndex": 1' in citation_events[0], "Should detect bracket #1"
+    assert '"raw_index": 1' in citation_events[0], "Should detect bracket #1"
 
     # We also have 3 message events for the 3 chunks
     message_events = [e for e in events if e.startswith("event: message")]
@@ -349,7 +351,7 @@ async def test_sse_repeated_bracket_references():
     assert (
         len(citation_events) == 1
     ), f"Repeated bracket #2 => only 1 citation event, got: {citation_events}"
-    assert '"rawIndex": 2' in citation_events[0], "Should detect bracket #2"
+    assert '"raw_index": 2' in citation_events[0], "Should detect bracket #2"
 
     # We have 2 chunks => 2 message events
     message_events = [e for e in events if e.startswith("event: message")]
@@ -377,11 +379,11 @@ async def test_sse_out_of_order_brackets():
     # Expect 3 unique brackets: 3, 1, 2
     # The second time we see [3] => no new event
     assert len(citation_events) == 3, f"Got: {citation_events}"
-    # Check the rawIndex in order
+    # Check the raw_index in order
     raw_indexes = []
     for ce in citation_events:
-        # e.g. 'event: citation\ndata: {"id":"cit_3","object":"rag.citation","data":{"rawIndex":3}}\n\n'
-        match = re.search(r'"rawIndex":\s*(\d+)', ce)
+        # e.g. 'event: citation\ndata: {"id":"cit_3","object":"rag.citation","data":{"raw_index":3}}\n\n'
+        match = re.search(r'"raw_index":\s*(\d+)', ce)
         if match:
             raw_indexes.append(int(match.group(1)))
 
@@ -425,7 +427,7 @@ async def test_sse_multiple_chunks_mixed_split_brackets():
     # Verify the bracket IDs
     found = []
     for ce in citation_events:
-        m = re.search(r'"rawIndex":\s*(\d+)', ce)
+        m = re.search(r'"raw_index":\s*(\d+)', ce)
         if m:
             found.append(int(m.group(1)))
     found.sort()
@@ -479,7 +481,7 @@ async def test_sse_duplicate_brackets_split_across_chunks():
         f"Got: {citation_events}"
     )
     assert (
-        '"rawIndex": 5' in citation_events[0]
+        '"raw_index": 5' in citation_events[0]
     ), "We recognized bracket #5 once"
 
     # We have 5 chunks => 5 'message' events
@@ -506,7 +508,7 @@ async def test_sse_bracket_with_spaces_inside():
     citation_events = [e for e in events if e.startswith("event: citation")]
     assert len(citation_events) == 1, f"Got: {citation_events}"
     assert (
-        '"rawIndex": 2' in citation_events[0]
+        '"raw_index": 2' in citation_events[0]
     ), "Detected bracket [2] even with spaces"
 
 
@@ -526,7 +528,7 @@ async def test_sse_multiple_brackets_one_chunk():
     # order is 1,2,3 in the text
     bracket_nums = []
     for ce in citation_events:
-        m = re.search(r'"rawIndex":\s*(\d+)', ce)
+        m = re.search(r'"raw_index":\s*(\d+)', ce)
         if m:
             bracket_nums.append(int(m.group(1)))
     assert bracket_nums == [
@@ -574,7 +576,7 @@ async def test_sse_complex_mixed():
     # Verify the bracket IDs
     found = []
     for ce in citation_events:
-        m = re.search(r'"rawIndex":\s*(\d+)', ce)
+        m = re.search(r'"raw_index":\s*(\d+)', ce)
         if m:
             found.append(int(m.group(1)))
 
@@ -610,10 +612,10 @@ async def test_sse_relabeling_simple():
     async for evt in mock_rag_sse_generator_with_relabeling(chunks):
         events.append(evt)
 
-    # We should see 'citation' event referencing rawIndex=5
+    # We should see 'citation' event referencing raw_index=5
     citation_events = [e for e in events if e.startswith("event: citation")]
     assert len(citation_events) == 1
-    assert '"rawIndex": 5' in citation_events[0]
+    assert '"raw_index": 5' in citation_events[0]
 
     # Now check the 'message' event(s) to ensure the text is [1] instead of [5]
     message_events = [e for e in events if e.startswith("event: message")]
@@ -628,7 +630,7 @@ async def test_sse_relabeling_simple():
     assert "[5]" not in final_events[0], "Should not contain original bracket."
 
     # Also confirm that citations array has newIndex=1
-    # We stored them as rawIndex=1, index=1 in this mock code.
+    # We stored them as raw_index=1, index=1 in this mock code.
     assert '"index": 1' in final_events[0], "Citations have the final index=1"
 
 
@@ -648,7 +650,7 @@ async def test_sse_relabeling_repeated_brackets():
     # Exactly one citation event for bracket #7
     citation_events = [e for e in events if "event: citation" in e]
     assert len(citation_events) == 1
-    assert '"rawIndex": 7' in citation_events[0]
+    assert '"raw_index": 7' in citation_events[0]
 
     # The "message" event text should show [1], [1], [1]
     message_event = [e for e in events if e.startswith("event: message")][0]
@@ -680,10 +682,10 @@ async def test_sse_relabeling_multiple_distinct_brackets():
     # We expect 3 distinct oldRefs discovered => 9, 2, 1
     citation_events = [e for e in events if "event: citation" in e]
     assert len(citation_events) == 3, f"Found citations: {citation_events}"
-    # Check rawIndex=9, rawIndex=2, rawIndex=1
+    # Check raw_index=9, raw_index=2, raw_index=1
     raw_idxs = []
     for ce in citation_events:
-        m = re.search(r'"rawIndex":\s*(\d+)', ce)
+        m = re.search(r'"raw_index":\s*(\d+)', ce)
         if m:
             raw_idxs.append(int(m.group(1)))
     raw_idxs.sort()
@@ -737,7 +739,7 @@ async def test_sse_relabeling_split_across_chunks():
     # Check raw indexes
     rawset = set()
     for c in citation_events:
-        m = re.search(r'"rawIndex":\s*(\d+)', c)
+        m = re.search(r'"raw_index":\s*(\d+)', c)
         if m:
             rawset.add(int(m.group(1)))
     assert rawset == {4, 11}, f"Discovered raw bracket references: {rawset}"

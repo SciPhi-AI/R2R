@@ -111,7 +111,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "format_search_results_for_llm",
-    "format_search_results_for_stream",
     "validate_uuid",
     # ID generation
     "generate_id",
@@ -123,4 +122,6 @@ __all__ = [
     "map_citations_to_collector",
     "extract_citations",
     "reassign_citations_in_order",
+    "yield_sse_event",
+    "CitationRelabeler",
 ]

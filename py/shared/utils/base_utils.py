@@ -4,15 +4,7 @@ import math
 import re
 from copy import deepcopy
 from datetime import datetime
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Iterable,
-    Optional,
-    Tuple,
-    TypeVar,
-)
+from typing import TYPE_CHECKING, Any, Optional, Tuple, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from ..abstractions.search import (
@@ -35,7 +27,7 @@ def reorder_collector_to_match_final_brackets(
 ):
     """
     Rebuilds collector._results_in_order so that bracket i => aggregator[i-1].
-    Each citation's rawIndex indicates which aggregator item the LLM used originally.
+    Each citation's raw_index indicates which aggregator item the LLM used originally.
     We place that aggregator item in the new position for bracket 'index'.
     """
     old_list = collector.get_all_results()  # [(source_type, result_obj), ...]
@@ -43,7 +35,7 @@ def reorder_collector_to_match_final_brackets(
     new_list = [None] * max_index
 
     for cit in final_citations:
-        old_idx = cit.rawIndex
+        old_idx = cit.raw_index
         new_idx = cit.index
         if not old_idx:  # or old_idx <= 0
             continue
@@ -64,8 +56,8 @@ def map_citations_to_collector(
     collector: Any,  # "SearchResultsCollector"
 ) -> list["Citation"]:
     """
-    For each citation, use its 'rawIndex' to look up the aggregator item from the
-    collector. We then fill out the Citation’s sourceType, doc_id, text, metadata, etc.
+    For each citation, use its 'raw_index' to look up the aggregator item from the
+    collector. We then fill out the Citation’s source_type, doc_id, text, metadata, etc.
     """
     from ..api.models.retrieval.responses import Citation
 
@@ -74,14 +66,22 @@ def map_citations_to_collector(
     for stype, obj, agg_idx in collector.get_all_results():
         aggregator_map[agg_idx] = (stype, obj)
 
+    logger.debug(
+        f"Performing `map_citations_to_collector` with aggregator map: {aggregator_map}."
+    )
+
     mapped_citations: list[Citation] = []
     for cit in citations:
-        old_ref = cit.rawIndex  # aggregator index we want
+        old_ref = cit.raw_index  # aggregator index we want
         if old_ref in aggregator_map:
             (source_type, result_obj) = aggregator_map[old_ref]
+            logger.debug(
+                f"Performing citation extraction, cit={cit}, source_type={source_type}, result_obj={result_obj}"
+            )
+
             # Make a copy with the updated fields
             updated = cit.copy()
-            updated.sourceType = source_type
+            updated.source_type = source_type
 
             # Fill chunk fields
             if source_type == "chunk":
@@ -94,7 +94,7 @@ def map_citations_to_collector(
                     str(cid) for cid in result_obj.collection_ids
                 ]
                 updated.score = result_obj.score
-                updated.text = result_obj.text
+                # updated.text = result_obj.text
                 updated.metadata = dict(result_obj.metadata)
 
             elif source_type == "graph":
@@ -110,14 +110,16 @@ def map_citations_to_collector(
                     "link": result_obj.link,
                     "title": result_obj.title,
                     "position": result_obj.position,
-                    # etc. ...
+                    # "snippet": result_obj.snippet,
                 }
 
             elif source_type == "contextDoc":
-                updated.metadata = {
-                    "document": result_obj.document,
-                    "chunks": result_obj.chunks,
-                }
+                document = updated.metadata.pop("document", {})
+                updated.document_id = document.get("id")
+                updated.owner_id = document.get("owner_id")
+                updated.collection_ids = document.get("collection_ids")
+                # updated.text = document.get("chunks", [])[updated.raw_index - 1]
+                updated.metadata = document.get("metadata")
 
             else:
                 # fallback unknown type
@@ -127,7 +129,7 @@ def map_citations_to_collector(
         else:
             # aggregator index not found => out-of-range or unknown
             updated = cit.copy()
-            updated.sourceType = None
+            updated.source_type = None
             mapped_citations.append(updated)
 
     return mapped_citations
@@ -137,9 +139,8 @@ def _expand_citation_span_to_sentence(
     full_text: str, start: int, end: int
 ) -> Tuple[int, int]:
     """
-    Return (sentence_start, sentence_end) for the sentence containing the bracket [n].
-    We define a sentence boundary as '.', '?', or '!', optionally followed by
-    spaces or a newline. This is a simple heuristic; you can refine it as needed.
+    Unchanged from your existing code. We will reuse it so each sub-reference
+    in a multi bracket has the same snippet boundaries.
     """
     sentence_enders = {".", "?", "!"}
 
@@ -170,34 +171,55 @@ def _expand_citation_span_to_sentence(
 
 def extract_citations(text: str) -> list["Citation"]:
     """
-    Find bracket references like [3], [10], etc. Return a list of Citation objects
-    whose 'index' field is the number found in brackets, but we will later rename
-    that to 'rawIndex' to avoid confusion.
+    Extended to parse single or multiple references within one bracket.
+    E.g. "[18]" => one Citation with index=18,
+         "[3, 5]" => two Citations, both share start/end/snippet, but have index=3 and index=5.
     """
     from ..api.models.retrieval.responses import Citation
 
-    CITATION_PATTERN = re.compile(r"\[(\d+)\]")
+    citations: list[Citation] = []
+    bracket_id_counter = 0
+    BRACKET_PATTERN = re.compile(r"\[([^\]]+)\]")
 
-    citations = []
-    for match in CITATION_PATTERN.finditer(text):
-        bracket_str = match.group(1)
-        bracket_num = int(bracket_str)
+    for match in BRACKET_PATTERN.finditer(text):
+        bracket_text = match.group(1)  # e.g. "18, 20"
         start_i = match.start()
         end_i = match.end()
 
-        # Expand around the bracket to get a snippet if desired:
+        # Expand snippet
         snippet_start, snippet_end = _expand_citation_span_to_sentence(
             text, start_i, end_i
         )
 
-        c = Citation(
-            index=bracket_num,  # We'll rename this to rawIndex in step 2
-            startIndex=start_i,
-            endIndex=end_i,
-            snippetStartIndex=snippet_start,
-            snippetEndIndex=snippet_end,
-        )
-        citations.append(c)
+        # For consistent grouping later, we can store a bracket_id
+        bracket_id_counter += 1
+        bracket_id = f"B{bracket_id_counter}"  # e.g. "B1"
+
+        # Now parse out all integers inside the bracket:
+        # "18,20" => [18, 20]
+        # " 3 , 5  " => [3,5], etc.
+        nums_found = re.findall(r"\d+", bracket_text)
+        # If no digits found, skip
+        if not nums_found:
+            continue
+
+        # For each integer in that bracket, create a separate Citation
+        for num_str in nums_found:
+            old_ref = int(num_str)
+            c = Citation(
+                index=old_ref,  # We'll rename it raw_index later in reassign.
+                start_index=start_i,
+                end_index=end_i,
+                snippet_start_index=snippet_start,
+                snippet_end_index=snippet_end,
+                bracket_id=bracket_id,
+            )
+            # We'll attach an extra attribute to track which bracket group this came from
+            # so we can replace them together in re-labelling. You could also store this
+            # in a separate map, but let's do it inline:
+            # setattr(c, "bracket_id", bracket_id)
+            # Optionally store the order within that bracket.
+            citations.append(c)
 
     return citations
 
@@ -206,72 +228,126 @@ def reassign_citations_in_order(
     text: str, citations: list["Citation"]
 ) -> Tuple[str, list["Citation"]]:
     """
-    Sort citations by their start index, unify repeated bracket numbers, and relabel them
-    in ascending order of first appearance. Return (new_text, new_citations).
-    - new_citations[i].index = the new bracket number
-    - new_citations[i].rawIndex = the original bracket number
+    Extended so that if one bracket has multiple references, we produce a single
+    bracket with multiple new references, e.g. "[18, 20]" => "[1, 2]".
+
+    1) If no citations => return original text & empty list
+    2) Group citations by bracket_id (or by (start_index, end_index)).
+    3) Build the oldRef->newRef map in the order brackets appear.
+    4) Replace from right to left in the text, each bracket with e.g. "[1, 2]".
+    5) Return (new_text, updated_citations).
     """
     from ..api.models.retrieval.responses import Citation
 
     if not citations:
         return text, []
 
-    # 1) Sort citations in order of their appearance
-    sorted_cits = sorted(citations, key=lambda c: c.startIndex)
+    # ---- 1) group by bracket_id ----
+    # Each bracket_id corresponds to a single matched bracket (start_index..end_index).
+    # If you didn't store bracket_id, you could do:
+    #   bracket_key = (cit.start_index, cit.end_index)
+    from collections import defaultdict
 
-    # 2) Build a map from oldRef -> newRef
+    bracket_map = defaultdict(list)
+    for c in citations:
+        # bracket_id = (c.start_index, c.end_index) if you prefer
+        bracket_id = getattr(c, "bracket_id", f"{c.start_index}-{c.end_index}")
+        bracket_map[bracket_id].append(c)
+
+    # We'll want to do the bracket replacements from right to left by their
+    # start_index, so we don't mess up indexes for earlier brackets.
+    # But first let's figure out the order we discover new references.
+    # We'll keep a global oldRef->newRef map, assigned in the order encountered
     old_to_new = {}
-    next_new_index = 1
-    labeled = []
-    for cit in sorted_cits:
-        old_ref = cit.index  # the bracket number we extracted
-        if old_ref not in old_to_new:
-            old_to_new[old_ref] = next_new_index
-            next_new_index += 1
-        new_ref = old_to_new[old_ref]
+    next_new_ref = 1
 
-        # We create a "relabeled" citation that has `rawIndex=old_ref`
-        # and `index=new_ref`.
-        labeled.append(
-            {
-                "rawIndex": old_ref,
-                "newIndex": new_ref,
-                "startIndex": cit.startIndex,
-                "endIndex": cit.endIndex,
-            }
+    # We also need a list of bracket groups in the order they appear in the text (lowest start_index first).
+    # We'll store (start_index, bracket_id).
+    bracket_order = []
+    for bid, cits in bracket_map.items():
+        first_cit = min(cits, key=lambda c: c.start_index)
+        bracket_order.append((first_cit.start_index, bid))
+    bracket_order.sort(key=lambda x: x[0])  # ascending by start_index
+
+    # This final data structure will hold bracket replacements for each bracket_id
+    bracket_replacements = {}
+
+    # ---- 2) unify references in each bracket group in the order they appear inside that bracket ----
+    for _, bid in bracket_order:
+        # bracket_cits = bracket_map[bid], all share the same bracket region
+        # We want them in the order they appear in the bracket text. If you want
+        # strictly the order they appear in the original text, you might store
+        # an "extractedOrder" or something, but let's just keep ascending by index below:
+        bracket_cits = bracket_map[bid]
+
+        # Sort them by the order of extraction or their oldRef, depending on your preference.
+        # We'll do the order in which they appear in the *original citations* list to keep it stable.
+        # That means first occurrence in `citations` => first in bracket.
+        # or you can do bracket_cits.sort(key=lambda c: c.index).
+        # We'll do stable sorting by their position in the original citations list:
+        bracket_cits_sorted = sorted(
+            bracket_cits, key=lambda c: citations.index(c)
         )
 
-    # 3) Replace the bracket references in the text from right-to-left
-    #    so we don't mess up subsequent indices.
-    result_chars = list(text)
-    for item in sorted(labeled, key=lambda x: x["startIndex"], reverse=True):
-        s_i = item["startIndex"]
-        e_i = item["endIndex"]
-        new_ref = item["newIndex"]
-        replacement = f"[{new_ref}]"
-        result_chars[s_i:e_i] = list(replacement)
+        # For each oldRef we haven't seen, assign a newRef
+        # Then build a list of newRefs for this bracket
+        bracket_new_refs = []
+        for cit in bracket_cits_sorted:
+            old_ref = cit.index  # the 'oldRef' from extraction
+            if old_ref not in old_to_new:
+                old_to_new[old_ref] = next_new_ref
+                next_new_ref += 1
+            new_ref = old_to_new[old_ref]
+            bracket_new_refs.append(new_ref)
 
-    new_text = "".join(result_chars)
+        # We produce a single bracket text like: "[1, 2, 5]"
+        bracket_str = "[" + ", ".join(str(r) for r in bracket_new_refs) + "]"
 
-    # 4) Re-extract to get updated start/end indices, snippet offsets, etc.
-    #    Then we merge that data with (rawIndex, newIndex).
-    updated_citations = []
-    updated_extracted = extract_citations(new_text)
+        # We'll store this so we can replace the text in one shot (later).
+        # All cits in bracket_map[bid] share the same (start_index, end_index).
+        # So let's pick any one of them to get the text range.
+        any_cit = bracket_cits[0]
+        bracket_replacements[bid] = {
+            "start": any_cit.start_index,
+            "end": any_cit.end_index,
+            "replacement": bracket_str,
+            "cits": bracket_cits_sorted,
+            "newRefs": bracket_new_refs,
+        }
 
-    # We'll match them up in sorted order. Because they appear in the same order with the same count
-    updated_extracted.sort(key=lambda c: c.startIndex)
-    labeled.sort(key=lambda x: x["startIndex"])
+    # ---- 3) Now do the actual text replacements from right to left ----
+    # Sort bracket_replacements by start desc
+    bracket_repls_desc = sorted(
+        bracket_replacements.values(), key=lambda x: x["start"], reverse=True
+    )
 
-    for labeled_item, updated_cit in zip(labeled, updated_extracted):
-        c = Citation(
-            rawIndex=labeled_item["rawIndex"],
-            index=labeled_item["newIndex"],
-            startIndex=updated_cit.startIndex,
-            endIndex=updated_cit.endIndex,
-            snippetStartIndex=updated_cit.snippetStartIndex,
-            snippetEndIndex=updated_cit.snippetEndIndex,
-        )
-        updated_citations.append(c)
+    text_chars = list(text)
+    for br_info in bracket_repls_desc:
+        s_i = br_info["start"]
+        e_i = br_info["end"]
+        replacement = br_info["replacement"]
+        text_chars[s_i:e_i] = list(replacement)
+
+    new_text = "".join(text_chars)
+
+    # ---- 4) update each Citation object with the final newRef ----
+    # Also fix up snippet boundaries if you want to be fancy. We can leave them as-is or re‐compute.
+    # We'll just keep them as-is for now.
+    updated_citations: list[Citation] = []
+
+    for bid in bracket_map.keys():
+        br_info = bracket_replacements[bid]
+        bracket_cits_sorted = br_info["cits"]
+        bracket_new_refs = br_info["newRefs"]
+        # zip them 1:1
+        for cit_obj, new_ref in zip(bracket_cits_sorted, bracket_new_refs):
+            # `cit_obj.index` = final bracket number
+            cit_obj.raw_index = cit_obj.index  # store original
+            cit_obj.index = new_ref
+            updated_citations.append(cit_obj)
+
+    # If you want them sorted by final start_index in ascending order:
+    updated_citations.sort(key=lambda c: c.start_index)
 
     return new_text, updated_citations
 
@@ -365,49 +441,6 @@ def format_search_results_for_llm(
                 lines.append(f"Chunk {i}: {ch_text}")
 
     return "\n".join(lines)
-
-
-def format_search_results_for_stream(results: AggregateSearchResult) -> str:
-    CHUNK_SEARCH_STREAM_MARKER = "chunk_search"
-    GRAPH_SEARCH_STREAM_MARKER = "graph_search"
-    WEB_SEARCH_STREAM_MARKER = "web_search"
-    CONTEXT_STREAM_MARKER = "content"
-
-    context = ""
-
-    if results.chunk_search_results:
-        context += f"<{CHUNK_SEARCH_STREAM_MARKER}>"
-        vector_results_list = [
-            r.as_dict() for r in results.chunk_search_results
-        ]
-        context += json.dumps(vector_results_list, default=str)
-        context += f"</{CHUNK_SEARCH_STREAM_MARKER}>"
-
-    if results.graph_search_results:
-        context += f"<{GRAPH_SEARCH_STREAM_MARKER}>"
-        graph_search_results_results_list = [
-            r.dict() for r in results.graph_search_results
-        ]
-        context += json.dumps(graph_search_results_results_list, default=str)
-        context += f"</{GRAPH_SEARCH_STREAM_MARKER}>"
-
-    if results.web_search_results:
-        context += f"<{WEB_SEARCH_STREAM_MARKER}>"
-        web_results_list = [r.to_dict() for r in results.web_search_results]
-        context += json.dumps(web_results_list, default=str)
-        context += f"</{WEB_SEARCH_STREAM_MARKER}>"
-
-    # NEW: local context
-    if results.context_document_results:
-        context += f"<{CONTEXT_STREAM_MARKER}>"
-        # Just store them as raw dict JSON, or build a more structured form
-        content_list = [
-            cdr.to_dict() for cdr in results.context_document_results
-        ]
-        context += json.dumps(content_list, default=str)
-        context += f"</{CONTEXT_STREAM_MARKER}>"
-
-    return context
 
 
 def _generate_id_from_label(label) -> UUID:

@@ -5,7 +5,6 @@ from .base_utils import (
     deep_update,
     extract_citations,
     format_search_results_for_llm,
-    format_search_results_for_stream,
     generate_default_prompt_id,
     generate_default_user_collection_id,
     generate_document_id,
@@ -21,7 +20,6 @@ from .base_utils import (
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
 __all__ = [
-    "format_search_results_for_stream",
     "format_search_results_for_llm",
     # ID generation
     "generate_id",

@@ -121,7 +121,7 @@ def test_single_citation_basic(empty_aggregate):
 
     mapped = map_citations_to_collector(new_citations, collector)
     # out-of-range => placeholders
-    assert mapped[0].sourceType is None
+    assert mapped[0].source_type is None
     assert mapped[0].id is None
 
 
@@ -178,17 +178,17 @@ def test_descending_citations(small_aggregate):
     # Now bracket #1 => chunk-1, #2 => chunk-2, #3 => chunk-3
 
     # So let's confirm that mapped[0] is indeed chunk #3:
-    assert mapped[0].sourceType == "chunk"
+    assert mapped[0].source_type == "chunk"
     assert (
         mapped[0].text == "Sample chunk text #3"
     )  # or check .metadata["title"] == "Doc3.pdf"
 
     # The second bracket => aggregator #2 => chunk #2
-    assert mapped[1].sourceType == "chunk"
+    assert mapped[1].source_type == "chunk"
     assert mapped[1].text == "Sample chunk text #2"
 
     # The third bracket => aggregator #1 => chunk #1
-    assert mapped[2].sourceType == "chunk"
+    assert mapped[2].source_type == "chunk"
     assert mapped[2].text == "Sample chunk text #1"
 
 
@@ -270,7 +270,7 @@ def test_snippet_extraction_basic():
     assert len(raw_citations) == 1
     cit = raw_citations[0]
     # snippet should ideally be 'This is a test [1].'
-    snippet = text[cit.snippetStartIndex : cit.snippetEndIndex]
+    snippet = text[cit.snippet_start_index : cit.snippet_end_index]
     assert "[1]" in snippet
     assert (
         "Next sentence!" not in snippet
@@ -296,8 +296,8 @@ def test_all_upper_bound(small_aggregate):
 
     mapped = map_citations_to_collector(new_cits, collector)
     # Only 3 chunk results => bracket #4, #5 => placeholders
-    assert mapped[3].sourceType is None
-    assert mapped[4].sourceType is None
+    assert mapped[3].source_type is None
+    assert mapped[4].source_type is None
     # The first 3 => chunk1, chunk2, chunk3
     assert mapped[0].id == str(generate_id("chunk-1"))
     assert mapped[1].id == str(generate_id("chunk-2"))
@@ -308,7 +308,7 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
     """
     If the text uses the same bracket [2] multiple times, we want them all to remain
     the same bracket index after relabeling.
-    For instance, if rawIndex=2 is repeated 3 times, the final text might become
+    For instance, if raw_index=2 is repeated 3 times, the final text might become
     [1],[1],[1] (if 2 is the first unique bracket encountered).
     """
     # The LLM text has repeated "[2]" references
@@ -317,7 +317,7 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
     )
 
     raw_citations = extract_citations(text)
-    # We expect 3 bracket occurrences, all rawIndex=2
+    # We expect 3 bracket occurrences, all raw_index=2
     assert len(raw_citations) == 3
     for cit in raw_citations:
         assert cit.index == 2  # the LLM wrote `[2]` each time
@@ -336,8 +336,8 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
         assert (
             cit.index == 1
         ), f"Expected repeated bracket index=1, got: {cit.index}"
-        # Also confirm rawIndex=2 for all occurrences
-        assert cit.rawIndex == 2
+        # Also confirm raw_index=2 for all occurrences
+        assert cit.raw_index == 2
 
     collector = SearchResultsCollector()
     collector.add_aggregate_result(empty_aggregate)
@@ -345,7 +345,7 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
     mapped = map_citations_to_collector(new_citations, collector)
     # out-of-range => placeholders
     for mc in mapped:
-        assert mc.sourceType is None
+        assert mc.source_type is None
         assert mc.id is None
 
 
@@ -385,8 +385,8 @@ def test_repeated_bracket_ref_with_two_values(small_aggregate):
     )
 
     # Check that oldRef=3 => newIndex=2 for all occurrences, oldRef=1 => newIndex=1
-    found_1 = [c for c in new_cits if c.rawIndex == 1]
-    found_3 = [c for c in new_cits if c.rawIndex == 3]
+    found_1 = [c for c in new_cits if c.raw_index == 1]
+    found_3 = [c for c in new_cits if c.raw_index == 3]
     assert (
         len(found_1) == 1
     ), f"Expected exactly one bracket occurrence for oldRef=1, got {len(found_1)}"
@@ -418,7 +418,7 @@ def test_same_bracket_in_non_sequential_text():
     text = "We have [8] here, then [2], back to [8], and one more [8]."
     raw_cits = extract_citations(text)
     # Expect 4 bracket references total
-    # rawIndex=8 for references #1, #3, #4, and rawIndex=2 for #2
+    # raw_index=8 for references #1, #3, #4, and raw_index=2 for #2
     assert len(raw_cits) == 4
 
     new_text, new_cits = reassign_citations_in_order(text, raw_cits)
@@ -435,7 +435,7 @@ def test_same_bracket_in_non_sequential_text():
     ), f"Expected 2 unique brackets, got: {unique_brackets}"
 
     # Inside new_cits, oldRef=8 should have the same newIndex across all occurrences
-    old8_cits = [c for c in new_cits if c.rawIndex == 8]
+    old8_cits = [c for c in new_cits if c.raw_index == 8]
     assert len(old8_cits) == 3, "Expected 3 mentions referencing oldRef=8"
     first_new_index = old8_cits[0].index
     for c in old8_cits:
@@ -443,7 +443,7 @@ def test_same_bracket_in_non_sequential_text():
             c.index == first_new_index
         ), "All oldRef=8 must share the same final bracket index"
 
-    old2_cits = [c for c in new_cits if c.rawIndex == 2]
+    old2_cits = [c for c in new_cits if c.raw_index == 2]
     assert (
         len(old2_cits) == 1
     ), "Expected exactly one mention referencing oldRef=2"
@@ -480,20 +480,20 @@ def test_three_unique_brackets_with_duplicates():
     ), f"Expected 3 distinct bracket values, got {unique_brackets}"
 
     # Confirm each oldRef is consistently re-labeled:
-    old3 = [c.index for c in new_cits if c.rawIndex == 3]
+    old3 = [c.index for c in new_cits if c.raw_index == 3]
     assert (
         len(set(old3)) == 1
-    ), "All references to rawIndex=3 must share the same newIndex"
+    ), "All references to raw_index=3 must share the same newIndex"
 
-    old4 = [c.index for c in new_cits if c.rawIndex == 4]
+    old4 = [c.index for c in new_cits if c.raw_index == 4]
     assert (
         len(set(old4)) == 1
-    ), "All references to rawIndex=4 must share the same newIndex"
+    ), "All references to raw_index=4 must share the same newIndex"
 
-    old10 = [c.index for c in new_cits if c.rawIndex == 10]
+    old10 = [c.index for c in new_cits if c.raw_index == 10]
     assert (
         len(set(old10)) == 1
-    ), "All references to rawIndex=10 must share the same newIndex"
+    ), "All references to raw_index=10 must share the same newIndex"
 
     # That’s the main correctness check. We can map them to actual aggregator results if we had them, but this suffices.
 
@@ -583,13 +583,13 @@ def test_end_to_end_citation_remapping(mock_aggregator_results):
     assert len(raw_citations) == 5
 
     # 2) Re-label them in ascending bracket order for display,
-    #    but store the original aggregator index in rawIndex
+    #    but store the original aggregator index in raw_index
     new_text, reassigned_citations = reassign_citations_in_order(
         raw_llm_text, raw_citations
     )
 
     # 3) Map citations by using the aggregator's oldRef => aggregator #.
-    #    i.e. we look up rawIndex in the collector
+    #    i.e. we look up raw_index in the collector
     final_mapped = map_citations_to_collector(reassigned_citations, collector)
 
     # 4) Let's check that repeated references map properly
@@ -601,10 +601,10 @@ def test_end_to_end_citation_remapping(mock_aggregator_results):
     def citation_summary(c: Citation):
         return {
             "finalIndex": c.index,
-            "rawIndex": getattr(
-                c, "rawIndex", c.rawIndex
+            "raw_index": getattr(
+                c, "raw_index", c.raw_index
             ),  # Some code calls it oldIndex
-            "sourceType": c.sourceType,
+            "source_type": c.source_type,
             "docId": c.document_id or "",
             "title": (c.metadata.get("title") if c.metadata else ""),
         }
@@ -613,19 +613,19 @@ def test_end_to_end_citation_remapping(mock_aggregator_results):
     print("Mapped Summaries:\n", mapped_summaries)
 
     # Let’s just do *some* asserts. For example:
-    # - oldRef=1 => chunk1 => sourceType="chunk", doc_id="doc-1"
-    # - oldRef=3 => graph => sourceType="graph"
+    # - oldRef=1 => chunk1 => source_type="chunk", doc_id="doc-1"
+    # - oldRef=3 => graph => source_type="graph"
     # - oldRef=4 => web => "Web #1 Title"
     # - oldRef=5 => web => "Web #2 Title"
     # Because we repeated oldRef=1, we want both references to have the same final bracket index
     # and the same aggregator item.
 
-    # Group by rawIndex
+    # Group by raw_index
     from collections import defaultdict
 
     grouped = defaultdict(list)
     for c in final_mapped:
-        grouped[c.rawIndex].append(c)
+        grouped[c.raw_index].append(c)
 
     # oldRef=1 => chunk1
     print("grouped = ", grouped)
@@ -639,24 +639,24 @@ def test_end_to_end_citation_remapping(mock_aggregator_results):
     ), "All references to oldRef=1 must share the same final bracket index"
     # They should map to chunk1 => doc-1
     for c in old1_cits:
-        assert c.sourceType == "chunk"
+        assert c.source_type == "chunk"
         assert c.document_id == str(generate_id("doc-1"))
 
     # oldRef=3 => graph
     old3_cits = grouped[3]
     assert len(old3_cits) == 1
-    assert old3_cits[0].sourceType == "graph"
+    assert old3_cits[0].source_type == "graph"
 
     # oldRef=4 => web => Web #1 Title
     old4_cits = grouped[4]
     assert len(old4_cits) == 1
-    assert old4_cits[0].sourceType == "web"
+    assert old4_cits[0].source_type == "web"
     assert old4_cits[0].metadata["title"] == "Web #1 Title"
 
     # oldRef=5 => web => Web #2 Title
     old5_cits = grouped[5]
     assert len(old5_cits) == 1
-    assert old5_cits[0].sourceType == "web"
+    assert old5_cits[0].source_type == "web"
     assert old5_cits[0].metadata["title"] == "Web #2 Title"
 
     # 5) Finally, ensure the final text “new_text” has the bracket references in ascending
@@ -778,12 +778,12 @@ def test_end_to_end_mocked_aggregator(ordered_aggregate):
     new_text, new_cits = reassign_citations_in_order(raw_text, raw_cits)
 
     # 2c) confirm that repeated oldRef=1 is assigned the same final bracket number each time
-    # Let's gather them by rawIndex
+    # Let's gather them by raw_index
     from collections import defaultdict
 
     bucket = defaultdict(list)
     for c in new_cits:
-        bucket[c.rawIndex].append(c.index)
+        bucket[c.raw_index].append(c.index)
 
     # oldRef=1 => repeated => should share the same newIndex
     indexes_for_1 = set(bucket[1])
@@ -803,35 +803,35 @@ def test_end_to_end_mocked_aggregator(ordered_aggregate):
     # Let's see them in print
     for i, fc in enumerate(final_mapped, start=1):
         print(
-            f"Final citation #{i} => bracket {fc.index} => aggregator #{fc.rawIndex}"
+            f"Final citation #{i} => bracket {fc.index} => aggregator #{fc.raw_index}"
         )
-        print(" sourceType=", fc.sourceType)
+        print(" source_type=", fc.source_type)
         print(" docID=", fc.document_id)
         print(" text=", fc.text)
         print(" metadata=", fc.metadata)
         print("-----")
 
     # We'll do a minimal check that aggregator #3 => graph
-    # Find the mapped citation(s) with rawIndex=3
-    cit_for3 = [fc for fc in final_mapped if fc.rawIndex == 3]
+    # Find the mapped citation(s) with raw_index=3
+    cit_for3 = [fc for fc in final_mapped if fc.raw_index == 3]
     assert len(cit_for3) == 1
-    assert cit_for3[0].sourceType == "graph"
+    assert cit_for3[0].source_type == "graph"
 
     # aggregator #1 => chunk => repeated
-    cit_for1 = [fc for fc in final_mapped if fc.rawIndex == 1]
+    cit_for1 = [fc for fc in final_mapped if fc.raw_index == 1]
     assert len(cit_for1) == 2
     for c in cit_for1:
-        assert c.sourceType == "chunk"
+        assert c.source_type == "chunk"
 
     # aggregator #5 => web
-    cit_for5 = [fc for fc in final_mapped if fc.rawIndex == 5]
+    cit_for5 = [fc for fc in final_mapped if fc.raw_index == 5]
     assert len(cit_for5) == 1
-    assert cit_for5[0].sourceType == "web"
+    assert cit_for5[0].source_type == "web"
 
     # aggregator #4 => web
-    cit_for4 = [fc for fc in final_mapped if fc.rawIndex == 4]
+    cit_for4 = [fc for fc in final_mapped if fc.raw_index == 4]
     assert len(cit_for4) == 1
-    assert cit_for4[0].sourceType == "web"
+    assert cit_for4[0].source_type == "web"
 
     print("Re-labeled text:\n", new_text)
     # e.g. => "We mention aggregator #3 first [1], then aggregator #1 [2], then aggregator #5 [3], aggregator #1 again [2], aggregator #4 [4]."
@@ -955,7 +955,7 @@ def test_collector_multiple_calls_with_small_aggregate(small_aggregate):
 def test_collector_out_of_range_with_small_aggregate(small_aggregate):
     """
     If the LLM references [5] but we only have aggregator items #1..#3,
-    map_citations_to_collector() should produce sourceType="unknown".
+    map_citations_to_collector() should produce source_type="unknown".
     """
     collector = SearchResultsCollector()
     collector.add_aggregate_result(small_aggregate)
@@ -968,10 +968,10 @@ def test_collector_out_of_range_with_small_aggregate(small_aggregate):
     # The final text might have [1] if it’s the first unique bracket, or remain [5] if your logic sees them as already in ascending order
     mapped = map_citations_to_collector(new_cits, collector)
 
-    # aggregator #5 doesn’t exist => sourceType="unknown"
+    # aggregator #5 doesn’t exist => source_type="unknown"
     # So we confirm the mapped citation is unknown
     assert len(mapped) == 1
-    assert mapped[0].sourceType in (None, "unknown")
+    assert mapped[0].source_type in (None, "unknown")
 
 
 def test_collector_repeated_same_aggregator_with_small_aggregate(
@@ -995,8 +995,8 @@ def test_collector_repeated_same_aggregator_with_small_aggregate(
 
     # All references => aggregator #2 => doc-2
     for c in mapped:
-        assert c.rawIndex == 2  # old aggregator index
-        assert c.sourceType == "chunk"
+        assert c.raw_index == 2  # old aggregator index
+        assert c.source_type == "chunk"
         assert str(c.document_id) == str(generate_id("doc-2"))
         # or check c.metadata["title"] == "Doc2.pdf"
 
@@ -1034,7 +1034,7 @@ def test_collector_mixed_references_small_aggregate(small_aggregate):
 
     grouped = defaultdict(list)
     for c in mapped:
-        grouped[c.rawIndex].append(c)
+        grouped[c.raw_index].append(c)
 
     # aggregator #3 => doc-3
     cits_for_3 = grouped[3]
@@ -1059,3 +1059,63 @@ def test_collector_mixed_references_small_aggregate(small_aggregate):
     final_brackets = re.findall(r"\[(\d+)\]", new_text)
     assert len(final_brackets) == 4
     # The references to oldRef=3 unify to the same bracket number each time.
+
+
+def test_multi_reference_bracket_parsing_and_relabeling():
+    from core.base import extract_citations, reassign_citations_in_order
+
+    text = "This sentence cites two references in one bracket [18, 20]. Then a single ref [3]."
+    raw_citations = extract_citations(text)
+    # We expect 3 total Citation objects:
+    #   2 from the bracket [18, 20], 1 from [3].
+    assert len(raw_citations) == 3
+
+    # raw_citations might be something like:
+    #  Citation(index=18, bracket_id="B1", start_index=..., end_index=...)
+    #  Citation(index=20, bracket_id="B1", start_index=..., end_index=...)
+    #  Citation(index=3,  bracket_id="B2", start_index=..., end_index=...)
+    # The snippetStart/End would be the same for the ones in the same bracket.
+
+    new_text, new_citations = reassign_citations_in_order(text, raw_citations)
+    # We want something like "[1, 2]" for oldRefs=18,20, and [3] might become [3] or [something],
+    # depending on the order your code assigns new references.
+
+    # Let's just check the bracket text:
+    import re
+
+    brackets = re.findall(r"\[([^\]]+)\]", new_text)
+    # We expect 2 bracket locations in final text
+    # e.g. brackets = ["1, 2", "3"]
+    assert len(brackets) == 2
+
+    # Parse them for new references
+    # The first bracket might be "1, 2" => references for old 18,20
+    # The second bracket might be "3" => for old 3
+
+    # Also confirm new_citations has 3 items with .index in {1,2,3}
+    assert len(new_citations) == 3
+    final_indexes = [c.index for c in new_citations]
+    # e.g. final_indexes = [1,2,3] in some order
+    assert all(idx in (1, 2, 3) for idx in final_indexes)
+
+    # Confirm that 18 => one final index, 20 => another, 3 => the third.
+    # We can group by raw_index:
+    from collections import defaultdict
+
+    by_old = defaultdict(list)
+    for c in new_citations:
+        by_old[c.raw_index].append(c.index)
+
+    # oldRef=18 => exactly 1 final index
+    assert len(by_old[18]) == 1
+    # oldRef=20 => exactly 1 final index
+    assert len(by_old[20]) == 1
+    # oldRef=3  => exactly 1 final index
+    assert len(by_old[3]) == 1
+
+    # oldRef=18,20 were in the same bracket => final text bracket "[X, Y]"
+    # That means if oldRef=18 was assigned newRef=1, oldRef=20 might be newRef=2, etc.
+
+    print("Original text:", text)
+    print("New text:", new_text)
+    print("Test multi-reference bracket passed!")

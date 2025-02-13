@@ -11,6 +11,10 @@ from core.base.api.models import (
     MessageEvent,
     SearchResultsData,
     SearchResultsEvent,
+    ToolCallData,
+    ToolCallEvent,
+    ToolResultData,
+    ToolResultEvent,
     UnknownEvent,
     WrappedAgentResponse,
     WrappedRAGResponse,
@@ -58,18 +62,16 @@ def parse_rag_event(raw: dict):
             data=MessageData(**data_obj),
         )
     elif event_type == "citation":
-        return CitationEvent(
-            event=event_type,
-            data=CitationData(
-                **data_obj
-            ),  # TODO - Fix this so it is not keyed by "data"
+        return CitationEvent(event=event_type, data=CitationData(**data_obj))
+    elif event_type == "tool_call":
+        return ToolCallEvent(event=event_type, data=ToolCallData(**data_obj))
+    elif event_type == "tool_result":
+        return ToolResultEvent(
+            event=event_type, data=ToolResultData(**data_obj)
         )
     elif event_type == "final_answer":
         return FinalAnswerEvent(
-            event=event_type,
-            data=FinalAnswerData(
-                **data_obj
-            ),  # TODO - Fix this so it is not keyed by "data"
+            event=event_type, data=FinalAnswerData(**data_obj)
         )
     else:
         return UnknownEvent(

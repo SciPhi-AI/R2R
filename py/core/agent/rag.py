@@ -3,7 +3,6 @@ import json
 import logging
 import random
 import re
-import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
@@ -11,8 +10,13 @@ from google.genai.errors import ServerError
 
 from core.agent import R2RAgent, R2RStreamingAgent, R2RStreamingReasoningAgent
 from core.base import (
+    CitationRelabeler,
+    ToolCallData,
+    ToolCallEvent,
+    ToolResultData,
+    ToolResultEvent,
     format_search_results_for_llm,
-    format_search_results_for_stream,
+    yield_sse_event,
 )
 from core.base.abstractions import (
     AggregateSearchResult,
@@ -24,6 +28,7 @@ from core.base.abstractions import (
 )
 from core.base.agent import AgentConfig, Tool
 from core.base.providers import DatabaseProvider
+from core.base.utils import convert_nonserializable_objects
 from core.providers import (
     AnthropicCompletionProvider,
     LiteLLMCompletionProvider,
@@ -154,7 +159,6 @@ class RAGAgentMixin:
             ),
             results_function=self._local_search_function,
             llm_format_function=self.format_search_results_for_llm,
-            stream_function=self.format_search_results_for_stream,
             parameters={
                 "type": "object",
                 "properties": {
@@ -219,7 +223,6 @@ class RAGAgentMixin:
                 ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,
-                stream_function=self.format_search_results_for_stream,
                 parameters={
                     "type": "object",
                     "properties": {
@@ -246,7 +249,6 @@ class RAGAgentMixin:
                 ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,
-                stream_function=self.format_search_results_for_stream,
                 parameters={
                     "type": "object",
                     "properties": {
@@ -334,7 +336,6 @@ class RAGAgentMixin:
             ),
             results_function=self._web_search_function,
             llm_format_function=self.format_search_results_for_llm,
-            stream_function=self.format_search_results_for_stream,
             parameters={
                 "type": "object",
                 "properties": {
@@ -371,12 +372,6 @@ class RAGAgentMixin:
         )
         self.search_results_collector.add_aggregate_result(agg)
         return agg
-
-    # 4) Utility format methods for search results
-    def format_search_results_for_stream(
-        self, results: AggregateSearchResult
-    ) -> str:
-        return format_search_results_for_stream(results)
 
     def format_search_results_for_llm(
         self, results: AggregateSearchResult
@@ -482,6 +477,260 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             local_search_method=local_search_method,
             content_method=content_method,
         )
+
+    async def arun(
+        self,
+        system_instruction: str | None = None,
+        messages: list[Message] | None = None,
+        *args,
+        **kwargs,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Main streaming entrypoint: returns an async generator of SSE lines.
+        """
+        self._reset()
+        await self._setup(system_instruction)
+
+        if messages:
+            for m in messages:
+                await self.conversation.add_message(m)
+
+        # SSE generator function
+        async def sse_generator() -> AsyncGenerator[str, None]:
+            relabeler = CitationRelabeler()
+            announced_refs = set()
+            pending_tool_calls = {}
+            partial_text_buffer = ""
+
+            while not self._completed:
+                msg_list = await self.conversation.get_messages()
+                gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+                llm_stream = self.llm_provider.aget_completion_stream(
+                    msg_list, gen_cfg
+                )
+
+                async for chunk in llm_stream:
+                    delta = chunk.choices[0].delta
+                    finish_reason = chunk.choices[0].finish_reason
+
+                    # 1) Append partial text
+                    if delta.content:
+                        partial_text_buffer += delta.content
+
+                        # A) Detect bracket references in the *entire* buffer or just the new substring.
+                        bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
+                        for match in bracket_pattern.finditer(
+                            partial_text_buffer
+                        ):
+                            old_ref = int(match.group(1))
+                            # The CitationRelabeler simply assigns newRef=1,2,3,... in the order discovered:
+                            new_ref = relabeler.get_or_assign_newref(old_ref)
+
+                            # If we haven't "announced" a reference to `[old_ref]` yet, do so:
+                            if old_ref not in announced_refs:
+                                announced_refs.add(old_ref)
+
+                                # Check if old_ref is actually within the aggregator range:
+                                all_results = (
+                                    self.search_results_collector.get_all_results()
+                                )
+                                if 1 <= old_ref <= len(all_results):
+                                    # Grab that result
+                                    (src_type, result_obj, agg_index) = (
+                                        all_results[old_ref - 1]
+                                    )
+                                    # Build SSE "citation" payload
+                                    citation_evt_payload = {
+                                        "oldRef": old_ref,  # LLM's bracket number
+                                        "newRef": new_ref,  # The re-labeled bracket
+                                        "aggIndex": agg_index,
+                                        "source_type": src_type,
+                                        # You can attach metadata from result_obj if desired
+                                        "sourceTitle": getattr(
+                                            result_obj, "title", None
+                                        ),
+                                    }
+                                    # Emit it
+                                    async for line in yield_sse_event(
+                                        "citation", citation_evt_payload
+                                    ):
+                                        yield line
+                                else:
+                                    # The LLM might have cited "[99]" but we have only 5 aggregator results, etc.
+                                    # Up to you how to handle that.
+                                    pass
+
+                        # B) Rewrite the references in partial_text_buffer to use the newRef
+                        rewritten_text = relabeler.rewrite_with_newrefs(
+                            partial_text_buffer
+                        )
+
+                        # Only emit the newly added substring in SSE:
+                        new_substring_start = len(rewritten_text) - len(
+                            delta.content
+                        )
+                        new_text_to_emit = rewritten_text[new_substring_start:]
+
+                        # SSE message event
+                        msg_payload = {
+                            "id": "msg_partial",
+                            "object": "agent.message.delta",
+                            "delta": {
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": {
+                                            "value": new_text_to_emit,
+                                            "annotations": [],
+                                        },
+                                    }
+                                ]
+                            },
+                        }
+                        async for line in yield_sse_event(
+                            "message", msg_payload
+                        ):
+                            yield line
+
+                    # 2) Accumulate partial tool_calls if present
+                    if delta.tool_calls:
+                        for tc in delta.tool_calls:
+                            idx = tc.index
+                            if idx not in pending_tool_calls:
+                                pending_tool_calls[idx] = {
+                                    "id": tc.id,
+                                    "name": tc.function.name or "",
+                                    "arguments": tc.function.arguments or "",
+                                }
+                            else:
+                                # Accumulate partial name/arguments
+                                if tc.function.name:
+                                    pending_tool_calls[idx][
+                                        "name"
+                                    ] = tc.function.name
+                                if tc.function.arguments:
+                                    pending_tool_calls[idx][
+                                        "arguments"
+                                    ] += tc.function.arguments
+
+                    # 3) If finish_reason == "tool_calls", we freeze partial content and do calls
+                    if finish_reason == "tool_calls":
+                        calls_list = []
+                        for idx in sorted(pending_tool_calls.keys()):
+                            cinfo = pending_tool_calls[idx]
+                            calls_list.append(
+                                {
+                                    "tool_call_id": cinfo["id"]
+                                    or f"call_{idx}",
+                                    "name": cinfo["name"],
+                                    "arguments": cinfo["arguments"],
+                                }
+                            )
+
+                        # SSE "tool_call" events
+                        for c in calls_list:
+                            tc_data = ToolCallData(**c)
+                            tc_evt = ToolCallEvent(
+                                event="tool_call", data=tc_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_call", tc_evt.dict()["data"]
+                            ):
+                                yield line
+
+                        # Store an assistant message capturing these calls
+                        assistant_msg = Message(
+                            role="assistant",
+                            content=partial_text_buffer or None,
+                            tool_calls=[
+                                {
+                                    "id": c["tool_call_id"],
+                                    "type": "function",
+                                    "function": {
+                                        "name": c["name"],
+                                        "arguments": c["arguments"],
+                                    },
+                                }
+                                for c in calls_list
+                            ],
+                        )
+                        await self.conversation.add_message(assistant_msg)
+
+                        # Execute each tool call in parallel
+                        tool_results = await asyncio.gather(
+                            *[
+                                self.handle_function_or_tool_call(
+                                    c["name"],
+                                    c["arguments"],
+                                    tool_id=c["tool_call_id"],
+                                )
+                                for c in calls_list
+                            ]
+                        )
+
+                        # SSE "tool_result" for each
+                        for cinfo, result_obj in zip(calls_list, tool_results):
+                            result_data = ToolResultData(
+                                tool_call_id=cinfo["tool_call_id"],
+                                role="tool",
+                                content=json.dumps(
+                                    convert_nonserializable_objects(
+                                        result_obj.raw_result.as_dict()
+                                    )
+                                ),
+                            )
+                            result_evt = ToolResultEvent(
+                                event="tool_result", data=result_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_result", result_evt.dict()["data"]
+                            ):
+                                yield line
+
+                        # Clear partial_text and pending calls
+                        pending_tool_calls.clear()
+                        partial_text_buffer = ""
+
+                    elif finish_reason == "stop":
+                        # The LLM is done. Save leftover partial_text_buffer as a final assistant message
+                        if partial_text_buffer:
+                            await self.conversation.add_message(
+                                Message(
+                                    role="assistant",
+                                    content=partial_text_buffer,
+                                )
+                            )
+
+                        # SSE final_answer (with references all replaced)
+                        final_text = relabeler.finalize_all_citations(
+                            partial_text_buffer
+                        )
+                        final_evt_payload = {
+                            "id": "msg_final",
+                            "object": "agent.final_answer",
+                            "generated_answer": final_text,
+                            "citations": relabeler.get_mapping(),
+                        }
+                        async for line in yield_sse_event(
+                            "final_answer", final_evt_payload
+                        ):
+                            yield line
+
+                        # SSE done
+                        yield "event: done\n"
+                        yield "data: [DONE]\n\n"
+
+                        self._completed = True
+                        break
+
+            if not self._completed:
+                yield "event: done\n"
+                yield "data: [DONE]\n\n"
+                self._completed = True
+
+        # Return the SSE generator
+        async for line in sse_generator():
+            yield line
 
 
 class R2RStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
@@ -1249,3 +1498,67 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             results.append(block_data)
 
         return results
+
+
+def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
+    dumped = []
+    for source_type, result_obj, _ in collector.get_all_results():
+        # Get the dictionary from the result object
+        if hasattr(result_obj, "model_dump"):
+            result_dict = result_obj.model_dump()
+        elif hasattr(result_obj, "dict"):
+            result_dict = result_obj.dict()
+        else:
+            result_dict = (
+                result_obj  # Fallback if no conversion method is available
+            )
+
+        # Use the recursive conversion on the entire dictionary
+        result_dict = convert_nonserializable_objects(result_dict)
+
+        dumped.append(
+            {
+                "source_type": source_type,
+                "result": result_dict,
+            }
+        )
+    return dumped
+
+
+def tokens_count_for_message(message, encoding):
+    """Return the number of tokens used by a single message."""
+    tokens_per_message = 3
+
+    num_tokens = 0
+    num_tokens += tokens_per_message
+    if message.get("function_call"):
+        num_tokens += len(encoding.encode(message["function_call"]["name"]))
+        num_tokens += len(
+            encoding.encode(message["function_call"]["arguments"])
+        )
+    elif message.get("tool_calls"):
+        for tool_call in message["tool_calls"]:
+            num_tokens += len(encoding.encode(tool_call["function"]["name"]))
+            num_tokens += len(
+                encoding.encode(tool_call["function"]["arguments"])
+            )
+    else:
+        num_tokens += len(encoding.encode(message["content"]))
+
+    return num_tokens
+
+
+def num_tokens_from_messages(messages, model="gpt-4o"):
+    """Return the number of tokens used by a list of messages for both user and assistant."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        logger.warning("Warning: model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    tokens = 0
+    for i, message in enumerate(messages):
+        tokens += tokens_count_for_message(messages[i], encoding)
+
+        tokens += 3  # every reply is primed with assistant
+    return tokens

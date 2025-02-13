@@ -2,7 +2,6 @@ from shared.utils.base_utils import (
     decrement_version,
     deep_update,
     format_search_results_for_llm,
-    format_search_results_for_stream,
     generate_default_user_collection_id,
     generate_document_id,
     generate_extraction_id,
@@ -18,7 +17,6 @@ from shared.utils.splitter.text import (
 )
 
 __all__ = [
-    "format_search_results_for_stream",
     "format_search_results_for_llm",
     "generate_id",
     "generate_document_id",

@@ -1,14 +1,20 @@
 import asyncio
 import logging
+import re
 from abc import ABCMeta
 from typing import AsyncGenerator, Generator, Optional
 
-from core.base.abstractions import (
+from core.base import (
     AsyncSyncMeta,
     LLMChatCompletion,
     LLMChatCompletionChunk,
     Message,
+    ToolCallData,
+    ToolCallEvent,
+    ToolResultData,
+    ToolResultEvent,
     syncable,
+    yield_sse_event,
 )
 from core.base.agent import Agent, Conversation
 
@@ -119,219 +125,239 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
 
 class R2RStreamingAgent(R2RAgent):
-    async def arun(  # type: ignore
+    async def arun(
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
+        """
+        Return an async generator that yields SSE lines with partial text + tool calls + tool results + final answer.
+        """
         self._reset()
         await self._setup(system_instruction)
 
         if messages:
-            for message in messages:
-                await self.conversation.add_message(message)
+            for msg in messages:
+                await self.conversation.add_message(msg)
 
-        while not self._completed:
-            messages_list = await self.conversation.get_messages()
-            generation_config = self.get_generation_config(
-                messages_list[-1], stream=True
-            )
-            stream = self.llm_provider.aget_completion_stream(
-                messages_list,
-                generation_config,
-            )
-            async for proc_chunk in self.process_llm_response(
-                stream, *args, **kwargs
-            ):
-                yield proc_chunk
-
-    def run(
-        self, system_instruction, messages, *args, **kwargs
-    ) -> Generator[str, None, None]:
-        return sync_wrapper(
-            self.arun(system_instruction, messages, *args, **kwargs)
-        )
-
-    async def process_llm_response(
+    async def arun(
         self,
-        stream: AsyncGenerator[LLMChatCompletionChunk, None],
+        system_instruction: Optional[str] = None,
+        messages: Optional[list[Message]] = None,
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
-        Updated to:
-        1) Accumulate interleaved content and tool calls gracefully.
-        2) Finalize content even if no tool calls are made.
-        3) Support processing of both content and tool calls in parallel.
+        Return an async generator that yields SSE lines with:
+          - partial text
+          - tool calls
+          - tool results
+          - final answer
+        No citation detection or rewriting in this version.
         """
-        pending_tool_calls = {}
-        content_buffer = ""
-        function_arguments = ""
+        self._reset()
+        await self._setup(system_instruction)
 
-        async for chunk in stream:
-            delta = chunk.choices[0].delta
-            finish_reason = chunk.choices[0].finish_reason
+        if messages:
+            for msg in messages:
+                await self.conversation.add_message(msg)
 
-            # 1) Handle interleaved tool_calls
-            if delta.tool_calls:
-                for tc in delta.tool_calls:
-                    idx = tc.index
-                    if idx not in pending_tool_calls:
-                        pending_tool_calls[idx] = {
-                            "id": tc.id,  # could be None
-                            "name": tc.function.name or "",
-                            "arguments": tc.function.arguments or "",
-                        }
-                    else:
-                        # Accumulate partial tool call details
-                        if tc.function.name:
-                            pending_tool_calls[idx]["name"] = tc.function.name
-                        if tc.function.arguments:
-                            pending_tool_calls[idx][
-                                "arguments"
-                            ] += tc.function.arguments
-                        # Set the ID if it appears in later chunks
-                        if tc.id and not pending_tool_calls[idx]["id"]:
-                            pending_tool_calls[idx]["id"] = tc.id
+        async def sse_generator() -> AsyncGenerator[str, None]:
+            partial_text_buffer = ""
+            pending_tool_calls = {}
 
-            # 2) Handle partial function_call (single-call logic)
-            if delta.function_call:
-                if delta.function_call.name:
-                    function_name = delta.function_call.name
-                if delta.function_call.arguments:
-                    function_arguments += delta.function_call.arguments
+            while not self._completed:
+                msgs_list = await self.conversation.get_messages()
+                generation_config = self.get_generation_config(
+                    msgs_list[-1], stream=True
+                )
+                llm_stream = self.llm_provider.aget_completion_stream(
+                    msgs_list, generation_config
+                )
 
-            # 3) Handle normal content
-            elif delta.content:
-                if not content_buffer:
-                    yield "<completion>"
-                content_buffer += delta.content
-                yield delta.content
+                async for chunk in llm_stream:
+                    delta = chunk.choices[0].delta
+                    finish_reason = chunk.choices[0].finish_reason
 
-            # 4) Check finish_reason for tool calls
-            if finish_reason == "tool_calls":
-                # Finalize the tool calls
-                calls_list = []
-                sorted_indexes = sorted(pending_tool_calls.keys())
-                for idx in sorted_indexes:
-                    call_info = pending_tool_calls[idx]
-                    call_id = call_info["id"] or f"call_{idx}"
-                    calls_list.append(
-                        {
-                            "id": call_id,
-                            "type": "function",
-                            "function": {
-                                "name": call_info["name"],
-                                "arguments": call_info["arguments"],
+                    # 1) Accumulate normal partial text
+                    if delta.content:
+                        partial_text_buffer += delta.content
+
+                        # Emit SSE "message" event with newly arrived text
+                        new_substring_start = len(partial_text_buffer) - len(
+                            delta.content
+                        )
+                        new_text_to_emit = partial_text_buffer[
+                            new_substring_start:
+                        ]
+
+                        message_evt_payload = {
+                            "id": "msg_partial",
+                            "object": "agent.message.delta",
+                            "delta": {
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": {
+                                            "value": new_text_to_emit,
+                                            "annotations": [],
+                                        },
+                                    }
+                                ]
                             },
                         }
-                    )
+                        async for line in yield_sse_event(
+                            "message", message_evt_payload
+                        ):
+                            yield line
 
-                assistant_msg = Message(
-                    role="assistant",
-                    content=content_buffer or None,
-                    tool_calls=calls_list,
-                )
-                await self.conversation.add_message(assistant_msg)
+                    # 2) If partial tool_calls
+                    if delta.tool_calls:
+                        for tc in delta.tool_calls:
+                            idx = tc.index
+                            if idx not in pending_tool_calls:
+                                pending_tool_calls[idx] = {
+                                    "id": tc.id,
+                                    "name": tc.function.name or "",
+                                    "arguments": tc.function.arguments or "",
+                                }
+                            else:
+                                if tc.function.name:
+                                    pending_tool_calls[idx][
+                                        "name"
+                                    ] = tc.function.name
+                                if tc.function.arguments:
+                                    pending_tool_calls[idx][
+                                        "arguments"
+                                    ] += tc.function.arguments
 
-                # Execute tool calls in parallel
-                async_calls = [
-                    self.handle_function_or_tool_call(
-                        call_info["name"],
-                        call_info["arguments"],
-                        tool_id=(call_info["id"] or f"call_{idx}"),
-                        *args,
-                        **kwargs,
-                    )
-                    for idx, call_info in pending_tool_calls.items()
-                ]
-                results = await asyncio.gather(*async_calls)
+                    # 3) If partial function_call
+                    if delta.function_call:
+                        # (Optionally handle single partial function call if needed)
+                        pass
 
-                # Yield tool call results
-                for idx, tool_result in zip(sorted_indexes, results):
-                    call_info = pending_tool_calls[idx]
-                    yield "<tool_call>"
-                    yield f"<name>{call_info['name']}</name>"
-                    yield f"<arguments>{call_info['arguments']}</arguments>"
-                    if tool_result.stream_result:
-                        yield f"<results>{tool_result.stream_result}</results>"
-                    else:
-                        yield f"<results>{tool_result.llm_formatted_result}</results>"
-                    yield "</tool_call>"
-
-                # Clear the tool call state
-                pending_tool_calls.clear()
-                content_buffer = ""
-
-            elif finish_reason == "stop":
-                # Finalize content if streaming stops
-                if pending_tool_calls:
-                    # TODO - RM COPY PASTA.
-                    calls_list = []
-                    sorted_indexes = sorted(pending_tool_calls.keys())
-                    for idx in sorted_indexes:
-                        call_info = pending_tool_calls[idx]
-                        call_id = call_info["id"] or f"call_{idx}"
-                        calls_list.append(
-                            {
-                                "id": call_id,
-                                "type": "function",
-                                "function": {
+                    # 4) On finish_reason="tool_calls", do the tool calls
+                    if finish_reason == "tool_calls":
+                        # Freeze partial content so far
+                        calls_list = []
+                        sorted_indexes = sorted(pending_tool_calls.keys())
+                        for idx in sorted_indexes:
+                            call_info = pending_tool_calls[idx]
+                            tool_call_id = call_info["id"] or f"call_{idx}"
+                            calls_list.append(
+                                {
+                                    "tool_call_id": tool_call_id,
                                     "name": call_info["name"],
                                     "arguments": call_info["arguments"],
-                                },
-                            }
+                                }
+                            )
+
+                        # SSE "tool_call" events
+                        for cinfo in calls_list:
+                            tc_data = ToolCallData(**cinfo)
+                            tc_event = ToolCallEvent(
+                                event="tool_call", data=tc_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_call", tc_event.dict()["data"]
+                            ):
+                                yield line
+
+                        # Store an assistant message capturing these calls
+                        assistant_msg = Message(
+                            role="assistant",
+                            content=partial_text_buffer or None,
+                            tool_calls=[
+                                {
+                                    "id": call["tool_call_id"],
+                                    "type": "function",
+                                    "function": {
+                                        "name": call["name"],
+                                        "arguments": call["arguments"],
+                                    },
+                                }
+                                for call in calls_list
+                            ],
+                        )
+                        await self.conversation.add_message(assistant_msg)
+
+                        # 5) Execute each call
+                        tool_results = await asyncio.gather(
+                            *[
+                                self.handle_function_or_tool_call(
+                                    call["name"],
+                                    call["arguments"],
+                                    tool_id=call["tool_call_id"],
+                                )
+                                for call in calls_list
+                            ]
                         )
 
-                    assistant_msg = Message(
-                        role="assistant",
-                        content=content_buffer or None,
-                        tool_calls=calls_list,
-                    )
-                    await self.conversation.add_message(assistant_msg)
+                        # SSE "tool_result" for each
+                        for call, result_obj in zip(calls_list, tool_results):
+                            output_text = (
+                                result_obj.stream_result
+                                or result_obj.llm_formatted_result
+                                or ""
+                            )
+                            result_data = ToolResultData(
+                                tool_call_id=call["tool_call_id"],
+                                role="tool",
+                                content=output_text,
+                            )
+                            result_evt = ToolResultEvent(
+                                event="tool_result", data=result_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_result", result_evt.dict()["data"]
+                            ):
+                                yield line
 
-                    # Execute tool calls in parallel
-                    async_calls = [
-                        self.handle_function_or_tool_call(
-                            call_info["name"],
-                            call_info["arguments"],
-                            tool_id=(call_info["id"] or f"call_{idx}"),
-                            *args,
-                            **kwargs,
-                        )
-                        for idx, call_info in pending_tool_calls.items()
-                    ]
-                    results = await asyncio.gather(*async_calls)
+                        # Clear partial text & pending calls
+                        pending_tool_calls.clear()
+                        partial_text_buffer = ""
 
-                    # Clear the tool call state
-                    pending_tool_calls.clear()
-                    continue
+                    elif finish_reason == "stop":
+                        # Final step: store leftover text as a message
+                        if pending_tool_calls:
+                            # If leftover calls exist, you could handle them similarly
+                            pass
+                        elif partial_text_buffer:
+                            await self.conversation.add_message(
+                                Message(
+                                    role="assistant",
+                                    content=partial_text_buffer,
+                                )
+                            )
 
-                elif content_buffer:
-                    await self.conversation.add_message(
-                        Message(role="assistant", content=content_buffer)
-                    )
+                        # SSE final_answer
+                        final_ans_evt = {
+                            "id": "msg_final",
+                            "object": "agent.final_answer",
+                            "generated_answer": partial_text_buffer,
+                        }
+                        async for line in yield_sse_event(
+                            "final_answer", final_ans_evt
+                        ):
+                            yield line
 
+                        # SSE done
+                        yield "event: done\n"
+                        yield "data: [DONE]\n\n"
+
+                        self._completed = True
+                        break
+
+            # If we ever exit the loop without finishing:
+            if not self._completed:
+                yield "event: done\n"
+                yield "data: [DONE]\n\n"
                 self._completed = True
-                yield "</completion>"
 
-        # If the stream ends without `finish_reason=stop`
-        if not self._completed and content_buffer:
-            await self.conversation.add_message(
-                Message(role="assistant", content=content_buffer)
-            )
-            self._completed = True
-            yield "</completion>"
-
-        # After the stream ends
-        if content_buffer and not self._completed:
-            await self.conversation.add_message(
-                Message(role="assistant", content=content_buffer)
-            )
-            self._completed = True
-            yield "</completion>"
+        async for line in sse_generator():
+            yield line
 
 
 class R2RStreamingReasoningAgent(R2RStreamingAgent):

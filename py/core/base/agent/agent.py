@@ -77,6 +77,7 @@ class Agent(ABC):
         self._completed = False
         self._tools: list[Tool] = []
         self.rag_generation_config = rag_generation_config
+        self.tool_call_results = []
         self._register_tools()
 
     @abstractmethod
@@ -227,6 +228,16 @@ class Agent(ABC):
                     name=function_name,
                     tool_call_id=tool_id,
                 )
+            )
+
+            # **Record the tool call and its result**
+            self.tool_call_results.append(
+                {
+                    "tool_name": function_name,
+                    "tool_call_id": tool_id,
+                    "arguments": merged_kwargs,
+                    "result": raw_result,
+                }
             )
 
         return tool_result

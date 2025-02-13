@@ -1,3 +1,4 @@
+import uuid
 from typing import Any, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -23,24 +24,24 @@ class Citation(BaseModel):
     index: int = Field(
         ..., description="Citation bracket index after re-labeling"
     )
-    rawIndex: Optional[int] = Field(
+    raw_index: Optional[int] = Field(
         None, description="Original citation bracket index before re-labeling"
     )
-    startIndex: Optional[int] = Field(
+    start_index: Optional[int] = Field(
         None,
         description="Character offset (start) for the bracket [n] in the final text",
     )
-    endIndex: Optional[int] = Field(
+    end_index: Optional[int] = Field(
         None,
         description="Character offset (end) for the bracket [n] in the final text",
     )
 
     # Expanded snippet offsets around the bracket
-    snippetStartIndex: Optional[int] = Field(
+    snippet_start_index: Optional[int] = Field(
         None,
         description="Start offset for the snippet region around the bracket",
     )
-    snippetEndIndex: Optional[int] = Field(
+    snippet_end_index: Optional[int] = Field(
         None,
         description="End offset for the snippet region around the bracket",
     )
@@ -50,14 +51,14 @@ class Citation(BaseModel):
     # )
 
     # Mapped source fields
-    sourceType: Optional[str] = Field(
+    source_type: Optional[str] = Field(
         None,
         description="Type of the cited source (chunk, graph, web, contextDoc)",
     )
-    id: Optional[str] = Field(
+    id: Optional[uuid.UUID] = Field(
         None, description="Search result ID (if chunk, e.g. chunk.id)"
     )
-    document_id: Optional[str] = Field(
+    document_id: Optional[uuid.UUID] = Field(
         None, description="Document ID if chunk references a particular doc"
     )
     owner_id: Optional[str] = Field(
@@ -77,18 +78,22 @@ class Citation(BaseModel):
         default_factory=dict,
         description="Additional key-value fields from the source (title, license, etc.)",
     )
+    bracket_id: Optional[str] = Field(
+        None,
+        description="Unique ID for the bracket reference (if needed)",
+    )
 
     class Config:
         json_schema_extra = {
             "example": {
                 "index": 1,
-                "rawIndex": 9,
-                "startIndex": 393,
-                "endIndex": 396,
-                "snippetStartIndex": 320,
-                "snippetEndIndex": 418,
+                "raw_index": 9,
+                "start_index": 393,
+                "end_index": 396,
+                "snippet_start_index": 320,
+                "snippet_end_index": 418,
                 # "snippet": "some line referencing the bracket [1]",
-                "sourceType": "chunk",
+                "source_type": "chunk",
                 "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
                 "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
                 "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
@@ -139,8 +144,8 @@ class RAGResponse(BaseModel):
                     "citations": [
                         {
                             "index": 1,
-                            "startIndex": 25,
-                            "endIndex": 28,
+                            "start_index": 25,
+                            "end_index": 28,
                             "uri": "https://example.com/doc1",
                             "title": "example_document_1.pdf",
                             "license": "CC-BY-4.0",
@@ -257,7 +262,7 @@ class MessageEvent(SSEEventBase):
 
 # Model for citation events
 class CitationData(BaseModel):
-    rawIndex: int
+    raw_index: int
 
 
 class CitationEvent(SSEEventBase):
@@ -276,6 +281,30 @@ class FinalAnswerEvent(SSEEventBase):
     data: FinalAnswerData
 
 
+# "tool_call" event
+class ToolCallData(BaseModel):
+    tool_call_id: str
+    name: str
+    arguments: Any  # If JSON arguments, use dict[str, Any], or str if needed
+
+
+class ToolCallEvent(SSEEventBase):
+    event: Literal["tool_call"]
+    data: ToolCallData
+
+
+# "tool_result" event
+class ToolResultData(BaseModel):
+    tool_call_id: str
+    role: Literal["tool", "function"]
+    content: str
+
+
+class ToolResultEvent(SSEEventBase):
+    event: Literal["tool_result"]
+    data: ToolResultData
+
+
 # Optionally, define a fallback model for unrecognized events
 class UnknownEvent(SSEEventBase):
     pass
@@ -288,6 +317,10 @@ RAGEvent = Union[
     CitationEvent,
     FinalAnswerEvent,
     UnknownEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    ToolResultData,
+    ToolResultEvent,
 ]
 
 
