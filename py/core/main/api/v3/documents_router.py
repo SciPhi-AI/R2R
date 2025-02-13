@@ -255,7 +255,7 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="Raw text content to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
-            chunks: Optional[Json[list[str]]] = Form(
+            chunks: Optional[list[str]] = Form(
                 None,
                 description="Pre-processed text chunks to ingest. Exactly one of file, raw_text, or chunks must be provided.",
             ),
@@ -263,11 +263,11 @@ class DocumentsRouter(BaseRouterV3):
                 None,
                 description="The ID of the document. If not provided, a new ID will be generated.",
             ),
-            collection_ids: Optional[Json[list[UUID]]] = Form(
+            collection_ids: Optional[list[UUID]] = Form(
                 None,
                 description="Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.",
             ),
-            metadata: Optional[Json[dict]] = Form(
+            metadata: Optional[dict] = Form(
                 None,
                 description="Metadata to associate with the document, such as title, description, or custom fields.",
             ),
@@ -282,7 +282,7 @@ class DocumentsRouter(BaseRouterV3):
                     "they will override the default settings for that mode."
                 ),
             ),
-            ingestion_config: Optional[Json[IngestionConfig]] = Form(
+            ingestion_config: Optional[IngestionConfig] = Form(
                 None,
                 description="An optional dictionary to override the default chunking configuration for the ingestion process. If not provided, the system will use the default server-side chunking configuration.",
             ),
@@ -1277,9 +1277,7 @@ class DocumentsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_document_by_filter(
-            filters: Json[dict] = Body(
-                ..., description="JSON-encoded filters"
-            ),
+            filters: dict = Body(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
