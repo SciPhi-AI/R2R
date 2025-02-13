@@ -187,6 +187,7 @@ def agent_arg_parser(
             Message(**message) if isinstance(message, dict) else message
         )
         data["message"] = cast_message.model_dump()
+    return data
 
 
 def reasoning_agent_arg_parser(

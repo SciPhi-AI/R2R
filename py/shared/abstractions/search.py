@@ -390,6 +390,12 @@ class SearchSettings(R2RSerializable):
         description="Settings specific to knowledge graph search",
     )
 
+    # For HyDE or multi-query:
+    num_sub_queries: int = Field(
+        default=5,
+        description="Number of sub-queries/hypothetical docs to generate when using hyde or rag_fusion search strategies.",
+    )
+
     class Config:
         populate_by_name = True
         json_encoders = {UUID: str}

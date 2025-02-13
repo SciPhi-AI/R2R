@@ -240,95 +240,411 @@ class RetrievalService(Service):
         **kwargs,
     ) -> AggregateSearchResult:
         """
-        Replaces your pipeline-based `SearchPipeline.run(...)` with a single method.
-        Does parallel vector + graph search, returning an aggregated result.
+        Depending on search_settings.search_strategy, fan out
+        to basic, hyde, or rag_fusion method. Each returns
+        an AggregateSearchResult that includes chunk + graph results.
         """
+        strategy = search_settings.search_strategy.lower()
 
-        # 1) Start run manager / telemetry
-        t0 = time.time()
+        if strategy == "hyde":
+            return await self._hyde_search(query, search_settings)
+        elif strategy == "rag_fusion":
+            return await self._rag_fusion_search(query, search_settings)
+        else:
+            # 'vanilla', 'basic', or anything else...
+            return await self._basic_search(query, search_settings)
 
-        # Basic sanity checks:
+    async def _basic_search(
+        self, query: str, search_settings: SearchSettings
+    ) -> AggregateSearchResult:
+        """
+        1) Possibly embed the query (if semantic or hybrid).
+        2) Chunk search.
+        3) Graph search.
+        4) Combine into an AggregateSearchResult.
+        """
+        # -- 1) Possibly embed the query
+        query_vector = None
         if (
             search_settings.use_semantic_search
-            and self.config.database.provider is None
-        ):
-            raise R2RException(
-                status_code=400,
-                message="Vector search is not enabled in the configuration.",
-            )
-
-        # If hybrid search is requested but no config for it
-        if (
-            (
-                search_settings.use_semantic_search
-                and search_settings.use_fulltext_search
-            )
             or search_settings.use_hybrid_search
-        ) and not search_settings.hybrid_settings:
-            raise R2RException(
-                status_code=400,
-                message="Hybrid search settings must be specified in the input configuration.",
+        ):
+            query_vector = (
+                await self.providers.completion_embedding.async_get_embedding(
+                    query  # , EmbeddingPurpose.QUERY
+                )
             )
 
-        # Convert any UUID filters to string if needed (your old pipeline does that)
-        for f, val in list(search_settings.filters.items()):
-            if isinstance(val, UUID):
-                search_settings.filters[f] = str(val)
+        # -- 2) Chunk search
+        chunk_results = []
+        if search_settings.chunk_settings.enabled:
+            chunk_results = await self._vector_search_logic(
+                query_text=query,
+                search_settings=search_settings,
+                precomputed_vector=query_vector,  # Pass in the vector we just computed (if any)
+            )
 
-        # 2) Vector search & graph search in parallel
-        vector_task = asyncio.create_task(
-            self._vector_search_logic(query, search_settings)
+        # -- 3) Graph search
+        graph_results = []
+        if search_settings.graph_settings.enabled:
+            graph_results = await self._graph_search_logic(
+                query_text=query,
+                search_settings=search_settings,
+                precomputed_vector=query_vector,  # same idea
+            )
+
+        # -- 4) Combine
+        return AggregateSearchResult(
+            chunk_search_results=chunk_results,
+            graph_search_results=graph_results,
         )
-        graph_task = asyncio.create_task(
-            self._graph_search_logic(query, search_settings)
+
+    async def _rag_fusion_search(
+        self, query: str, search_settings: SearchSettings
+    ) -> AggregateSearchResult:
+        """
+        Implements 'RAG Fusion':
+        1) Generate N sub-queries from the user query
+        2) For each sub-query => do chunk & graph search
+        3) Combine / fuse all retrieved results using Reciprocal Rank Fusion
+        4) Return an AggregateSearchResult
+        """
+
+        # 1) Generate sub-queries from the user’s original query
+        #    Typically you want the original query to remain in the set as well,
+        #    so that we do not lose the exact user intent.
+        sub_queries = [query]
+        if search_settings.num_sub_queries > 1:
+            # Generate (num_sub_queries - 1) rephrasings
+            # (Or just generate exactly search_settings.num_sub_queries,
+            #  and remove the first if you prefer.)
+            extra = await self._generate_similar_queries(
+                query=query,
+                num_sub_queries=search_settings.num_sub_queries - 1,
+            )
+            sub_queries.extend(extra)
+
+        # 2) For each sub-query => do chunk + graph search
+        #    We’ll store them in a structure so we can fuse them.
+        #    chunk_results_list is a list of lists of ChunkSearchResult
+        #    graph_results_list is a list of lists of GraphSearchResult
+        chunk_results_list = []
+        graph_results_list = []
+
+        for sq in sub_queries:
+            # Recompute or reuse the embedding if desired
+            # (You could do so, but not mandatory if you have a local approach)
+            # chunk + graph search
+            aggr = await self._basic_search(sq, search_settings)
+            chunk_results_list.append(aggr.chunk_search_results)
+            graph_results_list.append(aggr.graph_search_results)
+
+        # 3) Fuse the chunk results and fuse the graph results.
+        #    We'll use a simple RRF approach: each sub-query's result list
+        #    is a ranking from best to worst.
+        fused_chunk_results = self._reciprocal_rank_fusion_chunks(
+            chunk_results_list
+        )
+        fused_graph_results = self._reciprocal_rank_fusion_graphs(
+            graph_results_list
         )
 
-        chunk_search_results, graph_search_results_results = (
-            await asyncio.gather(vector_task, graph_task)
+        # Optionally, after the RRF, you may want to do a final semantic re-rank
+        # of the fused results by the user’s original query.
+        # E.g.:
+        if fused_chunk_results:
+            fused_chunk_results = (
+                await self.providers.completion_embedding.arerank(
+                    query=query,
+                    results=fused_chunk_results,
+                    limit=search_settings.limit,
+                )
+            )
+
+        # Sort or slice the graph results if needed:
+        if fused_graph_results and search_settings.include_scores:
+            fused_graph_results.sort(
+                key=lambda g: g.score if g.score is not None else 0.0,
+                reverse=True,
+            )
+            fused_graph_results = fused_graph_results[: search_settings.limit]
+
+        # 4) Return final AggregateSearchResult
+        return AggregateSearchResult(
+            chunk_search_results=fused_chunk_results,
+            graph_search_results=fused_graph_results,
         )
 
-        # 3) Wrap up in an `AggregateSearchResult`, or your CombinedSearchResponse
-        aggregated_result = AggregateSearchResult(
-            chunk_search_results=chunk_search_results,
-            graph_search_results=graph_search_results_results,
+    async def _generate_similar_queries(
+        self, query: str, num_sub_queries: int = 2
+    ) -> list[str]:
+        """
+        Use your LLM to produce 'similar' queries or rephrasings
+        that might retrieve different but relevant documents.
+
+        You can prompt your model with something like:
+        "Given the user query, produce N alternative short queries that
+        capture possible interpretations or expansions.
+        Keep them relevant to the user's intent."
+        """
+        if num_sub_queries < 1:
+            return []
+
+        # In production, you'd fetch a prompt from your prompts DB:
+        # Something like:
+        prompt = f"""
+    You are a helpful assistant. The user query is: "{query}"
+    Generate {num_sub_queries} alternative search queries that capture
+    slightly different phrasings or expansions while preserving the core meaning.
+    Return each alternative on its own line.
+        """
+
+        # For a short generation, we can set minimal tokens
+        gen_config = GenerationConfig(
+            model=self.config.app.fast_llm,
+            max_tokens=128,
+            temperature=0.8,
+            stream=False,
         )
+        response = await self.providers.llm.aget_completion(
+            messages=[{"role": "system", "content": prompt}],
+            generation_config=gen_config,
+        )
+        raw_text = response.choices[0].message.content.strip()
 
-        # If your higher-level code returns as_dict(), do that here:
-        # Or if you have a CombinedSearchResponse(...) object, fill it out
-        response_dict = aggregated_result.as_dict()
+        # Suppose each line is a sub-query
+        lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
+        return lines[:num_sub_queries]
 
-        # 4) Telemetry timing
-        t1 = time.time()
-        latency = f"{t1 - t0:.2f}"
-        logger.debug(f"[search] Query='{query}' => took {latency} seconds")
-
-        return response_dict
-
-    # Vector Search
-    async def _vector_search_logic(
-        self,
-        query: str,
-        search_settings: SearchSettings,
+    def _reciprocal_rank_fusion_chunks(
+        self, list_of_rankings: list[list[ChunkSearchResult]], k: float = 60.0
     ) -> list[ChunkSearchResult]:
         """
-        Equivalent to your old VectorSearchPipe.search, but simplified:
-         • embed query
-         • do fulltext, semantic, or hybrid search
-         • optional re-rank
-         • return list of ChunkSearchResult
+        Simple RRF for chunk results.
+        list_of_rankings is something like:
+        [
+            [chunkA, chunkB, chunkC],  # sub-query #1, in order
+            [chunkC, chunkD],         # sub-query #2, in order
+            ...
+        ]
+
+        We'll produce a dictionary mapping chunk.id -> aggregated_score,
+        then sort descending.
         """
-        # If chunk search is disabled, just return empty
+        if not list_of_rankings:
+            return []
+
+        # Build a map of chunk_id => final_rff_score
+        score_map = {}
+
+        # We also need to store a reference to the chunk object
+        # (the "first" or "best" instance), so we can reconstruct them later
+        chunk_map = {}
+
+        for ranking_list in list_of_rankings:
+            for rank, chunk_result in enumerate(ranking_list, start=1):
+                if not chunk_result.id:
+                    # fallback if no chunk_id is present
+                    continue
+
+                c_id = chunk_result.id
+                # RRF scoring
+                # score = sum(1 / (k + rank)) for each sub-query ranking
+                # We'll accumulate it.
+                existing_score = score_map.get(c_id, 0.0)
+                new_score = existing_score + 1.0 / (k + rank)
+                score_map[c_id] = new_score
+
+                # Keep a reference to chunk
+                if c_id not in chunk_map:
+                    chunk_map[c_id] = chunk_result
+
+        # Now sort by final score
+        fused_items = sorted(
+            score_map.items(), key=lambda x: x[1], reverse=True
+        )
+
+        # Rebuild the final list of chunk results with new 'score'
+        fused_chunks = []
+        for c_id, agg_score in fused_items:
+            # copy the chunk
+            c = chunk_map[c_id]
+            # Optionally store the RRF score if you want
+            c.score = agg_score
+            fused_chunks.append(c)
+
+        return fused_chunks
+
+    def _reciprocal_rank_fusion_graphs(
+        self, list_of_rankings: list[list[GraphSearchResult]], k: float = 60.0
+    ) -> list[GraphSearchResult]:
+        """
+        Similar RRF logic but for graph results.
+        """
+        if not list_of_rankings:
+            return []
+
+        score_map = {}
+        graph_map = {}
+
+        for ranking_list in list_of_rankings:
+            for rank, g_result in enumerate(ranking_list, start=1):
+                # We'll do a naive ID approach:
+                # If your GraphSearchResult has a unique ID in g_result.content.id or so
+                # we can use that as a key.
+                # If not, you might have to build a key from the content.
+                g_id = None
+                if hasattr(g_result.content, "id"):
+                    g_id = str(g_result.content.id)
+                else:
+                    # fallback
+                    g_id = f"graph_{hash(g_result.content.json())}"
+
+                existing_score = score_map.get(g_id, 0.0)
+                new_score = existing_score + 1.0 / (k + rank)
+                score_map[g_id] = new_score
+
+                if g_id not in graph_map:
+                    graph_map[g_id] = g_result
+
+        # Sort descending by aggregated RRF score
+        fused_items = sorted(
+            score_map.items(), key=lambda x: x[1], reverse=True
+        )
+
+        fused_graphs = []
+        for g_id, agg_score in fused_items:
+            g = graph_map[g_id]
+            g.score = agg_score
+            fused_graphs.append(g)
+
+        return fused_graphs
+
+    async def _hyde_search(
+        self, query: str, search_settings: SearchSettings
+    ) -> AggregateSearchResult:
+        """
+        1) Generate N hypothetical docs via LLM
+        2) For each doc => embed => parallel chunk search & graph search
+        3) Merge chunk results => optional re-rank => top K
+        4) Merge graph results => (optionally re-rank or keep them distinct)
+        """
+        # 1) Generate hypothetical docs
+        hyde_docs = await self._run_hyde_generation(
+            query=query, num_sub_queries=search_settings.num_sub_queries
+        )
+
+        chunk_all = []
+        graph_all = []
+
+        # We'll gather the per-doc searches in parallel
+        tasks = []
+        for hypothetical_text in hyde_docs:
+            tasks.append(
+                asyncio.create_task(
+                    self._fanout_chunk_and_graph_search(
+                        user_text=query,  # The user’s original query
+                        alt_text=hypothetical_text,  # The hypothetical doc
+                        search_settings=search_settings,
+                    )
+                )
+            )
+
+        # 2) Wait for them all
+        results_list = await asyncio.gather(*tasks)
+        # each item in results_list is a tuple: (chunks, graphs)
+
+        # Flatten chunk+graph results
+        for c_results, g_results in results_list:
+            chunk_all.extend(c_results)
+            graph_all.extend(g_results)
+
+        # 3) Re-rank chunk results with the original query
+        if chunk_all:
+            chunk_all = await self.providers.completion_embedding.arerank(
+                query=query,  # final user query
+                results=chunk_all,
+                limit=int(
+                    search_settings.limit * search_settings.num_sub_queries
+                ),
+                # no limit on results - limit=search_settings.limit,
+            )
+
+        # 4) If needed, re-rank graph results or just slice top-K by score
+        if search_settings.include_scores and graph_all:
+            graph_all.sort(key=lambda g: g.score or 0.0, reverse=True)
+            graph_all = (
+                graph_all  # no limit on results - [: search_settings.limit]
+            )
+
+        return AggregateSearchResult(
+            chunk_search_results=chunk_all,
+            graph_search_results=graph_all,
+        )
+
+    async def _fanout_chunk_and_graph_search(
+        self,
+        user_text: str,
+        alt_text: str,
+        search_settings: SearchSettings,
+    ) -> tuple[list[ChunkSearchResult], list[GraphSearchResult]]:
+        """
+        1) embed alt_text (HyDE doc or sub-query, etc.)
+        2) chunk search + graph search with that embedding
+        """
+        # Precompute the embedding of alt_text
+        vec = await self.providers.completion_embedding.async_get_embedding(
+            alt_text  # , EmbeddingPurpose.QUERY
+        )
+
+        # chunk search
+        chunk_results = []
+        if search_settings.chunk_settings.enabled:
+            chunk_results = await self._vector_search_logic(
+                query_text=user_text,  # used for text-based stuff & re-ranking
+                search_settings=search_settings,
+                precomputed_vector=vec,  # use the alt_text vector for semantic/hybrid
+            )
+
+        # graph search
+        graph_results = []
+        if search_settings.graph_settings.enabled:
+            graph_results = await self._graph_search_logic(
+                query_text=user_text,  # or alt_text if you prefer
+                search_settings=search_settings,
+                precomputed_vector=vec,
+            )
+
+        return (chunk_results, graph_results)
+
+    async def _vector_search_logic(
+        self,
+        query_text: str,
+        search_settings: SearchSettings,
+        precomputed_vector: Optional[list[float]] = None,
+    ) -> list[ChunkSearchResult]:
+        """
+        • If precomputed_vector is given, use it for semantic/hybrid search.
+        Otherwise embed query_text ourselves.
+        • Then do fulltext, semantic, or hybrid search.
+        • Optionally re-rank and return results.
+        """
         if not search_settings.chunk_settings.enabled:
             return []
 
-        # 1) embed the query
-        query_vector = (
-            await self.providers.completion_embedding.async_get_embedding(
-                query, purpose=EmbeddingPurpose.QUERY
+        # 1) Possibly embed
+        query_vector = precomputed_vector
+        if query_vector is None and (
+            search_settings.use_semantic_search
+            or search_settings.use_hybrid_search
+        ):
+            query_vector = (
+                await self.providers.completion_embedding.async_get_embedding(
+                    query_text  # , EmbeddingPurpose.QUERY
+                )
             )
-        )
 
-        # 2) Decide which search to run
+        # 2) Choose which search to run
         if (
             search_settings.use_fulltext_search
             and search_settings.use_semantic_search
@@ -336,14 +652,14 @@ class RetrievalService(Service):
             raw_results = (
                 await self.providers.database.chunks_handler.hybrid_search(
                     query_vector=query_vector,
-                    query_text=query,
+                    query_text=query_text,
                     search_settings=search_settings,
                 )
             )
         elif search_settings.use_fulltext_search:
             raw_results = (
                 await self.providers.database.chunks_handler.full_text_search(
-                    query_text=query,
+                    query_text=query_text,
                     search_settings=search_settings,
                 )
             )
@@ -355,52 +671,51 @@ class RetrievalService(Service):
                 )
             )
         else:
-            # If no type of search is requested, we can either return or raise
             raise ValueError(
                 "At least one of use_fulltext_search or use_semantic_search must be True"
             )
 
-        # 3) Re-rank if you want a second pass
+        # 3) Re-rank
         reranked = await self.providers.completion_embedding.arerank(
-            query=query, results=raw_results, limit=search_settings.limit
+            query=query_text, results=raw_results, limit=search_settings.limit
         )
 
-        # 4) Possibly add "Document Title" prefix
+        # 4) Possibly augment text or metadata
         final_results = []
         for r in reranked:
-            # If requested, or if you always do this:
             if "title" in r.metadata and search_settings.include_metadatas:
                 title = r.metadata["title"]
                 r.text = f"Document Title: {title}\n\nText: {r.text}"
-            # Tag the associated query
-            r.metadata["associated_query"] = query
+            r.metadata["associated_query"] = query_text
             final_results.append(r)
 
         return final_results
 
-    # Graph Search
     async def _graph_search_logic(
         self,
-        query: str,
+        query_text: str,
         search_settings: SearchSettings,
+        precomputed_vector: Optional[list[float]] = None,
     ) -> list[GraphSearchResult]:
         """
-        Mirrors GraphSearchSearchPipe logic:
-          • embed the query
-          • search entities, relationships, communities
-          • yield GraphSearchResult
+        Mirrors your previous GraphSearch approach:
+        • if precomputed_vector is supplied, use that
+        • otherwise embed query_text
+        • search entities, relationships, communities
+        • return results
         """
         results = []
-        # bail early if disabled
         if not search_settings.graph_settings.enabled:
             return results
 
-        # embed query
-        query_embedding = (
-            await self.providers.completion_embedding.async_get_embedding(
-                query
+        # 1) Possibly embed
+        query_embedding = precomputed_vector
+        if query_embedding is None:
+            query_embedding = (
+                await self.providers.completion_embedding.async_get_embedding(
+                    query_text
+                )
             )
-        )
 
         base_limit = search_settings.limit
         graph_limits = search_settings.graph_settings.limits or {}
@@ -408,7 +723,7 @@ class RetrievalService(Service):
         # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
         entity_cursor = self.providers.database.graphs_handler.graph_search(
-            query,
+            query_text,
             search_type="entities",
             limit=entity_limit,
             query_embedding=query_embedding,
@@ -416,17 +731,14 @@ class RetrievalService(Service):
             filters=search_settings.filters,
         )
         async for ent in entity_cursor:
-            # Build the GraphSearchResult object
             score = ent.get("similarity_score")
             metadata = ent.get("metadata", {})
-            # If there's a possibility that "metadata" is a JSON string, parse it:
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
                 except:
                     pass
 
-            # store
             results.append(
                 GraphSearchResult(
                     content=GraphEntityResult(
@@ -439,7 +751,7 @@ class RetrievalService(Service):
                     metadata=(
                         {
                             **(metadata or {}),
-                            "associated_query": query,
+                            "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
                         else None
@@ -450,7 +762,7 @@ class RetrievalService(Service):
         # Relationship search
         rel_limit = graph_limits.get("relationships", base_limit)
         rel_cursor = self.providers.database.graphs_handler.graph_search(
-            query,
+            query_text,
             search_type="relationships",
             limit=rel_limit,
             query_embedding=query_embedding,
@@ -468,7 +780,6 @@ class RetrievalService(Service):
         async for rel in rel_cursor:
             score = rel.get("similarity_score")
             metadata = rel.get("metadata", {})
-            # Possibly parse if it's JSON in a string
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
@@ -491,7 +802,7 @@ class RetrievalService(Service):
                     metadata=(
                         {
                             **(metadata or {}),
-                            "associated_query": query,
+                            "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
                         else None
@@ -502,7 +813,7 @@ class RetrievalService(Service):
         # Community search
         comm_limit = graph_limits.get("communities", base_limit)
         comm_cursor = self.providers.database.graphs_handler.graph_search(
-            query,
+            query_text,
             search_type="communities",
             limit=comm_limit,
             query_embedding=query_embedding,
@@ -534,7 +845,7 @@ class RetrievalService(Service):
                     metadata=(
                         {
                             **(metadata or {}),
-                            "associated_query": query,
+                            "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
                         else None
@@ -543,6 +854,49 @@ class RetrievalService(Service):
             )
 
         return results
+
+    async def _run_hyde_generation(
+        self,
+        query: str,
+        num_sub_queries: int = 2,
+    ) -> list[str]:
+        """
+        Calls the LLM with a 'HyDE' style prompt to produce multiple
+        hypothetical documents/answers, one per line or separated by blank lines.
+        """
+        # Retrieve the prompt template from your database or config:
+        # e.g. your "hyde" prompt has placeholders: {message}, {num_outputs}
+        hyde_template = (
+            await self.providers.database.prompts_handler.get_cached_prompt(
+                prompt_name="hyde",
+                inputs={"message": query, "num_outputs": num_sub_queries},
+            )
+        )
+
+        # Now call the LLM with that as the system or user prompt:
+        completion_config = GenerationConfig(
+            model=self.config.app.fast_llm,  # or whichever short/cheap model
+            max_tokens=512,
+            temperature=0.7,
+            stream=False,
+        )
+
+        response = await self.providers.llm.aget_completion(
+            messages=[{"role": "system", "content": hyde_template}],
+            generation_config=completion_config,
+        )
+
+        # Suppose the LLM returns something like:
+        #
+        # "Doc1. Some made up text.\n\nDoc2. Another made up text.\n\n"
+        #
+        # So we split by double-newline or some pattern:
+        raw_text = response.choices[0].message.content
+        hypothetical_docs = [
+            chunk.strip() for chunk in raw_text.split("\n\n") if chunk.strip()
+        ]
+
+        return hypothetical_docs
 
     @telemetry_event("SearchDocuments")
     async def search_documents(
@@ -607,12 +961,13 @@ class RetrievalService(Service):
                 search_settings.filters[f] = str(val)
 
         try:
+
+            print("search_settings = ", search_settings)
             # 2) Do the search => aggregator
-            search_results_dict = await self.search(query, search_settings)
-            print("search_results_dict = ", search_results_dict)
-            aggregated_results = AggregateSearchResult.from_dict(
-                search_results_dict
-            )
+            aggregated_results = await self.search(query, search_settings)
+            # aggregated_results = AggregateSearchResult.from_dict(
+            #     search_results_dict
+            # )
 
             # 3) Build "context" string from aggregator
             collector = SearchResultsCollector()

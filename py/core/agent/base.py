@@ -267,11 +267,7 @@ class R2RStreamingAgent(R2RAgent):
 
             elif finish_reason == "stop":
                 # Finalize content if streaming stops
-                if content_buffer:
-                    await self.conversation.add_message(
-                        Message(role="assistant", content=content_buffer)
-                    )
-                elif pending_tool_calls:
+                if pending_tool_calls:
                     # TODO - RM COPY PASTA.
                     calls_list = []
                     sorted_indexes = sorted(pending_tool_calls.keys())
@@ -295,7 +291,28 @@ class R2RStreamingAgent(R2RAgent):
                         tool_calls=calls_list,
                     )
                     await self.conversation.add_message(assistant_msg)
-                    return
+
+                    # Execute tool calls in parallel
+                    async_calls = [
+                        self.handle_function_or_tool_call(
+                            call_info["name"],
+                            call_info["arguments"],
+                            tool_id=(call_info["id"] or f"call_{idx}"),
+                            *args,
+                            **kwargs,
+                        )
+                        for idx, call_info in pending_tool_calls.items()
+                    ]
+                    results = await asyncio.gather(*async_calls)
+
+                    # Clear the tool call state
+                    pending_tool_calls.clear()
+                    continue
+
+                elif content_buffer:
+                    await self.conversation.add_message(
+                        Message(role="assistant", content=content_buffer)
+                    )
 
                 self._completed = True
                 yield "</completion>"
@@ -444,11 +461,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
 
                 elif finish_reason == "stop":
                     # Finalize content if streaming stops
-                    if content_buffer:
-                        await self.conversation.add_message(
-                            Message(role="assistant", content=content_buffer)
-                        )
-                    elif pending_tool_calls:
+                    if pending_tool_calls:
                         # TODO - RM COPY PASTA.
                         calls_list = []
                         sorted_indexes = sorted(pending_tool_calls.keys())
@@ -472,7 +485,29 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             tool_calls=calls_list,
                         )
                         await self.conversation.add_message(assistant_msg)
-                        return
+
+                        # Execute tool calls in parallel
+                        async_calls = [
+                            self.handle_function_or_tool_call(
+                                call_info["name"],
+                                call_info["arguments"],
+                                tool_id=(call_info["id"] or f"call_{idx}"),
+                                *args,
+                                **kwargs,
+                            )
+                            for idx, call_info in pending_tool_calls.items()
+                        ]
+                        results = await asyncio.gather(*async_calls)
+
+                        # Clear the tool call state
+                        pending_tool_calls.clear()
+
+                        continue
+
+                    elif content_buffer:
+                        await self.conversation.add_message(
+                            Message(role="assistant", content=content_buffer)
+                        )
 
                     self._completed = True
 
@@ -644,11 +679,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
 
                 # --- 5. Finalize on finish_reason == "stop" ---
                 elif finish_reason == "stop":
-                    if content_buffer:
-                        await self.conversation.add_message(
-                            Message(role="assistant", content=content_buffer)
-                        )
-                    elif pending_calls:
+                    if pending_calls:
                         # In case there are pending calls not triggered by a tool_calls finish.
                         calls_list = []
                         for call in pending_calls:
@@ -668,6 +699,28 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             tool_calls=calls_list,
                         )
                         await self.conversation.add_message(assistant_msg)
+                        # Execute tool calls in parallel
+                        async_calls = [
+                            self.handle_function_or_tool_call(
+                                call_info["name"],
+                                call_info["arguments"],
+                                tool_id=(call_info["id"] or f"call_{idx}"),
+                                *args,
+                                **kwargs,
+                            )
+                            for idx, call_info in pending_tool_calls.items()
+                        ]
+                        results = await asyncio.gather(*async_calls)
+
+                        # Clear the tool call state
+                        pending_tool_calls.clear()
+                        continue
+
+                    elif content_buffer:
+                        await self.conversation.add_message(
+                            Message(role="assistant", content=content_buffer)
+                        )
+
                     self._completed = True
                     return
 
