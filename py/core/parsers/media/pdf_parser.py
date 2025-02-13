@@ -24,7 +24,7 @@ from core.base.providers import (
     DatabaseProvider,
     IngestionConfig,
 )
-from shared.abstractions import PDFParsingError, PopperNotFoundError
+from shared.abstractions import PDFParsingError, PopplerNotFoundError
 
 logger = logging.getLogger()
 
@@ -75,7 +75,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             logger.error(
                 "PDFInfoNotInstalledError encountered during PDF conversion."
             )
-            raise PopperNotFoundError()
+            raise PopplerNotFoundError()
         except Exception as err:
             logger.error(
                 f"Error converting PDF to images: {err} type: {type(err)}"
@@ -130,7 +130,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content
                 page_elapsed = time.perf_counter() - page_start
-                logger.info(
+                logger.debug(
                     f"Processed page {page_num} in {page_elapsed:.2f} seconds."
                 )
                 return {"page": str(page_num), "content": content}
@@ -146,7 +146,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
     async def ingest(
         self, data: str | bytes, maintain_order: bool = True, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    ) -> AsyncGenerator[dict[str, str | int], None]:
         """
         Ingest PDF data and yield the text description for each page using the vision model.
         (This version yields a string per page rather than a dictionary.)
@@ -185,16 +185,21 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                         result = await task
                         page_num = int(result["page"])
                         results[page_num] = result
-                        # **Fix:** Yield only the content string instead of the whole dictionary.
                         while next_page in results:
-                            yield results.pop(next_page)["content"]
+                            yield {
+                                "content": results[next_page]["content"],
+                                "page_number": next_page,
+                            }
+                            results.pop(next_page)
                             next_page += 1
             else:
                 # Yield results as tasks complete
                 for coro in asyncio.as_completed(tasks.keys()):
                     result = await coro
-                    # **Fix:** Yield only the content string.
-                    yield result["content"]
+                    yield {
+                        "content": result["content"],
+                        "page_number": int(result["page"]),
+                    }
             total_elapsed = time.perf_counter() - ingest_start
             logger.info(
                 f"Completed PDF ingestion in {total_elapsed:.2f} seconds using VLMPDFParser."
