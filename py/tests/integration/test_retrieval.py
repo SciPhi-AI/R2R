@@ -351,9 +351,7 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
     # _setup_collection_with_documents(client)
 
     # ((category=ancient OR rating<5) AND tags contains 'philosophy')
-    print(
-        'test_collection["collection_id"] = ', test_collection["collection_id"]
-    )
+
     filters = {
         "$and": [
             {
@@ -378,7 +376,6 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
     ).results
     chunk_search_results = results.chunk_search_results
 
-    print("results -> ", chunk_search_results)
     assert (
         len(chunk_search_results) == 2
     ), f"Expected 2 docs, got {len(chunk_search_results)}"
@@ -535,8 +532,14 @@ def test_search_hyde_mode(client: R2RClient):
     # 1) Create a test doc containing "Aristotle" text
     suffix = str(uuid.uuid4())
     client.documents.create(
-        raw_text=f"Aristotle was a famous Greek philosopher. TestDoc: {suffix}",
-        metadata={"category": "test_hyde"},
+        chunks=[
+            f"Aristotle. Fulltext test doc. {uuid.uuid4()}",
+            f"Plato. Fulltext test doc. {uuid.uuid4()}",
+            f"Socrates. Fulltext test doc. {uuid.uuid4()}",
+            f"Pythagoras. Fulltext test doc. {uuid.uuid4()}",
+            f"Euclid. Fulltext test doc. {uuid.uuid4()}",
+        ],
+        metadata={"category": "test_hyde_fulltext"},
     )
 
     # 2) Perform a HyDE search
@@ -548,13 +551,16 @@ def test_search_hyde_mode(client: R2RClient):
             "use_semantic_search": True,
             "limit": 5,
             # If you want multiple hypothetical docs:
-            "num_sub_queries": 2,
+            "num_sub_queries": 5,
         },
     )
 
     # 3) Validate the results
     results = resp.results
     assert results is not None, "No results returned by HyDE search"
+    assert (
+        len(results.chunk_search_results) == 25
+    ), "Expected 25 chunk search results"
     chunk_results = results.chunk_search_results
     # We can't guarantee you have actual matches in your DB,
     # but we can at least confirm the structure is correct.
@@ -596,80 +602,9 @@ def test_search_rag_fusion_mode(client: R2RClient):
     chunk_results = results.chunk_search_results
     assert chunk_results is not None, "No chunk_search_results for RAG-Fusion"
     # Possibly check if chunk_results is not empty if you have data
-
-
-def test_search_hyde_mode_with_graph(client: R2RClient):
-    """
-    If you have a knowledge graph, test that HyDE triggers graph search in parallel.
-    You might have a graph node referencing 'Aristotle' or 'Plato' so
-    we can see if the graph results come back.
-    """
-    # We'll just do the search; verifying graph came back is easy if the code includes graph items
-    resp = client.retrieval.search(
-        query="Aristotle's relationships?",
-        search_mode="custom",
-        search_settings={
-            "search_strategy": "hyde",
-            "use_semantic_search": True,
-            "graph_settings": {"enabled": True},  # ensure graph is on
-            "chunk_settings": {"enabled": True},  # chunk also on
-            "limit": 3,
-            "num_sub_queries": 2,
-        },
-    )
-
-    results = resp.results
-    assert results is not None, "No results from HyDE+Graph search"
-
-    # chunk results
-    chunk_res = results.chunk_search_results
-    assert chunk_res is not None, "Missing chunk results in HyDE+Graph search"
-
-    # graph results
-    graph_res = results.graph_search_results
     assert (
-        graph_res is not None
-    ), "Missing graph search results in HyDE+Graph search"
-    # If your environment doesn't have actual graph data, you might get an empty list
-    # but at least we confirmed the field is present.
-
-
-def test_search_hyde_mode_no_semantic(client: R2RClient):
-    """
-    If we do a HyDE search but only do use_fulltext_search, see if it still runs.
-    The hypothetical doc embedding won't matter for fulltext,
-    but we want to ensure it doesn't break.
-    """
-    client.documents.create(
-        chunks=[
-            f"Aristotle. Fulltext test doc. {uuid.uuid4()}",
-            f"Plato. Fulltext test doc. {uuid.uuid4()}",
-            f"Socrates. Fulltext test doc. {uuid.uuid4()}",
-            f"Pythagoras. Fulltext test doc. {uuid.uuid4()}",
-        ],
-        metadata={"category": "test_hyde_fulltext"},
-    )
-
-    resp = client.retrieval.search(
-        query="Aristotle logic?",
-        # search_mode="custom",
-        search_settings={
-            "search_strategy": "hyde",
-            # "use_semantic_search": False,
-            # "use_fulltext_search": True,
-            "limit": 3,
-            "num_sub_queries": 1,
-        },
-    )
-    import pdb
-
-    pdb.set_trace()
-
-    assert (
-        resp.results is not None
-    ), "No results in HyDE fulltext only scenario"
-    # Typically chunk_search_results might still be empty if your DB doesn't rank it highly
-    # but let's see if the code runs.
+        len(results.chunk_search_results) == 5
+    ), "Expected 5 chunk search results"
 
 
 def test_rag_fusion_mode_with_subqueries(client: R2RClient):

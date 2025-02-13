@@ -564,13 +564,18 @@ class RetrievalService(Service):
             chunk_all = await self.providers.completion_embedding.arerank(
                 query=query,  # final user query
                 results=chunk_all,
-                limit=search_settings.limit,
+                limit=int(
+                    search_settings.limit * search_settings.num_sub_queries
+                ),
+                # no limit on results - limit=search_settings.limit,
             )
 
         # 4) If needed, re-rank graph results or just slice top-K by score
         if search_settings.include_scores and graph_all:
             graph_all.sort(key=lambda g: g.score or 0.0, reverse=True)
-            graph_all = graph_all[: search_settings.limit]
+            graph_all = (
+                graph_all  # no limit on results - [: search_settings.limit]
+            )
 
         return AggregateSearchResult(
             chunk_search_results=chunk_all,
@@ -956,12 +961,13 @@ class RetrievalService(Service):
                 search_settings.filters[f] = str(val)
 
         try:
+
+            print("search_settings = ", search_settings)
             # 2) Do the search => aggregator
-            search_results_dict = await self.search(query, search_settings)
-            print("search_results_dict = ", search_results_dict)
-            aggregated_results = AggregateSearchResult.from_dict(
-                search_results_dict
-            )
+            aggregated_results = await self.search(query, search_settings)
+            # aggregated_results = AggregateSearchResult.from_dict(
+            #     search_results_dict
+            # )
 
             # 3) Build "context" string from aggregator
             collector = SearchResultsCollector()

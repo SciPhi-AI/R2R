@@ -187,6 +187,7 @@ def agent_arg_parser(
             Message(**message) if isinstance(message, dict) else message
         )
         data["message"] = cast_message.model_dump()
+    return data
 
 
 def reasoning_agent_arg_parser(
@@ -375,6 +376,7 @@ class RetrievalSDK:
             max_tool_context_length=max_tool_context_length,
             use_extended_prompt=use_extended_prompt,
         )
+        print("data = ", data)
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):

@@ -446,12 +446,6 @@ class RetrievalRouterV3(BaseRouterV3):
             "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
-            deprecated=True,
-        )
-        @self.router.post(
-            "/retrieval/rag_agent",
-            dependencies=[Depends(self.rate_limit_dependency)],
-            summary="RAG-powered Conversational Agent",
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -653,7 +647,8 @@ class RetrievalRouterV3(BaseRouterV3):
             The agent uses both vector search and knowledge graph capabilities to find and synthesize
             information, providing detailed, factual responses with proper attribution to source documents.
             """
-            print("in app..")
+            print("message = ", message)
+            print("messages = ", messages)
             if "model" not in rag_generation_config.__fields_set__:
                 rag_generation_config.model = self.config.app.quality_llm
 
