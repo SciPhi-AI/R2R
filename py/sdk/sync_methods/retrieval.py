@@ -376,7 +376,6 @@ class RetrievalSDK:
             max_tool_context_length=max_tool_context_length,
             use_extended_prompt=use_extended_prompt,
         )
-        print("data = ", data)
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
