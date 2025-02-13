@@ -122,8 +122,7 @@ class RetrievalRouter(BaseRouterV3):
                                     "use_semantic_search": True,
                                     "filters": {"category": {"$like": "%philosophy%"}},
                                     "limit": 20,
-                                    "chunk_settings": {"limit": 20},
-                                    "graph_settings": {"enabled": True}
+                                    "chunk_settings": {"index_measure": "l2_distance"}
                                 }
                             )
                             """
@@ -142,14 +141,7 @@ class RetrievalRouter(BaseRouterV3):
                                     query: "Who is Aristotle?",
                                     search_settings: {
                                         filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        useSemanticSearch: true,
-                                        chunkSettings: {
-                                            limit: 20, # separate limit for chunk vs. graph
-                                            enabled: true
-                                        },
-                                        graphSettings: {
-                                            enabled: true,
-                                        }
+                                        useSemanticSearch: true
                                     }
                                 });
                             }
@@ -169,14 +161,7 @@ class RetrievalRouter(BaseRouterV3):
                                 "query": "Who is Aristotle?",
                                 "search_settings": {
                                     filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    use_semantic_search: true,
-                                    chunk_settings: {
-                                        limit: 20, # separate limit for chunk vs. graph
-                                        enabled: true
-                                    },
-                                    graph_settings: {
-                                        enabled: true,
-                                    }
+                                    use_semantic_search: true
                                 }
                             }'
                             """
@@ -225,7 +210,7 @@ class RetrievalRouter(BaseRouterV3):
             Apply filters directly inside `search_settings.filters`. For example:
             ```json
             {
-            "filters": {"document_id": {"$eq": "3e157b3a-..."}}
+              "filters": {"document_id": {"$eq": "3e157b3a-..."}}
             }
             ```
             Supported operators: `$eq`, `$neq`, `$gt`, `$gte`, `$lt`, `$lte`, `$like`, `$ilike`, `$in`, `$nin`.
@@ -234,7 +219,7 @@ class RetrievalRouter(BaseRouterV3):
             Control how many results you get by specifying `limit` inside `search_settings`. For example:
             ```json
             {
-            "limit": 20
+              "limit": 20
             }
             ```
 
@@ -261,7 +246,6 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/rag",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG Query",
-            response_model=None,
             openapi_extra={
                 "x-codeSamples": [
                     {
@@ -273,23 +257,20 @@ class RetrievalRouter(BaseRouterV3):
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
-                            response =client.retrieval.rag(
+                            response = client.retrieval.rag(
                                 query="Who is Aristotle?",
                                 search_settings={
                                     "use_semantic_search": True,
                                     "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
                                     "limit": 10,
-                                    chunk_settings={
+                                    "chunk_settings": {
                                         "limit": 20, # separate limit for chunk vs. graph
                                     },
-                                    graph_settings={
-                                        "enabled": True,
-                                    },
                                 },
-                                rag_generation_config: {
-                                    stream: false,
-                                    temperature: 0.7,
-                                    max_tokens: 150
+                                rag_generation_config={
+                                    "stream": false,
+                                    "temperature": 0.7,
+                                    "max_tokens": 150
                                 }
                             )
                             """
@@ -311,10 +292,6 @@ class RetrievalRouter(BaseRouterV3):
                                         useSemanticSearch: true,
                                         chunkSettings: {
                                             limit: 20, # separate limit for chunk vs. graph
-                                            enabled: true
-                                        },
-                                        graphSettings: {
-                                            enabled: true,
                                         },
                                     },
                                     ragGenerationConfig: {
@@ -344,9 +321,6 @@ class RetrievalRouter(BaseRouterV3):
                                     "limit": 10,
                                     chunk_settings={
                                         "limit": 20, # separate limit for chunk vs. graph
-                                    },
-                                    graph_settings={
-                                        "enabled": True,
                                     },
                                 },
                                 "rag_generation_config": {
@@ -444,12 +418,6 @@ class RetrievalRouter(BaseRouterV3):
                 return response
 
         @self.router.post(
-            "/retrieval/agent",
-            dependencies=[Depends(self.rate_limit_dependency)],
-            summary="RAG-powered Conversational Agent",
-            deprecated=True,
-        )
-        @self.router.post(
             "/retrieval/rag_agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
@@ -464,7 +432,7 @@ class RetrievalRouter(BaseRouterV3):
                         client = R2RClient()
                         # when using auth, do client.login(...)
 
-                        response =client.retrieval.agent(
+                        response = client.retrieval.agent(
                             message={
                                 "role": "user",
                                 "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
@@ -892,7 +860,7 @@ class RetrievalRouter(BaseRouterV3):
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
-                            response =client.completion(
+                            response = client.completion(
                                 messages=[
                                     {"role": "system", "content": "You are a helpful assistant."},
                                     {"role": "user", "content": "What is the capital of France?"},
