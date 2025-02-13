@@ -1277,7 +1277,7 @@ class DocumentsRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def delete_document_by_filter(
-            filters: dict = Body(..., description="JSON-encoded filters"),
+            filters: Json[dict] = Body(..., description="JSON-encoded filters"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
             """
