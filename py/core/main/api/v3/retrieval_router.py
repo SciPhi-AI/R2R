@@ -418,7 +418,7 @@ class RetrievalRouter(BaseRouterV3):
                 return response
 
         @self.router.post(
-            "/retrieval/rag_agent",
+            "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
             openapi_extra={

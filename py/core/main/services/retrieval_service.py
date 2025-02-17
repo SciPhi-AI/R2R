@@ -60,7 +60,7 @@ def convert_nonserializable_objects(obj):
         new_obj = {}
         for key, value in obj.items():
             # Convert key to string if it is a UUID or not already a string.
-            new_key = str(key) if not isinstance(key, str) else key
+            new_key = key if isinstance(key, str) else str(key)
             new_obj[new_key] = convert_nonserializable_objects(value)
         return new_obj
     elif isinstance(obj, list):
@@ -104,10 +104,8 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
 
 def tokens_count_for_message(message, encoding):
     """Return the number of tokens used by a single message."""
-    tokens_per_message = 3
+    num_tokens = 3
 
-    num_tokens = 0
-    num_tokens += tokens_per_message
     if message.get("function_call"):
         num_tokens += len(encoding.encode(message["function_call"]["name"]))
         num_tokens += len(
@@ -1136,8 +1134,8 @@ class RetrievalService(Service):
         filters: dict[str, Any],
     ):
         ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and", None)
-        filter_starts_with_or = filters.get("$or", None)
+        filter_starts_with_and = filters.get("$and")
+        filter_starts_with_or = filters.get("$or")
         if filter_starts_with_and:
             try:
                 filter_starts_with_and_then_or = filter_starts_with_and[0][
@@ -1262,8 +1260,15 @@ class RetrievalService(Service):
             else self.config.agent.agent_static_prompt
         )
 
+        # TODO: This should just be enforced in the config
+        if model is None:
+            raise R2RException(
+                status_code=400,
+                message="Model not provided for system instruction",
+            )
+
         if ("gemini" in model or "claude" in model) and reasoning_agent:
-            prompt_name = prompt_name + "_prompted_reasoning"
+            prompt_name = f"{prompt_name}_prompted_reasoning"
 
         if use_system_context or reasoning_agent:
             doc_context_str = await self._build_documents_context(
