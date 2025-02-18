@@ -15,6 +15,11 @@ from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
+from ..services.auth_service import AuthService  # noqa: F401
+from ..services.graph_service import GraphService  # noqa: F401
+from ..services.ingestion_service import IngestionService  # noqa: F401
+from ..services.management_service import ManagementService  # noqa: F401
+from ..services.retrieval_service import RetrievalService  # noqa: F401
 from .factory import R2RProviderFactory
 
 logger = logging.getLogger()

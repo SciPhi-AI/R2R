@@ -79,6 +79,7 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "DocumentResponse",
+    "IngestionMode",
     "IngestionStatus",
     "GraphExtractionStatus",
     "GraphConstructionStatus",
