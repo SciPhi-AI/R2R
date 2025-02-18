@@ -131,7 +131,9 @@ class Serializable(BaseModel, ABC):
 
     @property
     def lc_attributes(self) -> dict:
-        """List of attribute names that should be included in the serialized kwargs.
+        """
+        List of attribute names that should be included in the serialized
+        kwargs.
 
         These attributes must be accepted by the constructor.
         """
@@ -1589,7 +1591,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n\\*\\*\\*+\n",
                 "\n---+\n",
                 "\n___+\n",
-                # Note that this splitter doesn't handle horizontal lines defined
+                # Note that this splitter doesn't handle
+                # horizontal lines defined
                 # by *three or more* of ***, ---, or ___, but this is not handled
                 "\n\n",
                 "\n",
@@ -1791,8 +1794,8 @@ class SpacyTextSplitter(TextSplitter):
 
     Per default, Spacy's `en_core_web_sm` model is used and
     its default max_length is 1000000 (it is the length of maximum character
-    this model takes which can be increased for large files). For a faster, but
-    potentially less accurate splitting, you can use `pipe='sentencizer'`.
+    this model takes which can be increased for large files). For a faster,
+    but potentially less accurate splitting, you can use `pipe='sentencizer'`.
     """
 
     def __init__(

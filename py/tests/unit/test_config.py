@@ -218,13 +218,13 @@ def test_config_required_keys(config_file):
             section_config = getattr(config, section)
             for key in keys_to_check:
                 if isinstance(section_config, dict):
-                    assert (
-                        key in section_config
-                    ), f"Missing required key {key} in section {section}"
+                    assert key in section_config, (
+                        f"Missing required key {key} in section {section}"
+                    )
                 else:
-                    assert hasattr(
-                        section_config, key
-                    ), f"Missing required key {key} in section {section}"
+                    assert hasattr(section_config, key), (
+                        f"Missing required key {key} in section {section}"
+                    )
 
 
 def test_serialization_roundtrip(merged_config):

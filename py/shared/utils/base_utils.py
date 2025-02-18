@@ -7,8 +7,6 @@ from datetime import datetime
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncGenerator,
-    Iterable,
     Optional,
     Tuple,
     TypeVar,
@@ -262,7 +260,9 @@ def reassign_citations_in_order(
     updated_extracted.sort(key=lambda c: c.startIndex)
     labeled.sort(key=lambda x: x["startIndex"])
 
-    for labeled_item, updated_cit in zip(labeled, updated_extracted):
+    for labeled_item, updated_cit in zip(
+        labeled, updated_extracted, strict=False
+    ):
         c = Citation(
             rawIndex=labeled_item["rawIndex"],
             index=labeled_item["newIndex"],

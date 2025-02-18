@@ -84,7 +84,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 **kwargs,
             )
             return [data["embedding"] for data in response.data]
-        except AuthenticationError as e:
+        except AuthenticationError:
             logger.error(
                 "Authentication error: Invalid API key or credentials."
             )
@@ -104,7 +104,7 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                 **kwargs,
             )
             return [data["embedding"] for data in response.data]
-        except AuthenticationError as e:
+        except AuthenticationError:
             logger.error(
                 "Authentication error: Invalid API key or credentials."
             )

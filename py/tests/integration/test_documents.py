@@ -46,9 +46,9 @@ def test_create_document_with_raw_text(client: R2RClient, cleanup_documents):
     # Verify retrieval
     retrieved = client.documents.retrieve(id=doc_id)
     retrieved_results = retrieved.results
-    assert (
-        retrieved_results.id == doc_id
-    ), "Failed to retrieve the ingested raw text document"
+    assert retrieved_results.id == doc_id, (
+        "Failed to retrieve the ingested raw text document"
+    )
 
 
 def test_create_document_with_chunks(client: R2RClient, cleanup_documents):
@@ -64,9 +64,9 @@ def test_create_document_with_chunks(client: R2RClient, cleanup_documents):
 
     retrieved = client.documents.retrieve(id=doc_id)
     retrieved_results = retrieved.results
-    assert (
-        retrieved_results.id == doc_id
-    ), "Failed to retrieve the chunk-based document"
+    assert retrieved_results.id == doc_id, (
+        "Failed to retrieve the chunk-based document"
+    )
 
 
 def test_create_document_different_modes(client: R2RClient, cleanup_documents):
@@ -138,18 +138,18 @@ def test_delete_document_by_filter(client: R2RClient):
     # Verify deletion
     with pytest.raises(R2RException) as exc_info:
         client.documents.retrieve(id=doc_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Document still exists after filter-based deletion"
+    assert exc_info.value.status_code == 404, (
+        "Document still exists after filter-based deletion"
+    )
 
 
 # @pytest.mark.skip(reason="Only if superuser-specific logic is implemented")
 def test_list_document_collections(client: R2RClient, test_document):
     # This test assumes the currently logged in user is a superuser
     collections = client.documents.list_collections(id=test_document).results
-    assert isinstance(
-        collections, list
-    ), "Document collections list is not a list"
+    assert isinstance(collections, list), (
+        "Document collections list is not a list"
+    )
 
 
 # @pytest.mark.skip(
@@ -180,9 +180,9 @@ def test_list_relationships(client: R2RClient, test_document):
         relationships = client.documents.list_relationships(
             id=test_document
         ).results
-        assert isinstance(
-            relationships, list
-        ), "Relationships response not a list"
+        assert isinstance(relationships, list), (
+            "Relationships response not a list"
+        )
     except R2RException as e:
         pytest.skip(f"No relationships extracted yet: {str(e)}")
 
@@ -196,9 +196,9 @@ def test_search_documents(client: R2RClient, test_document):
     )
     assert search_results.results is not None, "Search results key not found"
     # We cannot guarantee a match, but at least we got a well-formed response
-    assert isinstance(
-        search_results.results, list
-    ), "Search results not a list"
+    assert isinstance(search_results.results, list), (
+        "Search results not a list"
+    )
 
 
 def test_list_document_chunks(mutable_client: R2RClient, cleanup_documents):
@@ -230,9 +230,9 @@ def test_search_documents_extended(client: R2RClient, cleanup_documents):
         search_mode="basic",
         search_settings={"limit": 1},
     )
-    assert (
-        search_results.results is not None
-    ), "No results key in search response"
+    assert search_results.results is not None, (
+        "No results key in search response"
+    )
     assert len(search_results.results) > 0, "No documents found"
 
 
@@ -247,9 +247,9 @@ def test_delete_document_non_existent(client):
     bad_id = str(uuid.uuid4())
     with pytest.raises(R2RException) as exc_info:
         client.documents.delete(id=bad_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for delete non-existent"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for delete non-existent"
+    )
 
 
 # @pytest.mark.skip(reason="If your API restricts this endpoint to superusers")
@@ -263,9 +263,9 @@ def test_get_document_collections_non_superuser(client):
     document_id = str(uuid.uuid4())  # Some doc ID
     with pytest.raises(R2RException) as exc_info:
         non_super_client.documents.list_collections(id=document_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Expected 403 for non-superuser collections access"
+    assert exc_info.value.status_code == 403, (
+        "Expected 403 for non-superuser collections access"
+    )
 
 
 def test_access_document_not_owned(client: R2RClient, cleanup_documents):
@@ -284,9 +284,9 @@ def test_access_document_not_owned(client: R2RClient, cleanup_documents):
 
     with pytest.raises(R2RException) as exc_info:
         non_super_client.documents.download(id=doc_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Wrong error code for unauthorized access"
+    assert exc_info.value.status_code == 403, (
+        "Wrong error code for unauthorized access"
+    )
 
 
 def test_list_documents_with_pagination(
@@ -326,9 +326,9 @@ def test_ingest_too_many_chunks(client):
         client.documents.create(
             chunks=excessive_chunks, run_with_orchestration=False
         )
-    assert (
-        exc_info.value.status_code == 400
-    ), "Wrong error code for exceeding max chunks"
+    assert exc_info.value.status_code == 400, (
+        "Wrong error code for exceeding max chunks"
+    )
 
 
 def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
@@ -355,9 +355,9 @@ def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
     for d_id in [doc1, doc2]:
         with pytest.raises(R2RException) as exc_info:
             client.documents.retrieve(d_id)
-        assert (
-            exc_info.value.status_code == 404
-        ), f"Document {d_id} still exists after deletion"
+        assert exc_info.value.status_code == 404, (
+            f"Document {d_id} still exists after deletion"
+        )
 
 
 def test_search_documents_no_match(client: R2RClient, cleanup_documents):
@@ -382,11 +382,7 @@ def test_search_documents_no_match(client: R2RClient, cleanup_documents):
     assert len(search_results.results) == 0, "Expected zero results"
 
 
-from datetime import datetime
-
 import pytest
-
-from r2r import R2RException
 
 
 def test_delete_by_workflow_metadata(client: R2RClient, cleanup_documents):

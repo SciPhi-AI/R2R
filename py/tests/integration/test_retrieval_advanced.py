@@ -1,7 +1,5 @@
 import uuid
 
-import pytest
-
 from r2r import R2RClient
 
 
@@ -32,9 +30,9 @@ def test_semantic_search_with_near_duplicates(client: R2RClient):
         if str(r.document_id) in [str(doc1), str(doc2)]
     ]
     assert len(scores) == 2, "Expected both similar documents"
-    assert (
-        len(set(scores)) == 2
-    ), "Expected different scores for similar documents"
+    assert len(set(scores)) == 2, (
+        "Expected different scores for similar documents"
+    )
 
 
 def test_semantic_search_multilingual(client: R2RClient):
@@ -132,9 +130,9 @@ def test_rag_context_window_limits(client: R2RClient):
         search_settings={"filters": {"document_id": {"$eq": str(doc_id)}}},
         rag_generation_config={"max_tokens": 100},
     )
-    assert (
-        resp.results is not None
-    ), "RAG should handle large context gracefully"
+    assert resp.results is not None, (
+        "RAG should handle large context gracefully"
+    )
 
 
 # UNCOMMENT LATER

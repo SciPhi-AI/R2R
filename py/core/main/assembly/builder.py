@@ -15,11 +15,6 @@ from ..api.v3.system_router import SystemRouter
 from ..api.v3.users_router import UsersRouter
 from ..app import R2RApp
 from ..config import R2RConfig
-from ..services.auth_service import AuthService
-from ..services.graph_service import GraphService
-from ..services.ingestion_service import IngestionService
-from ..services.management_service import ManagementService
-from ..services.retrieval_service import RetrievalService
 from .factory import R2RProviderFactory
 
 logger = logging.getLogger()

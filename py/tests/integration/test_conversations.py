@@ -34,9 +34,9 @@ def test_retrieve_conversation(client: R2RClient, test_conversation):
     retrieved = client.conversations.retrieve(id=test_conversation).results
     # A new conversation might have no messages, so results should be an empty list
     assert isinstance(retrieved, list), "Expected list of messages"
-    assert (
-        len(retrieved) == 0
-    ), "Expected empty message list for a new conversation"
+    assert len(retrieved) == 0, (
+        "Expected empty message list for a new conversation"
+    )
 
 
 def test_delete_conversation(client: R2RClient):
@@ -47,9 +47,9 @@ def test_delete_conversation(client: R2RClient):
     # Verify retrieval fails
     with pytest.raises(R2RException) as exc_info:
         client.conversations.retrieve(id=conv_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code retrieving deleted conversation"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code retrieving deleted conversation"
+    )
 
 
 def test_add_message(client: R2RClient, test_conversation):
@@ -71,18 +71,18 @@ def test_retrieve_non_existent_conversation(client: R2RClient):
     bad_id = str(uuid.uuid4())
     with pytest.raises(R2RException) as exc_info:
         client.conversations.retrieve(id=bad_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for non-existent conversation"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for non-existent conversation"
+    )
 
 
 def test_delete_non_existent_conversation(client: R2RClient):
     bad_id = str(uuid.uuid4())
     with pytest.raises(R2RException) as exc_info:
         client.conversations.delete(id=bad_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for delete non-existent"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for delete non-existent"
+    )
 
 
 def test_add_message_to_non_existent_conversation(client: R2RClient):
@@ -94,9 +94,9 @@ def test_add_message_to_non_existent_conversation(client: R2RClient):
             role="user",
         )
     # Expected a 404 since conversation doesn't exist
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for adding message to non-existent conversation"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for adding message to non-existent conversation"
+    )
 
 
 def test_update_message(client: R2RClient, test_conversation):
@@ -116,17 +116,17 @@ def test_update_message(client: R2RClient, test_conversation):
     ).results
 
     assert update_resp.message is not None, "No message returned after update"
-    assert (
-        update_resp.metadata is not None
-    ), "No metadata returned after update"
+    assert update_resp.metadata is not None, (
+        "No metadata returned after update"
+    )
     assert update_resp.id is not None, "No metadata returned after update"
 
     # Retrieve the conversation with the new branch
     updated_conv = client.conversations.retrieve(id=test_conversation).results
     assert updated_conv, "No conversation returned after update"
-    assert (
-        updated_conv[0].message.content == "Updated content"
-    ), "Message content not updated"
+    assert updated_conv[0].message.content == "Updated content", (
+        "Message content not updated"
+    )
     # found_updated = any(msg["id"] == new_message_id and msg["message"]["content"] == "Updated content" for msg in updated_conv)
     # assert found_updated, "Updated message not found in the new branch"
 
@@ -137,9 +137,9 @@ def test_update_non_existent_message(client: R2RClient, test_conversation):
         client.conversations.update_message(
             id=test_conversation, message_id=fake_msg_id, content="Should fail"
         )
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for updating non-existent message"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for updating non-existent message"
+    )
 
 
 def test_add_message_with_empty_content(client: R2RClient, test_conversation):
@@ -150,9 +150,9 @@ def test_add_message_with_empty_content(client: R2RClient, test_conversation):
             role="user",
         )
     # Check for 400 or a relevant error code depending on server validation
-    assert (
-        exc_info.value.status_code == 400
-    ), "Wrong error code or no error for empty content message"
+    assert exc_info.value.status_code == 400, (
+        "Wrong error code or no error for empty content message"
+    )
 
 
 def test_add_message_invalid_role(client: R2RClient, test_conversation):
@@ -162,9 +162,9 @@ def test_add_message_invalid_role(client: R2RClient, test_conversation):
             content="Hello",
             role="invalid_role",
         )
-    assert (
-        exc_info.value.status_code == 400
-    ), "Wrong error code or no error for invalid role"
+    assert exc_info.value.status_code == 400, (
+        "Wrong error code or no error for invalid role"
+    )
 
 
 def test_add_message_to_deleted_conversation(client: R2RClient):
@@ -179,9 +179,9 @@ def test_add_message_to_deleted_conversation(client: R2RClient):
             content="Should fail",
             role="user",
         )
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for adding message to deleted conversation"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for adding message to deleted conversation"
+    )
 
 
 def test_update_message_with_additional_metadata(
@@ -211,19 +211,19 @@ def test_update_message_with_additional_metadata(
         (msg for msg in updated_conv if str(msg.id) == str(original_msg_id)),
         None,
     )
-    assert (
-        updated_message is not None
-    ), "Updated message not found in conversation"
+    assert updated_message is not None, (
+        "Updated message not found in conversation"
+    )
 
     # Check that metadata includes old keys, new keys, and 'edited': True
     msg_metadata = updated_message.metadata
-    assert (
-        msg_metadata.get("initial_key") == "initial_value"
-    ), "Old metadata not preserved"
+    assert msg_metadata.get("initial_key") == "initial_value", (
+        "Old metadata not preserved"
+    )
     assert msg_metadata.get("new_key") == "new_value", "New metadata not added"
-    assert (
-        msg_metadata.get("edited") is True
-    ), "'edited' flag not set in metadata"
-    assert (
-        updated_message.message.content == "Updated content"
-    ), "Message content not updated"
+    assert msg_metadata.get("edited") is True, (
+        "'edited' flag not set in metadata"
+    )
+    assert updated_message.message.content == "Updated content", (
+        "Message content not updated"
+    )

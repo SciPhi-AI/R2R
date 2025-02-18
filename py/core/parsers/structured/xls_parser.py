@@ -77,11 +77,11 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
 
     def connected_components(self, arr):
         g = self.nx.grid_2d_graph(len(arr), len(arr[0]))
-        empty_cell_indices = list(zip(*self.np.where(arr == "")))
+        empty_cell_indices = list(zip(*self.np.where(arr == ""), strict=False))
         g.remove_nodes_from(empty_cell_indices)
         components = self.nx.connected_components(g)
         for component in components:
-            rows, cols = zip(*component)
+            rows, cols = zip(*component, strict=False)
             min_row, max_row = min(rows), max(rows)
             min_col, max_col = min(cols), max(cols)
             yield arr[min_row : max_row + 1, min_col : max_col + 1]
@@ -133,6 +133,8 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
 
                 for i in range(1, num_rows, num_rows_per_chunk):
                     chunk = table[i : i + num_rows_per_chunk]
-                    yield headers + "\n" + "\n".join(
-                        [", ".join(row) for row in chunk]
+                    yield (
+                        headers
+                        + "\n"
+                        + "\n".join([", ".join(row) for row in chunk])
                     )

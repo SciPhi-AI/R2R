@@ -185,7 +185,8 @@ class AuthService(Service):
             or (
                 user.hashed_password is not None
                 and self.providers.auth.crypto_provider.verify_password(
-                    password, user.hashed_password  # type: ignore
+                    password,
+                    user.hashed_password,  # type: ignore
                 )
             )
         ):

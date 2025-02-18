@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 from r2r import R2RClient, R2RException
@@ -95,6 +93,6 @@ def test_error_handling(client: R2RClient):
         client.indices.retrieve(
             index_name="nonexistent_index", table_name="chunks"
         )
-    assert (
-        "not found" in str(exc_info.value).lower()
-    ), "Unexpected error message for non-existent index"
+    assert "not found" in str(exc_info.value).lower(), (
+        "Unexpected error message for non-existent index"
+    )

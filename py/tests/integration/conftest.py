@@ -55,8 +55,6 @@ async def superuser_client(
     await client.users.logout()
 
 
-import uuid
-
 import pytest
 
 from r2r import R2RClient, R2RException

@@ -9,7 +9,6 @@ from shared.abstractions import (
     GraphSearchResultType,
     GraphSearchSettings,
     HybridSearchSettings,
-    IngestionMode,
     Message,
     MessageType,
     R2RException,

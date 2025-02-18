@@ -60,7 +60,7 @@ class CompletionProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(
@@ -83,7 +83,7 @@ class CompletionProvider(Provider):
                     async for chunk in await self._execute_task(task):
                         yield chunk
                 return  # Successful completion of the stream
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(

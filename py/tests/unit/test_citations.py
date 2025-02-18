@@ -10,9 +10,7 @@ from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
     Citation,
-    GraphCommunityResult,
     GraphEntityResult,
-    GraphRelationshipResult,
     GraphSearchResult,
     WebSearchResult,
     extract_citations,
@@ -323,15 +321,15 @@ def test_repeated_bracket_ref_basic(empty_aggregate):
 
     # The final text should have the *same* bracket each time (e.g. `[1],[1],[1]`)
     # because there's only one unique oldRef = 2, which gets mapped to newIndex=1
-    assert (
-        new_text.count("[1]") == 3
-    ), f"Expected all references to become [1], got: {new_text}"
+    assert new_text.count("[1]") == 3, (
+        f"Expected all references to become [1], got: {new_text}"
+    )
 
     # And the new_citations should all share index=1
     for cit in new_citations:
-        assert (
-            cit.index == 1
-        ), f"Expected repeated bracket index=1, got: {cit.index}"
+        assert cit.index == 1, (
+            f"Expected repeated bracket index=1, got: {cit.index}"
+        )
         # Also confirm rawIndex=2 for all occurrences
         assert cit.rawIndex == 2
 
@@ -374,27 +372,26 @@ def test_repeated_bracket_ref_with_two_values(small_aggregate):
     # We can confirm that the final text has two bracket numbers total, one for oldRef=1, one for oldRef=3
     bracket_matches = [m.group() for m in re.finditer(r"\[\d+\]", new_text)]
     unique_brackets = set(bracket_matches)
-    assert (
-        len(unique_brackets) == 2
-    ), "Expected exactly 2 bracket values in final text. Got: " + str(
-        unique_brackets
+    assert len(unique_brackets) == 2, (
+        "Expected exactly 2 bracket values in final text. Got: "
+        + str(unique_brackets)
     )
 
     # Check that oldRef=3 => newIndex=2 for all occurrences, oldRef=1 => newIndex=1
     found_1 = [c for c in new_cits if c.rawIndex == 1]
     found_3 = [c for c in new_cits if c.rawIndex == 3]
-    assert (
-        len(found_1) == 1
-    ), f"Expected exactly one bracket occurrence for oldRef=1, got {len(found_1)}"
-    assert (
-        len(found_3) == 3
-    ), f"Expected 3 bracket occurrences for oldRef=3, got {len(found_3)}"
-    assert all(
-        c.index == found_1[0].index for c in found_1
-    ), "All oldRef=1 must share the same final index"
-    assert all(
-        c.index == found_3[0].index for c in found_3
-    ), "All oldRef=3 must share the same final index"
+    assert len(found_1) == 1, (
+        f"Expected exactly one bracket occurrence for oldRef=1, got {len(found_1)}"
+    )
+    assert len(found_3) == 3, (
+        f"Expected 3 bracket occurrences for oldRef=3, got {len(found_3)}"
+    )
+    assert all(c.index == found_1[0].index for c in found_1), (
+        "All oldRef=1 must share the same final index"
+    )
+    assert all(c.index == found_3[0].index for c in found_3), (
+        "All oldRef=3 must share the same final index"
+    )
 
     collector = SearchResultsCollector()
     collector.add_aggregate_result(small_aggregate)
@@ -426,23 +423,23 @@ def test_same_bracket_in_non_sequential_text():
     # There should be exactly 2 distinct bracket numbers in the final text
     # The 3 mentions of oldRef=8 => same bracket, and the single mention of oldRef=2 => the other bracket
     unique_brackets = set(brackets_list)
-    assert (
-        len(unique_brackets) == 2
-    ), f"Expected 2 unique brackets, got: {unique_brackets}"
+    assert len(unique_brackets) == 2, (
+        f"Expected 2 unique brackets, got: {unique_brackets}"
+    )
 
     # Inside new_cits, oldRef=8 should have the same newIndex across all occurrences
     old8_cits = [c for c in new_cits if c.rawIndex == 8]
     assert len(old8_cits) == 3, "Expected 3 mentions referencing oldRef=8"
     first_new_index = old8_cits[0].index
     for c in old8_cits:
-        assert (
-            c.index == first_new_index
-        ), "All oldRef=8 must share the same final bracket index"
+        assert c.index == first_new_index, (
+            "All oldRef=8 must share the same final bracket index"
+        )
 
     old2_cits = [c for c in new_cits if c.rawIndex == 2]
-    assert (
-        len(old2_cits) == 1
-    ), "Expected exactly one mention referencing oldRef=2"
+    assert len(old2_cits) == 1, (
+        "Expected exactly one mention referencing oldRef=2"
+    )
 
     # That one mention has a different bracket index from the oldRef=8 group
     assert old2_cits[0].index != first_new_index
@@ -471,25 +468,25 @@ def test_three_unique_brackets_with_duplicates():
     bracket_list = re.findall(r"\[\d+\]", new_text)
     unique_brackets = sorted(set(bracket_list))
     # We expect exactly 3 unique bracket labels in final text:
-    assert (
-        len(unique_brackets) == 3
-    ), f"Expected 3 distinct bracket values, got {unique_brackets}"
+    assert len(unique_brackets) == 3, (
+        f"Expected 3 distinct bracket values, got {unique_brackets}"
+    )
 
     # Confirm each oldRef is consistently re-labeled:
     old3 = [c.index for c in new_cits if c.rawIndex == 3]
-    assert (
-        len(set(old3)) == 1
-    ), "All references to rawIndex=3 must share the same newIndex"
+    assert len(set(old3)) == 1, (
+        "All references to rawIndex=3 must share the same newIndex"
+    )
 
     old4 = [c.index for c in new_cits if c.rawIndex == 4]
-    assert (
-        len(set(old4)) == 1
-    ), "All references to rawIndex=4 must share the same newIndex"
+    assert len(set(old4)) == 1, (
+        "All references to rawIndex=4 must share the same newIndex"
+    )
 
     old10 = [c.index for c in new_cits if c.rawIndex == 10]
-    assert (
-        len(set(old10)) == 1
-    ), "All references to rawIndex=10 must share the same newIndex"
+    assert len(set(old10)) == 1, (
+        "All references to rawIndex=10 must share the same newIndex"
+    )
 
     # That’s the main correctness check. We can map them to actual aggregator results if we had them, but this suffices.
 
@@ -630,9 +627,9 @@ def test_end_to_end_citation_remapping(mock_aggregator_results):
     assert len(old1_cits) == 2, "We repeated oldRef=1 exactly twice"
     # They should share same final 'index' if your code unifies repeated references
     final_idx_set = {c.index for c in old1_cits}
-    assert (
-        len(final_idx_set) == 1
-    ), "All references to oldRef=1 must share the same final bracket index"
+    assert len(final_idx_set) == 1, (
+        "All references to oldRef=1 must share the same final bracket index"
+    )
     # They should map to chunk1 => doc-1
     for c in old1_cits:
         assert c.sourceType == "chunk"
@@ -783,9 +780,9 @@ def test_end_to_end_mocked_aggregator(ordered_aggregate):
 
     # oldRef=1 => repeated => should share the same newIndex
     indexes_for_1 = set(bucket[1])
-    assert (
-        len(indexes_for_1) == 1
-    ), f"All references to oldRef=1 must unify, found indexes: {indexes_for_1}"
+    assert len(indexes_for_1) == 1, (
+        f"All references to oldRef=1 must unify, found indexes: {indexes_for_1}"
+    )
 
     # Step 3: map to aggregator items
     final_mapped = map_citations_to_collector(new_cits, collector)
@@ -834,9 +831,9 @@ def test_end_to_end_mocked_aggregator(ordered_aggregate):
 
     # Confirm repeated bracket for aggregator #1
     count_b2 = new_text.count("[2]")
-    assert (
-        count_b2 == 2
-    ), f"Expected aggregator #1 references to unify to bracket [2], found text: {new_text}"
+    assert count_b2 == 2, (
+        f"Expected aggregator #1 references to unify to bracket [2], found text: {new_text}"
+    )
 
     print("Test end_to_end_mocked_aggregator passed successfully!")
 

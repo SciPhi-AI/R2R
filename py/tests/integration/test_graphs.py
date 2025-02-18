@@ -59,9 +59,9 @@ def test_update_graph(client: R2RClient, test_collection):
     ).results
 
     assert resp.name == new_name, "Name not updated correctly"
-    assert (
-        resp.description == new_description
-    ), "Description not updated correctly"
+    assert resp.description == new_description, (
+        "Description not updated correctly"
+    )
 
 
 def test_list_entities(client: R2RClient, test_collection):

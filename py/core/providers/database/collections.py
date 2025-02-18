@@ -209,7 +209,7 @@ class PostgresCollectionsHandler(Handler):
         query = f"""
             WITH updated_collection AS (
                 UPDATE {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
-                SET {', '.join(update_fields)}
+                SET {", ".join(update_fields)}
                 WHERE id = ${param_index}
                 RETURNING id, owner_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
             )
@@ -218,8 +218,8 @@ class PostgresCollectionsHandler(Handler):
                 COUNT(DISTINCT u.id) FILTER (WHERE u.id IS NOT NULL) as user_count,
                 COUNT(DISTINCT d.id) FILTER (WHERE d.id IS NOT NULL) as document_count
             FROM updated_collection uc
-            LEFT JOIN {self._get_table_name('users')} u ON uc.id = ANY(u.collection_ids)
-            LEFT JOIN {self._get_table_name('documents')} d ON uc.id = ANY(d.collection_ids)
+            LEFT JOIN {self._get_table_name("users")} u ON uc.id = ANY(u.collection_ids)
+            LEFT JOIN {self._get_table_name("documents")} d ON uc.id = ANY(d.collection_ids)
             GROUP BY uc.id, uc.owner_id, uc.name, uc.description, uc.graph_sync_status, uc.graph_cluster_status, uc.created_at, uc.updated_at
         """
         try:
@@ -252,7 +252,7 @@ class PostgresCollectionsHandler(Handler):
     async def delete_collection_relational(self, collection_id: UUID) -> None:
         # Remove collection_id from users
         user_update_query = f"""
-            UPDATE {self._get_table_name('users')}
+            UPDATE {self._get_table_name("users")}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE $1 = ANY(collection_ids)
         """
@@ -263,7 +263,7 @@ class PostgresCollectionsHandler(Handler):
         # Remove collection_id from documents
         document_update_query = f"""
             WITH updated AS (
-                UPDATE {self._get_table_name('documents')}
+                UPDATE {self._get_table_name("documents")}
                 SET collection_ids = array_remove(collection_ids, $1)
                 WHERE $1 = ANY(collection_ids)
                 RETURNING 1
@@ -307,7 +307,7 @@ class PostgresCollectionsHandler(Handler):
             SELECT d.id, d.owner_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at, d.summary,
                 COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('documents')} d
+            FROM {self._get_table_name("documents")} d
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
@@ -447,7 +447,7 @@ class PostgresCollectionsHandler(Handler):
 
             # First, check if the document exists
             document_check_query = f"""
-                SELECT 1 FROM {self._get_table_name('documents')}
+                SELECT 1 FROM {self._get_table_name("documents")}
                 WHERE id = $1
             """
             document_exists = await self.connection_manager.fetchrow_query(
@@ -461,7 +461,7 @@ class PostgresCollectionsHandler(Handler):
 
             # If document exists, proceed with the assignment
             assign_query = f"""
-                UPDATE {self._get_table_name('documents')}
+                UPDATE {self._get_table_name("documents")}
                 SET collection_ids = array_append(collection_ids, $1)
                 WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING id
@@ -478,7 +478,7 @@ class PostgresCollectionsHandler(Handler):
                 )
 
             update_collection_query = f"""
-                UPDATE {self._get_table_name('collections')}
+                UPDATE {self._get_table_name("collections")}
                 SET document_count = document_count + 1
                 WHERE id = $1
             """
@@ -514,7 +514,7 @@ class PostgresCollectionsHandler(Handler):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
-            UPDATE {self._get_table_name('documents')}
+            UPDATE {self._get_table_name("documents")}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE id = $2 AND $1 = ANY(collection_ids)
             RETURNING id
@@ -544,7 +544,7 @@ class PostgresCollectionsHandler(Handler):
             decrement_by (int): Number to decrease the count by (default: 1)
         """
         collection_query = f"""
-            UPDATE {self._get_table_name('collections')}
+            UPDATE {self._get_table_name("collections")}
             SET document_count = document_count - $1
             WHERE id = $2
         """

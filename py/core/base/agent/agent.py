@@ -12,7 +12,6 @@ from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     Message,
-    MessageType,
     R2RException,
 )
 from core.base.providers import CompletionProvider, DatabaseProvider

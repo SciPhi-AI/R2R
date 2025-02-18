@@ -159,7 +159,7 @@ class CacheablePromptHandler(Handler):
                 return cached
 
         logger.debug(
-            f"Prompt cache miss or bypass. Retrieving from DB or template cache."
+            "Prompt cache miss or bypass. Retrieving from DB or template cache."
         )
         # Notice the new parameter `bypass_template_cache` below
         result = await self._get_prompt_impl(
@@ -498,7 +498,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
         query = f"""
         UPDATE {self._get_table_name("prompts")}
-        SET {', '.join(set_clauses)}
+        SET {", ".join(set_clauses)}
         WHERE name = $1
         RETURNING id, template, input_types;
         """

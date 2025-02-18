@@ -87,7 +87,6 @@ def test_rag_stream_query(client: R2RClient):
     )
 
     # Consume a few chunks from the async generator
-    import asyncio
 
     def consume_stream():
         count = 0
@@ -120,8 +119,6 @@ def test_agent_query_stream(client: R2RClient):
         rag_generation_config={"stream": True, "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
     )
-
-    import asyncio
 
     def consume_stream():
         count = 0
@@ -191,9 +188,9 @@ def test_pagination_limit_one(client: R2RClient):
     results = client.retrieval.search(
         query="Aristotle", search_mode="basic", search_settings={"limit": 1}
     ).results
-    assert (
-        len(results.chunk_search_results) == 1
-    ), "Expected one result with limit=1"
+    assert len(results.chunk_search_results) == 1, (
+        "Expected one result with limit=1"
+    )
 
 
 def test_pagination_offset(client: R2RClient):
@@ -231,9 +228,9 @@ def test_rag_task_prompt_override(client: R2RClient):
         task_prompt_override=custom_prompt,
     ).results
     answer = results.completion
-    assert (
-        "[END-TEST-PROMPT]" in answer
-    ), "Custom prompt override not reflected in RAG answer"
+    assert "[END-TEST-PROMPT]" in answer, (
+        "Custom prompt override not reflected in RAG answer"
+    )
 
 
 def test_agent_conversation_id(client: R2RClient):
@@ -245,9 +242,9 @@ def test_agent_conversation_id(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 3},
         conversation_id=str(conversation_id),
     ).results
-    assert (
-        len(results.messages) > 0
-    ), "No results from agent with conversation_id"
+    assert len(results.messages) > 0, (
+        "No results from agent with conversation_id"
+    )
 
     msg2 = Message(role="user", content="Can you elaborate more?")
     results2 = client.retrieval.agent(
@@ -256,9 +253,9 @@ def test_agent_conversation_id(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 3},
         conversation_id=str(conversation_id),
     ).results
-    assert (
-        len(results2.messages) > 0
-    ), "No results from agent in second turn of conversation"
+    assert len(results2.messages) > 0, (
+        "No results from agent in second turn of conversation"
+    )
 
 
 def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
@@ -280,9 +277,9 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     ).results
     results = results.chunk_search_results
-    assert (
-        len(results) == 2
-    ), f"Expected 2 docs with rating > 5, got {len(results)}"
+    assert len(results) == 2, (
+        f"Expected 2 docs with rating > 5, got {len(results)}"
+    )
 
     # category in [ancient, modern]
     filters = {
@@ -299,9 +296,9 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         search_settings={"use_semantic_search": True, "filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 4
-    ), f"Expected all 4 docs, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 4, (
+        f"Expected all 4 docs, got {len(chunk_search_results)}"
+    )
 
     # rating > 5 AND category=modern
     filters = {
@@ -322,9 +319,9 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 2
-    ), f"Expected 2 modern docs with rating>5, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 2, (
+        f"Expected 2 modern docs with rating>5, got {len(chunk_search_results)}"
+    )
 
     results = client.retrieval.search(
         query="unique_philosopher",
@@ -341,9 +338,9 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         },
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 1
-    ), f"Expected 1 doc for unique_philosopher, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 1, (
+        f"Expected 1 doc for unique_philosopher, got {len(chunk_search_results)}"
+    )
 
 
 def test_complex_nested_filters(client: R2RClient, test_collection):
@@ -379,9 +376,9 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
     chunk_search_results = results.chunk_search_results
 
     print("results -> ", chunk_search_results)
-    assert (
-        len(chunk_search_results) == 2
-    ), f"Expected 2 docs, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 2, (
+        f"Expected 2 docs, got {len(chunk_search_results)}"
+    )
 
 
 def test_filters_no_match(client: R2RClient):
@@ -392,9 +389,9 @@ def test_filters_no_match(client: R2RClient):
         search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 0
-    ), f"Expected 0 docs, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 0, (
+        f"Expected 0 docs, got {len(chunk_search_results)}"
+    )
 
 
 def test_pagination_extremes(client: R2RClient):
@@ -407,9 +404,9 @@ def test_pagination_extremes(client: R2RClient):
         search_settings={"limit": 10, "offset": offset},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 0
-    ), f"Expected no results at large offset, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 0, (
+        f"Expected no results at large offset, got {len(chunk_search_results)}"
+    )
 
 
 def test_full_text_stopwords(client: R2RClient):
@@ -422,9 +419,9 @@ def test_full_text_stopwords(client: R2RClient):
             "limit": 5,
         },
     )
-    assert (
-        resp.results is not None
-    ), "No results field in stopword query response"
+    assert resp.results is not None, (
+        "No results field in stopword query response"
+    )
 
 
 def test_full_text_non_ascii(client: R2RClient):
@@ -437,9 +434,9 @@ def test_full_text_non_ascii(client: R2RClient):
             "limit": 3,
         },
     )
-    assert (
-        resp.results is not None
-    ), "No results field in non-ASCII query response"
+    assert resp.results is not None, (
+        "No results field in non-ASCII query response"
+    )
 
 
 def test_missing_fields(client: R2RClient):
@@ -450,9 +447,9 @@ def test_missing_fields(client: R2RClient):
         search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) == 0
-    ), f"Expected 0 docs for a non-existent field, got {len(chunk_search_results)}"
+    assert len(chunk_search_results) == 0, (
+        f"Expected 0 docs for a non-existent field, got {len(chunk_search_results)}"
+    )
 
 
 def test_rag_with_large_context(client: R2RClient):
@@ -461,9 +458,9 @@ def test_rag_with_large_context(client: R2RClient):
         rag_generation_config={"stream": False, "max_tokens": 200},
         search_settings={"use_semantic_search": True, "limit": 10},
     ).results
-    assert (
-        results.completion is not None
-    ), "RAG large context missing 'completion'"
+    assert results.completion is not None, (
+        "RAG large context missing 'completion'"
+    )
     completion = results.completion
     assert len(completion) > 0, "RAG large context returned empty answer"
 
@@ -478,9 +475,9 @@ def test_agent_long_conversation(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert (
-        resp1.results is not None
-    ), "No results in first turn of conversation"
+    assert resp1.results is not None, (
+        "No results in first turn of conversation"
+    )
 
     msg2 = Message(
         role="user", content="How did these ideas influence modern philosophy?"
@@ -491,9 +488,9 @@ def test_agent_long_conversation(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert (
-        resp2.results is not None
-    ), "No results in second turn of conversation"
+    assert resp2.results is not None, (
+        "No results in second turn of conversation"
+    )
 
     msg3 = Message(role="user", content="Now tell me about Descartes.")
     resp3 = client.retrieval.agent(
@@ -502,9 +499,9 @@ def test_agent_long_conversation(client: R2RClient):
         search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert (
-        resp3.results is not None
-    ), "No results in third turn of conversation"
+    assert resp3.results is not None, (
+        "No results in third turn of conversation"
+    )
 
 
 def test_filter_by_document_type(client: R2RClient):
@@ -521,6 +518,6 @@ def test_filter_by_document_type(client: R2RClient):
         query="a", search_settings={"filters": filters}
     ).results
     chunk_search_results = results.chunk_search_results
-    assert (
-        len(chunk_search_results) > 0
-    ), "No results found for filter by document type"
+    assert len(chunk_search_results) > 0, (
+        "No results found for filter by document type"
+    )

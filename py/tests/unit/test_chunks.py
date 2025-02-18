@@ -112,9 +112,9 @@ class TestChunks:
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
         assert str(retrieved.id) == str(chunk_id), "Retrieved wrong chunk ID"
-        assert (
-            retrieved.text.split("_")[0] == "Test chunk 1"
-        ), "Chunk text mismatch"
+        assert retrieved.text.split("_")[0] == "Test chunk 1", (
+            "Chunk text mismatch"
+        )
 
     @pytest.mark.asyncio
     async def test_update_chunk(
@@ -245,23 +245,23 @@ class TestChunks:
             # Test first page
             response1 = await test_client.client.chunks.list(offset=0, limit=2)
 
-            assert (
-                len(response1.results) == 2
-            ), "Expected 2 results on first page"
+            assert len(response1.results) == 2, (
+                "Expected 2 results on first page"
+            )
 
             # Test second page
             response2 = await test_client.client.chunks.list(offset=2, limit=2)
 
-            assert (
-                len(response2.results) == 2
-            ), "Expected 2 results on second page"
+            assert len(response2.results) == 2, (
+                "Expected 2 results on second page"
+            )
 
             # Verify no duplicate results
             ids_page1 = {str(chunk.id) for chunk in response1.results}
             ids_page2 = {str(chunk.id) for chunk in response2.results}
-            assert not ids_page1.intersection(
-                ids_page2
-            ), "Found duplicate chunks across pages"
+            assert not ids_page1.intersection(ids_page2), (
+                "Found duplicate chunks across pages"
+            )
 
         finally:
             # Cleanup
@@ -301,9 +301,9 @@ class TestChunks:
             chunk_doc_ids = {
                 str(chunk.document_id) for chunk in response.results
             }
-            assert all(
-                str(doc_id) in chunk_doc_ids for doc_id in doc_ids
-            ), "Got chunks from wrong documents"
+            assert all(str(doc_id) in chunk_doc_ids for doc_id in doc_ids), (
+                "Got chunks from wrong documents"
+            )
 
         finally:
             # Cleanup

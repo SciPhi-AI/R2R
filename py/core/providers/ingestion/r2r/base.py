@@ -126,12 +126,12 @@ class R2RIngestionProvider(IngestionProvider):
                     llm_provider=self.llm_provider,
                 )
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[
-                f"{doc_parser_name}_{str(doc_type)}"
-            ] = R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
-                config=self.config,
-                database_provider=self.database_provider,
-                llm_provider=self.llm_provider,
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
+                    config=self.config,
+                    database_provider=self.database_provider,
+                    llm_provider=self.llm_provider,
+                )
             )
 
     def _build_text_splitter(

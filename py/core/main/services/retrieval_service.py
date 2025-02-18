@@ -202,9 +202,10 @@ class RetrievalService(Service):
             self._graph_search_logic(query, search_settings)
         )
 
-        chunk_search_results, graph_search_results_results = (
-            await asyncio.gather(vector_task, graph_task)
-        )
+        (
+            chunk_search_results,
+            graph_search_results_results,
+        ) = await asyncio.gather(vector_task, graph_task)
 
         # 3) Wrap up in an `AggregateSearchResult`, or your CombinedSearchResponse
         aggregated_result = AggregateSearchResult(
@@ -747,9 +748,7 @@ class RetrievalService(Service):
                             )
                     messages = messages_from_conversation + messages
             else:  # Create new conversation
-                conversation_response = (
-                    await self.providers.database.conversations_handler.create_conversation()
-                )
+                conversation_response = await self.providers.database.conversations_handler.create_conversation()
                 conversation_id = conversation_response.id
                 needs_conversation_name = True
 
@@ -1028,7 +1027,7 @@ class RetrievalService(Service):
                         .choices[0]
                         .message.content
                     )
-                except Exception as e:
+                except Exception:
                     pass
                 finally:
                     await self.providers.database.conversations_handler.update_conversation(
@@ -1160,7 +1159,7 @@ class RetrievalService(Service):
                     "$overlap"
                 ]
                 return user_id, [str(ele) for ele in collection_ids]
-            except Exception as e:
+            except Exception:
                 logger.error(
                     """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
                 )
@@ -1205,7 +1204,7 @@ class RetrievalService(Service):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
-                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
+                f"[{i}] Title: {title}, Summary: {(doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
         return "\n".join(lines)
 

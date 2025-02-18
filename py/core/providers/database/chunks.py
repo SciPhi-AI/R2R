@@ -472,8 +472,8 @@ class PostgresChunksHandler(Handler):
             FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             {where_clause}
             ORDER BY rank DESC
-            OFFSET ${len(params)+1}
-            LIMIT ${len(params)+2}
+            OFFSET ${len(params) + 1}
+            LIMIT ${len(params) + 2}
         """
 
         params.extend(
@@ -528,9 +528,9 @@ class PostgresChunksHandler(Handler):
         semantic_results: list[ChunkSearchResult] = await self.semantic_search(
             query_vector, semantic_settings
         )
-        full_text_results: list[ChunkSearchResult] = (
-            await self.full_text_search(query_text, full_text_settings)
-        )
+        full_text_results: list[
+            ChunkSearchResult
+        ] = await self.full_text_search(query_text, full_text_settings)
 
         semantic_limit = search_settings.limit
         full_text_limit = search_settings.hybrid_settings.full_text_limit
@@ -1156,7 +1156,7 @@ class PostgresChunksHandler(Handler):
                         )
                     END as metadata_rank
                 FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} v
-                LEFT JOIN {self._get_table_name('documents')} d ON v.document_id = d.id
+                LEFT JOIN {self._get_table_name("documents")} d ON v.document_id = d.id
                 WHERE v.metadata IS NOT NULL
             ),
             -- Body search scores
