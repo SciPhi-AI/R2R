@@ -187,14 +187,14 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     )
         # TODO - Reduce code duplication between Unstructured & R2R
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[
-                f"{doc_parser_name}_{str(doc_type)}"
-            ] = UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
-                doc_parser_name
-            ](
-                config=self.config,
-                database_provider=self.database_provider,
-                llm_provider=self.llm_provider,
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
+                    doc_parser_name
+                ](
+                    config=self.config,
+                    database_provider=self.database_provider,
+                    llm_provider=self.llm_provider,
+                )
             )
 
     async def parse_fallback(
@@ -204,7 +204,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
         parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
         context = ""
-        async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
+        async for text in self.parsers[parser_name].ingest(
+            file_content, **ingestion_config
+        ):  # type: ignore
             if text is not None:
                 context += text + "\n\n"
         logging.info(f"Fallback ingestion with config = {ingestion_config}")

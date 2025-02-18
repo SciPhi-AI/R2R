@@ -137,9 +137,9 @@ def test_all_routes_have_base_endpoint_decorator(router):
             continue
 
         endpoint = route.endpoint
-        assert hasattr(
-            endpoint, "_is_base_endpoint"
-        ), f"Route {route.path} missing @base_endpoint decorator"
+        assert hasattr(endpoint, "_is_base_endpoint"), (
+            f"Route {route.path} missing @base_endpoint decorator"
+        )
 
 
 def test_all_routes_have_proper_return_type_hints(router):
@@ -162,9 +162,9 @@ def test_all_routes_have_proper_return_type_hints(router):
             or return_type == _TemplateResponse
         )
 
-        assert (
-            is_valid
-        ), f"Route {route.path} has invalid return type: {return_type}, expected R2RResults[...]"
+        assert is_valid, (
+            f"Route {route.path} has invalid return type: {return_type}, expected R2RResults[...]"
+        )
 
 
 def test_all_routes_have_rate_limiting(router):

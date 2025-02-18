@@ -88,9 +88,9 @@ def test_collection_id_ne_filter(
         query="whoami", search_settings={"filters": filters}
     ).results.chunk_search_results
     found_ids = {str(d.document_id) for d in listed}
-    assert (
-        str(coll_ids[0]) not in found_ids
-    ), f"Expected no coll0, got {found_ids}"
+    assert str(coll_ids[0]) not in found_ids, (
+        f"Expected no coll0, got {found_ids}"
+    )
 
     # expected_ids = {doc3, doc4}
 
@@ -135,9 +135,9 @@ def test_collection_id_nin_filter(
     found_ids = {str(d.document_id) for d in listed}
     # expected_ids = {doc1, doc3, doc4}
     found_ids = {str(d.document_id) for d in listed}
-    assert (
-        str(coll_ids[1]) not in found_ids
-    ), f"Expected no coll1, got {found_ids}"
+    assert str(coll_ids[1]) not in found_ids, (
+        f"Expected no coll1, got {found_ids}"
+    )
 
     # assert expected_ids.issubset(
     #     found_ids

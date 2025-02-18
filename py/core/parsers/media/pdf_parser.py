@@ -246,13 +246,13 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                                 "Nl",
                                 "No",
                             ]  # Keep letters and numbers
-                            or "\u4E00" <= x <= "\u9FFF"  # Chinese characters
-                            or "\u0600" <= x <= "\u06FF"  # Arabic characters
-                            or "\u0400" <= x <= "\u04FF"  # Cyrillic letters
-                            or "\u0370" <= x <= "\u03FF"  # Greek letters
-                            or "\u0E00" <= x <= "\u0E7F"  # Thai
-                            or "\u3040" <= x <= "\u309F"  # Japanese Hiragana
-                            or "\u30A0" <= x <= "\u30FF"  # Katakana
+                            or "\u4e00" <= x <= "\u9fff"  # Chinese characters
+                            or "\u0600" <= x <= "\u06ff"  # Arabic characters
+                            or "\u0400" <= x <= "\u04ff"  # Cyrillic letters
+                            or "\u0370" <= x <= "\u03ff"  # Greek letters
+                            or "\u0e00" <= x <= "\u0e7f"  # Thai
+                            or "\u3040" <= x <= "\u309f"  # Japanese Hiragana
+                            or "\u30a0" <= x <= "\u30ff"  # Katakana
                             or x in string.printable
                         ),
                         page_text,

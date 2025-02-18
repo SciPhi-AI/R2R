@@ -1,6 +1,4 @@
-import json
 import uuid
-from uuid import UUID
 
 import pytest
 
@@ -127,6 +125,6 @@ async def test_delete_conversation(conversations_handler):
 
     with pytest.raises(R2RException) as exc:
         await conversations_handler.get_conversation(conv_id)
-    assert (
-        exc.value.status_code == 404
-    ), "Conversation should be deleted and not found"
+    assert exc.value.status_code == 404, (
+        "Conversation should be deleted and not found"
+    )

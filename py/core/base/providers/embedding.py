@@ -74,7 +74,7 @@ class EmbeddingProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(
@@ -92,7 +92,7 @@ class EmbeddingProvider(Provider):
         while retries < self.config.max_retries:
             try:
                 return self._execute_task_sync(task)
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(

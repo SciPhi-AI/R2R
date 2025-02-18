@@ -1,5 +1,4 @@
 import uuid
-from uuid import UUID
 
 import pytest
 
@@ -202,6 +201,6 @@ async def test_delete_nonexistent_collection(collections_handler):
     non_existent_id = uuid.uuid4()
     with pytest.raises(R2RException) as exc:
         await collections_handler.delete_collection_relational(non_existent_id)
-    assert (
-        exc.value.status_code == 404
-    ), "Should raise 404 for non-existing collection"
+    assert exc.value.status_code == 404, (
+        "Should raise 404 for non-existing collection"
+    )

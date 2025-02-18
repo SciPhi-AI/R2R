@@ -719,7 +719,7 @@ class PostgresUserHandler(Handler):
             )
 
         update_collection_query = f"""
-            UPDATE {self._get_table_name('collections')}
+            UPDATE {self._get_table_name("collections")}
             SET user_count = user_count + 1
             WHERE id = $1
         """
@@ -874,7 +874,7 @@ class PostgresUserHandler(Handler):
                     u.id as user_id,
                     ARRAY_AGG(d.id) FILTER (WHERE d.id IS NOT NULL) AS doc_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN {self._get_table_name("documents")} d ON u.id = d.owner_id
                 GROUP BY u.id
             ),
             user_docs AS (
@@ -894,9 +894,9 @@ class PostgresUserHandler(Handler):
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ud.doc_ids as document_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN {self._get_table_name("documents")} d ON u.id = d.owner_id
                 LEFT JOIN user_document_ids ud ON u.id = ud.user_id
-                {' WHERE u.id = ANY($3::uuid[])' if user_ids else ''}
+                {" WHERE u.id = ANY($3::uuid[])" if user_ids else ""}
                 GROUP BY u.id, u.email, u.is_superuser, u.is_active, u.is_verified,
                          u.created_at, u.updated_at, u.collection_ids, ud.doc_ids
             )

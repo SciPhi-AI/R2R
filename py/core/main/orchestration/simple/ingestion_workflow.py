@@ -302,6 +302,7 @@ def simple_ingestion_factory(service: IngestionService):
                 document_ids,
                 documents_overview,
                 file_sizes_in_bytes,
+                strict=False,
             )
         ):
             new_version = increment_version(doc_info.version)

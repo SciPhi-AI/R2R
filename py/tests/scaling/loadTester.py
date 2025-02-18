@@ -187,14 +187,14 @@ class LoadTester:
         print(f"Failed Requests: {failed_requests}")
 
         if durations:
-            print(f"\nLatency Statistics (ms):")
-            print(f"Min: {min(durations)/1000.:.2f}")
-            print(f"Max: {max(durations)/1000.:.2f}")
-            print(f"Mean: {statistics.mean(durations)/1000.:.2f}")
-            print(f"Median: {statistics.median(durations)/1000.:.2f}")
+            print("\nLatency Statistics (ms):")
+            print(f"Min: {min(durations) / 1000.0:.2f}")
+            print(f"Max: {max(durations) / 1000.0:.2f}")
+            print(f"Mean: {statistics.mean(durations) / 1000.0:.2f}")
+            print(f"Median: {statistics.median(durations) / 1000.0:.2f}")
             try:
                 print(
-                    f"95th Percentile: {statistics.quantiles(durations, n=20)[-1]/1000.:.2f}"
+                    f"95th Percentile: {statistics.quantiles(durations, n=20)[-1] / 1000.0:.2f}"
                 )
             except Exception:
                 pass

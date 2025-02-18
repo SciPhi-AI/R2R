@@ -54,9 +54,7 @@ class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: list = (
-            []
-        )  # Changed from dict to list for PostgreSQL $1, $2 style
+        self.params: list = []  # Changed from dict to list for PostgreSQL $1, $2 style
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None

@@ -438,9 +438,7 @@ class DocumentsRouter(BaseRouterV3):
                         )
                         raw_message["document_id"] = str(document_id)
                         return raw_message  # type: ignore
-                    except (
-                        Exception
-                    ) as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
+                    except Exception as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
                         logger.error(
                             f"Error running orchestrated ingestion: {e} \n\nAttempting to run without orchestration."
                         )
@@ -541,7 +539,9 @@ class DocumentsRouter(BaseRouterV3):
                 try:
                     # TODO - Modify create_chunks so that we can add chunks to existing document
 
-                    raw_message: dict[str, str | None] = await self.providers.orchestration.run_workflow(  # type: ignore
+                    raw_message: dict[
+                        str, str | None
+                    ] = await self.providers.orchestration.run_workflow(  # type: ignore
                         "ingest-files",
                         {"request": workflow_input},
                         options={
@@ -552,9 +552,7 @@ class DocumentsRouter(BaseRouterV3):
                     )
                     raw_message["document_id"] = str(document_id)
                     return raw_message  # type: ignore
-                except (
-                    Exception
-                ) as e:  # TODO: Need to find specific error (gRPC most likely?)
+                except Exception as e:  # TODO: Need to find specific error (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated ingestion: {e} \n\nAttempting to run without orchestration."
                     )
@@ -655,12 +653,13 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_documents(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_documents(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -750,12 +749,14 @@ class DocumentsRouter(BaseRouterV3):
                         message="Non-superusers must provide document IDs to export.",
                     )
 
-            zip_name, zip_content, zip_size = (
-                await self.services.management.export_files(
-                    document_ids=document_ids,
-                    start_date=start_date,
-                    end_date=end_date,
-                )
+            (
+                zip_name,
+                zip_content,
+                zip_size,
+            ) = await self.services.management.export_files(
+                document_ids=document_ids,
+                start_date=start_date,
+                end_date=end_date,
             )
             encoded_filename = quote(zip_name)
 
@@ -1292,8 +1293,10 @@ class DocumentsRouter(BaseRouterV3):
             filters_dict = {
                 "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
             }
-            await self.services.management.delete_documents_and_chunks_by_filter(
-                filters=filters_dict
+            await (
+                self.services.management.delete_documents_and_chunks_by_filter(
+                    filters=filters_dict
+                )
             )
 
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -1366,8 +1369,10 @@ class DocumentsRouter(BaseRouterV3):
                     "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
                 }
 
-            await self.services.management.delete_documents_and_chunks_by_filter(
-                filters=filters
+            await (
+                self.services.management.delete_documents_and_chunks_by_filter(
+                    filters=filters
+                )
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 
@@ -1572,9 +1577,7 @@ class DocumentsRouter(BaseRouterV3):
                     return await self.providers.orchestration.run_workflow(  # type: ignore
                         "graph-extraction", {"request": workflow_input}, {}
                     )
-                except (
-                    Exception
-                ) as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
+                except Exception as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
                     )
@@ -1711,9 +1714,7 @@ class DocumentsRouter(BaseRouterV3):
                         {"request": workflow_input},
                         {},
                     )
-                except (
-                    Exception
-                ) as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
+                except Exception as e:  # TODO: Need to find specific errors that we should be excepting (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated deduplication: {e} \n\nAttempting to run without orchestration."
                     )
@@ -1924,13 +1925,14 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_document_entities(
-                    id=id,
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_document_entities(
+                id=id,
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -2165,13 +2167,14 @@ class DocumentsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_document_relationships(
-                    id=id,
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_document_relationships(
+                id=id,
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)

@@ -53,11 +53,11 @@ async def test_log_request_and_count(limits_handler):
             route_count = await limits_handler._count_requests(
                 user_id, route, one_min_ago
             )
-            print(f"Route count after request {i+1}: {route_count}")
+            print(f"Route count after request {i + 1}: {route_count}")
 
             # This should pass for all 5 requests
             await limits_handler.check_limits(test_user, route)
-            print(f"Check limits passed after request {i+1}")
+            print(f"Check limits passed after request {i + 1}")
 
         # Log the 6th request (over limit)
         await limits_handler.log_request(user_id, route)
@@ -231,7 +231,7 @@ async def test_user_level_override(limits_handler):
         route_count = await limits_handler._count_requests(
             user_id, route, one_min_ago
         )
-        print(f"\nAfter first request:")
+        print("\nAfter first request:")
         print(f"Global count: {global_count}")
         print(f"Route count: {route_count}")
 
@@ -290,19 +290,19 @@ async def test_determine_effective_limits(limits_handler):
 
         # Check final / effective limits
         # Global limit overridden to 6
-        assert (
-            effective.global_per_min == 6
-        ), "User-level global override not applied"
+        assert effective.global_per_min == 6, (
+            "User-level global override not applied"
+        )
 
         # route_per_min should be overridden to 2 (not the route-level 3)
-        assert (
-            effective.route_per_min == 2
-        ), "User-level route override not applied"
+        assert effective.route_per_min == 2, (
+            "User-level route override not applied"
+        )
 
         # monthly_limit from route-level override is 30, user didn't override it, so it should stay 30
-        assert (
-            effective.monthly_limit == 30
-        ), "Route-level monthly override not applied"
+        assert effective.monthly_limit == 30, (
+            "Route-level monthly override not applied"
+        )
     finally:
         # revert changes
         limits_handler.config.limits = old_limits
@@ -366,12 +366,12 @@ async def test_separate_route_usage_is_isolated(limits_handler):
     routeB_count_after = await limits_handler._count_requests(
         user_id, routeB, one_min_ago
     )
-    assert (
-        routeA_count_after == 3
-    ), f"RouteA usage changed unexpectedly: {routeA_count_after}"
-    assert (
-        routeB_count_after == 2
-    ), f"RouteB usage is wrong: {routeB_count_after}"
+    assert routeA_count_after == 3, (
+        f"RouteA usage changed unexpectedly: {routeA_count_after}"
+    )
+    assert routeB_count_after == 2, (
+        f"RouteB usage is wrong: {routeB_count_after}"
+    )
 
 
 # @pytest.mark.asyncio
@@ -475,17 +475,17 @@ async def test_route_specific_monthly_usage(limits_handler):
     routeB_monthly_after = await limits_handler._count_monthly_requests(
         user_id, routeB
     )
-    assert (
-        routeA_monthly_after == 5
-    ), f"RouteA usage changed unexpectedly: {routeA_monthly_after}"
-    assert (
-        routeB_monthly_after == 3
-    ), f"RouteB usage is wrong: {routeB_monthly_after}"
+    assert routeA_monthly_after == 5, (
+        f"RouteA usage changed unexpectedly: {routeA_monthly_after}"
+    )
+    assert routeB_monthly_after == 3, (
+        f"RouteB usage is wrong: {routeB_monthly_after}"
+    )
 
     # Additionally confirm total usage across all routes
     global_monthly = await limits_handler._count_monthly_requests(
         user_id, route=None
     )
-    assert (
-        global_monthly == 8
-    ), f"Expected total of 8 monthly requests, got {global_monthly}"
+    assert global_monthly == 8, (
+        f"Expected total of 8 monthly requests, got {global_monthly}"
+    )

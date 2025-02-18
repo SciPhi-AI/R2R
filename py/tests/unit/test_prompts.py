@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 
@@ -181,15 +180,15 @@ async def test_get_cached_prompt(prompt_handler):
         prompt_name, {"key": "Alice"}
     )
     assert "Bob" not in content_2  # Just to ensure we see the difference
-    assert (
-        "Updated in DB" not in content_2
-    ), "Should not see updated text if cache is used."
+    assert "Updated in DB" not in content_2, (
+        "Should not see updated text if cache is used."
+    )
     assert "Cached template" in content_2
 
     # Bypass cache
     content_3 = await prompt_handler.get_cached_prompt(
         prompt_name, {"key": "Alice"}, bypass_cache=True
     )
-    assert (
-        "Updated in DB" in content_3
-    ), "Now we should see the new DB changes after bypassing cache."
+    assert "Updated in DB" in content_3, (
+        "Now we should see the new DB changes after bypassing cache."
+    )

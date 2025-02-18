@@ -275,12 +275,13 @@ class ConversationsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_conversations(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_conversations(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -374,12 +375,13 @@ class ConversationsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_messages(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_messages(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)

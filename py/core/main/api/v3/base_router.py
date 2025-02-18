@@ -130,7 +130,8 @@ class BaseRouterV3:
             # 2) Rate-limit check
             try:
                 await self.providers.database.limits_handler.check_limits(
-                    user=user, route=route  # Pass the User object
+                    user=user,
+                    route=route,  # Pass the User object
                 )
             except ValueError as e:
                 # If check_limits raises ValueError -> 429 Too Many Requests

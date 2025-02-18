@@ -104,15 +104,21 @@ class R2RConfig:
 
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
-        self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
+        self.completion = CompletionConfig.create(
+            **self.completion, app=self.app
+        )  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
         self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
-        self.completion_embedding = EmbeddingConfig.create(**self.completion_embedding, app=self.app)  # type: ignore
+        self.completion_embedding = EmbeddingConfig.create(
+            **self.completion_embedding, app=self.app
+        )  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
-        self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+        self.orchestration = OrchestrationConfig.create(
+            **self.orchestration, app=self.app
+        )  # type: ignore
 
         IngestionConfig.set_default(**self.ingestion.dict())
 

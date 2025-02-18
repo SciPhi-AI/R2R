@@ -91,9 +91,9 @@ def test_non_member_cannot_view_collection(
     # The normal user is not added to the superuser collection, should fail
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.collections.retrieve(superuser_owned_collection)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-member should not be able to view collection."
+    assert exc_info.value.status_code == 403, (
+        "Non-member should not be able to view collection."
+    )
 
 
 def test_collection_owner_can_view_collection(
@@ -103,9 +103,9 @@ def test_collection_owner_can_view_collection(
     coll = normal_user_client.collections.retrieve(
         user_owned_collection
     ).results
-    assert (
-        coll.id == user_owned_collection
-    ), "Owner cannot view their own collection."
+    assert coll.id == user_owned_collection, (
+        "Owner cannot view their own collection."
+    )
 
 
 def test_collection_member_can_view_collection(
@@ -153,9 +153,9 @@ def test_non_owner_member_cannot_edit_collection(
         another_normal_user_client.collections.update(
             user_owned_collection, name="Malicious Update"
         )
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-owner member should not be able to edit."
+    assert exc_info.value.status_code == 403, (
+        "Non-owner member should not be able to edit."
+    )
 
 
 def test_non_owner_member_cannot_delete_collection(
@@ -173,9 +173,9 @@ def test_non_owner_member_cannot_delete_collection(
     # Another user tries to delete
     with pytest.raises(R2RException) as exc_info:
         another_normal_user_client.collections.delete(user_owned_collection)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-owner member should not be able to delete."
+    assert exc_info.value.status_code == 403, (
+        "Non-owner member should not be able to delete."
+    )
 
 
 def test_non_owner_member_cannot_add_other_users(
@@ -211,9 +211,9 @@ def test_non_owner_member_cannot_add_other_users(
         another_normal_user_client.collections.add_user(
             user_owned_collection, third_user_id
         )
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-owner member should not be able to add users."
+    assert exc_info.value.status_code == 403, (
+        "Non-owner member should not be able to add users."
+    )
 
 
 def test_owner_can_remove_member_from_collection(
@@ -237,9 +237,9 @@ def test_owner_can_remove_member_from_collection(
     # The removed user should no longer have access
     with pytest.raises(R2RException) as exc_info:
         another_normal_user_client.collections.retrieve(user_owned_collection)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Removed user still has access after removal."
+    assert exc_info.value.status_code == 403, (
+        "Removed user still has access after removal."
+    )
 
 
 def test_superuser_can_access_any_collection(
@@ -248,17 +248,17 @@ def test_superuser_can_access_any_collection(
     """A superuser should be able to view and edit any collection."""
     # Superuser can view
     coll = client.collections.retrieve(user_owned_collection).results
-    assert (
-        coll.id == user_owned_collection
-    ), "Superuser cannot view a user collection."
+    assert coll.id == user_owned_collection, (
+        "Superuser cannot view a user collection."
+    )
 
     # Superuser can also update
     updated = client.collections.update(
         user_owned_collection, name="Superuser Edit"
     ).results
-    assert (
-        updated.name == "Superuser Edit"
-    ), "Superuser cannot edit collection."
+    assert updated.name == "Superuser Edit", (
+        "Superuser cannot edit collection."
+    )
 
 
 def test_unauthenticated_cannot_access_collections(
@@ -272,9 +272,9 @@ def test_unauthenticated_cannot_access_collections(
     unauth_client.users.login(user_name, "unauth_password")
     with pytest.raises(R2RException) as exc_info:
         unauth_client.collections.retrieve(user_owned_collection)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Unaurthorized user should get 403"
+    assert exc_info.value.status_code == 403, (
+        "Unaurthorized user should get 403"
+    )
 
 
 def test_user_cannot_add_document_to_collection_they_cannot_edit(
@@ -321,9 +321,9 @@ def test_user_cannot_add_document_to_collection_they_cannot_edit(
     # Second user tries to add their doc2_id to the owner’s collection
     with pytest.raises(R2RException) as exc_info:
         second_client.collections.add_document(coll_id, doc2_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-owner member should not add documents."
+    assert exc_info.value.status_code == 403, (
+        "Non-owner member should not add documents."
+    )
 
     # Cleanup
     normal_user_client.collections.delete(coll_id)
@@ -363,9 +363,9 @@ def test_user_cannot_remove_document_from_collection_they_cannot_edit(
     # Member tries to remove the document
     with pytest.raises(R2RException) as exc_info:
         member_client.collections.remove_document(coll_id, doc_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Member should not remove documents."
+    assert exc_info.value.status_code == 403, (
+        "Member should not remove documents."
+    )
 
     # Cleanup
     normal_user_client.collections.delete(coll_id)
@@ -383,9 +383,9 @@ def test_normal_user_cannot_make_another_user_superuser(
     # Try updating their superuser status
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.users.update(new_user_id, is_superuser=True)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-superuser should not grant superuser status."
+    assert exc_info.value.status_code == 403, (
+        "Non-superuser should not grant superuser status."
+    )
 
 
 def test_normal_user_cannot_view_other_users_if_not_superuser(
@@ -394,9 +394,9 @@ def test_normal_user_cannot_view_other_users_if_not_superuser(
     """A normal user tries to list all users, should fail."""
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.users.list()
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-superuser should not list all users."
+    assert exc_info.value.status_code == 403, (
+        "Non-superuser should not list all users."
+    )
 
 
 def test_normal_user_cannot_update_other_users_details(
@@ -416,9 +416,9 @@ def test_normal_user_cannot_update_other_users_details(
     # Try to update as first normal user (not superuser, not same user)
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.users.update(another_user_id, name="Hacked Name")
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-superuser should not update another user's info."
+    assert exc_info.value.status_code == 403, (
+        "Non-superuser should not update another user's info."
+    )
 
 
 # Additional Tests for Strengthened Coverage
@@ -442,9 +442,9 @@ def test_owner_cannot_promote_member_to_superuser_via_collection(
     # Try to update the member's superuser status
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.users.update(another_user_id, is_superuser=True)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Collection owners should not grant superuser status."
+    assert exc_info.value.status_code == 403, (
+        "Collection owners should not grant superuser status."
+    )
 
 
 def test_member_cannot_view_other_users_info(
@@ -466,9 +466,9 @@ def test_member_cannot_view_other_users_info(
     owner_id = normal_user_client.users.me().results.id
     with pytest.raises(R2RException) as exc_info:
         another_normal_user_client.users.retrieve(owner_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Members should not be able to view other users' details."
+    assert exc_info.value.status_code == 403, (
+        "Members should not be able to view other users' details."
+    )
 
 
 def test_unauthenticated_user_cannot_join_collection(
@@ -511,9 +511,9 @@ def test_non_owner_cannot_remove_users_they_did_not_add(
         another_normal_user_client.collections.remove_user(
             user_owned_collection, another_user_id
         )
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-owner member should not remove other users."
+    assert exc_info.value.status_code == 403, (
+        "Non-owner member should not remove other users."
+    )
 
 
 def test_owner_cannot_access_deleted_member_info_after_removal(
@@ -543,9 +543,9 @@ def test_owner_cannot_access_deleted_member_info_after_removal(
     with pytest.raises(R2RException) as exc_info:
         normal_user_client.users.retrieve(another_user_id)
     # We expect a 403 because normal_user_client is not superuser and not that user.
-    assert (
-        exc_info.value.status_code == 403
-    ), "Owner should not access removed member's user info."
+    assert exc_info.value.status_code == 403, (
+        "Owner should not access removed member's user info."
+    )
 
 
 def test_member_cannot_add_document_to_non_existent_collection(

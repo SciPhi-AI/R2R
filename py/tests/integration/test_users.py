@@ -2,9 +2,7 @@ import uuid
 
 import pytest
 
-from core.providers.database.postgres import PostgresUserHandler
 from r2r import R2RClient, R2RException
-from shared.abstractions import User
 
 
 @pytest.fixture(scope="session")
@@ -54,9 +52,9 @@ def test_user_refresh_token(client: R2RClient):
     old_access_token = client.access_token
 
     new_access_token = client.users.refresh_token().results.access_token.token
-    assert (
-        new_access_token != old_access_token
-    ), "Refresh token did not provide a new access token."
+    assert new_access_token != old_access_token, (
+        "Refresh token did not provide a new access token."
+    )
 
 
 def test_change_password(client: R2RClient):
@@ -74,9 +72,9 @@ def test_change_password(client: R2RClient):
     client.users.logout()
     with pytest.raises(R2RException) as exc_info:
         client.users.login(random_email, old_password)
-    assert (
-        exc_info.value.status_code == 401
-    ), "Old password should not work anymore."
+    assert exc_info.value.status_code == 401, (
+        "Old password should not work anymore."
+    )
 
     # New password should work
     client.users.login(random_email, new_password)
@@ -206,9 +204,9 @@ def test_delete_user(client: R2RClient):
     with pytest.raises(R2RException) as exc_info:
         client.users.login(random_email, password)
 
-    assert (
-        exc_info.value.status_code == 404
-    ), "User still exists after deletion."
+    assert exc_info.value.status_code == 404, (
+        "User still exists after deletion."
+    )
 
 
 def test_superuser_downgrade_permissions(
@@ -222,9 +220,9 @@ def test_superuser_downgrade_permissions(
 
     # Upgrade user to superuser
     upgraded_user = client.users.update(new_user_id, is_superuser=True).results
-    assert (
-        upgraded_user.is_superuser == True
-    ), "User not upgraded to superuser."
+    assert upgraded_user.is_superuser == True, (
+        "User not upgraded to superuser."
+    )
 
     # Logout admin, login as new superuser
     client.users.logout()
@@ -245,9 +243,9 @@ def test_superuser_downgrade_permissions(
     client.users.login(user_email, user_password)
     with pytest.raises(R2RException) as exc_info:
         client.users.list()
-    assert (
-        exc_info.value.status_code == 403
-    ), "Downgraded user still has superuser privileges."
+    assert exc_info.value.status_code == 403, (
+        "Downgraded user still has superuser privileges."
+    )
     client.users.logout()
 
 
@@ -277,9 +275,9 @@ def test_non_owner_delete_collection(client: R2RClient):
     client.users.login(non_owner_email, non_owner_password)
     with pytest.raises(R2RException) as exc_info:
         result = client.collections.delete(coll_id)
-    assert (
-        exc_info.value.status_code == 403
-    ), "Wrong error code for non-owner deletion attempt"
+    assert exc_info.value.status_code == 403, (
+        "Wrong error code for non-owner deletion attempt"
+    )
 
     # Cleanup
     client.users.logout()
@@ -355,9 +353,9 @@ def test_login_with_incorrect_password(client: R2RClient):
     # Try incorrect password
     with pytest.raises(R2RException) as exc_info:
         client.users.login(email, "wrongpass")
-    assert (
-        exc_info.value.status_code == 401
-    ), "Expected 401 when logging in with incorrect password."
+    assert exc_info.value.status_code == 401, (
+        "Expected 401 when logging in with incorrect password."
+    )
     client.users.logout()
 
 
@@ -452,9 +450,9 @@ def test_api_key_lifecycle(client: R2RClient):
     # List API keys
     list_resp = client.users.list_api_keys(user_id).results
     assert len(list_resp) > 0, "No API keys found after creation"
-    assert (
-        list_resp[0].key_id == key_id
-    ), "Listed key ID doesn't match created key"
+    assert list_resp[0].key_id == key_id, (
+        "Listed key ID doesn't match created key"
+    )
     assert list_resp[0].updated_at is not None, "Updated timestamp missing"
     assert list_resp[0].public_key is not None, "Public key missing in list"
 
@@ -464,9 +462,9 @@ def test_api_key_lifecycle(client: R2RClient):
 
     # Verify deletion
     list_resp_after = client.users.list_api_keys(user_id).results
-    assert not any(
-        k.key_id == key_id for k in list_resp_after
-    ), "API key still exists after deletion"
+    assert not any(k.key_id == key_id for k in list_resp_after), (
+        "API key still exists after deletion"
+    )
 
     client.users.logout()
 
@@ -495,9 +493,9 @@ def test_api_key_permissions(client: R2RClient, user_with_api_key):
     # Should not be able to list all users (superuser only)
     with pytest.raises(R2RException) as exc_info:
         api_client.users.list()
-    assert (
-        exc_info.value.status_code == 403
-    ), "Non-superuser API key shouldn't list users"
+    assert exc_info.value.status_code == 403, (
+        "Non-superuser API key shouldn't list users"
+    )
 
 
 def test_invalid_api_key(client: R2RClient):
@@ -507,9 +505,9 @@ def test_invalid_api_key(client: R2RClient):
 
     with pytest.raises(R2RException) as exc_info:
         api_client.users.me()
-    assert (
-        exc_info.value.status_code == 401
-    ), "Expected 401 for invalid API key"
+    assert exc_info.value.status_code == 401, (
+        "Expected 401 for invalid API key"
+    )
 
 
 def test_multiple_api_keys(client: R2RClient):
@@ -533,9 +531,9 @@ def test_multiple_api_keys(client: R2RClient):
     for key_id in key_ids:
         client.users.delete_api_key(user_id, key_id)
         current_keys = client.users.list_api_keys(user_id).results
-        assert not any(
-            k.key_id == key_id for k in current_keys
-        ), f"Key {key_id} still exists after deletion"
+        assert not any(k.key_id == key_id for k in current_keys), (
+            f"Key {key_id} still exists after deletion"
+        )
 
     client.users.logout()
 

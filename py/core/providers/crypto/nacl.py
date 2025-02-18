@@ -1,10 +1,8 @@
 import base64
-import json
 import logging
 import os
-import secrets
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 import jwt
@@ -86,7 +84,6 @@ class NaClCryptoProvider(CryptoProvider):
         return base64.urlsafe_b64encode(random_bytes)[:length].decode("utf-8")
 
     def generate_api_key(self) -> Tuple[str, str]:
-
         # Define our character set (excluding ambiguous characters)
         chars = string.ascii_letters.replace("l", "").replace("I", "").replace(
             "O", ""

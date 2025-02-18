@@ -1,6 +1,5 @@
 import json
 import uuid
-from uuid import UUID
 
 import pytest
 
@@ -9,8 +8,6 @@ from core.base import (
     DocumentType,
     GraphExtractionStatus,
     IngestionStatus,
-    R2RException,
-    SearchSettings,
 )
 
 

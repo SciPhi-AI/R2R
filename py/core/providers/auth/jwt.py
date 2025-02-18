@@ -82,7 +82,7 @@ class JwtAuthProvider(AuthProvider):
                     user.get("email")
                 )
                 # TODO do we want to update user info here based on what's in the token?
-            except Exception as e:
+            except Exception:
                 # user doesn't exist, create in db
                 logger.debug(f"Creating new user: {user.get('email')}")
                 try:

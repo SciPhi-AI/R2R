@@ -57,9 +57,9 @@ def simple_graph_search_results_factory(service: GraphService):
                     elif not isinstance(
                         input_data[key]["generation_config"], GenerationConfig
                     ):
-                        input_data[key][
-                            "generation_config"
-                        ] = GenerationConfig()
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig()
+                        )
 
                     input_data[key]["generation_config"].model = (
                         input_data[key]["generation_config"].model
@@ -109,7 +109,6 @@ def simple_graph_search_results_factory(service: GraphService):
         )
 
         for _, document_id in enumerate(document_ids):
-
             await service.providers.database.documents_handler.set_workflow_status(
                 id=document_id,
                 status_type="extraction_status",
@@ -136,9 +135,7 @@ def simple_graph_search_results_factory(service: GraphService):
                     **input_data["graph_creation_settings"],
                 )
 
-                if (
-                    service.providers.database.config.graph_creation_settings.automatic_deduplication
-                ):
+                if service.providers.database.config.graph_creation_settings.automatic_deduplication:
                     logger.warning(
                         "Automatic deduplication is not yet implemented for `simple` workflows."
                     )
@@ -186,7 +183,7 @@ def simple_graph_search_results_factory(service: GraphService):
                 )
 
                 logger.info(
-                    f"Running graph_search_results community summary for workflow {i+1} of {total_workflows}"
+                    f"Running graph_search_results community summary for workflow {i + 1} of {total_workflows}"
                 )
 
                 await service.graph_search_results_community_summary(

@@ -31,9 +31,6 @@ logger = logging.getLogger()
 
 
 from enum import Enum
-from uuid import UUID
-
-from core.base import R2RException
 
 
 class CollectionAction(str, Enum):
@@ -276,12 +273,13 @@ class CollectionsRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_collections(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_collections(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -1213,9 +1211,7 @@ class CollectionsRouter(BaseRouterV3):
                     return await self.providers.orchestration.run_workflow(  # type: ignore
                         "graph-extraction", {"request": workflow_input}, {}
                     )
-                except (
-                    Exception
-                ) as e:  # TODO: Need to find specific error (gRPC most likely?)
+                except Exception as e:  # TODO: Need to find specific error (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
                     )
@@ -1228,7 +1224,9 @@ class CollectionsRouter(BaseRouterV3):
             simple_graph_search_results = simple_graph_search_results_factory(
                 self.services.graph
             )
-            await simple_graph_search_results["graph-extraction"](workflow_input)  # type: ignore
+            await simple_graph_search_results["graph-extraction"](
+                workflow_input
+            )  # type: ignore
             return {  # type: ignore
                 "message": "Graph created successfully.",
                 "task_id": None,

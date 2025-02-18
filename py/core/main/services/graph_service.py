@@ -417,7 +417,7 @@ class GraphService(Service):
             limit = batch_size
 
             logger.info(
-                f"GraphService: describing batch {i+1}/{num_batches}, offset={offset}, limit={limit}"
+                f"GraphService: describing batch {i + 1}/{num_batches}, offset={offset}, limit={limit}"
             )
 
             # Actually handle describing the entities in the batch
@@ -539,7 +539,7 @@ class GraphService(Service):
             f"{e.name}, {e.description or 'NONE'}" for e in entities
         ]
         relationships_txt = [
-            f"{i+1}: {r.subject}, {r.object}, {r.predicate} - Summary: {r.description or ''}"
+            f"{i + 1}: {r.subject}, {r.object}, {r.predicate} - Summary: {r.description or ''}"
             for i, r in enumerate(relationships)
         ]
 
@@ -687,34 +687,37 @@ class GraphService(Service):
         )
 
         # get all entities & relationships
-        all_entities, _ = (
-            await self.providers.database.graphs_handler.get_entities(
-                parent_id=collection_id,
-                offset=0,
-                limit=-1,
-                include_embeddings=False,
-            )
+        (
+            all_entities,
+            _,
+        ) = await self.providers.database.graphs_handler.get_entities(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
         )
-        all_relationships, _ = (
-            await self.providers.database.graphs_handler.get_relationships(
-                parent_id=collection_id,
-                offset=0,
-                limit=-1,
-                include_embeddings=False,
-            )
+        (
+            all_relationships,
+            _,
+        ) = await self.providers.database.graphs_handler.get_relationships(
+            parent_id=collection_id,
+            offset=0,
+            limit=-1,
+            include_embeddings=False,
         )
 
         # We can optionally re-run the clustering to produce fresh community assignments
         clustering_mode = (
             self.config.database.graph_creation_settings.clustering_mode
         )
-        _, community_clusters = (
-            await self.providers.database.graphs_handler._cluster_and_add_community_info(
-                relationships=all_relationships,
-                leiden_params=leiden_params,
-                collection_id=collection_id,
-                clustering_mode=clustering_mode,
-            )
+        (
+            _,
+            community_clusters,
+        ) = await self.providers.database.graphs_handler._cluster_and_add_community_info(
+            relationships=all_relationships,
+            leiden_params=leiden_params,
+            collection_id=collection_id,
+            clustering_mode=clustering_mode,
         )
 
         # Group clusters
@@ -757,7 +760,7 @@ class GraphService(Service):
             results_returned += 1
             if results_returned % 50 == 0:
                 logger.info(
-                    f"Community summaries: {results_returned}/{total_jobs} done in {time.time()-start_time:.2f}s"
+                    f"Community summaries: {results_returned}/{total_jobs} done in {time.time() - start_time:.2f}s"
                 )
             if "error" in summary:
                 total_errors += 1
@@ -1090,7 +1093,7 @@ class GraphService(Service):
                 )
 
         logger.info(
-            f"Graph Extraction: done with {document_id}, time={time.time()-start_time:.2f}s"
+            f"Graph Extraction: done with {document_id}, time={time.time() - start_time:.2f}s"
         )
 
     async def _extract_graph_search_results_from_chunk_group(
@@ -1122,9 +1125,7 @@ class GraphService(Service):
         )
 
         # Build messages/prompt
-        prompt_name = (
-            self.providers.database.config.graph_creation_settings.graph_extraction_prompt
-        )
+        prompt_name = self.providers.database.config.graph_creation_settings.graph_extraction_prompt
         messages = (
             await self.providers.database.prompts_handler.get_message_payload(
                 task_prompt_name=prompt_name,
@@ -1151,10 +1152,11 @@ class GraphService(Service):
                     )
 
                 # parse the XML
-                entities, relationships = (
-                    await self._parse_graph_search_results_extraction_xml(
-                        graph_search_results_str, chunks
-                    )
+                (
+                    entities,
+                    relationships,
+                ) = await self._parse_graph_search_results_extraction_xml(
+                    graph_search_results_str, chunks
                 )
                 return GraphExtraction(
                     entities=entities, relationships=relationships

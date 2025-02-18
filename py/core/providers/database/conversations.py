@@ -363,8 +363,8 @@ class PostgresConversationsHandler(Handler):
 
         query = f"""
             SELECT c.id, extract(epoch from c.created_at) AS created_at_epoch
-            FROM {self._get_table_name('conversations')} c
-            WHERE {' AND '.join(conditions)}
+            FROM {self._get_table_name("conversations")} c
+            WHERE {" AND ".join(conditions)}
         """
 
         conv_row = await self.connection_manager.fetchrow_query(query, params)
@@ -410,7 +410,7 @@ class PostgresConversationsHandler(Handler):
                 )
 
             update_query = f"""
-            UPDATE {self._get_table_name('conversations')}
+            UPDATE {self._get_table_name("conversations")}
             SET name = $1 WHERE id = $2
             RETURNING user_id, extract(epoch from created_at) as created_at_epoch
             """
@@ -452,8 +452,8 @@ class PostgresConversationsHandler(Handler):
 
         conv_query = f"""
             SELECT 1
-            FROM {self._get_table_name('conversations')} c
-            WHERE {' AND '.join(conditions)}
+            FROM {self._get_table_name("conversations")} c
+            WHERE {" AND ".join(conditions)}
         """
         conv_row = await self.connection_manager.fetchrow_query(
             conv_query, params
