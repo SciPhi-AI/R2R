@@ -32,7 +32,7 @@ from core.base.abstractions import (
 )
 from core.base.api.models import User
 from core.telemetry.telemetry_decorator import telemetry_event
-from shared.abstractions import PDFParsingError, PopperNotFoundError
+from shared.abstractions import PDFParsingError, PopplerNotFoundError
 
 from ..abstractions import R2RProviders
 from ..config import R2RConfig
@@ -274,7 +274,7 @@ class IngestionService:
                 extraction.metadata["version"] = version
                 yield extraction
 
-        except (PopperNotFoundError, PDFParsingError) as e:
+        except (PopplerNotFoundError, PDFParsingError) as e:
             raise R2RDocumentProcessingError(
                 error_message=e.message,
                 document_id=document_info.id,

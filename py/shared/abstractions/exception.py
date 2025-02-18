@@ -51,7 +51,7 @@ class PDFParsingError(R2RException):
         super().__init__(message, status_code, detail)
 
 
-class PopperNotFoundError(PDFParsingError):
+class PopplerNotFoundError(PDFParsingError):
     """Specific error for when Poppler is not installed."""
 
     def __init__(self):
