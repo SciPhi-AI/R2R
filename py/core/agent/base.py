@@ -189,9 +189,9 @@ class R2RStreamingAgent(R2RAgent):
                         if tc.function.name:
                             pending_tool_calls[idx]["name"] = tc.function.name
                         if tc.function.arguments:
-                            pending_tool_calls[idx][
-                                "arguments"
-                            ] += tc.function.arguments
+                            pending_tool_calls[idx]["arguments"] += (
+                                tc.function.arguments
+                            )
                         # Set the ID if it appears in later chunks
                         if tc.id and not pending_tool_calls[idx]["id"]:
                             pending_tool_calls[idx]["id"] = tc.id
@@ -250,7 +250,9 @@ class R2RStreamingAgent(R2RAgent):
                 results = await asyncio.gather(*async_calls)
 
                 # Yield tool call results
-                for idx, tool_result in zip(sorted_indexes, results):
+                for idx, tool_result in zip(
+                    sorted_indexes, results, strict=False
+                ):
                     call_info = pending_tool_calls[idx]
                     yield "<tool_call>"
                     yield f"<name>{call_info['name']}</name>"
@@ -368,13 +370,13 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                         else:
                             # Accumulate partial tool call details
                             if tc.function.name:
-                                pending_tool_calls[idx][
-                                    "name"
-                                ] = tc.function.name
+                                pending_tool_calls[idx]["name"] = (
+                                    tc.function.name
+                                )
                             if tc.function.arguments:
-                                pending_tool_calls[idx][
-                                    "arguments"
-                                ] += tc.function.arguments
+                                pending_tool_calls[idx]["arguments"] += (
+                                    tc.function.arguments
+                                )
                             # Set the ID if it appears in later chunks
                             if tc.id and not pending_tool_calls[idx]["id"]:
                                 pending_tool_calls[idx]["id"] = tc.id
@@ -490,9 +492,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                 )
                 self._completed = True
         else:
-            pending_calls = (
-                []
-            )  # list of dicts: each has "internal_id", "original_id", "name", "arguments"
+            pending_calls = []  # list of dicts: each has "internal_id", "original_id", "name", "arguments"
             content_buffer = ""
             function_arguments = ""
 
@@ -578,9 +578,9 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             else:
                                 # Accumulate partial tool call details
                                 if tc.function.arguments:
-                                    pending_calls[idx][
-                                        "arguments"
-                                    ] += tc.function.arguments
+                                    pending_calls[idx]["arguments"] += (
+                                        tc.function.arguments
+                                    )
 
                 # --- 2. Process a function_call (if any) ---
                 if delta.function_call:

@@ -324,8 +324,10 @@ class ChunksRouter(BaseRouterV3):
                     {"chunk_id": {"$eq": str(id)}},
                 ]
             }
-            await self.services.management.delete_documents_and_chunks_by_filter(
-                filters=filters
+            await (
+                self.services.management.delete_documents_and_chunks_by_filter(
+                    filters=filters
+                )
             )
             return GenericBooleanResponse(success=True)  # type: ignore
 

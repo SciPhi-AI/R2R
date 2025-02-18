@@ -29,7 +29,6 @@ from core.base.api.models import (
     WrappedUserResponse,
     WrappedUsersResponse,
 )
-from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
@@ -236,12 +235,13 @@ class UsersRouter(BaseRouterV3):
                     message="Only a superuser can export data.",
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_users(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_users(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -395,7 +395,9 @@ class UsersRouter(BaseRouterV3):
                 )
 
             await self.services.auth.send_verification_email(email=email)
-            return GenericMessageResponse(message="A verification email has been sent.")  # type: ignore
+            return GenericMessageResponse(
+                message="A verification email has been sent."
+            )  # type: ignore
 
         @self.router.post(
             "/users/login",
@@ -562,7 +564,7 @@ class UsersRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def refresh_token(
-            refresh_token: str = Body(..., description="Refresh token")
+            refresh_token: str = Body(..., description="Refresh token"),
         ) -> WrappedTokenResponse:
             """Refresh the access token using a refresh token."""
             result = await self.services.auth.refresh_access_token(

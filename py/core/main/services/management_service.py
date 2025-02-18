@@ -88,7 +88,7 @@ class ManagementService(Service):
         """
 
         def transform_chunk_id_to_id(
-            filters: dict[str, Any]
+            filters: dict[str, Any],
         ) -> dict[str, Any]:
             """
             Example transformation function if your filters use `chunk_id` instead of `id`.
@@ -852,9 +852,11 @@ class ManagementService(Service):
         conversation_id: UUID,
         user_ids: Optional[list[UUID]] = None,
     ) -> None:
-        await self.providers.database.conversations_handler.delete_conversation(
-            conversation_id=conversation_id,
-            filter_user_ids=user_ids,
+        await (
+            self.providers.database.conversations_handler.delete_conversation(
+                conversation_id=conversation_id,
+                filter_user_ids=user_ids,
+            )
         )
 
     async def get_user_max_documents(self, user_id: UUID) -> int | None:

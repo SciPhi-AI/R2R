@@ -14,7 +14,6 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
-from openai import AsyncOpenAI
 from sqlalchemy import inspect
 from sqlalchemy.types import UserDefinedType
 
@@ -203,7 +202,7 @@ def check_if_upgrade_needed():
     # Then check if the columns exist
     existing_columns = [
         col["name"]
-        for col in inspector.get_columns(f"document_info", schema=project_name)
+        for col in inspector.get_columns("document_info", schema=project_name)
     ]
 
     needs_upgrade = "summary" not in existing_columns
@@ -288,7 +287,7 @@ def upgrade() -> None:
                     f"""
                     UPDATE {project_name}.document_info
                     SET
-                        summary = '{doc_data['summary'].replace("'", "''")}',
+                        summary = '{doc_data["summary"].replace("'", "''")}',
                         summary_embedding = '{embedding_str}'::vector({dimension})
                     WHERE document_id = '{doc_id}'::uuid;
                     """

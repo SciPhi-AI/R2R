@@ -93,13 +93,17 @@ class TSVParserAdvanced(AsyncParser[str | bytes]):
         for row_num, row in enumerate(tsv_reader):
             chunk_rows.append(row)
             if row_num % num_rows == 0:
-                yield ", ".join(header) + "\n" + "\n".join(
-                    [", ".join(row) for row in chunk_rows]
+                yield (
+                    ", ".join(header)
+                    + "\n"
+                    + "\n".join([", ".join(row) for row in chunk_rows])
                 )
                 chunk_rows = []
 
         # Yield remaining rows
         if chunk_rows:
-            yield ", ".join(header) + "\n" + "\n".join(
-                [", ".join(row) for row in chunk_rows]
+            yield (
+                ", ".join(header)
+                + "\n"
+                + "\n".join([", ".join(row) for row in chunk_rows])
             )

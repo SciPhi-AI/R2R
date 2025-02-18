@@ -28,7 +28,6 @@ from core.base.abstractions import (
 from core.base.api.models import GraphResponse
 from core.base.providers.database import Handler
 from core.base.utils import (
-    _decorate_vector_type,
     _get_vector_column_str,
     generate_entity_document_id,
 )
@@ -42,9 +41,13 @@ logger = logging.getLogger()
 class PostgresEntitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
         self.relationships_handler: PostgresRelationshipsHandler = (
             PostgresRelationshipsHandler(*args, **kwargs)
         )
@@ -197,7 +200,7 @@ class PostgresEntitiesHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
 
         count_params = params[: param_index - 1]
@@ -210,7 +213,7 @@ class PostgresEntitiesHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -292,7 +295,7 @@ class PostgresEntitiesHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}\
             RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
@@ -680,9 +683,13 @@ class PostgresEntitiesHandler(Handler):
 class PostgresRelationshipsHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
 
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
@@ -880,7 +887,7 @@ class PostgresRelationshipsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count_params = params[: param_index - 1]
         count = (
@@ -893,7 +900,7 @@ class PostgresRelationshipsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -994,7 +1001,7 @@ class PostgresRelationshipsHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
@@ -1194,9 +1201,13 @@ class PostgresRelationshipsHandler(Handler):
 class PostgresCommunitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
 
     async def create_tables(self) -> None:
         vector_column_str = _get_vector_column_str(
@@ -1442,7 +1453,7 @@ class PostgresCommunitiesHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
 
         count = (
@@ -1454,7 +1465,7 @@ class PostgresCommunitiesHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -1604,10 +1615,16 @@ class PostgresGraphsHandler(Handler):
         **kwargs: Any,
     ) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
-        self.collections_handler: PostgresCollectionsHandler = kwargs.get("collections_handler")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
+        self.collections_handler: PostgresCollectionsHandler = kwargs.get(
+            "collections_handler"
+        )  # type: ignore
 
         self.entities = PostgresEntitiesHandler(*args, **kwargs)
         self.relationships = PostgresRelationshipsHandler(*args, **kwargs)
@@ -1918,7 +1935,7 @@ class PostgresGraphsHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
         """
@@ -1988,7 +2005,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_entities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2006,7 +2023,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_entities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2073,7 +2090,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_relationships")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2090,7 +2107,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_relationships")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2241,7 +2258,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_communities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2250,7 +2267,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_communities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2279,7 +2296,9 @@ class PostgresGraphsHandler(Handler):
             k: v for k, v in community.__dict__.items() if v is not None
         }
         columns = ", ".join(non_null_attrs.keys())
-        placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+        placeholders = ", ".join(
+            f"${i + 1}" for i in range(len(non_null_attrs))
+        )
 
         conflict_columns = ", ".join(
             [f"{k} = EXCLUDED.{k}" for k in non_null_attrs]

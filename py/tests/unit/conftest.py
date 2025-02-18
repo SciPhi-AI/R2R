@@ -1,6 +1,5 @@
 # tests/conftest.py
 import os
-from uuid import uuid4
 
 import pytest
 
@@ -9,7 +8,6 @@ from core.providers import NaClCryptoConfig, NaClCryptoProvider
 from core.providers.database.postgres import (
     PostgresChunksHandler,
     PostgresCollectionsHandler,
-    PostgresConnectionManager,
     PostgresConversationsHandler,
     PostgresDatabaseProvider,
     PostgresDocumentsHandler,
@@ -20,7 +18,6 @@ from core.providers.database.postgres import (
 from core.providers.database.users import (  # Make sure this import is correct
     PostgresUserHandler,
 )
-from core.utils import generate_user_id
 
 TEST_DB_CONNECTION_STRING = os.environ.get(
     "TEST_DB_CONNECTION_STRING",

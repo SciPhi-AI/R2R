@@ -27,22 +27,19 @@ repos:
         types: [python]
         pass_filenames: false
 
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^py/
+        exclude: ^py/tests/
+      - id: ruff-format
+        files: ^py/
+        exclude: ^py/tests/
+
   - repo: local
     hooks:
-      - id: isort
-        name: isort
-        entry: bash -c 'cd py && poetry run isort .'
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: black
-        name: black
-        entry: bash -c 'cd py && poetry run black .'
-        language: system
-        types: [python]
-        pass_filenames: false
-
       - id: mypy
         name: mypy
         entry: bash -c 'cd py && poetry run mypy .'

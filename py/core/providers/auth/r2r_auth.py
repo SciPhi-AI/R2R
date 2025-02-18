@@ -152,7 +152,7 @@ class R2RAuthProvider(AuthProvider):
         """
         try:
             key_id, raw_key = api_key.split(".", 1)
-        except ValueError as e:
+        except ValueError:
             raise R2RException(
                 status_code=401, message="Invalid API key format"
             )

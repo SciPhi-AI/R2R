@@ -60,7 +60,7 @@ def convert_nonserializable_objects(obj):
         new_obj = {}
         for key, value in obj.items():
             # Convert key to string if it is a UUID or not already a string.
-            new_key = str(key) if not isinstance(key, str) else key
+            new_key = key if isinstance(key, str) else str(key)
             new_obj[new_key] = convert_nonserializable_objects(value)
         return new_obj
     elif isinstance(obj, list):
@@ -104,10 +104,8 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
 
 def tokens_count_for_message(message, encoding):
     """Return the number of tokens used by a single message."""
-    tokens_per_message = 3
+    num_tokens = 3
 
-    num_tokens = 0
-    num_tokens += tokens_per_message
     if message.get("function_call"):
         num_tokens += len(encoding.encode(message["function_call"]["name"]))
         num_tokens += len(
@@ -204,9 +202,10 @@ class RetrievalService(Service):
             self._graph_search_logic(query, search_settings)
         )
 
-        chunk_search_results, graph_search_results_results = (
-            await asyncio.gather(vector_task, graph_task)
-        )
+        (
+            chunk_search_results,
+            graph_search_results_results,
+        ) = await asyncio.gather(vector_task, graph_task)
 
         # 3) Wrap up in an `AggregateSearchResult`, or your CombinedSearchResponse
         aggregated_result = AggregateSearchResult(
@@ -749,9 +748,7 @@ class RetrievalService(Service):
                             )
                     messages = messages_from_conversation + messages
             else:  # Create new conversation
-                conversation_response = (
-                    await self.providers.database.conversations_handler.create_conversation()
-                )
+                conversation_response = await self.providers.database.conversations_handler.create_conversation()
                 conversation_id = conversation_response.id
                 needs_conversation_name = True
 
@@ -1030,7 +1027,7 @@ class RetrievalService(Service):
                         .choices[0]
                         .message.content
                     )
-                except Exception as e:
+                except Exception:
                     pass
                 finally:
                     await self.providers.database.conversations_handler.update_conversation(
@@ -1136,8 +1133,8 @@ class RetrievalService(Service):
         filters: dict[str, Any],
     ):
         ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and", None)
-        filter_starts_with_or = filters.get("$or", None)
+        filter_starts_with_and = filters.get("$and")
+        filter_starts_with_or = filters.get("$or")
         if filter_starts_with_and:
             try:
                 filter_starts_with_and_then_or = filter_starts_with_and[0][
@@ -1162,7 +1159,7 @@ class RetrievalService(Service):
                     "$overlap"
                 ]
                 return user_id, [str(ele) for ele in collection_ids]
-            except Exception as e:
+            except Exception:
                 logger.error(
                     """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
                 )
@@ -1207,7 +1204,7 @@ class RetrievalService(Service):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
-                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
+                f"[{i}] Title: {title}, Summary: {(doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
         return "\n".join(lines)
 
@@ -1262,8 +1259,15 @@ class RetrievalService(Service):
             else self.config.agent.agent_static_prompt
         )
 
+        # TODO: This should just be enforced in the config
+        if model is None:
+            raise R2RException(
+                status_code=400,
+                message="Model not provided for system instruction",
+            )
+
         if ("gemini" in model or "claude" in model) and reasoning_agent:
-            prompt_name = prompt_name + "_prompted_reasoning"
+            prompt_name = f"{prompt_name}_prompted_reasoning"
 
         if use_system_context or reasoning_agent:
             doc_context_str = await self._build_documents_context(

@@ -208,7 +208,9 @@ class PostgresDocumentsHandler(Handler):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+                    async with (
+                        self.connection_manager.pool.get_connection() as conn
+                    ):  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""

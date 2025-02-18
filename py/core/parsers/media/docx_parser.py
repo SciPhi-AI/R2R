@@ -25,7 +25,9 @@ class DOCXParser(AsyncParser[str | bytes]):
         self.config = config
         self.Document = Document
 
-    async def ingest(self, data: str | bytes, *args, **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
+    async def ingest(
+        self, data: str | bytes, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest DOCX data and yield text from each paragraph."""
         if isinstance(data, str):
             raise ValueError("DOCX data must be in bytes format.")

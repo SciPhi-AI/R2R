@@ -194,7 +194,7 @@ def test_file_type_ingestion(
 
         assert result is not None
 
-    except Exception as e:
+    except Exception:
         raise
 
 
@@ -258,7 +258,7 @@ def test_custom_ingestion_config(client: R2RClient):
             wait_for_completion=True,
         )
         assert result is not None
-    except Exception as e:
+    except Exception:
         raise
 
 
@@ -282,7 +282,7 @@ def test_raw_text_ingestion(client: R2RClient):
             retrieval_response = client.documents.retrieve(id=doc_id)
             if retrieval_response.results.ingestion_status == "success":
                 break
-        except R2RException as e:
+        except R2RException:
             if time.time() - start_time > 600:
                 raise TimeoutError("Ingestion didn't complete within timeout")
             time.sleep(2)
@@ -331,5 +331,5 @@ def test_metadata_handling(client: R2RClient):
 
         # Cleanup
         client.documents.delete(id=doc_id)
-    except Exception as e:
+    except Exception:
         raise

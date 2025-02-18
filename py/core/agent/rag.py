@@ -3,7 +3,6 @@ import json
 import logging
 import random
 import re
-import xml.etree.ElementTree as ET
 from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 import tiktoken
@@ -649,9 +648,13 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             logger.debug(f"action_text:\n{action_text}")
             logger.debug(f"parsed_tool_calls:\n{parsed_tool_calls}")
             if "<Response>" in action_text:
-                yield "<Response>" + action_text.split("<Response>")[-1].split(
-                    "</Response>"
-                )[0] + "</Response>"
+                yield (
+                    "<Response>"
+                    + action_text.split("<Response>")[-1].split("</Response>")[
+                        0
+                    ]
+                    + "</Response>"
+                )
                 return
             # If there are tool calls, execute them concurrently and build the XML block with results
             if parsed_tool_calls:
@@ -671,8 +674,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 
                 # Build the XML block containing the original tool calls and their results
                 xml_toolcalls = "<ToolCalls>"
-                for call, result in zip(parsed_tool_calls, results):
-
+                for call, result in zip(
+                    parsed_tool_calls, results, strict=False
+                ):
                     if call["name"] == "result":
                         logger.info(
                             f"Returning response = {call['params']['answer']}"
@@ -701,8 +705,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 # Optionally yield the XML block so that the user sees it
                 # yield f"\n\n<Action>{xml_toolcalls}</Action>"
             else:
-                iteration_text += f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
-                yield f"<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
+                iteration_text += "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
+                yield "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
 
             await self.conversation.add_message(
                 Message(role="assistant", content=iteration_text)
@@ -991,7 +995,6 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             if parsed_actions:
                 # For each action block, see if it has <ToolCalls>, <Response>
                 for action_block in parsed_actions:
-
                     # Prepare two separate <ToolCalls> blocks:
                     #  - "toolcalls_xml": with <Result> inside (for conversation_context)
                     #  - "toolcalls_minus_results": no <Result> (to show user)
@@ -1068,7 +1071,10 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                     yield COMPUTE_FAILURE
                     return
 
-                yield failed_iteration_text + f"\n\n[System]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                yield (
+                    failed_iteration_text
+                    + f"\n\n[System]\n{step_i + 1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                )
                 conversation_context += failed_iteration_text
                 continue
 
@@ -1078,7 +1084,7 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             if context_size > self.max_context_window_tokens:
                 yield COMPUTE_FAILURE
                 return
-            conversation_context += f"\n\n[System]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+            conversation_context += f"\n\n[System]\n{step_i + 1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
         # If we finish all steps with no <Response>, yield fallback:
         yield COMPUTE_FAILURE
         return

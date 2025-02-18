@@ -1,7 +1,5 @@
 from typing import Optional
 
-import pytest
-
 from r2r import R2RException
 
 

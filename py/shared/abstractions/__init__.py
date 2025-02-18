@@ -14,7 +14,7 @@ from .document import (
 from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import (
     PDFParsingError,
-    PopperNotFoundError,
+    PopplerNotFoundError,
     R2RDocumentProcessingError,
     R2RException,
 )
@@ -92,7 +92,7 @@ __all__ = [
     "R2RDocumentProcessingError",
     "R2RException",
     "PDFParsingError",
-    "PopperNotFoundError",
+    "PopplerNotFoundError",
     # Graph abstractions
     "Entity",
     "Community",

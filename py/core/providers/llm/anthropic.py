@@ -168,9 +168,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             # Handle parallel tool use setting
             if hasattr(generation_config, "disable_parallel_tool_use"):
                 args["tool_choice"] = args.get("tool_choice", {})
-                args["tool_choice"][
-                    "disable_parallel_tool_use"
-                ] = generation_config.disable_parallel_tool_use
+                args["tool_choice"]["disable_parallel_tool_use"] = (
+                    generation_config.disable_parallel_tool_use
+                )
 
         return args
 
