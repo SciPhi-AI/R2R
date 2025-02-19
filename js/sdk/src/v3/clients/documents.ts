@@ -121,10 +121,8 @@ export class DocumentsClient {
         JSON.stringify(options.ingestionConfig),
       );
     }
-    if (options.collectionIds) {
-      options.collectionIds.forEach((id) => {
-        formData.append("collection_ids", id);
-      });
+    if (options.collectionIds?.length) {
+      formData.append("collection_ids", JSON.stringify(options.collectionIds));
     }
     if (options.runWithOrchestration !== undefined) {
       formData.append(
