@@ -12,6 +12,7 @@ from shared.api.models import (
 
 
 class CollectionsSDK:
+
     def __init__(self, client):
         self.client = client
 
@@ -20,8 +21,7 @@ class CollectionsSDK:
         name: str,
         description: Optional[str] = None,
     ) -> WrappedCollectionResponse:
-        """
-        Create a new collection.
+        """Create a new collection.
 
         Args:
             name (str): Name of the collection
@@ -46,8 +46,7 @@ class CollectionsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
-        """
-        List collections with pagination and filtering options.
+        """List collections with pagination and filtering options.
 
         Args:
             ids (Optional[list[str | UUID]]): Filter collections by ids
@@ -64,9 +63,10 @@ class CollectionsSDK:
         if ids:
             params["ids"] = ids
 
-        response_dict = await self.client._make_request(
-            "GET", "collections", params=params, version="v3"
-        )
+        response_dict = await self.client._make_request("GET",
+                                                        "collections",
+                                                        params=params,
+                                                        version="v3")
 
         return WrappedCollectionsResponse(**response_dict)
 
@@ -74,8 +74,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
     ) -> WrappedCollectionResponse:
-        """
-        Get detailed information about a specific collection.
+        """Get detailed information about a specific collection.
 
         Args:
             id (str | UUID): Collection ID to retrieve
@@ -84,8 +83,7 @@ class CollectionsSDK:
             WrappedCollectionResponse
         """
         response_dict = await self.client._make_request(
-            "GET", f"collections/{str(id)}", version="v3"
-        )
+            "GET", f"collections/{str(id)}", version="v3")
 
         return WrappedCollectionResponse(**response_dict)
 
@@ -96,8 +94,7 @@ class CollectionsSDK:
         description: Optional[str] = None,
         generate_description: Optional[bool] = False,
     ) -> WrappedCollectionResponse:
-        """
-        Update collection information.
+        """Update collection information.
 
         Args:
             id (str | UUID): Collection ID to update
@@ -129,8 +126,7 @@ class CollectionsSDK:
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Delete a collection.
+        """Delete a collection.
 
         Args:
             id (str | UUID): Collection ID to delete
@@ -139,8 +135,7 @@ class CollectionsSDK:
             WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
-            "DELETE", f"collections/{str(id)}", version="v3"
-        )
+            "DELETE", f"collections/{str(id)}", version="v3")
 
         return WrappedBooleanResponse(**response_dict)
 
@@ -150,8 +145,7 @@ class CollectionsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedDocumentsResponse:
-        """
-        List all documents in a collection.
+        """List all documents in a collection.
 
         Args:
             id (str | UUID): Collection ID
@@ -180,8 +174,7 @@ class CollectionsSDK:
         id: str | UUID,
         document_id: str | UUID,
     ) -> WrappedGenericMessageResponse:
-        """
-        Add a document to a collection.
+        """Add a document to a collection.
 
         Args:
             id (str | UUID): Collection ID
@@ -203,8 +196,7 @@ class CollectionsSDK:
         id: str | UUID,
         document_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove a document from a collection.
+        """Remove a document from a collection.
 
         Args:
             id (str | UUID): Collection ID
@@ -227,8 +219,7 @@ class CollectionsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedUsersResponse:
-        """
-        List all users in a collection.
+        """List all users in a collection.
 
         Args:
             id (str, UUID): Collection ID
@@ -244,8 +235,7 @@ class CollectionsSDK:
         }
 
         response_dict = await self.client._make_request(
-            "GET", f"collections/{str(id)}/users", params=params, version="v3"
-        )
+            "GET", f"collections/{str(id)}/users", params=params, version="v3")
 
         return WrappedUsersResponse(**response_dict)
 
@@ -254,8 +244,7 @@ class CollectionsSDK:
         id: str | UUID,
         user_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Add a user to a collection.
+        """Add a user to a collection.
 
         Args:
             id (str | UUID): Collection ID
@@ -265,8 +254,9 @@ class CollectionsSDK:
             WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
-            "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
-        )
+            "POST",
+            f"collections/{str(id)}/users/{str(user_id)}",
+            version="v3")
 
         return WrappedBooleanResponse(**response_dict)
 
@@ -275,8 +265,7 @@ class CollectionsSDK:
         id: str | UUID,
         user_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove a user from a collection.
+        """Remove a user from a collection.
 
         Args:
             id (str | UUID): Collection ID
@@ -299,8 +288,7 @@ class CollectionsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """
-        Extract entities and relationships from documents in a collection.
+        """Extract entities and relationships from documents in a collection.
 
         Args:
             id (str | UUID): Collection ID to extract from
@@ -328,10 +316,10 @@ class CollectionsSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def retrieve_by_name(
-        self, name: str, owner_id: Optional[str] = None
-    ) -> WrappedCollectionResponse:
-        """
-        Retrieve a collection by its name.
+            self,
+            name: str,
+            owner_id: Optional[str] = None) -> WrappedCollectionResponse:
+        """Retrieve a collection by its name.
 
         For non-superusers, the backend will use the authenticated user's ID.
         For superusers, the caller must supply an owner_id to restrict the search.

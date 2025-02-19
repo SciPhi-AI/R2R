@@ -73,12 +73,16 @@ class R2RIngestionProvider(IngestionProvider):
     }
 
     EXTRA_PARSERS = {
-        DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
+        DocumentType.CSV: {
+            "advanced": parsers.CSVParserAdvanced
+        },
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,
             "zerox": parsers.VLMPDFParser,
         },
-        DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
+        DocumentType.XLSX: {
+            "advanced": parsers.XLSXParserAdvanced
+        },
     }
 
     IMAGE_TYPES = {
@@ -94,27 +98,22 @@ class R2RIngestionProvider(IngestionProvider):
         self,
         config: R2RIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: (
-            LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ),
+        llm_provider: (LiteLLMCompletionProvider
+                       | OpenAICompletionProvider
+                       | R2RCompletionProvider),
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
-        self.llm_provider: (
-            LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ) = llm_provider
+        self.llm_provider: (LiteLLMCompletionProvider
+                            | OpenAICompletionProvider
+                            | R2RCompletionProvider) = llm_provider
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self.text_splitter = self._build_text_splitter()
         self._initialize_parsers()
 
         logger.info(
-            f"R2RIngestionProvider initialized with config: {self.config}"
-        )
+            f"R2RIngestionProvider initialized with config: {self.config}")
 
     def _initialize_parsers(self):
         for doc_type, parser in self.DEFAULT_PARSERS.items():
@@ -131,12 +130,11 @@ class R2RIngestionProvider(IngestionProvider):
                     config=self.config,
                     database_provider=self.database_provider,
                     llm_provider=self.llm_provider,
-                )
-            )
+                ))
 
     def _build_text_splitter(
-        self, ingestion_config_override: Optional[dict] = None
-    ) -> TextSplitter:
+            self,
+            ingestion_config_override: Optional[dict] = None) -> TextSplitter:
         logger.info(
             f"Initializing text splitter with method: {self.config.chunking_strategy}"
         )
@@ -144,19 +142,13 @@ class R2RIngestionProvider(IngestionProvider):
         if not ingestion_config_override:
             ingestion_config_override = {}
 
-        chunking_strategy = (
-            ingestion_config_override.get("chunking_strategy")
-            or self.config.chunking_strategy
-        )
+        chunking_strategy = (ingestion_config_override.get("chunking_strategy")
+                             or self.config.chunking_strategy)
 
-        chunk_size = (
-            ingestion_config_override.get("chunk_size")
-            or self.config.chunk_size
-        )
-        chunk_overlap = (
-            ingestion_config_override.get("chunk_overlap")
-            or self.config.chunk_overlap
-        )
+        chunk_size = (ingestion_config_override.get("chunk_size")
+                      or self.config.chunk_size)
+        chunk_overlap = (ingestion_config_override.get("chunk_overlap")
+                         or self.config.chunk_overlap)
 
         if chunking_strategy == ChunkingStrategy.RECURSIVE:
             return RecursiveCharacterTextSplitter(
@@ -166,11 +158,9 @@ class R2RIngestionProvider(IngestionProvider):
         elif chunking_strategy == ChunkingStrategy.CHARACTER:
             from core.base.utils.splitter.text import CharacterTextSplitter
 
-            separator = (
-                ingestion_config_override.get("separator")
-                or self.config.separator
-                or CharacterTextSplitter.DEFAULT_SEPARATOR
-            )
+            separator = (ingestion_config_override.get("separator")
+                         or self.config.separator
+                         or CharacterTextSplitter.DEFAULT_SEPARATOR)
 
             return CharacterTextSplitter(
                 chunk_size=chunk_size,
@@ -181,8 +171,7 @@ class R2RIngestionProvider(IngestionProvider):
             )
         elif chunking_strategy == ChunkingStrategy.BASIC:
             raise NotImplementedError(
-                "Basic chunking method not implemented. Please use Recursive."
-            )
+                "Basic chunking method not implemented. Please use Recursive.")
         elif chunking_strategy == ChunkingStrategy.BY_TITLE:
             raise NotImplementedError("By title method not implemented")
         else:
@@ -199,8 +188,7 @@ class R2RIngestionProvider(IngestionProvider):
         text_spliiter = self.text_splitter
         if ingestion_config_override:
             text_spliiter = self._build_text_splitter(
-                ingestion_config_override
-            )
+                ingestion_config_override)
         if isinstance(parsed_document, DocumentChunk):
             parsed_document = parsed_document.data
 
@@ -211,9 +199,8 @@ class R2RIngestionProvider(IngestionProvider):
             chunks = parsed_document
 
         for chunk in chunks:
-            yield (
-                chunk.page_content if hasattr(chunk, "page_content") else chunk
-            )
+            yield (chunk.page_content
+                   if hasattr(chunk, "page_content") else chunk)
 
     async def parse(  # type: ignore
         self,
@@ -224,46 +211,40 @@ class R2RIngestionProvider(IngestionProvider):
         if document.document_type not in self.parsers:
             raise R2RDocumentProcessingError(
                 document_id=document.id,
-                error_message=f"Parser for {document.document_type} not found in `R2RIngestionProvider`.",
+                error_message=
+                f"Parser for {document.document_type} not found in `R2RIngestionProvider`.",
             )
         else:
             t0 = time.time()
             contents = []
             parser_overrides = ingestion_config_override.get(
-                "parser_overrides", {}
-            )
+                "parser_overrides", {})
             if document.document_type.value in parser_overrides:
                 logger.info(
                     f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
                 # TODO - Cleanup this approach to be less hardcoded
-                if (
-                    document.document_type != DocumentType.PDF
-                    or parser_overrides[DocumentType.PDF.value] != "zerox"
-                ):
+                if (document.document_type != DocumentType.PDF or
+                        parser_overrides[DocumentType.PDF.value] != "zerox"):
                     raise ValueError(
-                        "Only Zerox PDF parser override is available."
-                    )
+                        "Only Zerox PDF parser override is available.")
                 async for chunk in self.parsers[
-                    f"zerox_{DocumentType.PDF.value}"
-                ].ingest(file_content, **ingestion_config_override):
+                        f"zerox_{DocumentType.PDF.value}"].ingest(
+                            file_content, **ingestion_config_override):
                     if isinstance(chunk, dict) and chunk.get("content"):
                         contents.append(chunk)
-                    elif (
-                        chunk
-                    ):  # Handle string output for backward compatibility
+                    elif (chunk
+                          ):  # Handle string output for backward compatibility
                         contents.append({"content": chunk})
             else:
                 async for text in self.parsers[document.document_type].ingest(
-                    file_content, **ingestion_config_override
-                ):
+                        file_content, **ingestion_config_override):
                     if text is not None:
                         contents.append({"content": text})
 
             if not contents:
                 logging.warning(
-                    "No valid text content was extracted during parsing"
-                )
+                    "No valid text content was extracted during parsing")
                 return
 
             iteration = 0

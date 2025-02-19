@@ -25,11 +25,9 @@ class JSONParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
 
-    async def ingest(
-        self, data: str | bytes, *args, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        """
-        Ingest JSON data and yield a formatted text representation.
+    async def ingest(self, data: str | bytes, *args,
+                     **kwargs) -> AsyncGenerator[str, None]:
+        """Ingest JSON data and yield a formatted text representation.
 
         :param data: The JSON data to parse.
         :param kwargs: Additional keyword arguments.
@@ -42,11 +40,11 @@ class JSONParser(AsyncParser[str | bytes]):
         try:
             parsed_json = await loop.run_in_executor(None, json.loads, data)
             formatted_text = await loop.run_in_executor(
-                None, self._parse_json, parsed_json
-            )
+                None, self._parse_json, parsed_json)
         except json.JSONDecodeError as e:
             raise R2RException(
-                message=f"Failed to parse JSON data, likely due to invalid JSON: {str(e)}",
+                message=
+                f"Failed to parse JSON data, likely due to invalid JSON: {str(e)}",
                 status_code=400,
             )
 
@@ -54,13 +52,14 @@ class JSONParser(AsyncParser[str | bytes]):
         if chunk_size and isinstance(chunk_size, int):
             # If chunk_size is provided and is an integer, yield the formatted text in chunks
             for i in range(0, len(formatted_text), chunk_size):
-                yield formatted_text[i : i + chunk_size]
+                yield formatted_text[i:i + chunk_size]
                 await asyncio.sleep(0)
         else:
             # If no valid chunk_size is provided, yield the entire formatted text
             yield formatted_text
 
     def _parse_json(self, data: dict) -> str:
+
         def remove_objects_with_null(obj):
             if not isinstance(obj, dict):
                 return obj

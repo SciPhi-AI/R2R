@@ -10,7 +10,6 @@
 #     IngestionConfig,
 # )
 
-
 # class MSGParser(AsyncParser[str | bytes]):
 #     """Parser for MSG (Outlook Message) files."""
 

@@ -22,6 +22,7 @@ logger = logging.getLogger()
 
 
 class Conversation:
+
     def __init__(self):
         self.messages: list[Message] = []
         self._lock = asyncio.Lock()
@@ -32,10 +33,9 @@ class Conversation:
 
     async def get_messages(self) -> list[dict[str, Any]]:
         async with self._lock:
-            return [
-                {**msg.model_dump(exclude_none=True), "role": str(msg.role)}
-                for msg in self.messages
-            ]
+            return [{
+                **msg.model_dump(exclude_none=True), "role": str(msg.role)
+            } for msg in self.messages]
 
 
 # TODO - Move agents to provider pattern
@@ -52,16 +52,15 @@ class AgentConfig(BaseModel):
         base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
-            for k, v in kwargs.items()
-            if k in base_args
+            for k, v in kwargs.items() if k in base_args
         }
         filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
-            "tool_names", None
-        )
+            "tool_names", None)
         return cls(**filtered_kwargs)  # type: ignore
 
 
 class Agent(ABC):
+
     def __init__(
         self,
         llm_provider: CompletionProvider,
@@ -82,21 +81,20 @@ class Agent(ABC):
     def _register_tools(self):
         pass
 
-    async def _setup(
-        self, system_instruction: Optional[str] = None, *args, **kwargs
-    ):
+    async def _setup(self,
+                     system_instruction: Optional[str] = None,
+                     *args,
+                     **kwargs):
         await self.conversation.add_message(
             Message(
                 role="system",
                 content=system_instruction
-                or (
-                    await self.database_provider.prompts_handler.get_cached_prompt(
+                or (await
+                    self.database_provider.prompts_handler.get_cached_prompt(
                         self.config.agent_static_prompt,
                         inputs={"date": str(datetime.now().isoformat())},
-                    )
-                ),
-            )
-        )
+                    )),
+            ))
 
     @property
     def tools(self) -> list[Tool]:
@@ -131,44 +129,33 @@ class Agent(ABC):
         else:
             return f"Error: Tool {tool_name} not found."
 
-    def get_generation_config(
-        self, last_message: dict, stream: bool = False
-    ) -> GenerationConfig:
-        if (
-            last_message["role"] in ["tool", "function"]
-            and last_message["content"] != ""
-            and "ollama" in self.rag_generation_config.model
-            or self.config.include_tools == False
-        ):
+    def get_generation_config(self,
+                              last_message: dict,
+                              stream: bool = False) -> GenerationConfig:
+        if (last_message["role"] in ["tool", "function"]
+                and last_message["content"] != ""
+                and "ollama" in self.rag_generation_config.model
+                or self.config.include_tools == False):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
-                    exclude={"functions", "tools", "stream"}
-                ),
+                    exclude={"functions", "tools", "stream"}),
                 stream=stream,
             )
 
         return GenerationConfig(
             **self.rag_generation_config.model_dump(
-                exclude={"functions", "tools", "stream"}
-            ),
+                exclude={"functions", "tools", "stream"}),
             # FIXME: Use tools instead of functions
             # TODO - Investigate why `tools` fails with OpenAI+LiteLLM
-            tools=(
-                [
-                    {
-                        "function": {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "parameters": tool.parameters,
-                        },
-                        "type": "function",
-                        "name": tool.name,
-                    }
-                    for tool in self.tools
-                ]
-                if self.tools
-                else None
-            ),
+            tools=([{
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description,
+                    "parameters": tool.parameters,
+                },
+                "type": "function",
+                "name": tool.name,
+            } for tool in self.tools] if self.tools else None),
             stream=stream,
         )
 
@@ -183,9 +170,8 @@ class Agent(ABC):
         logger.info(
             f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
         )
-        if tool := next(
-            (t for t in self.tools if t.name == function_name), None
-        ):
+        if tool := next((t for t in self.tools if t.name == function_name),
+                        None):
             try:
                 function_args = json.loads(function_arguments)
 
@@ -201,11 +187,11 @@ class Agent(ABC):
                         content=str(tool_result.llm_formatted_result),
                         name=function_name,
                         tool_call_id=tool_id,
-                    )
-                )
+                    ))
 
                 raise R2RException(
-                    message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
+                    message=
+                    f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
                     status_code=400,
                 )
 
@@ -225,7 +211,6 @@ class Agent(ABC):
                     content=str(tool_result.llm_formatted_result),
                     name=function_name,
                     tool_call_id=tool_id,
-                )
-            )
+                ))
 
         return tool_result

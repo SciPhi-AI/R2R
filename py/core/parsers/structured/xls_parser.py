@@ -27,9 +27,8 @@ class XLSParser(AsyncParser[str | bytes]):
         self.config = config
         self.xlrd = xlrd
 
-    async def ingest(
-        self, data: bytes, *args, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: bytes, *args,
+                     **kwargs) -> AsyncGenerator[str, None]:
         """Ingest XLS data and yield text from each row."""
         if isinstance(data, str):
             raise ValueError("XLS data must be in bytes format.")
@@ -45,8 +44,7 @@ class XLSParser(AsyncParser[str | bytes]):
                     if cell.ctype == self.xlrd.XL_CELL_DATE:
                         try:
                             value = self.xlrd.xldate_as_datetime(
-                                cell.value, wb.datemode
-                            ).strftime("%Y-%m-%d")
+                                cell.value, wb.datemode).strftime("%Y-%m-%d")
                         except Exception:
                             value = str(cell.value)
                     elif cell.ctype == self.xlrd.XL_CELL_BOOLEAN:
@@ -66,9 +64,8 @@ class XLSParser(AsyncParser[str | bytes]):
 class XLSParserAdvanced(AsyncParser[str | bytes]):
     """An advanced parser for XLS data with chunking support."""
 
-    def __init__(
-        self, config: IngestionConfig, llm_provider: CompletionProvider
-    ):
+    def __init__(self, config: IngestionConfig,
+                 llm_provider: CompletionProvider):
         self.llm_provider = llm_provider
         self.config = config
         self.nx = nx
@@ -84,15 +81,14 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
             rows, cols = zip(*component, strict=False)
             min_row, max_row = min(rows), max(rows)
             min_col, max_col = min(cols), max(cols)
-            yield arr[min_row : max_row + 1, min_col : max_col + 1]
+            yield arr[min_row:max_row + 1, min_col:max_col + 1]
 
     def get_cell_value(self, cell, workbook):
         """Extract cell value handling different data types."""
         if cell.ctype == self.xlrd.XL_CELL_DATE:
             try:
                 return self.xlrd.xldate_as_datetime(
-                    cell.value, workbook.datemode
-                ).strftime("%Y-%m-%d")
+                    cell.value, workbook.datemode).strftime("%Y-%m-%d")
             except Exception:
                 return str(cell.value)
         elif cell.ctype == self.xlrd.XL_CELL_BOOLEAN:
@@ -102,9 +98,11 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
         else:
             return str(cell.value).strip()
 
-    async def ingest(
-        self, data: bytes, num_col_times_num_rows: int = 100, *args, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self,
+                     data: bytes,
+                     num_col_times_num_rows: int = 100,
+                     *args,
+                     **kwargs) -> AsyncGenerator[str, None]:
         """Ingest XLS data and yield text from each connected component."""
         if isinstance(data, str):
             raise ValueError("XLS data must be in bytes format.")
@@ -113,15 +111,10 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
 
         for sheet in workbook.sheets():
             # Convert sheet to numpy array with proper value handling
-            ws_data = self.np.array(
-                [
-                    [
-                        self.get_cell_value(sheet.cell(row, col), workbook)
-                        for col in range(sheet.ncols)
-                    ]
-                    for row in range(sheet.nrows)
-                ]
-            )
+            ws_data = self.np.array([[
+                self.get_cell_value(sheet.cell(row, col), workbook)
+                for col in range(sheet.ncols)
+            ] for row in range(sheet.nrows)])
 
             for table in self.connected_components(ws_data):
                 if len(table) <= 1:
@@ -132,9 +125,6 @@ class XLSParserAdvanced(AsyncParser[str | bytes]):
                 headers = ", ".join(table[0])
 
                 for i in range(1, num_rows, num_rows_per_chunk):
-                    chunk = table[i : i + num_rows_per_chunk]
-                    yield (
-                        headers
-                        + "\n"
-                        + "\n".join([", ".join(row) for row in chunk])
-                    )
+                    chunk = table[i:i + num_rows_per_chunk]
+                    yield (headers + "\n" +
+                           "\n".join([", ".join(row) for row in chunk]))

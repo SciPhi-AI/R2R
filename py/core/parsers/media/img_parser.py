@@ -19,6 +19,7 @@ logger = logging.getLogger()
 
 
 class ImageParser(AsyncParser[str | bytes]):
+
     def __init__(
         self,
         config: IngestionConfig,
@@ -82,23 +83,19 @@ class ImageParser(AsyncParser[str | bytes]):
             logger.error(f"Error converting HEIC to JPEG: {str(e)}")
             raise
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_img_prompt_name
-                )
-            )
+                    prompt_name=self.config.vision_img_prompt_name))
         try:
             if isinstance(data, bytes):
                 try:
                     # Check if it's HEIC and convert if necessary
                     if self._is_heic(data):
                         logger.debug(
-                            "Detected HEIC format, converting to JPEG"
-                        )
+                            "Detected HEIC format, converting to JPEG")
                         data = await self._convert_heic_to_jpeg(data)
                     image_data = base64.b64encode(data).decode("utf-8")
                 except Exception as e:
@@ -112,24 +109,25 @@ class ImageParser(AsyncParser[str | bytes]):
                 stream=False,
             )
 
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.vision_prompt_text},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
-                            },
+            messages = [{
+                "role":
+                "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": self.vision_prompt_text
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}"
                         },
-                    ],
-                }
-            ]
+                    },
+                ],
+            }]
 
             response = await self.llm_provider.aget_completion(
-                messages=messages, generation_config=generation_config
-            )
+                messages=messages, generation_config=generation_config)
 
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content

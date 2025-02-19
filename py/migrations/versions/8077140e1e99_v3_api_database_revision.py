@@ -1,9 +1,8 @@
-"""v3_api_database_revision
+"""v3_api_database_revision.
 
 Revision ID: 8077140e1e99
 Revises:
 Create Date: 2024-12-03 12:10:10.878485
-
 """
 
 import os
@@ -27,7 +26,7 @@ if not project_name:
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     connection = op.get_bind()
     inspector = inspect(connection)
 
@@ -41,8 +40,7 @@ def check_if_upgrade_needed():
     # If we find an old column name, we do need to migrate
     if "id" in collections_columns:
         print(
-            "Migration not needed: collections table already has 'id' column"
-        )
+            "Migration not needed: collections table already has 'id' column")
         return False
     elif "collection_id" in collections_columns:
         print("Migration needed: collections table has old column names")
@@ -84,9 +82,9 @@ def upgrade() -> None:
 
     op.add_column(
         "collections",
-        sa.Column(
-            "graph_sync_status", sa.Text, server_default=sa.text("'pending'")
-        ),
+        sa.Column("graph_sync_status",
+                  sa.Text,
+                  server_default=sa.text("'pending'")),
         schema=project_name,
     )
 

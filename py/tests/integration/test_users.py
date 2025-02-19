@@ -7,6 +7,7 @@ from r2r import R2RClient, R2RException
 
 @pytest.fixture(scope="session")
 def config():
+
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -30,9 +31,8 @@ def superuser_login(client: R2RClient, config):
     # client.users.logout()
 
 
-def register_and_return_user_id(
-    client: R2RClient, email: str, password: str
-) -> str:
+def register_and_return_user_id(client: R2RClient, email: str,
+                                password: str) -> str:
     return client.users.create(email, password).results.id
 
 
@@ -53,8 +53,7 @@ def test_user_refresh_token(client: R2RClient):
 
     new_access_token = client.users.refresh_token().results.access_token.token
     assert new_access_token != old_access_token, (
-        "Refresh token did not provide a new access token."
-    )
+        "Refresh token did not provide a new access token.")
 
 
 def test_change_password(client: R2RClient):
@@ -63,9 +62,8 @@ def test_change_password(client: R2RClient):
     new_password = "new_password456"
     register_and_return_user_id(client, random_email, old_password)
     client.users.login(random_email, old_password)
-    change_resp = client.users.change_password(
-        old_password, new_password
-    ).results
+    change_resp = client.users.change_password(old_password,
+                                               new_password).results
     assert change_resp.message is not None, "Change password failed."
 
     # Check old password no longer works
@@ -73,8 +71,7 @@ def test_change_password(client: R2RClient):
     with pytest.raises(R2RException) as exc_info:
         client.users.login(random_email, old_password)
     assert exc_info.value.status_code == 401, (
-        "Old password should not work anymore."
-    )
+        "Old password should not work anymore.")
 
     # New password should work
     client.users.login(random_email, new_password)
@@ -82,7 +79,8 @@ def test_change_password(client: R2RClient):
 
 
 @pytest.mark.skip(
-    reason="Requires a real or mocked reset token retrieval if verification is implemented."
+    reason=
+    "Requires a real or mocked reset token retrieval if verification is implemented."
 )
 def test_request_and_reset_password(client: R2RClient):
     # This test scenario assumes you can obtain a valid reset token somehow.
@@ -155,36 +153,32 @@ def test_user_collections(client: R2RClient, superuser_login, config):
     client.users.logout()
 
 
-def test_add_remove_user_from_collection(
-    client: R2RClient, superuser_login, config
-):
+def test_add_remove_user_from_collection(client: R2RClient, superuser_login,
+                                         config):
     random_email = f"{uuid.uuid4()}@example.com"
     password = "somepassword"
     user_id = register_and_return_user_id(client, random_email, password)
 
     # Add user to known collection
     add_resp = client.users.add_to_collection(
-        user_id, config.known_collection_id
-    ).results
+        user_id, config.known_collection_id).results
     assert add_resp.success, "Failed to add user to collection."
 
     # Verify
     collections = client.users.list_collections(user_id).results
     assert any(
-        str(col.id) == str(config.known_collection_id) for col in collections
-    ), "User not in collection after add."
+        str(col.id) == str(config.known_collection_id)
+        for col in collections), "User not in collection after add."
 
     # Remove user from collection
     remove_resp = client.users.remove_from_collection(
-        user_id, config.known_collection_id
-    ).results
+        user_id, config.known_collection_id).results
     assert remove_resp.success, "Failed to remove user from collection."
 
     collections_after = client.users.list_collections(user_id).results
     assert not any(
-        str(col.id) == str(config.known_collection_id)
-        for col in collections_after
-    ), "User still in collection after removal."
+        str(col.id) == str(config.known_collection_id) for col in
+        collections_after), "User still in collection after removal."
     client.users.logout()
 
 
@@ -205,24 +199,20 @@ def test_delete_user(client: R2RClient):
         client.users.login(random_email, password)
 
     assert exc_info.value.status_code == 404, (
-        "User still exists after deletion."
-    )
+        "User still exists after deletion.")
 
 
-def test_superuser_downgrade_permissions(
-    client: R2RClient, superuser_login, config
-):
+def test_superuser_downgrade_permissions(client: R2RClient, superuser_login,
+                                         config):
     user_email = f"test_super_{uuid.uuid4()}@test.com"
     user_password = "securepass"
-    new_user_id = register_and_return_user_id(
-        client, user_email, user_password
-    )
+    new_user_id = register_and_return_user_id(client, user_email,
+                                              user_password)
 
     # Upgrade user to superuser
     upgraded_user = client.users.update(new_user_id, is_superuser=True).results
     assert upgraded_user.is_superuser == True, (
-        "User not upgraded to superuser."
-    )
+        "User not upgraded to superuser.")
 
     # Logout admin, login as new superuser
     client.users.logout()
@@ -233,9 +223,8 @@ def test_superuser_downgrade_permissions(
     # Downgrade back to normal (re-login as original admin)
     client.users.logout()
     client.users.login(config.superuser_email, config.superuser_password)
-    downgraded_user = client.users.update(
-        new_user_id, is_superuser=False
-    ).results
+    downgraded_user = client.users.update(new_user_id,
+                                          is_superuser=False).results
     assert downgraded_user.is_superuser == False, "User not downgraded."
 
     # Now login as downgraded user and verify no superuser access
@@ -244,8 +233,7 @@ def test_superuser_downgrade_permissions(
     with pytest.raises(R2RException) as exc_info:
         client.users.list()
     assert exc_info.value.status_code == 403, (
-        "Downgraded user still has superuser privileges."
-    )
+        "Downgraded user still has superuser privileges.")
     client.users.logout()
 
 
@@ -276,8 +264,7 @@ def test_non_owner_delete_collection(client: R2RClient):
     with pytest.raises(R2RException) as exc_info:
         result = client.collections.delete(coll_id)
     assert exc_info.value.status_code == 403, (
-        "Wrong error code for non-owner deletion attempt"
-    )
+        "Wrong error code for non-owner deletion attempt")
 
     # Cleanup
     client.users.logout()
@@ -354,8 +341,7 @@ def test_login_with_incorrect_password(client: R2RClient):
     with pytest.raises(R2RException) as exc_info:
         client.users.login(email, "wrongpass")
     assert exc_info.value.status_code == 401, (
-        "Expected 401 when logging in with incorrect password."
-    )
+        "Expected 401 when logging in with incorrect password.")
     client.users.logout()
 
 
@@ -389,8 +375,7 @@ def test_verification_with_invalid_code(client: R2RClient):
 
 
 @pytest.mark.skip(
-    reason="Verification and token logic depends on implementation."
-)
+    reason="Verification and token logic depends on implementation.")
 def test_password_reset_with_invalid_token(client: R2RClient):
     email = f"{uuid.uuid4()}@example.com"
     password = "initialpass"
@@ -410,7 +395,7 @@ def test_password_reset_with_invalid_token(client: R2RClient):
 
 @pytest.fixture
 def user_with_api_key(client: R2RClient):
-    """Fixture that creates a user and returns their ID and API key details"""
+    """Fixture that creates a user and returns their ID and API key details."""
     random_email = f"{uuid.uuid4()}@example.com"
     password = "api_key_test_password"
     user_id = client.users.create(random_email, password).results.id
@@ -432,7 +417,8 @@ def user_with_api_key(client: R2RClient):
 
 
 def test_api_key_lifecycle(client: R2RClient):
-    """Test the complete lifecycle of API keys including creation, listing, and deletion"""
+    """Test the complete lifecycle of API keys including creation, listing, and
+    deletion."""
     # Create user and login
     email = f"{uuid.uuid4()}@example.com"
     password = "api_key_test_password"
@@ -451,8 +437,7 @@ def test_api_key_lifecycle(client: R2RClient):
     list_resp = client.users.list_api_keys(user_id).results
     assert len(list_resp) > 0, "No API keys found after creation"
     assert list_resp[0].key_id == key_id, (
-        "Listed key ID doesn't match created key"
-    )
+        "Listed key ID doesn't match created key")
     assert list_resp[0].updated_at is not None, "Updated timestamp missing"
     assert list_resp[0].public_key is not None, "Public key missing in list"
 
@@ -462,15 +447,15 @@ def test_api_key_lifecycle(client: R2RClient):
 
     # Verify deletion
     list_resp_after = client.users.list_api_keys(user_id).results
-    assert not any(k.key_id == key_id for k in list_resp_after), (
-        "API key still exists after deletion"
-    )
+    assert not any(
+        k.key_id == key_id
+        for k in list_resp_after), ("API key still exists after deletion")
 
     client.users.logout()
 
 
 def test_api_key_authentication(client: R2RClient, user_with_api_key):
-    """Test using an API key for authentication"""
+    """Test using an API key for authentication."""
     user_id, api_key, _ = user_with_api_key
 
     # Create new client with API key
@@ -483,7 +468,7 @@ def test_api_key_authentication(client: R2RClient, user_with_api_key):
 
 
 def test_api_key_permissions(client: R2RClient, user_with_api_key):
-    """Test API key permission restrictions"""
+    """Test API key permission restrictions."""
     user_id, api_key, _ = user_with_api_key
 
     # Create new client with API key
@@ -494,24 +479,22 @@ def test_api_key_permissions(client: R2RClient, user_with_api_key):
     with pytest.raises(R2RException) as exc_info:
         api_client.users.list()
     assert exc_info.value.status_code == 403, (
-        "Non-superuser API key shouldn't list users"
-    )
+        "Non-superuser API key shouldn't list users")
 
 
 def test_invalid_api_key(client: R2RClient):
-    """Test behavior with invalid API key"""
+    """Test behavior with invalid API key."""
     api_client = R2RClient(client.base_url)
     api_client.set_api_key("invalid.api.key")
 
     with pytest.raises(R2RException) as exc_info:
         api_client.users.me()
     assert exc_info.value.status_code == 401, (
-        "Expected 401 for invalid API key"
-    )
+        "Expected 401 for invalid API key")
 
 
 def test_multiple_api_keys(client: R2RClient):
-    """Test creating and managing multiple API keys for a single user"""
+    """Test creating and managing multiple API keys for a single user."""
     email = f"{uuid.uuid4()}@example.com"
     password = "multi_key_test_password"
     user_id = client.users.create(email, password).results.id
@@ -532,8 +515,7 @@ def test_multiple_api_keys(client: R2RClient):
         client.users.delete_api_key(user_id, key_id)
         current_keys = client.users.list_api_keys(user_id).results
         assert not any(k.key_id == key_id for k in current_keys), (
-            f"Key {key_id} still exists after deletion"
-        )
+            f"Key {key_id} still exists after deletion")
 
     client.users.logout()
 
@@ -555,7 +537,9 @@ def test_update_user_limits_overrides(client: R2RClient):
         "global_per_min": 10,
         "monthly_limit": 3000,
         "route_overrides": {
-            "/some-route": {"route_per_min": 5},
+            "/some-route": {
+                "route_per_min": 5
+            },
         },
     }
     client.users.update(id=fetched_user.id, limits_overrides=overrides)
@@ -565,9 +549,5 @@ def test_update_user_limits_overrides(client: R2RClient):
     updated_user = client.users.me().results
     assert len(updated_user.limits_overrides) != 0
     assert updated_user.limits_overrides["global_per_min"] == 10
-    assert (
-        updated_user.limits_overrides["route_overrides"]["/some-route"][
-            "route_per_min"
-        ]
-        == 5
-    )
+    assert (updated_user.limits_overrides["route_overrides"]["/some-route"]
+            ["route_per_min"] == 5)

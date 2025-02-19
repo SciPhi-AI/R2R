@@ -1,5 +1,5 @@
-"""
-Tests document ingestion functionality in R2R across all supported file types and modes.
+"""Tests document ingestion functionality in R2R across all supported file
+types and modes.
 
 Supported file types include:
 - Documents: .doc, .docx, .odt, .pdf, .rtf, .txt
@@ -42,8 +42,7 @@ def file_ingestion(
     raw_text: Optional[str] = None,
     timeout: int = 600,
 ) -> UUID:
-    """
-    Test ingestion of a file with the given parameters.
+    """Test ingestion of a file with the given parameters.
 
     Args:
         client: R2RClient instance
@@ -100,8 +99,7 @@ def file_ingestion(
                     break
                 elif ingestion_status == "failed":
                     raise AssertionError(
-                        f"Document ingestion failed: {retrieval_response}"
-                    )
+                        f"Document ingestion failed: {retrieval_response}")
 
             except R2RException as e:
                 if e.status_code == 404:
@@ -131,6 +129,7 @@ def file_ingestion(
 
 @pytest.fixture(scope="session")
 def config():
+
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -179,9 +178,8 @@ def client(config):
         ("xlsx", "core/examples/supported_file_types/xlsx.xlsx"),
     ],
 )
-def test_file_type_ingestion(
-    client: R2RClient, file_type: str, file_path: str
-):
+def test_file_type_ingestion(client: R2RClient, file_type: str,
+                             file_path: str):
     """Test ingestion of specific file type."""
 
     try:
@@ -207,7 +205,8 @@ def test_file_type_ingestion(
     ],
 )
 def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
-    """Test hi-res ingestion with complex documents containing mixed content."""
+    """Test hi-res ingestion with complex documents containing mixed
+    content."""
     if file_type == "pdf":
         try:
             result = file_ingestion(
@@ -221,8 +220,7 @@ def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
         except Exception as e:  # Changed from R2RException to Exception
             if "PDF processing requires Poppler to be installed" in str(e):
                 pytest.skip(
-                    "Skipping PDF test due to missing Poppler dependency"
-                )
+                    "Skipping PDF test due to missing Poppler dependency")
             raise
     else:
         result = file_ingestion(
@@ -266,9 +264,8 @@ def test_raw_text_ingestion(client: R2RClient):
     """Test ingestion of raw text content."""
     text_content = "This is a test document.\nIt has multiple lines.\nTesting raw text ingestion."
 
-    response = client.documents.create(
-        raw_text=text_content, ingestion_mode="fast"
-    )
+    response = client.documents.create(raw_text=text_content,
+                                       ingestion_mode="fast")
 
     assert response is not None
     assert response.results is not None

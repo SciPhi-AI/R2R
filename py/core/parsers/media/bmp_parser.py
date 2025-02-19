@@ -45,7 +45,7 @@ class BMPParser(AsyncParser[str | bytes]):
             # DIB header
             dib_format = "<IiiHHIIiiII"
             dib_size = self.struct.calcsize(dib_format)
-            dib_data = self.struct.unpack(dib_format, data[14 : 14 + dib_size])
+            dib_data = self.struct.unpack(dib_format, data[14:14 + dib_size])
 
             width = dib_data[1]
             height = abs(dib_data[2])  # Height can be negative
@@ -62,9 +62,8 @@ class BMPParser(AsyncParser[str | bytes]):
         except Exception as e:
             return {"error": f"Failed to parse BMP header: {str(e)}"}
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         """Ingest BMP data and yield metadata description."""
         if isinstance(data, str):
             # Convert base64 string to bytes if needed

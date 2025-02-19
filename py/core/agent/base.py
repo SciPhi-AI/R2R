@@ -36,6 +36,7 @@ def sync_wrapper(async_gen):
 
 
 class R2RAgent(Agent, metaclass=CombinedMeta):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._reset()
@@ -74,10 +75,8 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
         output_messages = []
         for message_2 in all_messages:
-            if (
-                message_2.get("content")
-                and message_2.get("content") != messages[-1].content
-            ):
+            if (message_2.get("content")
+                    and message_2.get("content") != messages[-1].content):
                 output_messages.append(message_2)
             else:
                 break
@@ -85,9 +84,8 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
         return output_messages
 
-    async def process_llm_response(
-        self, response: LLMChatCompletion, *args, **kwargs
-    ) -> None:
+    async def process_llm_response(self, response: LLMChatCompletion, *args,
+                                   **kwargs) -> None:
         # Unchanged from your snippet:
         if not self._completed:
             message = response.choices[0].message
@@ -113,12 +111,12 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                     )
             else:
                 await self.conversation.add_message(
-                    Message(role="assistant", content=message.content)
-                )
+                    Message(role="assistant", content=message.content))
                 self._completed = True
 
 
 class R2RStreamingAgent(R2RAgent):
+
     async def arun(  # type: ignore
         self,
         system_instruction: Optional[str] = None,
@@ -135,24 +133,20 @@ class R2RStreamingAgent(R2RAgent):
 
         while not self._completed:
             messages_list = await self.conversation.get_messages()
-            generation_config = self.get_generation_config(
-                messages_list[-1], stream=True
-            )
+            generation_config = self.get_generation_config(messages_list[-1],
+                                                           stream=True)
             stream = self.llm_provider.aget_completion_stream(
                 messages_list,
                 generation_config,
             )
             async for proc_chunk in self.process_llm_response(
-                stream, *args, **kwargs
-            ):
+                    stream, *args, **kwargs):
                 yield proc_chunk
 
-    def run(
-        self, system_instruction, messages, *args, **kwargs
-    ) -> Generator[str, None, None]:
+    def run(self, system_instruction, messages, *args,
+            **kwargs) -> Generator[str, None, None]:
         return sync_wrapper(
-            self.arun(system_instruction, messages, *args, **kwargs)
-        )
+            self.arun(system_instruction, messages, *args, **kwargs))
 
     async def process_llm_response(
         self,
@@ -190,8 +184,7 @@ class R2RStreamingAgent(R2RAgent):
                             pending_tool_calls[idx]["name"] = tc.function.name
                         if tc.function.arguments:
                             pending_tool_calls[idx]["arguments"] += (
-                                tc.function.arguments
-                            )
+                                tc.function.arguments)
                         # Set the ID if it appears in later chunks
                         if tc.id and not pending_tool_calls[idx]["id"]:
                             pending_tool_calls[idx]["id"] = tc.id
@@ -218,16 +211,14 @@ class R2RStreamingAgent(R2RAgent):
                 for idx in sorted_indexes:
                     call_info = pending_tool_calls[idx]
                     call_id = call_info["id"] or f"call_{idx}"
-                    calls_list.append(
-                        {
-                            "id": call_id,
-                            "type": "function",
-                            "function": {
-                                "name": call_info["name"],
-                                "arguments": call_info["arguments"],
-                            },
-                        }
-                    )
+                    calls_list.append({
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": call_info["name"],
+                            "arguments": call_info["arguments"],
+                        },
+                    })
 
                 assistant_msg = Message(
                     role="assistant",
@@ -244,15 +235,14 @@ class R2RStreamingAgent(R2RAgent):
                         tool_id=(call_info["id"] or f"call_{idx}"),
                         *args,
                         **kwargs,
-                    )
-                    for idx, call_info in pending_tool_calls.items()
+                    ) for idx, call_info in pending_tool_calls.items()
                 ]
                 results = await asyncio.gather(*async_calls)
 
                 # Yield tool call results
-                for idx, tool_result in zip(
-                    sorted_indexes, results, strict=False
-                ):
+                for idx, tool_result in zip(sorted_indexes,
+                                            results,
+                                            strict=False):
                     call_info = pending_tool_calls[idx]
                     yield "<tool_call>"
                     yield f"<name>{call_info['name']}</name>"
@@ -271,8 +261,7 @@ class R2RStreamingAgent(R2RAgent):
                 # Finalize content if streaming stops
                 if content_buffer:
                     await self.conversation.add_message(
-                        Message(role="assistant", content=content_buffer)
-                    )
+                        Message(role="assistant", content=content_buffer))
                 elif pending_tool_calls:
                     # TODO - RM COPY PASTA.
                     calls_list = []
@@ -280,16 +269,14 @@ class R2RStreamingAgent(R2RAgent):
                     for idx in sorted_indexes:
                         call_info = pending_tool_calls[idx]
                         call_id = call_info["id"] or f"call_{idx}"
-                        calls_list.append(
-                            {
-                                "id": call_id,
-                                "type": "function",
-                                "function": {
-                                    "name": call_info["name"],
-                                    "arguments": call_info["arguments"],
-                                },
-                            }
-                        )
+                        calls_list.append({
+                            "id": call_id,
+                            "type": "function",
+                            "function": {
+                                "name": call_info["name"],
+                                "arguments": call_info["arguments"],
+                            },
+                        })
 
                     assistant_msg = Message(
                         role="assistant",
@@ -305,29 +292,28 @@ class R2RStreamingAgent(R2RAgent):
         # If the stream ends without `finish_reason=stop`
         if not self._completed and content_buffer:
             await self.conversation.add_message(
-                Message(role="assistant", content=content_buffer)
-            )
+                Message(role="assistant", content=content_buffer))
             self._completed = True
             yield "</completion>"
 
         # After the stream ends
         if content_buffer and not self._completed:
             await self.conversation.add_message(
-                Message(role="assistant", content=content_buffer)
-            )
+                Message(role="assistant", content=content_buffer))
             self._completed = True
             yield "</completion>"
 
 
 class R2RStreamingReasoningAgent(R2RStreamingAgent):
+
     async def process_llm_response(
         self,
         stream: AsyncGenerator[LLMChatCompletionChunk, None],
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        Revised processing for the reasoning agent.
+        """Revised processing for the reasoning agent.
+
         This version:
           1. Accumulates tool calls in a list (each with a unique internal_id).
           2. When finish_reason == "tool_calls", it records the tool calls in the conversation,
@@ -345,15 +331,11 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                 delta = chunk.choices[0].delta
 
                 if delta.content and delta.content.count(
-                    "<Thought>"
-                ) > delta.content.count("</Thought>"):
+                        "<Thought>") > delta.content.count("</Thought>"):
                     inside_thoughts = True
-                elif (
-                    delta.content
-                    and inside_thoughts
-                    and delta.content.count("</Thought>")
-                    > delta.content.count("<Thought>")
-                ):
+                elif (delta.content and inside_thoughts
+                      and delta.content.count("</Thought>")
+                      > delta.content.count("<Thought>")):
                     inside_thoughts = False
                 finish_reason = chunk.choices[0].finish_reason
 
@@ -371,12 +353,10 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             # Accumulate partial tool call details
                             if tc.function.name:
                                 pending_tool_calls[idx]["name"] = (
-                                    tc.function.name
-                                )
+                                    tc.function.name)
                             if tc.function.arguments:
                                 pending_tool_calls[idx]["arguments"] += (
-                                    tc.function.arguments
-                                )
+                                    tc.function.arguments)
                             # Set the ID if it appears in later chunks
                             if tc.id and not pending_tool_calls[idx]["id"]:
                                 pending_tool_calls[idx]["id"] = tc.id
@@ -401,16 +381,14 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                     for idx in sorted_indexes:
                         call_info = pending_tool_calls[idx]
                         call_id = call_info["id"] or f"call_{idx}"
-                        calls_list.append(
-                            {
-                                "id": call_id,
-                                "type": "function",
-                                "function": {
-                                    "name": call_info["name"],
-                                    "arguments": call_info["arguments"],
-                                },
-                            }
-                        )
+                        calls_list.append({
+                            "id": call_id,
+                            "type": "function",
+                            "function": {
+                                "name": call_info["name"],
+                                "arguments": call_info["arguments"],
+                            },
+                        })
 
                     assistant_msg = Message(
                         role="assistant",
@@ -435,8 +413,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             tool_id=(call_info["id"] or f"call_{idx}"),
                             *args,
                             **kwargs,
-                        )
-                        for idx, call_info in pending_tool_calls.items()
+                        ) for idx, call_info in pending_tool_calls.items()
                     ]
                     await asyncio.gather(*async_calls)
 
@@ -448,8 +425,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                     # Finalize content if streaming stops
                     if content_buffer:
                         await self.conversation.add_message(
-                            Message(role="assistant", content=content_buffer)
-                        )
+                            Message(role="assistant", content=content_buffer))
                     elif pending_tool_calls:
                         # TODO - RM COPY PASTA.
                         calls_list = []
@@ -457,16 +433,14 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                         for idx in sorted_indexes:
                             call_info = pending_tool_calls[idx]
                             call_id = call_info["id"] or f"call_{idx}"
-                            calls_list.append(
-                                {
-                                    "id": call_id,
-                                    "type": "function",
-                                    "function": {
-                                        "name": call_info["name"],
-                                        "arguments": call_info["arguments"],
-                                    },
-                                }
-                            )
+                            calls_list.append({
+                                "id": call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": call_info["name"],
+                                    "arguments": call_info["arguments"],
+                                },
+                            })
 
                         assistant_msg = Message(
                             role="assistant",
@@ -481,18 +455,17 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             # If the stream ends without `finish_reason=stop`
             if not self._completed and content_buffer:
                 await self.conversation.add_message(
-                    Message(role="assistant", content=content_buffer)
-                )
+                    Message(role="assistant", content=content_buffer))
                 self._completed = True
 
             # After the stream ends
             if content_buffer and not self._completed:
                 await self.conversation.add_message(
-                    Message(role="assistant", content=content_buffer)
-                )
+                    Message(role="assistant", content=content_buffer))
                 self._completed = True
         else:
-            pending_calls = []  # list of dicts: each has "internal_id", "original_id", "name", "arguments"
+            pending_calls = [
+            ]  # list of dicts: each has "internal_id", "original_id", "name", "arguments"
             content_buffer = ""
             function_arguments = ""
 
@@ -513,10 +486,8 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
 
                 # --- 1. Process any incoming tool_calls ---
                 if delta.tool_calls:
-                    if (
-                        "anthropic" in self.rag_generation_config.model
-                        or "claude" in self.rag_generation_config.model
-                    ):
+                    if ("anthropic" in self.rag_generation_config.model
+                            or "claude" in self.rag_generation_config.model):
                         for tc in delta.tool_calls:
                             original_id = tc.id if tc.id else None
                             # Check if an existing pending call with this original_id is incomplete.
@@ -524,11 +495,8 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             for call in pending_calls:
                                 if call["original_id"] == original_id:
                                     # If the accumulated arguments do not appear complete (e.g. not ending with "}")
-                                    if (
-                                        not call["arguments"]
-                                        .strip()
-                                        .endswith("}")
-                                    ):
+                                    if (not call["arguments"].strip().endswith(
+                                            "}")):
                                         found = call
                                         break
                             if found is not None:
@@ -540,47 +508,42 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                                 # Create a new call entry. If the original_id is reused,
                                 # add a suffix so that each call gets a unique internal_id.
                                 new_internal_id = (
-                                    original_id
-                                    if original_id
-                                    else f"call_{len(pending_calls)}"
-                                )
+                                    original_id if original_id else
+                                    f"call_{len(pending_calls)}")
                                 if original_id is not None:
                                     count = sum(
-                                        1
-                                        for call in pending_calls
-                                        if call["original_id"] == original_id
-                                    )
+                                        1 for call in pending_calls
+                                        if call["original_id"] == original_id)
                                     if count > 0:
                                         new_internal_id = (
-                                            f"{original_id}_{count}"
-                                        )
-                                pending_calls.append(
-                                    {
-                                        "internal_id": new_internal_id,
-                                        "original_id": original_id,
-                                        "name": tc.function.name or "",
-                                        "arguments": tc.function.arguments
-                                        or "",
-                                    }
-                                )
+                                            f"{original_id}_{count}")
+                                pending_calls.append({
+                                    "internal_id":
+                                    new_internal_id,
+                                    "original_id":
+                                    original_id,
+                                    "name":
+                                    tc.function.name or "",
+                                    "arguments":
+                                    tc.function.arguments or "",
+                                })
                     else:
                         for tc in delta.tool_calls:
                             idx = tc.index
                             if len(pending_calls) <= idx:
-                                pending_calls.append(
-                                    {
-                                        "internal_id": tc.id,  # could be None
-                                        "name": tc.function.name or "",
-                                        "arguments": tc.function.arguments
-                                        or "",
-                                    }
-                                )
+                                pending_calls.append({
+                                    "internal_id":
+                                    tc.id,  # could be None
+                                    "name":
+                                    tc.function.name or "",
+                                    "arguments":
+                                    tc.function.arguments or "",
+                                })
                             else:
                                 # Accumulate partial tool call details
                                 if tc.function.arguments:
                                     pending_calls[idx]["arguments"] += (
-                                        tc.function.arguments
-                                    )
+                                        tc.function.arguments)
 
                 # --- 2. Process a function_call (if any) ---
                 if delta.function_call:
@@ -599,16 +562,14 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                     # Build a list of tool call descriptors for the conversation message.
                     calls_list = []
                     for call in pending_calls:
-                        calls_list.append(
-                            {
-                                "id": call["internal_id"],
-                                "type": "function",
-                                "function": {
-                                    "name": call["name"],
-                                    "arguments": call["arguments"],
-                                },
-                            }
-                        )
+                        calls_list.append({
+                            "id": call["internal_id"],
+                            "type": "function",
+                            "function": {
+                                "name": call["name"],
+                                "arguments": call["arguments"],
+                            },
+                        })
                     assistant_msg = Message(
                         role="assistant",
                         content=content_buffer or None,
@@ -634,8 +595,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                             tool_id=call["internal_id"],
                             *args,
                             **kwargs,
-                        )
-                        for call in pending_calls
+                        ) for call in pending_calls
                     ]
                     await asyncio.gather(*async_calls)
                     # Reset state after processing.
@@ -646,22 +606,19 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                 elif finish_reason == "stop":
                     if content_buffer:
                         await self.conversation.add_message(
-                            Message(role="assistant", content=content_buffer)
-                        )
+                            Message(role="assistant", content=content_buffer))
                     elif pending_calls:
                         # In case there are pending calls not triggered by a tool_calls finish.
                         calls_list = []
                         for call in pending_calls:
-                            calls_list.append(
-                                {
-                                    "id": call["internal_id"],
-                                    "type": "function",
-                                    "function": {
-                                        "name": call["name"],
-                                        "arguments": call["arguments"],
-                                    },
-                                }
-                            )
+                            calls_list.append({
+                                "id": call["internal_id"],
+                                "type": "function",
+                                "function": {
+                                    "name": call["name"],
+                                    "arguments": call["arguments"],
+                                },
+                            })
                         assistant_msg = Message(
                             role="assistant",
                             content=content_buffer or None,
@@ -674,23 +631,20 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
             # --- Finalize if stream ends unexpectedly ---
             if not self._completed and content_buffer:
                 await self.conversation.add_message(
-                    Message(role="assistant", content=content_buffer)
-                )
+                    Message(role="assistant", content=content_buffer))
                 self._completed = True
 
             if not self._completed and pending_calls:
                 calls_list = []
                 for call in pending_calls:
-                    calls_list.append(
-                        {
-                            "id": call["internal_id"],
-                            "type": "function",
-                            "function": {
-                                "name": call["name"],
-                                "arguments": call["arguments"],
-                            },
-                        }
-                    )
+                    calls_list.append({
+                        "id": call["internal_id"],
+                        "type": "function",
+                        "function": {
+                            "name": call["name"],
+                            "arguments": call["arguments"],
+                        },
+                    })
                 assistant_msg = Message(
                     role="assistant",
                     content=content_buffer or None,

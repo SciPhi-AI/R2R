@@ -39,9 +39,8 @@ class ORGParser(AsyncParser[str | bytes]):
 
         return contents
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         """Ingest ORG data and yield document content."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")

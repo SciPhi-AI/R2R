@@ -41,10 +41,8 @@ STARTING_VERSION = "v0"
 
 
 class IngestionService:
-    """
-    A refactored IngestionService that inlines all pipe logic for parsing,
-    embedding, and vector storage directly in its methods.
-    """
+    """A refactored IngestionService that inlines all pipe logic for parsing,
+    embedding, and vector storage directly in its methods."""
 
     def __init__(
         self,
@@ -66,19 +64,19 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        """
-        Pre-ingests a file by creating or validating the DocumentResponse entry.
-        Does not actually parse/ingest the content. (See parse_file() for that step.)
+        """Pre-ingests a file by creating or validating the DocumentResponse
+        entry.
+
+        Does not actually parse/ingest the content. (See parse_file() for that
+        step.)
         """
         try:
             if not file_data:
-                raise R2RException(
-                    status_code=400, message="No files provided for ingestion."
-                )
+                raise R2RException(status_code=400,
+                                   message="No files provided for ingestion.")
             if not file_data.get("filename"):
-                raise R2RException(
-                    status_code=400, message="File name not provided."
-                )
+                raise R2RException(status_code=400,
+                                   message="File name not provided.")
 
             metadata = metadata or {}
             version = version or STARTING_VERSION
@@ -92,14 +90,13 @@ class IngestionService:
                 size_in_bytes,
             )
 
-            existing_document_info = (
-                await self.providers.database.documents_handler.get_documents_overview(
-                    offset=0,
-                    limit=100,
-                    filter_user_ids=[user.id],
-                    filter_document_ids=[document_id],
-                )
-            )["results"]
+            existing_document_info = (await self.providers.database.
+                                      documents_handler.get_documents_overview(
+                                          offset=0,
+                                          limit=100,
+                                          filter_user_ids=[user.id],
+                                          filter_document_ids=[document_id],
+                                      ))["results"]
 
             # Validate ingestion status for re-ingestion
             if len(existing_document_info) > 0:
@@ -107,26 +104,24 @@ class IngestionService:
                 if existing_doc.ingestion_status == IngestionStatus.SUCCESS:
                     raise R2RException(
                         status_code=409,
-                        message=(
-                            f"Document {document_id} already exists. "
-                            "Submit a DELETE request to `/documents/{document_id}` "
-                            "to delete this document and allow for re-ingestion."
-                        ),
+                        message=
+                        (f"Document {document_id} already exists. "
+                         "Submit a DELETE request to `/documents/{document_id}` "
+                         "to delete this document and allow for re-ingestion."
+                         ),
                     )
                 elif existing_doc.ingestion_status != IngestionStatus.FAILED:
                     raise R2RException(
                         status_code=409,
                         message=(
                             f"Document {document_id} is currently ingesting "
-                            f"with status {existing_doc.ingestion_status}."
-                        ),
+                            f"with status {existing_doc.ingestion_status}."),
                     )
 
             # Set to PARSING until we actually parse
             document_info.ingestion_status = IngestionStatus.PARSING
             await self.providers.database.documents_handler.upsert_documents_overview(
-                document_info
-            )
+                document_info)
 
             return {
                 "info": document_info,
@@ -135,9 +130,8 @@ class IngestionService:
             logger.error(f"R2RException in ingest_file_ingress: {str(e)}")
             raise
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Error during ingestion: {str(e)}"
-            )
+            raise HTTPException(status_code=500,
+                                detail=f"Error during ingestion: {str(e)}")
 
     def create_document_info_from_file(
         self,
@@ -148,9 +142,8 @@ class IngestionService:
         version: str,
         size_in_bytes: int,
     ) -> DocumentResponse:
-        file_extension = (
-            file_name.split(".")[-1].lower() if file_name != "N/A" else "txt"
-        )
+        file_extension = (file_name.split(".")[-1].lower()
+                          if file_name != "N/A" else "txt")
         if file_extension.upper() not in DocumentType.__members__:
             raise R2RException(
                 status_code=415,
@@ -165,11 +158,9 @@ class IngestionService:
             owner_id=user.id,
             collection_ids=metadata.get("collection_ids", []),
             document_type=DocumentType[file_extension.upper()],
-            title=(
-                metadata.get("title", file_name.split("/")[-1])
-                if file_name != "N/A"
-                else "N/A"
-            ),
+            title=(metadata.get("title",
+                                file_name.split("/")[-1])
+                   if file_name != "N/A" else "N/A"),
             metadata=metadata,
             version=version,
             size_in_bytes=size_in_bytes,
@@ -198,8 +189,7 @@ class IngestionService:
             metadata=metadata,
             version=version,
             size_in_bytes=sum(
-                len(chunk.text.encode("utf-8")) for chunk in chunks
-            ),
+                len(chunk.text.encode("utf-8")) for chunk in chunks),
             ingestion_status=IngestionStatus.PENDING,
             created_at=datetime.now(),
             updated_at=datetime.now(),
@@ -210,37 +200,31 @@ class IngestionService:
         document_info: DocumentResponse,
         ingestion_config: dict | None,
     ) -> AsyncGenerator[DocumentChunk, None]:
-        """
-        Inline replacement for the old parsing_pipe.run(...)
-        Reads the file content from the DB, calls the ingestion provider to parse,
-        and yields DocumentChunk objects.
-        """
+        """Inline replacement for the old parsing_pipe.run(...) Reads the file
+        content from the DB, calls the ingestion provider to parse, and yields
+        DocumentChunk objects."""
         version = document_info.version or "v0"
         ingestion_config_override = ingestion_config or {}
 
         # The ingestion config might specify a different provider, etc.
         override_provider = ingestion_config_override.pop("provider", None)
-        if (
-            override_provider
-            and override_provider != self.providers.ingestion.config.provider
-        ):
+        if (override_provider and override_provider
+                != self.providers.ingestion.config.provider):
             raise ValueError(
                 f"Provider '{override_provider}' does not match ingestion provider "
-                f"'{self.providers.ingestion.config.provider}'."
-            )
+                f"'{self.providers.ingestion.config.provider}'.")
 
         try:
             # Pull file from DB
-            retrieved = (
-                await self.providers.database.files_handler.retrieve_file(
-                    document_info.id
-                )
-            )
+            retrieved = (await
+                         self.providers.database.files_handler.retrieve_file(
+                             document_info.id))
             if not retrieved:
                 # No file found in the DB, can't parse
                 raise R2RDocumentProcessingError(
                     document_id=document_info.id,
-                    error_message="No file content found in DB for this document.",
+                    error_message=
+                    "No file content found in DB for this document.",
                 )
 
             file_name, file_wrapper, file_size = retrieved
@@ -298,36 +282,36 @@ class IngestionService:
                 document += f"Document Metadata: {json.dumps(document_info.metadata)}\n"
 
             document += "Document Text:\n"
-            for chunk in chunked_documents[
-                : self.config.ingestion.chunks_for_document_summary
-            ]:
+            for chunk in chunked_documents[:self.config.ingestion.
+                                           chunks_for_document_summary]:
                 document += chunk["data"]
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
-                system_prompt_name=self.config.ingestion.document_summary_system_prompt,
-                task_prompt_name=self.config.ingestion.document_summary_task_prompt,
+                system_prompt_name=self.config.ingestion.
+                document_summary_system_prompt,
+                task_prompt_name=self.config.ingestion.
+                document_summary_task_prompt,
                 task_inputs={
-                    "document": document[
-                        : self.config.ingestion.document_summary_max_length
-                    ]
+                    "document":
+                    document[:self.config.ingestion.
+                             document_summary_max_length]
                 },
             )
             response = await self.providers.llm.aget_completion(
                 messages=messages,
                 generation_config=GenerationConfig(
                     model=self.config.ingestion.document_summary_model
-                    or self.config.app.fast_llm
-                ),
+                    or self.config.app.fast_llm),
             )
 
-            document_info.summary = response.choices[0].message.content  # type: ignore
+            document_info.summary = response.choices[
+                0].message.content  # type: ignore
 
             if not document_info.summary:
                 raise ValueError("Expected a generated response.")
 
             embedding = await self.providers.embedding.async_get_embedding(
-                text=document_info.summary,
-            )
+                text=document_info.summary, )
             document_info.summary_embedding = embedding
         return
 
@@ -336,31 +320,24 @@ class IngestionService:
         chunked_documents: list[dict],
         embedding_batch_size: int = 8,
     ) -> AsyncGenerator[VectorEntry, None]:
-        """
-        Inline replacement for the old embedding_pipe.run(...).
+        """Inline replacement for the old embedding_pipe.run(...).
+
         Batches the embedding calls and yields VectorEntry objects.
         """
         if not chunked_documents:
             return
 
         concurrency_limit = (
-            self.providers.embedding.config.concurrent_request_limit or 5
-        )
+            self.providers.embedding.config.concurrent_request_limit or 5)
         extraction_batch: list[DocumentChunk] = []
         tasks: set[asyncio.Task] = set()
 
         async def process_batch(
-            batch: list[DocumentChunk],
-        ) -> list[VectorEntry]:
+            batch: list[DocumentChunk], ) -> list[VectorEntry]:
             # All text from the batch
-            texts = [
-                (
-                    ex.data.decode("utf-8")
-                    if isinstance(ex.data, bytes)
-                    else ex.data
-                )
-                for ex in batch
-            ]
+            texts = [(ex.data.decode("utf-8")
+                      if isinstance(ex.data, bytes) else ex.data)
+                     for ex in batch]
             # Retrieve embeddings in bulk
             vectors = await self.providers.embedding.async_get_embeddings(
                 texts,  # list of strings
@@ -375,14 +352,10 @@ class IngestionService:
                         owner_id=extraction.owner_id,
                         collection_ids=extraction.collection_ids,
                         vector=Vector(data=raw_vector, type=VectorType.FIXED),
-                        text=(
-                            extraction.data.decode("utf-8")
-                            if isinstance(extraction.data, bytes)
-                            else str(extraction.data)
-                        ),
+                        text=(extraction.data.decode("utf-8") if isinstance(
+                            extraction.data, bytes) else str(extraction.data)),
                         metadata={**extraction.metadata},
-                    )
-                )
+                    ))
             return results
 
         async def run_process_batch(batch: list[DocumentChunk]):
@@ -396,15 +369,13 @@ class IngestionService:
             # If we hit a batch threshold, spawn a task
             if len(extraction_batch) >= embedding_batch_size:
                 tasks.add(
-                    asyncio.create_task(run_process_batch(extraction_batch))
-                )
+                    asyncio.create_task(run_process_batch(extraction_batch)))
                 extraction_batch = []
 
             # If tasks are at concurrency limit, wait for the first to finish
             while len(tasks) >= concurrency_limit:
                 done, tasks = await asyncio.wait(
-                    tasks, return_when=asyncio.FIRST_COMPLETED
-                )
+                    tasks, return_when=asyncio.FIRST_COMPLETED)
                 for t in done:
                     for vector_entry in await t:
                         yield vector_entry
@@ -423,10 +394,10 @@ class IngestionService:
         embeddings: Sequence[dict | VectorEntry],
         storage_batch_size: int = 128,
     ) -> AsyncGenerator[str, None]:
-        """
-        Inline replacement for the old vector_storage_pipe.run(...).
-        Batches up the vector entries, enforces usage limits, stores them,
-        and yields a success/error string (or you could yield a StorageResult).
+        """Inline replacement for the old vector_storage_pipe.run(...).
+
+        Batches up the vector entries, enforces usage limits, stores them, and
+        yields a success/error string (or you could yield a StorageResult).
         """
         if not embeddings:
             return
@@ -457,32 +428,26 @@ class IngestionService:
                         limit=1,
                         offset=0,
                         filters={"owner_id": msg.owner_id},
-                    )
-                )
+                    ))
                 current_usage = usage_data["total_entries"]
 
             # Figure out the user's limit
             user = await self.providers.database.users_handler.get_user_by_id(
-                msg.owner_id
-            )
+                msg.owner_id)
             max_chunks = (
-                self.providers.database.config.app.default_max_chunks_per_user
-            )
+                self.providers.database.config.app.default_max_chunks_per_user)
             if user.limits_overrides and "max_chunks" in user.limits_overrides:
                 max_chunks = user.limits_overrides["max_chunks"]
 
             # Add to our local batch
             vector_batch.append(msg)
             document_counts[msg.document_id] = (
-                document_counts.get(msg.document_id, 0) + 1
-            )
+                document_counts.get(msg.document_id, 0) + 1)
             count += 1
 
             # Check usage
-            if (
-                current_usage is not None
-                and (current_usage + len(vector_batch) + count) > max_chunks
-            ):
+            if (current_usage is not None and
+                (current_usage + len(vector_batch) + count) > max_chunks):
                 error_message = f"User {msg.owner_id} has exceeded the maximum number of allowed chunks: {max_chunks}"
                 logger.error(error_message)
                 yield error_message
@@ -491,11 +456,8 @@ class IngestionService:
             # Once we hit our batch size, store them
             if len(vector_batch) >= storage_batch_size:
                 try:
-                    await (
-                        self.providers.database.chunks_handler.upsert_entries(
-                            vector_batch
-                        )
-                    )
+                    await (self.providers.database.chunks_handler.
+                           upsert_entries(vector_batch))
                 except Exception as e:
                     logger.error(f"Failed to store vector batch: {e}")
                     yield f"Error: {e}"
@@ -505,8 +467,7 @@ class IngestionService:
         if vector_batch:
             try:
                 await self.providers.database.chunks_handler.upsert_entries(
-                    vector_batch
-                )
+                    vector_batch)
             except Exception as e:
                 logger.error(f"Failed to store final vector batch: {e}")
                 yield f"Error: {e}"
@@ -517,20 +478,16 @@ class IngestionService:
             logger.info(info_msg)
             yield info_msg
 
-    async def finalize_ingestion(
-        self, document_info: DocumentResponse
-    ) -> None:
-        """
-        Called at the end of a successful ingestion pipeline to
-        set the document status to SUCCESS or similar final steps.
-        """
+    async def finalize_ingestion(self,
+                                 document_info: DocumentResponse) -> None:
+        """Called at the end of a successful ingestion pipeline to set the
+        document status to SUCCESS or similar final steps."""
 
         async def empty_generator():
             yield document_info
 
-        await self.update_document_status(
-            document_info, IngestionStatus.SUCCESS
-        )
+        await self.update_document_status(document_info,
+                                          IngestionStatus.SUCCESS)
         return empty_generator()
 
     async def update_document_status(
@@ -544,13 +501,11 @@ class IngestionService:
             document_info.metadata = {**document_info.metadata, **metadata}
         await self._update_document_status_in_db(document_info)
 
-    async def _update_document_status_in_db(
-        self, document_info: DocumentResponse
-    ):
+    async def _update_document_status_in_db(self,
+                                            document_info: DocumentResponse):
         try:
             await self.providers.database.documents_handler.upsert_documents_overview(
-                document_info
-            )
+                document_info)
         except Exception as e:
             logger.error(
                 f"Failed to update document status: {document_info.id}. Error: {str(e)}"
@@ -566,13 +521,11 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> DocumentResponse:
-        """
-        Directly ingest user-provided text chunks (rather than from a file).
-        """
+        """Directly ingest user-provided text chunks (rather than from a
+        file)."""
         if not chunks:
-            raise R2RException(
-                status_code=400, message="No chunks provided for ingestion."
-            )
+            raise R2RException(status_code=400,
+                               message="No chunks provided for ingestion.")
         metadata = metadata or {}
         version = STARTING_VERSION
 
@@ -585,27 +538,24 @@ class IngestionService:
         )
 
         existing_document_info = (
-            await self.providers.database.documents_handler.get_documents_overview(
+            await
+            self.providers.database.documents_handler.get_documents_overview(
                 offset=0,
                 limit=100,
                 filter_user_ids=[user.id],
                 filter_document_ids=[document_id],
-            )
-        )["results"]
+            ))["results"]
         if len(existing_document_info) > 0:
             existing_doc = existing_document_info[0]
             if existing_doc.ingestion_status != IngestionStatus.FAILED:
                 raise R2RException(
                     status_code=409,
-                    message=(
-                        f"Document {document_id} was already ingested "
-                        "and is not in a failed state."
-                    ),
+                    message=(f"Document {document_id} was already ingested "
+                             "and is not in a failed state."),
                 )
 
         await self.providers.database.documents_handler.upsert_documents_overview(
-            document_info
-        )
+            document_info)
         return document_info
 
     @telemetry_event("UpdateChunk")
@@ -619,17 +569,15 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        """
-        Update an individual chunk's text and metadata, re-embed, and re-store it.
-        """
+        """Update an individual chunk's text and metadata, re-embed, and re-
+        store it."""
         # Verify chunk exists and user has access
         existing_chunks = (
             await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=document_id,
                 offset=0,
                 limit=1,
-            )
-        )
+            ))
         if not existing_chunks["results"]:
             raise R2RException(
                 status_code=404,
@@ -637,18 +585,15 @@ class IngestionService:
             )
 
         existing_chunk = (
-            await self.providers.database.chunks_handler.get_chunk(chunk_id)
-        )
+            await self.providers.database.chunks_handler.get_chunk(chunk_id))
         if not existing_chunk:
             raise R2RException(
                 status_code=404,
                 message=f"Chunk with id {chunk_id} not found",
             )
 
-        if (
-            str(existing_chunk["owner_id"]) != str(user.id)
-            and not user.is_superuser
-        ):
+        if (str(existing_chunk["owner_id"]) != str(user.id)
+                and not user.is_superuser):
             raise R2RException(
                 status_code=403,
                 message="You don't have permission to modify this chunk.",
@@ -661,21 +606,24 @@ class IngestionService:
 
         # Create updated chunk
         extraction_data = {
-            "id": chunk_id,
-            "document_id": document_id,
-            "collection_ids": kwargs.get(
-                "collection_ids", existing_chunk["collection_ids"]
-            ),
-            "owner_id": existing_chunk["owner_id"],
-            "data": text or existing_chunk["text"],
-            "metadata": merged_metadata,
+            "id":
+            chunk_id,
+            "document_id":
+            document_id,
+            "collection_ids":
+            kwargs.get("collection_ids", existing_chunk["collection_ids"]),
+            "owner_id":
+            existing_chunk["owner_id"],
+            "data":
+            text or existing_chunk["text"],
+            "metadata":
+            merged_metadata,
         }
         extraction = DocumentChunk(**extraction_data).model_dump()
 
         # Re-embed
-        embeddings_generator = self.embed_document(
-            [extraction], embedding_batch_size=1
-        )
+        embeddings_generator = self.embed_document([extraction],
+                                                   embedding_batch_size=1)
         embeddings = []
         async for embedding in embeddings_generator:
             embeddings.append(embedding)
@@ -696,20 +644,18 @@ class IngestionService:
         chunk_enrichment_settings: ChunkEnrichmentSettings,
         list_document_chunks: list[dict],
     ) -> VectorEntry:
-        """
-        Helper for chunk_enrichment. Leverages an LLM to rewrite or expand chunk text,
-        then re-embeds it.
+        """Helper for chunk_enrichment.
+
+        Leverages an LLM to rewrite or expand chunk text, then re-embeds it.
         """
         preceding_chunks = [
-            list_document_chunks[idx]["text"]
-            for idx in range(
+            list_document_chunks[idx]["text"] for idx in range(
                 max(0, chunk_idx - chunk_enrichment_settings.n_chunks),
                 chunk_idx,
             )
         ]
         succeeding_chunks = [
-            list_document_chunks[idx]["text"]
-            for idx in range(
+            list_document_chunks[idx]["text"] for idx in range(
                 chunk_idx + 1,
                 min(
                     len(list_document_chunks),
@@ -719,42 +665,33 @@ class IngestionService:
         ]
         try:
             # Obtain the updated text from the LLM
-            updated_chunk_text = (
-                (
-                    await self.providers.llm.aget_completion(
-                        messages=await self.providers.database.prompts_handler.get_message_payload(
-                            task_prompt_name=chunk_enrichment_settings.chunk_enrichment_prompt,
-                            task_inputs={
-                                "document_summary": document_summary or "None",
-                                "chunk": chunk["text"],
-                                "preceding_chunks": (
-                                    "\n".join(preceding_chunks)
-                                    if preceding_chunks
-                                    else "None"
-                                ),
-                                "succeeding_chunks": (
-                                    "\n".join(succeeding_chunks)
-                                    if succeeding_chunks
-                                    else "None"
-                                ),
-                                "chunk_size": self.config.ingestion.chunk_size
-                                or 1024,
-                            },
-                        ),
-                        generation_config=chunk_enrichment_settings.generation_config
-                        or GenerationConfig(model=self.config.app.fast_llm),
-                    )
-                )
-                .choices[0]
-                .message.content
-            )
+            updated_chunk_text = ((await self.providers.llm.aget_completion(
+                messages=await
+                self.providers.database.prompts_handler.get_message_payload(
+                    task_prompt_name=chunk_enrichment_settings.
+                    chunk_enrichment_prompt,
+                    task_inputs={
+                        "document_summary":
+                        document_summary or "None",
+                        "chunk":
+                        chunk["text"],
+                        "preceding_chunks": ("\n".join(preceding_chunks)
+                                             if preceding_chunks else "None"),
+                        "succeeding_chunks": ("\n".join(succeeding_chunks) if
+                                              succeeding_chunks else "None"),
+                        "chunk_size":
+                        self.config.ingestion.chunk_size or 1024,
+                    },
+                ),
+                generation_config=chunk_enrichment_settings.generation_config
+                or GenerationConfig(model=self.config.app.fast_llm),
+            )).choices[0].message.content)
         except Exception:
             updated_chunk_text = chunk["text"]
             chunk["metadata"]["chunk_enrichment_status"] = "failed"
         else:
             chunk["metadata"]["chunk_enrichment_status"] = (
-                "success" if updated_chunk_text else "failed"
-            )
+                "success" if updated_chunk_text else "failed")
 
         if not updated_chunk_text or not isinstance(updated_chunk_text, str):
             updated_chunk_text = str(chunk["text"])
@@ -762,8 +699,7 @@ class IngestionService:
 
         # Re-embed
         data = await self.providers.embedding.async_get_embedding(
-            updated_chunk_text
-        )
+            updated_chunk_text)
         chunk["metadata"]["original_text"] = chunk["text"]
 
         return VectorEntry(
@@ -782,17 +718,14 @@ class IngestionService:
         document_summary: str | None,
         chunk_enrichment_settings: ChunkEnrichmentSettings,
     ) -> int:
-        """
-        Example function that modifies chunk text via an LLM then re-embeds
-        and re-stores all chunks for the given document.
-        """
+        """Example function that modifies chunk text via an LLM then re-embeds
+        and re-stores all chunks for the given document."""
         list_document_chunks = (
             await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=document_id,
                 offset=0,
                 limit=-1,
-            )
-        )["results"]
+            ))["results"]
 
         new_vector_entries: list[VectorEntry] = []
         tasks = []
@@ -807,8 +740,7 @@ class IngestionService:
                     document_summary=document_summary,
                     chunk_enrichment_settings=chunk_enrichment_settings,
                     list_document_chunks=list_document_chunks,
-                )
-            )
+                ))
 
             # Process in batches of e.g. 128 concurrency
             if len(tasks) == 128:
@@ -827,13 +759,11 @@ class IngestionService:
 
         # Delete old chunks from vector db
         await self.providers.database.chunks_handler.delete(
-            filters={"document_id": document_id}
-        )
+            filters={"document_id": document_id})
 
         # Insert the newly enriched entries
         await self.providers.database.chunks_handler.upsert_entries(
-            new_vector_entries
-        )
+            new_vector_entries)
         return len(new_vector_entries)
 
     async def list_chunks(
@@ -876,16 +806,17 @@ class IngestionService:
         if not existing_document["results"]:
             raise R2RException(
                 status_code=404,
-                message=(
-                    f"Document with id {document_id} not found "
-                    "or you don't have access."
-                ),
+                message=(f"Document with id {document_id} not found "
+                         "or you don't have access."),
             )
 
         existing_document = existing_document["results"][0]
 
         # Merge metadata
-        merged_metadata = {**existing_document.metadata, **metadata}  # type: ignore
+        merged_metadata = {
+            **existing_document.metadata,
+            **metadata
+        }  # type: ignore
 
         # Update document metadata
         existing_document.metadata = merged_metadata  # type: ignore
@@ -895,6 +826,7 @@ class IngestionService:
 
 
 class IngestionServiceAdapter:
+
     @staticmethod
     def _parse_user_data(user_data) -> User:
         if isinstance(user_data, str):
@@ -902,35 +834,43 @@ class IngestionServiceAdapter:
                 user_data = json.loads(user_data)
             except json.JSONDecodeError as e:
                 raise ValueError(
-                    f"Invalid user data format: {user_data}"
-                ) from e
+                    f"Invalid user data format: {user_data}") from e
         return User.from_dict(user_data)
 
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
         return {
-            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
-            "metadata": data["metadata"],
-            "document_id": (
-                UUID(data["document_id"]) if data["document_id"] else None
-            ),
-            "version": data.get("version"),
-            "ingestion_config": data["ingestion_config"] or {},
-            "file_data": data["file_data"],
-            "size_in_bytes": data["size_in_bytes"],
-            "collection_ids": data.get("collection_ids", []),
+            "user":
+            IngestionServiceAdapter._parse_user_data(data["user"]),
+            "metadata":
+            data["metadata"],
+            "document_id":
+            (UUID(data["document_id"]) if data["document_id"] else None),
+            "version":
+            data.get("version"),
+            "ingestion_config":
+            data["ingestion_config"] or {},
+            "file_data":
+            data["file_data"],
+            "size_in_bytes":
+            data["size_in_bytes"],
+            "collection_ids":
+            data.get("collection_ids", []),
         }
 
     @staticmethod
     def parse_ingest_chunks_input(data: dict) -> dict:
         return {
-            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
-            "metadata": data["metadata"],
-            "document_id": data["document_id"],
-            "chunks": [
-                UnprocessedChunk.from_dict(chunk) for chunk in data["chunks"]
-            ],
-            "id": data.get("id"),
+            "user":
+            IngestionServiceAdapter._parse_user_data(data["user"]),
+            "metadata":
+            data["metadata"],
+            "document_id":
+            data["document_id"],
+            "chunks":
+            [UnprocessedChunk.from_dict(chunk) for chunk in data["chunks"]],
+            "id":
+            data.get("id"),
         }
 
     @staticmethod

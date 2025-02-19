@@ -1,9 +1,8 @@
-"""migrate_to_document_search
+"""migrate_to_document_search.
 
 Revision ID: 2fac23e4d91b
 Revises:
 Create Date: 2024-11-11 11:55:49.461015
-
 """
 
 import asyncio
@@ -39,18 +38,19 @@ if not dimension:
 
 
 class Vector(UserDefinedType):
+
     def get_col_spec(self, **kw):
         return f"vector({dimension})"
 
 
 def run_async(coroutine):
-    """Helper function to run async code synchronously"""
+    """Helper function to run async code synchronously."""
     with ThreadPoolExecutor() as pool:
         return pool.submit(asyncio.run, coroutine).result()
 
 
 async def async_generate_all_summaries():
-    """Asynchronous function to generate summaries"""
+    """Asynchronous function to generate summaries."""
 
     base_url = os.getenv("R2R_BASE_URL")
     if not base_url:
@@ -72,14 +72,12 @@ async def async_generate_all_summaries():
 
     offset = 0
     limit = 1_000
-    documents = (await client.documents_overview(offset=offset, limit=limit))[
-        "results"
-    ]
+    documents = (await client.documents_overview(offset=offset,
+                                                 limit=limit))["results"]
     while len(documents) == limit:
         limit += offset
-        documents += (
-            await client.documents_overview(offset=offset, limit=limit)
-        )["results"]
+        documents += (await client.documents_overview(offset=offset,
+                                                      limit=limit))["results"]
 
     # Load existing summaries if they exist
     document_summaries = {}
@@ -92,15 +90,13 @@ async def async_generate_all_summaries():
             )
         except json.JSONDecodeError:
             print(
-                "Existing document_summaries.json was invalid, starting fresh"
-            )
+                "Existing document_summaries.json was invalid, starting fresh")
             document_summaries = {}
 
     for document in documents:
         title = document["title"]
         doc_id = str(
-            document["id"]
-        )  # Convert UUID to string for JSON compatibility
+            document["id"])  # Convert UUID to string for JSON compatibility
 
         # Skip if document already has a summary
         if doc_id in document_summaries:
@@ -117,9 +113,8 @@ async def async_generate_all_summaries():
                 metadata = json.dumps(document["metadata"])
                 document_text += f"Document Metadata:\n{metadata}\n"
 
-            full_chunks = (
-                await client.document_chunks(document["id"], limit=10)
-            )["results"]
+            full_chunks = (await client.document_chunks(document["id"],
+                                                        limit=10))["results"]
 
             document_text += "Document Content:\n"
 
@@ -141,20 +136,16 @@ async def async_generate_all_summaries():
 
     ## Response:"""
 
-            messages = [
-                {
-                    "role": "user",
-                    "content": summary_prompt.format(
-                        **{"document": document_text}
-                    ),
-                }
-            ]
+            messages = [{
+                "role":
+                "user",
+                "content":
+                summary_prompt.format(**{"document": document_text}),
+            }]
             summary = await client.completion(
-                messages=messages, generation_config={"model": base_model}
-            )
+                messages=messages, generation_config={"model": base_model})
             summary_text = summary["results"]["choices"][0]["message"][
-                "content"
-            ]
+                "content"]
             embedding_vector = await client.embedding(summary_text)
             # embedding_response = await openai_client.embeddings.create(
             #     model=embedding_model, input=summary_text, dimensions=dimension
@@ -182,12 +173,12 @@ async def async_generate_all_summaries():
 
 
 def generate_all_summaries():
-    """Synchronous wrapper for async_generate_all_summaries"""
+    """Synchronous wrapper for async_generate_all_summaries."""
     return run_async(async_generate_all_summaries())
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     # Get database connection
     connection = op.get_bind()
     inspector = inspect(connection)
@@ -253,8 +244,7 @@ def upgrade() -> None:
         )
 
         # Add generated column for full text search
-        op.execute(
-            f"""
+        op.execute(f"""
         ALTER TABLE {project_name}.document_info
         ADD COLUMN doc_search_vector tsvector
         GENERATED ALWAYS AS (
@@ -262,36 +252,30 @@ def upgrade() -> None:
             setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
             setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
         ) STORED;
-        """
-        )
+        """)
 
         # Create index for full text search
-        op.execute(
-            f"""
+        op.execute(f"""
         CREATE INDEX idx_doc_search_{project_name}
         ON {project_name}.document_info
         USING GIN (doc_search_vector);
-        """
-        )
+        """)
 
         if document_summaries:
             # Update existing documents with summaries and embeddings
             for doc_id, doc_data in document_summaries.items():
                 # Convert the embedding array to the PostgreSQL vector format
                 embedding_str = (
-                    f"[{','.join(str(x) for x in doc_data['embedding'])}]"
-                )
+                    f"[{','.join(str(x) for x in doc_data['embedding'])}]")
 
                 # Use plain SQL with proper escaping for PostgreSQL
-                op.execute(
-                    f"""
+                op.execute(f"""
                     UPDATE {project_name}.document_info
                     SET
                         summary = '{doc_data["summary"].replace("'", "''")}',
                         summary_embedding = '{embedding_str}'::vector({dimension})
                     WHERE document_id = '{doc_id}'::uuid;
-                    """
-                )
+                    """)
         else:
             print(
                 "No document summaries found, skipping update of existing documents"
@@ -300,16 +284,14 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # First drop any dependencies on the columns we want to remove
-    op.execute(
-        f"""
+    op.execute(f"""
         -- Drop the full text search index first
         DROP INDEX IF EXISTS {project_name}.idx_doc_search_{project_name};
 
         -- Drop the generated column that depends on the summary column
         ALTER TABLE {project_name}.document_info
         DROP COLUMN IF EXISTS doc_search_vector;
-        """
-    )
+        """)
 
     # Now we can safely drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)

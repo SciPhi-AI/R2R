@@ -41,18 +41,21 @@ def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
 
 
 def hatchet_ingestion_factory(
-    orchestration_provider: OrchestrationProvider, service: IngestionService
-) -> dict[str, "Hatchet.Workflow"]:
+        orchestration_provider: OrchestrationProvider,
+        service: IngestionService) -> dict[str, "Hatchet.Workflow"]:
+
     @orchestration_provider.workflow(
         name="ingest-files",
         timeout="60m",
     )
     class HatchetIngestFilesWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
         @orchestration_provider.concurrency(  # type: ignore
-            max_runs=orchestration_provider.config.ingestion_concurrency_limit,  # type: ignore
+            max_runs=orchestration_provider.config.
+            ingestion_concurrency_limit,  # type: ignore
             limit_strategy=ConcurrencyLimitStrategy.GROUP_ROUND_ROBIN,
         )
         def concurrency(self, context: Context) -> str:
@@ -60,8 +63,7 @@ def hatchet_ingestion_factory(
             try:
                 input_data = context.workflow_input()["request"]
                 parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-                    input_data
-                )
+                    input_data)
                 return str(parsed_data["user"].id)
             except Exception:
                 return str(uuid.uuid4())
@@ -72,8 +74,7 @@ def hatchet_ingestion_factory(
                 logger.info("Initiating ingestion workflow, step: parse")
                 input_data = context.workflow_input()["request"]
                 parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
-                    input_data
-                )
+                    input_data)
 
                 # ingestion_result = (
                 #     await self.ingestion_service.ingest_file_ingress(
@@ -90,8 +91,7 @@ def hatchet_ingestion_factory(
                         parsed_data["metadata"],
                         parsed_data["version"],
                         parsed_data["size_in_bytes"],
-                    )
-                )
+                    ))
 
                 await self.ingestion_service.update_document_status(
                     document_info,
@@ -100,8 +100,7 @@ def hatchet_ingestion_factory(
 
                 ingestion_config = parsed_data["ingestion_config"] or {}
                 extractions_generator = self.ingestion_service.parse_file(
-                    document_info, ingestion_config
-                )
+                    document_info, ingestion_config)
 
                 extractions = []
                 async for extraction in extractions_generator:
@@ -118,8 +117,7 @@ def hatchet_ingestion_factory(
 
                 if not ingestion_config.get("skip_document_summary", False):
                     await service.update_document_status(
-                        document_info, status=IngestionStatus.AUGMENTING
-                    )
+                        document_info, status=IngestionStatus.AUGMENTING)
                     await service.augment_document_info(
                         document_info,
                         [extraction.to_dict() for extraction in extractions],
@@ -133,8 +131,7 @@ def hatchet_ingestion_factory(
                 # extractions = context.step_output("parse")["extractions"]
 
                 embedding_generator = self.ingestion_service.embed_document(
-                    [extraction.to_dict() for extraction in extractions]
-                )
+                    [extraction.to_dict() for extraction in extractions])
 
                 embeddings = []
                 async for embedding in embedding_generator:
@@ -146,8 +143,7 @@ def hatchet_ingestion_factory(
                 )
 
                 storage_generator = self.ingestion_service.store_embeddings(  # type: ignore
-                    embeddings
-                )
+                    embeddings)
 
                 async for _ in storage_generator:
                     pass
@@ -160,13 +156,11 @@ def hatchet_ingestion_factory(
                 )
 
                 collection_ids = context.workflow_input()["request"].get(
-                    "collection_ids"
-                )
+                    "collection_ids")
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.owner_id
-                    )
+                        document_info.owner_id)
                     await service.providers.database.collections_handler.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
@@ -182,7 +176,8 @@ def hatchet_ingestion_factory(
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
-                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status_type=
+                        "graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         status=GraphConstructionStatus.OUTDATED,
                     )
                 else:
@@ -203,8 +198,7 @@ def hatchet_ingestion_factory(
                                     name=name,
                                     description=description,
                                     graph_id=collection_id,
-                                )
-                            )
+                                ))
 
                         except Exception as e:
                             logger.warning(
@@ -226,15 +220,16 @@ def hatchet_ingestion_factory(
                         )
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
-                            status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status_type=
+                            "graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                             status=GraphConstructionStatus.OUTDATED,
                         )
 
                 # get server chunk enrichment settings and override parts of it if provided in the ingestion config
                 if server_chunk_enrichment_settings := getattr(
-                    service.providers.ingestion.config,
-                    "chunk_enrichment_settings",
-                    None,
+                        service.providers.ingestion.config,
+                        "chunk_enrichment_settings",
+                        None,
                 ):
                     chunk_enrichment_settings = update_settings_from_dict(
                         server_chunk_enrichment_settings,
@@ -246,13 +241,13 @@ def hatchet_ingestion_factory(
                     logger.info("Enriching document with contextual chunks")
 
                     document_info: DocumentResponse = (
-                        await self.ingestion_service.providers.database.documents_handler.get_documents_overview(
+                        await self.ingestion_service.providers.database.
+                        documents_handler.get_documents_overview(
                             offset=0,
                             limit=1,
                             filter_user_ids=[document_info.owner_id],
                             filter_document_ids=[document_info.id],
-                        )
-                    )["results"][0]
+                        ))["results"][0]
 
                     await self.ingestion_service.update_document_status(
                         document_info,
@@ -273,17 +268,19 @@ def hatchet_ingestion_factory(
 
                 if service.providers.ingestion.config.automatic_extraction:
                     extract_input = {
-                        "document_id": str(document_info.id),
-                        "graph_creation_settings": self.ingestion_service.providers.database.config.graph_creation_settings.model_dump_json(),
-                        "user": input_data["user"],
+                        "document_id":
+                        str(document_info.id),
+                        "graph_creation_settings":
+                        self.ingestion_service.providers.database.config.
+                        graph_creation_settings.model_dump_json(),
+                        "user":
+                        input_data["user"],
                     }
 
-                    extract_result = (
-                        await context.aio.spawn_workflow(
-                            "graph-extraction",
-                            {"request": extract_input},
-                        )
-                    ).result()
+                    extract_result = (await context.aio.spawn_workflow(
+                        "graph-extraction",
+                        {"request": extract_input},
+                    )).result()
 
                     await asyncio.gather(extract_result)
 
@@ -295,7 +292,8 @@ def hatchet_ingestion_factory(
             except AuthenticationError:
                 raise R2RException(
                     status_code=401,
-                    message="Authentication error: Invalid API key or credentials.",
+                    message=
+                    "Authentication error: Invalid API key or credentials.",
                 )
             except Exception as e:
                 raise HTTPException(
@@ -316,12 +314,12 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(
+                    await self.ingestion_service.providers.database.
+                    documents_handler.get_documents_overview(
                         offset=0,
                         limit=1,
                         filter_document_ids=[document_id],
-                    )
-                )["results"]
+                    ))["results"]
 
                 if not documents_overview:
                     logger.error(
@@ -341,14 +339,14 @@ def hatchet_ingestion_factory(
 
             except Exception as e:
                 logger.error(
-                    f"Failed to update document status for {document_id}: {e}"
-                )
+                    f"Failed to update document status for {document_id}: {e}")
 
     @orchestration_provider.workflow(
         name="ingest-chunks",
         timeout="60m",
     )
     class HatchetIngestChunksWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
@@ -356,16 +354,13 @@ def hatchet_ingestion_factory(
         async def ingest(self, context: Context) -> dict:
             input_data = context.workflow_input()["request"]
             parsed_data = IngestionServiceAdapter.parse_ingest_chunks_input(
-                input_data
-            )
+                input_data)
 
             document_info = await self.ingestion_service.ingest_chunks_ingress(
-                **parsed_data
-            )
+                **parsed_data)
 
             await self.ingestion_service.update_document_status(
-                document_info, status=IngestionStatus.EMBEDDING
-            )
+                document_info, status=IngestionStatus.EMBEDDING)
             document_id = document_info.id
 
             extractions = [
@@ -376,8 +371,7 @@ def hatchet_ingestion_factory(
                     owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
-                ).to_dict()
-                for i, chunk in enumerate(parsed_data["chunks"])
+                ).to_dict() for i, chunk in enumerate(parsed_data["chunks"])
             ]
 
             # 2) Sum tokens
@@ -403,20 +397,17 @@ def hatchet_ingestion_factory(
             extractions = context.step_output("ingest")["extractions"]
 
             embedding_generator = self.ingestion_service.embed_document(
-                extractions
-            )
+                extractions)
             embeddings = [
                 embedding.model_dump()
                 async for embedding in embedding_generator
             ]
 
             await self.ingestion_service.update_document_status(
-                document_info, status=IngestionStatus.STORING
-            )
+                document_info, status=IngestionStatus.STORING)
 
             storage_generator = self.ingestion_service.store_embeddings(
-                embeddings
-            )
+                embeddings)
             async for _ in storage_generator:
                 pass
 
@@ -433,19 +424,16 @@ def hatchet_ingestion_factory(
             await self.ingestion_service.finalize_ingestion(document_info)
 
             await self.ingestion_service.update_document_status(
-                document_info, status=IngestionStatus.SUCCESS
-            )
+                document_info, status=IngestionStatus.SUCCESS)
 
             try:
                 # TODO - Move logic onto the `management service`
                 collection_ids = context.workflow_input()["request"].get(
-                    "collection_ids"
-                )
+                    "collection_ids")
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
-                        document_info.owner_id
-                    )
+                        document_info.owner_id)
                     await service.providers.database.collections_handler.assign_document_to_collection_relational(
                         document_id=document_info.id,
                         collection_id=collection_id,
@@ -461,7 +449,8 @@ def hatchet_ingestion_factory(
                     )
                     await service.providers.database.documents_handler.set_workflow_status(
                         id=collection_id,
-                        status_type="graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                        status_type=
+                        "graph_cluster_status",  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         status=GraphConstructionStatus.OUTDATED,
                     )
                 else:
@@ -482,8 +471,7 @@ def hatchet_ingestion_factory(
                                     name=name,
                                     description=description,
                                     graph_id=collection_id,
-                                )
-                            )
+                                ))
 
                         except Exception as e:
                             logger.warning(
@@ -509,12 +497,12 @@ def hatchet_ingestion_factory(
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_cluster_status",
-                            status=GraphConstructionStatus.OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
+                            status=GraphConstructionStatus.
+                            OUTDATED,  # NOTE - we should actually check that cluster has been made first, if not it should be PENDING still
                         )
             except Exception as e:
                 logger.error(
-                    f"Error during assigning document to collection: {str(e)}"
-                )
+                    f"Error during assigning document to collection: {str(e)}")
 
             return {
                 "status": "Successfully finalized ingestion",
@@ -534,12 +522,13 @@ def hatchet_ingestion_factory(
 
             try:
                 documents_overview = (
-                    await self.ingestion_service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
+                    await self.ingestion_service.providers.database.
+                    documents_handler.
+                    get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
                         offset=0,
                         limit=100,
                         filter_document_ids=[document_id],
-                    )
-                )["results"]
+                    ))["results"]
 
                 if not documents_overview:
                     logger.error(
@@ -551,19 +540,18 @@ def hatchet_ingestion_factory(
 
                 if document_info.ingestion_status != IngestionStatus.SUCCESS:
                     await self.ingestion_service.update_document_status(
-                        document_info, status=IngestionStatus.FAILED
-                    )
+                        document_info, status=IngestionStatus.FAILED)
 
             except Exception as e:
                 logger.error(
-                    f"Failed to update document status for {document_id}: {e}"
-                )
+                    f"Failed to update document status for {document_id}: {e}")
 
     @orchestration_provider.workflow(
         name="update-chunk",
         timeout="60m",
     )
     class HatchetUpdateChunkWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
@@ -572,19 +560,13 @@ def hatchet_ingestion_factory(
             try:
                 input_data = context.workflow_input()["request"]
                 parsed_data = IngestionServiceAdapter.parse_update_chunk_input(
-                    input_data
-                )
+                    input_data)
 
-                document_uuid = (
-                    UUID(parsed_data["document_id"])
-                    if isinstance(parsed_data["document_id"], str)
-                    else parsed_data["document_id"]
-                )
-                extraction_uuid = (
-                    UUID(parsed_data["id"])
-                    if isinstance(parsed_data["id"], str)
-                    else parsed_data["id"]
-                )
+                document_uuid = (UUID(parsed_data["document_id"])
+                                 if isinstance(parsed_data["document_id"], str)
+                                 else parsed_data["document_id"])
+                extraction_uuid = (UUID(parsed_data["id"]) if isinstance(
+                    parsed_data["id"], str) else parsed_data["id"])
 
                 await self.ingestion_service.update_chunk_ingress(
                     document_id=document_uuid,
@@ -612,25 +594,21 @@ def hatchet_ingestion_factory(
             # Handle failure case if necessary
             pass
 
-    @orchestration_provider.workflow(
-        name="create-vector-index", timeout="360m"
-    )
+    @orchestration_provider.workflow(name="create-vector-index",
+                                     timeout="360m")
     class HatchetCreateVectorIndexWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
         @orchestration_provider.step(timeout="60m")
         async def create_vector_index(self, context: Context) -> dict:
             input_data = context.workflow_input()["request"]
-            parsed_data = (
-                IngestionServiceAdapter.parse_create_vector_index_input(
-                    input_data
-                )
-            )
+            parsed_data = (IngestionServiceAdapter.
+                           parse_create_vector_index_input(input_data))
 
             await self.ingestion_service.providers.database.chunks_handler.create_index(
-                **parsed_data
-            )
+                **parsed_data)
 
             return {
                 "status": "Vector index creation queued successfully.",
@@ -638,21 +616,18 @@ def hatchet_ingestion_factory(
 
     @orchestration_provider.workflow(name="delete-vector-index", timeout="30m")
     class HatchetDeleteVectorIndexWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
         @orchestration_provider.step(timeout="10m")
         async def delete_vector_index(self, context: Context) -> dict:
             input_data = context.workflow_input()["request"]
-            parsed_data = (
-                IngestionServiceAdapter.parse_delete_vector_index_input(
-                    input_data
-                )
-            )
+            parsed_data = (IngestionServiceAdapter.
+                           parse_delete_vector_index_input(input_data))
 
             await self.ingestion_service.providers.database.chunks_handler.delete_index(
-                **parsed_data
-            )
+                **parsed_data)
 
             return {"status": "Vector index deleted successfully."}
 
@@ -661,6 +636,7 @@ def hatchet_ingestion_factory(
         timeout="30m",
     )
     class HatchetUpdateDocumentMetadataWorkflow:
+
         def __init__(self, ingestion_service: IngestionService):
             self.ingestion_service = ingestion_service
 
@@ -669,8 +645,7 @@ def hatchet_ingestion_factory(
             try:
                 input_data = context.workflow_input()["request"]
                 parsed_data = IngestionServiceAdapter.parse_update_document_metadata_input(
-                    input_data
-                )
+                    input_data)
 
                 document_id = UUID(parsed_data["document_id"])
                 metadata = parsed_data["metadata"]
@@ -683,7 +658,8 @@ def hatchet_ingestion_factory(
                 )
 
                 return {
-                    "message": "Document metadata update completed successfully.",
+                    "message":
+                    "Document metadata update completed successfully.",
                     "document_id": str(document_id),
                     "task_id": context.workflow_run_id(),
                 }
@@ -704,8 +680,7 @@ def hatchet_ingestion_factory(
     ingest_chunks_workflow = HatchetIngestChunksWorkflow(service)
     update_chunks_workflow = HatchetUpdateChunkWorkflow(service)
     update_document_metadata_workflow = HatchetUpdateDocumentMetadataWorkflow(
-        service
-    )
+        service)
     create_vector_index_workflow = HatchetCreateVectorIndexWorkflow(service)
     delete_vector_index_workflow = HatchetDeleteVectorIndexWorkflow(service)
 

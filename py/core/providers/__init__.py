@@ -17,9 +17,7 @@ from .embeddings import (
     OpenAIEmbeddingProvider,
 )
 from .ingestion import (  # type: ignore
-    R2RIngestionConfig,
-    R2RIngestionProvider,
-    UnstructuredIngestionConfig,
+    R2RIngestionConfig, R2RIngestionProvider, UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
 from .llm import (

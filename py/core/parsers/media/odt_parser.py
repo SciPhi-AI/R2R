@@ -12,6 +12,7 @@ from core.base.providers import (
 
 
 class ODTParser(AsyncParser[str | bytes]):
+
     def __init__(
         self,
         config: IngestionConfig,
@@ -24,9 +25,8 @@ class ODTParser(AsyncParser[str | bytes]):
         self.zipfile = zipfile
         self.ET = ET
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         if isinstance(data, str):
             raise ValueError("ODT data must be in bytes format.")
 

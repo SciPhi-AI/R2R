@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncSMTPEmailProvider(EmailProvider):
-    """Email provider implementation using Brevo SMTP relay"""
+    """Email provider implementation using Brevo SMTP relay."""
 
     def __init__(self, config: EmailConfig):
         super().__init__(config)
@@ -26,34 +26,30 @@ class AsyncSMTPEmailProvider(EmailProvider):
             raise ValueError("SMTP port is required")
 
         self.smtp_username = config.smtp_username or os.getenv(
-            "R2R_SMTP_USERNAME"
-        )
+            "R2R_SMTP_USERNAME")
         if not self.smtp_username:
             raise ValueError("SMTP username is required")
 
         self.smtp_password = config.smtp_password or os.getenv(
-            "R2R_SMTP_PASSWORD"
-        )
+            "R2R_SMTP_PASSWORD")
         if not self.smtp_password:
             raise ValueError("SMTP password is required")
 
-        self.from_email: Optional[str] = (
-            config.from_email
-            or os.getenv("R2R_FROM_EMAIL")
-            or self.smtp_username
-        )
+        self.from_email: Optional[str] = (config.from_email
+                                          or os.getenv("R2R_FROM_EMAIL")
+                                          or self.smtp_username)
         self.ssl_context = ssl.create_default_context()
 
     async def _send_email_sync(self, msg: MIMEMultipart) -> None:
-        """Synchronous email sending wrapped in asyncio executor"""
+        """Synchronous email sending wrapped in asyncio executor."""
         loop = asyncio.get_running_loop()
 
         def _send():
             with smtplib.SMTP_SSL(
-                self.smtp_server,
-                self.smtp_port,
-                context=self.ssl_context,
-                timeout=30,
+                    self.smtp_server,
+                    self.smtp_port,
+                    context=self.ssl_context,
+                    timeout=30,
             ) as server:
                 logger.info("Connected to SMTP server")
                 server.login(self.smtp_username, self.smtp_password)
@@ -99,9 +95,9 @@ class AsyncSMTPEmailProvider(EmailProvider):
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
-    async def send_verification_email(
-        self, to_email: str, verification_code: str, *args, **kwargs
-    ) -> None:
+    async def send_verification_email(self, to_email: str,
+                                      verification_code: str, *args,
+                                      **kwargs) -> None:
         body = f"""
         Please verify your email address by entering the following code:
 
@@ -125,9 +121,8 @@ class AsyncSMTPEmailProvider(EmailProvider):
             html_body=html_body,
         )
 
-    async def send_password_reset_email(
-        self, to_email: str, reset_token: str, *args, **kwargs
-    ) -> None:
+    async def send_password_reset_email(self, to_email: str, reset_token: str,
+                                        *args, **kwargs) -> None:
         body = f"""
         You have requested to reset your password.
 
@@ -151,9 +146,8 @@ class AsyncSMTPEmailProvider(EmailProvider):
             html_body=html_body,
         )
 
-    async def send_password_changed_email(
-        self, to_email: str, *args, **kwargs
-    ) -> None:
+    async def send_password_changed_email(self, to_email: str, *args,
+                                          **kwargs) -> None:
         body = """
         Your password has been successfully changed.
 

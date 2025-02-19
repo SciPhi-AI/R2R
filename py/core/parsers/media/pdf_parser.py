@@ -43,29 +43,27 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         self.config = config
         self.vision_prompt_text = None
 
-    async def convert_pdf_to_images(
-        self, data: str | bytes
-    ) -> list[Image.Image]:
-        """
-        Convert PDF pages to images asynchronously using in-memory conversion.
-        """
+    async def convert_pdf_to_images(self,
+                                    data: str | bytes) -> list[Image.Image]:
+        """Convert PDF pages to images asynchronously using in-memory
+        conversion."""
         logger.info("Starting PDF conversion to images.")
         start_time = time.perf_counter()
         options = {
-            "dpi": 300,  # You can make this configurable via self.config if needed
+            "dpi":
+            300,  # You can make this configurable via self.config if needed
             "fmt": "jpeg",
             "thread_count": 4,
-            "paths_only": False,  # Return PIL Image objects instead of writing to disk
+            "paths_only":
+            False,  # Return PIL Image objects instead of writing to disk
         }
         try:
             if isinstance(data, bytes):
-                images = await asyncio.to_thread(
-                    convert_from_bytes, data, **options
-                )
+                images = await asyncio.to_thread(convert_from_bytes, data,
+                                                 **options)
             else:
-                images = await asyncio.to_thread(
-                    convert_from_path, data, **options
-                )
+                images = await asyncio.to_thread(convert_from_path, data,
+                                                 **options)
             elapsed = time.perf_counter() - start_time
             logger.info(
                 f"PDF conversion completed in {elapsed:.2f} seconds, total pages: {len(images)}"
@@ -73,18 +71,15 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             return images
         except PDFInfoNotInstalledError:
             logger.error(
-                "PDFInfoNotInstalledError encountered during PDF conversion."
-            )
+                "PDFInfoNotInstalledError encountered during PDF conversion.")
             raise PopplerNotFoundError()
         except Exception as err:
             logger.error(
-                f"Error converting PDF to images: {err} type: {type(err)}"
-            )
+                f"Error converting PDF to images: {err} type: {type(err)}")
             raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
 
-    async def process_page(
-        self, image: Image.Image, page_num: int
-    ) -> dict[str, str]:
+    async def process_page(self, image: Image.Image,
+                           page_num: int) -> dict[str, str]:
         """Process a single PDF page using the vision model."""
         page_start = time.perf_counter()
         try:
@@ -102,26 +97,27 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             )
 
             # Prepare message with image content
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.vision_prompt_text},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
-                            },
+            messages = [{
+                "role":
+                "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": self.vision_prompt_text
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_base64}"
                         },
-                    ],
-                }
-            ]
+                    },
+                ],
+            }]
 
             logger.debug(f"Sending page {page_num} to vision model.")
             req_start = time.perf_counter()
             response = await self.llm_provider.aget_completion(
-                messages=messages, generation_config=generation_config
-            )
+                messages=messages, generation_config=generation_config)
             req_elapsed = time.perf_counter() - req_start
             logger.debug(
                 f"Vision model response for page {page_num} received in {req_elapsed:.2f} seconds."
@@ -144,11 +140,13 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             )
             raise
 
-    async def ingest(
-        self, data: str | bytes, maintain_order: bool = True, **kwargs
-    ) -> AsyncGenerator[dict[str, str | int], None]:
-        """
-        Ingest PDF data and yield the text description for each page using the vision model.
+    async def ingest(self,
+                     data: str | bytes,
+                     maintain_order: bool = True,
+                     **kwargs) -> AsyncGenerator[dict[str, str | int], None]:
+        """Ingest PDF data and yield the text description for each page using
+        the vision model.
+
         (This version yields a string per page rather than a dictionary.)
         """
         ingest_start = time.perf_counter()
@@ -156,9 +154,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_pdf_prompt_name
-                )
-            )
+                    prompt_name=self.config.vision_pdf_prompt_name))
             logger.info("Retrieved vision prompt text from database.")
 
         try:
@@ -167,9 +163,8 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             # Create asynchronous tasks for processing each page
             tasks = {
-                asyncio.create_task(
-                    self.process_page(image, page_num)
-                ): page_num
+                asyncio.create_task(self.process_page(image, page_num)):
+                page_num
                 for page_num, image in enumerate(images, 1)
             }
 
@@ -179,8 +174,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 next_page = 1
                 while pending:
                     done, pending = await asyncio.wait(
-                        pending, return_when=asyncio.FIRST_COMPLETED
-                    )
+                        pending, return_when=asyncio.FIRST_COMPLETED)
                     for task in done:
                         result = await task
                         page_num = int(result["page"])
@@ -223,9 +217,8 @@ class BasicPDFParser(AsyncParser[str | bytes]):
         self.config = config
         self.PdfReader = PdfReader
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
         if isinstance(data, str):
             raise ValueError("PDF data must be in bytes format.")
@@ -236,8 +229,7 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                 page_text = "".join(
                     filter(
                         lambda x: (
-                            unicodedata.category(x)
-                            in [
+                            unicodedata.category(x) in [
                                 "Ll",
                                 "Lu",
                                 "Lt",
@@ -253,8 +245,7 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                             or "\u0e00" <= x <= "\u0e7f"  # Thai
                             or "\u3040" <= x <= "\u309f"  # Japanese Hiragana
                             or "\u30a0" <= x <= "\u30ff"  # Katakana
-                            or x in string.printable
-                        ),
+                            or x in string.printable),
                         page_text,
                     )
                 )  # Keep characters in common languages ; # Filter out non-printable characters
@@ -262,6 +253,7 @@ class BasicPDFParser(AsyncParser[str | bytes]):
 
 
 class PDFParserUnstructured(AsyncParser[str | bytes]):
+
     def __init__(
         self,
         config: IngestionConfig,

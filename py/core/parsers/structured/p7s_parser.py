@@ -54,27 +54,26 @@ class P7SParser(AsyncParser[str | bytes]):
             issuer = cert.issuer
 
             info = {
-                "common_name": self._get_name_attribute(
-                    subject, self.NameOID.COMMON_NAME
-                ),
-                "organization": self._get_name_attribute(
-                    subject, self.NameOID.ORGANIZATION_NAME
-                ),
-                "email": self._get_name_attribute(
-                    subject, self.NameOID.EMAIL_ADDRESS
-                ),
-                "issuer_common_name": self._get_name_attribute(
-                    issuer, self.NameOID.COMMON_NAME
-                ),
-                "issuer_organization": self._get_name_attribute(
-                    issuer, self.NameOID.ORGANIZATION_NAME
-                ),
-                "serial_number": hex(cert.serial_number)[2:],
-                "not_valid_before": self._format_datetime(
-                    cert.not_valid_before
-                ),
-                "not_valid_after": self._format_datetime(cert.not_valid_after),
-                "version": cert.version.name,
+                "common_name":
+                self._get_name_attribute(subject, self.NameOID.COMMON_NAME),
+                "organization":
+                self._get_name_attribute(subject,
+                                         self.NameOID.ORGANIZATION_NAME),
+                "email":
+                self._get_name_attribute(subject, self.NameOID.EMAIL_ADDRESS),
+                "issuer_common_name":
+                self._get_name_attribute(issuer, self.NameOID.COMMON_NAME),
+                "issuer_organization":
+                self._get_name_attribute(issuer,
+                                         self.NameOID.ORGANIZATION_NAME),
+                "serial_number":
+                hex(cert.serial_number)[2:],
+                "not_valid_before":
+                self._format_datetime(cert.not_valid_before),
+                "not_valid_after":
+                self._format_datetime(cert.not_valid_after),
+                "version":
+                cert.version.name,
             }
 
             return {k: v for k, v in info.items() if v is not None}
@@ -105,8 +104,7 @@ class P7SParser(AsyncParser[str | bytes]):
 
         raise ValueError(
             "Unable to parse signature file as PKCS7 with certificates. Attempted methods:\n"
-            + "\n".join(exceptions)
-        )
+            + "\n".join(exceptions))
 
     def _extract_p7s_data_from_mime(self, raw_data: bytes) -> bytes:
         """Extract the raw PKCS#7 signature data from a MIME message."""
@@ -141,10 +139,10 @@ class P7SParser(AsyncParser[str | bytes]):
                 "The provided data does not contain a valid S/MIME signed message."
             )
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        """Ingest an S/MIME message and extract the PKCS#7 signature information."""
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
+        """Ingest an S/MIME message and extract the PKCS#7 signature
+        information."""
         # If data is a string, it might be base64 encoded, or it might be the raw MIME text.
         # We should assume it's raw MIME text here because the input includes MIME headers.
         if isinstance(data, str):

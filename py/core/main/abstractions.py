@@ -36,28 +36,20 @@ class R2RProviders(BaseModel):
     auth: R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
-    embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    completion_embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    llm: (
-        AnthropicCompletionProvider
-        | LiteLLMCompletionProvider
-        | OpenAICompletionProvider
-        | R2RCompletionProvider
-    )
+    embedding: (LiteLLMEmbeddingProvider
+                | OpenAIEmbeddingProvider
+                | OllamaEmbeddingProvider)
+    completion_embedding: (LiteLLMEmbeddingProvider
+                           | OpenAIEmbeddingProvider
+                           | OllamaEmbeddingProvider)
+    llm: (AnthropicCompletionProvider
+          | LiteLLMCompletionProvider
+          | OpenAICompletionProvider
+          | R2RCompletionProvider)
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
-    email: (
-        AsyncSMTPEmailProvider
-        | ConsoleMockEmailProvider
-        | SendGridEmailProvider
-    )
+    email: (AsyncSMTPEmailProvider
+            | ConsoleMockEmailProvider
+            | SendGridEmailProvider)
 
     class Config:
         arbitrary_types_allowed = True

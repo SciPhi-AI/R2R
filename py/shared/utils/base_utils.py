@@ -31,10 +31,12 @@ def reorder_collector_to_match_final_brackets(
     collector: Any,  # "SearchResultsCollector",
     final_citations: list["Citation"],
 ):
-    """
-    Rebuilds collector._results_in_order so that bracket i => aggregator[i-1].
-    Each citation's rawIndex indicates which aggregator item the LLM used originally.
-    We place that aggregator item in the new position for bracket 'index'.
+    """Rebuilds collector._results_in_order so that bracket i =>
+    aggregator[i-1].
+
+    Each citation's rawIndex indicates which aggregator item the LLM used
+    originally. We place that aggregator item in the new position for bracket
+    'index'.
     """
     old_list = collector.get_all_results()  # [(source_type, result_obj), ...]
     max_index = max((c.index for c in final_citations), default=0)
@@ -58,12 +60,13 @@ def reorder_collector_to_match_final_brackets(
 
 
 def map_citations_to_collector(
-    citations: list["Citation"],
-    collector: Any,  # "SearchResultsCollector"
+        citations: list["Citation"],
+        collector: Any,  # "SearchResultsCollector"
 ) -> list["Citation"]:
-    """
-    For each citation, use its 'rawIndex' to look up the aggregator item from the
-    collector. We then fill out the Citation’s sourceType, doc_id, text, metadata, etc.
+    """For each citation, use its 'rawIndex' to look up the aggregator item
+    from the collector.
+
+    We then fill out the Citation’s sourceType, doc_id, text, metadata, etc.
     """
     from ..api.models.retrieval.responses import Citation
 
@@ -85,9 +88,8 @@ def map_citations_to_collector(
             if source_type == "chunk":
                 updated.id = str(result_obj.id)
                 updated.document_id = str(result_obj.document_id)
-                updated.owner_id = (
-                    str(result_obj.owner_id) if result_obj.owner_id else None
-                )
+                updated.owner_id = (str(result_obj.owner_id)
+                                    if result_obj.owner_id else None)
                 updated.collection_ids = [
                     str(cid) for cid in result_obj.collection_ids
                 ]
@@ -100,8 +102,7 @@ def map_citations_to_collector(
                 updated.metadata = dict(result_obj.metadata)
                 if result_obj.content:
                     updated.metadata["graphContent"] = (
-                        result_obj.content.model_dump()
-                    )
+                        result_obj.content.model_dump())
 
             elif source_type == "web":
                 updated.metadata = {
@@ -131,13 +132,14 @@ def map_citations_to_collector(
     return mapped_citations
 
 
-def _expand_citation_span_to_sentence(
-    full_text: str, start: int, end: int
-) -> Tuple[int, int]:
-    """
-    Return (sentence_start, sentence_end) for the sentence containing the bracket [n].
+def _expand_citation_span_to_sentence(full_text: str, start: int,
+                                      end: int) -> Tuple[int, int]:
+    """Return (sentence_start, sentence_end) for the sentence containing the
+    bracket [n].
+
     We define a sentence boundary as '.', '?', or '!', optionally followed by
-    spaces or a newline. This is a simple heuristic; you can refine it as needed.
+    spaces or a newline. This is a simple heuristic; you can refine it as
+    needed.
     """
     sentence_enders = {".", "?", "!"}
 
@@ -167,10 +169,11 @@ def _expand_citation_span_to_sentence(
 
 
 def extract_citations(text: str) -> list["Citation"]:
-    """
-    Find bracket references like [3], [10], etc. Return a list of Citation objects
-    whose 'index' field is the number found in brackets, but we will later rename
-    that to 'rawIndex' to avoid confusion.
+    """Find bracket references like [3], [10], etc.
+
+    Return a list of Citation objects whose 'index' field is the number found
+    in brackets, but we will later rename that to 'rawIndex' to avoid
+    confusion.
     """
     from ..api.models.retrieval.responses import Citation
 
@@ -185,8 +188,7 @@ def extract_citations(text: str) -> list["Citation"]:
 
         # Expand around the bracket to get a snippet if desired:
         snippet_start, snippet_end = _expand_citation_span_to_sentence(
-            text, start_i, end_i
-        )
+            text, start_i, end_i)
 
         c = Citation(
             index=bracket_num,  # We'll rename this to rawIndex in step 2
@@ -201,10 +203,11 @@ def extract_citations(text: str) -> list["Citation"]:
 
 
 def reassign_citations_in_order(
-    text: str, citations: list["Citation"]
-) -> Tuple[str, list["Citation"]]:
-    """
-    Sort citations by their start index, unify repeated bracket numbers, and relabel them
+        text: str,
+        citations: list["Citation"]) -> Tuple[str, list["Citation"]]:
+    """Sort citations by their start index, unify repeated bracket numbers, and
+    relabel them.
+
     in ascending order of first appearance. Return (new_text, new_citations).
     - new_citations[i].index = the new bracket number
     - new_citations[i].rawIndex = the original bracket number
@@ -230,14 +233,12 @@ def reassign_citations_in_order(
 
         # We create a "relabeled" citation that has `rawIndex=old_ref`
         # and `index=new_ref`.
-        labeled.append(
-            {
-                "rawIndex": old_ref,
-                "newIndex": new_ref,
-                "startIndex": cit.startIndex,
-                "endIndex": cit.endIndex,
-            }
-        )
+        labeled.append({
+            "rawIndex": old_ref,
+            "newIndex": new_ref,
+            "startIndex": cit.startIndex,
+            "endIndex": cit.endIndex,
+        })
 
     # 3) Replace the bracket references in the text from right-to-left
     #    so we don't mess up subsequent indices.
@@ -260,9 +261,9 @@ def reassign_citations_in_order(
     updated_extracted.sort(key=lambda c: c.startIndex)
     labeled.sort(key=lambda x: x["startIndex"])
 
-    for labeled_item, updated_cit in zip(
-        labeled, updated_extracted, strict=False
-    ):
+    for labeled_item, updated_cit in zip(labeled,
+                                         updated_extracted,
+                                         strict=False):
         c = Citation(
             rawIndex=labeled_item["rawIndex"],
             index=labeled_item["newIndex"],
@@ -277,14 +278,14 @@ def reassign_citations_in_order(
 
 
 def format_search_results_for_llm(
-    results: AggregateSearchResult,
-    collector: Any,  # SearchResultsCollector
+        results: AggregateSearchResult,
+        collector: Any,  # SearchResultsCollector
 ) -> str:
-    """
-    Instead of resetting 'source_counter' to 1, we:
-     - For each chunk / graph / web / contextDoc in `results`,
-     - Find the aggregator index from the collector,
-     - Print 'Source [X]:' with that aggregator index.
+    """Instead of resetting 'source_counter' to 1, we:
+
+    - For each chunk / graph / web / contextDoc in `results`,
+    - Find the aggregator index from the collector,
+    - Print 'Source [X]:' with that aggregator index.
     """
     lines = []
 
@@ -293,7 +294,7 @@ def format_search_results_for_llm(
     # in the same order. But let's do a "lookup aggregator index" approach:
 
     def get_aggregator_index_for_item(item):
-        for stype, obj, agg_index in collector.get_all_results():
+        for _stype, obj, agg_index in collector.get_all_results():
             if obj is item:
                 return agg_index
         return None  # not found, fallback
@@ -415,54 +416,42 @@ def _generate_id_from_label(label) -> UUID:
 
 
 def generate_id(label: Optional[str] = None) -> UUID:
-    """
-    Generates a unique run id
-    """
-    return _generate_id_from_label(label if label != None else str(uuid4()))
+    """Generates a unique run id."""
+    return _generate_id_from_label(
+        label if label is not None else str(uuid4()))
 
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
-    """
-    Generates a unique document id from a given filename and user id
-    """
+    """Generates a unique document id from a given filename and user id."""
     safe_filename = filename.replace("/", "_")
     return _generate_id_from_label(f"{safe_filename}-{str(user_id)}")
 
 
-def generate_extraction_id(
-    document_id: UUID, iteration: int = 0, version: str = "0"
-) -> UUID:
-    """
-    Generates a unique extraction id from a given document id and iteration
-    """
+def generate_extraction_id(document_id: UUID,
+                           iteration: int = 0,
+                           version: str = "0") -> UUID:
+    """Generates a unique extraction id from a given document id and
+    iteration."""
     return _generate_id_from_label(f"{str(document_id)}-{iteration}-{version}")
 
 
 def generate_default_user_collection_id(user_id: UUID) -> UUID:
-    """
-    Generates a unique collection id from a given user id
-    """
+    """Generates a unique collection id from a given user id."""
     return _generate_id_from_label(str(user_id))
 
 
 def generate_user_id(email: str) -> UUID:
-    """
-    Generates a unique user id from a given email
-    """
+    """Generates a unique user id from a given email."""
     return _generate_id_from_label(email)
 
 
 def generate_default_prompt_id(prompt_name: str) -> UUID:
-    """
-    Generates a unique prompt id
-    """
+    """Generates a unique prompt id."""
     return _generate_id_from_label(prompt_name)
 
 
 def generate_entity_document_id() -> UUID:
-    """
-    Generates a unique document id inserting entities into a graph
-    """
+    """Generates a unique document id inserting entities into a graph."""
     generation_time = datetime.now().isoformat()
     return _generate_id_from_label(f"entity-{generation_time}")
 
@@ -484,9 +473,7 @@ def validate_uuid(uuid_str: str) -> UUID:
 
 
 def update_settings_from_dict(server_settings, settings_dict: dict):
-    """
-    Updates a settings object with values from a dictionary.
-    """
+    """Updates a settings object with values from a dictionary."""
     settings = deepcopy(server_settings)
     for key, value in settings_dict.items():
         if value is not None:
@@ -509,15 +496,12 @@ def _decorate_vector_type(
     return f"{quantization_type.db_type}{input_str}"
 
 
-def _get_vector_column_str(
-    dimension: int | float, quantization_type: VectorQuantizationType
-) -> str:
-    """
-    Returns a string representation of a vector column type.
+def _get_vector_column_str(dimension: int | float,
+                           quantization_type: VectorQuantizationType) -> str:
+    """Returns a string representation of a vector column type.
 
-    Explicitly handles the case where the dimension is not a valid number
-    meant to support embedding models that do not allow for specifying
-    the dimension.
+    Explicitly handles the case where the dimension is not a valid number meant
+    to support embedding models that do not allow for specifying the dimension.
     """
     if math.isnan(dimension) or dimension <= 0:
         vector_dim = ""  # Allows for Postgres to handle any dimension
@@ -529,9 +513,8 @@ def _get_vector_column_str(
 KeyType = TypeVar("KeyType")
 
 
-def deep_update(
-    mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, Any]
-) -> dict[KeyType, Any]:
+def deep_update(mapping: dict[KeyType, Any], *updating_mappings:
+                dict[KeyType, Any]) -> dict[KeyType, Any]:
     """
     Taken from Pydantic v1:
     https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
@@ -539,11 +522,8 @@ def deep_update(
     updated_mapping = mapping.copy()
     for updating_mapping in updating_mappings:
         for k, v in updating_mapping.items():
-            if (
-                k in updated_mapping
-                and isinstance(updated_mapping[k], dict)
-                and isinstance(v, dict)
-            ):
+            if (k in updated_mapping and isinstance(updated_mapping[k], dict)
+                    and isinstance(v, dict)):
                 updated_mapping[k] = deep_update(updated_mapping[k], v)
             else:
                 updated_mapping[k] = v

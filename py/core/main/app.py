@@ -26,12 +26,12 @@ from .config import R2RConfig
 
 
 class R2RApp:
+
     def __init__(
         self,
         config: R2RConfig,
-        orchestration_provider: (
-            HatchetOrchestrationProvider | SimpleOrchestrationProvider
-        ),
+        orchestration_provider: (HatchetOrchestrationProvider
+                                 | SimpleOrchestrationProvider),
         services: R2RServices,
         chunks_router: ChunksRouter,
         collections_router: CollectionsRouter,

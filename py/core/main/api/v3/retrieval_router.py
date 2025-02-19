@@ -28,9 +28,8 @@ from ...config import R2RConfig
 from .base_router import BaseRouterV3
 
 
-def merge_search_settings(
-    base: SearchSettings, overrides: SearchSettings
-) -> SearchSettings:
+def merge_search_settings(base: SearchSettings,
+                          overrides: SearchSettings) -> SearchSettings:
     # Convert both to dict
     base_dict = base.model_dump()
     overrides_dict = overrides.model_dump(exclude_unset=True)
@@ -45,9 +44,9 @@ def merge_search_settings(
 
 
 class RetrievalRouter(BaseRouterV3):
-    def __init__(
-        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
-    ):
+
+    def __init__(self, providers: R2RProviders, services: R2RServices,
+                 config: R2RConfig):
         logging.info("Initializing RetrievalRouter")
         super().__init__(providers, services, config)
 
@@ -60,29 +59,27 @@ class RetrievalRouter(BaseRouterV3):
         search_mode: SearchMode,
         search_settings: Optional[SearchSettings],
     ) -> SearchSettings:
-        """
-        Prepare the effective search settings based on the provided search_mode,
-        optional user-overrides in search_settings, and applied filters.
-        """
+        """Prepare the effective search settings based on the provided
+        search_mode, optional user-overrides in search_settings, and applied
+        filters."""
         if search_mode != SearchMode.custom:
             # Start from mode defaults
             effective_settings = SearchSettings.get_default(search_mode.value)
             if search_settings:
                 # Merge user-provided overrides
                 effective_settings = merge_search_settings(
-                    effective_settings, search_settings
-                )
+                    effective_settings, search_settings)
         else:
             # Custom mode: use provided settings or defaults
             effective_settings = search_settings or SearchSettings()
 
         # Apply user-specific filters
         effective_settings.filters = select_search_filters(
-            auth_user, effective_settings
-        )
+            auth_user, effective_settings)
         return effective_settings
 
     def _setup_routes(self):
+
         @self.router.post(
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],
@@ -90,9 +87,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -125,13 +123,13 @@ class RetrievalRouter(BaseRouterV3):
                                     "chunk_settings": {"index_measure": "l2_distance"}
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -147,13 +145,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/search" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -164,8 +162,7 @@ class RetrievalRouter(BaseRouterV3):
                                     use_semantic_search: true
                                 }
                             }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -178,28 +175,27 @@ class RetrievalRouter(BaseRouterV3):
             ),
             search_mode: SearchMode = Body(
                 default=SearchMode.custom,
-                description=(
-                    "Default value of `custom` allows full control over search settings.\n\n"
-                    "Pre-configured search modes:\n"
-                    "`basic`: A simple semantic-based search.\n"
-                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
-                    "`custom`: Full control via `search_settings`.\n\n"
-                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
-                    "they will override the default settings for that mode."
-                ),
+                description=
+                ("Default value of `custom` allows full control over search settings.\n\n"
+                 "Pre-configured search modes:\n"
+                 "`basic`: A simple semantic-based search.\n"
+                 "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                 "`custom`: Full control via `search_settings`.\n\n"
+                 "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                 "they will override the default settings for that mode."),
             ),
             search_settings: Optional[SearchSettings] = Body(
                 None,
-                description=(
-                    "The search configuration object. If `search_mode` is `custom`, "
-                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
-                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
-                ),
+                description=
+                ("The search configuration object. If `search_mode` is `custom`, "
+                 "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                 "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                 ),
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSearchResponse:
-            """
-            Perform a search query against vector and/or graph-based databases.
+            """Perform a search query against vector and/or graph-based
+            databases.
 
             **Search Modes:**
             - `basic`: Defaults to semantic search. Simple and easy to use.
@@ -234,8 +230,7 @@ class RetrievalRouter(BaseRouterV3):
             if query == "":
                 raise R2RException("Query cannot be empty", 400)
             effective_settings = self._prepare_search_settings(
-                auth_user, search_mode, search_settings
-            )
+                auth_user, search_mode, search_settings)
             results = await self.services.retrieval.search(
                 query=query,
                 search_settings=effective_settings,
@@ -249,9 +244,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -273,13 +269,13 @@ class RetrievalRouter(BaseRouterV3):
                                     "max_tokens": 150
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -303,13 +299,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/rag" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -329,8 +325,7 @@ class RetrievalRouter(BaseRouterV3):
                                     max_tokens: 150
                                 }
                             }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -340,23 +335,22 @@ class RetrievalRouter(BaseRouterV3):
             query: str = Body(...),
             search_mode: SearchMode = Body(
                 default=SearchMode.custom,
-                description=(
-                    "Default value of `custom` allows full control over search settings.\n\n"
-                    "Pre-configured search modes:\n"
-                    "`basic`: A simple semantic-based search.\n"
-                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
-                    "`custom`: Full control via `search_settings`.\n\n"
-                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
-                    "they will override the default settings for that mode."
-                ),
+                description=
+                ("Default value of `custom` allows full control over search settings.\n\n"
+                 "Pre-configured search modes:\n"
+                 "`basic`: A simple semantic-based search.\n"
+                 "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                 "`custom`: Full control via `search_settings`.\n\n"
+                 "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                 "they will override the default settings for that mode."),
             ),
             search_settings: Optional[SearchSettings] = Body(
                 None,
-                description=(
-                    "The search configuration object. If `search_mode` is `custom`, "
-                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
-                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
-                ),
+                description=
+                ("The search configuration object. If `search_mode` is `custom`, "
+                 "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                 "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                 ),
             ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
@@ -368,12 +362,12 @@ class RetrievalRouter(BaseRouterV3):
             ),
             include_title_if_available: bool = Body(
                 default=False,
-                description="Include document titles in responses when available",
+                description=
+                "Include document titles in responses when available",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
-            """
-            Execute a RAG (Retrieval-Augmented Generation) query.
+            """Execute a RAG (Retrieval-Augmented Generation) query.
 
             This endpoint combines search results with language model generation.
             It supports the same filtering capabilities as the search endpoint,
@@ -386,8 +380,7 @@ class RetrievalRouter(BaseRouterV3):
                 rag_generation_config.model = self.config.app.quality_llm
 
             effective_settings = self._prepare_search_settings(
-                auth_user, search_mode, search_settings
-            )
+                auth_user, search_mode, search_settings)
 
             response = await self.services.retrieval.rag(
                 query=query,
@@ -404,7 +397,7 @@ class RetrievalRouter(BaseRouterV3):
                         async for chunk in response:
                             if len(chunk) > 1024:
                                 for i in range(0, len(chunk), 1024):
-                                    yield chunk[i : i + 1024]
+                                    yield chunk[i:i + 1024]
                             else:
                                 yield chunk
                     except GeneratorExit:
@@ -412,8 +405,8 @@ class RetrievalRouter(BaseRouterV3):
                         return
 
                 return StreamingResponse(
-                    stream_generator(), media_type="text/event-stream"
-                )  # type: ignore
+                    stream_generator(),
+                    media_type="text/event-stream")  # type: ignore
             else:
                 return response
 
@@ -424,9 +417,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                         from r2r import R2RClient
 
                         client = R2RClient()
@@ -456,13 +450,13 @@ class RetrievalRouter(BaseRouterV3):
                             include_title_if_available=True,
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -495,13 +489,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/agent" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -524,8 +518,7 @@ class RetrievalRouter(BaseRouterV3):
                                 "include_title_if_available": true,
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -539,27 +532,27 @@ class RetrievalRouter(BaseRouterV3):
             messages: Optional[list[Message]] = Body(
                 None,
                 deprecated=True,
-                description="List of messages (deprecated, use message instead)",
+                description=
+                "List of messages (deprecated, use message instead)",
             ),
             search_mode: SearchMode = Body(
                 default=SearchMode.custom,
-                description=(
-                    "Default value of `custom` allows full control over search settings.\n\n"
-                    "Pre-configured search modes:\n"
-                    "`basic`: A simple semantic-based search.\n"
-                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
-                    "`custom`: Full control via `search_settings`.\n\n"
-                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
-                    "they will override the default settings for that mode."
-                ),
+                description=
+                ("Default value of `custom` allows full control over search settings.\n\n"
+                 "Pre-configured search modes:\n"
+                 "`basic`: A simple semantic-based search.\n"
+                 "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
+                 "`custom`: Full control via `search_settings`.\n\n"
+                 "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
+                 "they will override the default settings for that mode."),
             ),
             search_settings: Optional[SearchSettings] = Body(
                 None,
-                description=(
-                    "The search configuration object. If `search_mode` is `custom`, "
-                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
-                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
-                ),
+                description=
+                ("The search configuration object. If `search_mode` is `custom`, "
+                 "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
+                 "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
+                 ),
             ),
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
@@ -571,7 +564,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             include_title_if_available: bool = Body(
                 default=True,
-                description="Include document titles in responses when available",
+                description=
+                "Include document titles in responses when available",
             ),
             conversation_id: Optional[UUID] = Body(
                 default=None,
@@ -591,8 +585,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
-            """
-            Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
+            """Engage with an intelligent RAG-powered conversational agent for
+            complex information retrieval and analysis.
 
             This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
             detailed, context-aware responses based on your document collection. The agent can:
@@ -626,8 +620,7 @@ class RetrievalRouter(BaseRouterV3):
                 rag_generation_config.model = self.config.app.quality_llm
 
             effective_settings = self._prepare_search_settings(
-                auth_user, search_mode, search_settings
-            )
+                auth_user, search_mode, search_settings)
 
             try:
                 response = await self.services.retrieval.agent(
@@ -638,9 +631,8 @@ class RetrievalRouter(BaseRouterV3):
                     task_prompt_override=task_prompt_override,
                     include_title_if_available=include_title_if_available,
                     max_tool_context_length=max_tool_context_length,
-                    conversation_id=(
-                        str(conversation_id) if conversation_id else None
-                    ),
+                    conversation_id=(str(conversation_id)
+                                     if conversation_id else None),
                     use_system_context=use_system_context,
                     override_tools=tools,
                 )
@@ -652,7 +644,7 @@ class RetrievalRouter(BaseRouterV3):
                             async for chunk in response:
                                 if len(chunk) > 1024:
                                     for i in range(0, len(chunk), 1024):
-                                        yield chunk[i : i + 1024]
+                                        yield chunk[i:i + 1024]
                                 else:
                                     yield chunk
                         except GeneratorExit:
@@ -660,8 +652,8 @@ class RetrievalRouter(BaseRouterV3):
                             return
 
                     return StreamingResponse(
-                        stream_generator(), media_type="text/event-stream"
-                    )  # type: ignore
+                        stream_generator(),
+                        media_type="text/event-stream")  # type: ignore
                 else:
                     return response
             except Exception as e:
@@ -674,9 +666,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                         from r2r import R2RClient
 
                         client = R2RClient()
@@ -694,13 +687,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -721,13 +714,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/agent" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -738,8 +731,7 @@ class RetrievalRouter(BaseRouterV3):
                                 },
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -768,8 +760,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
-            """
-            Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
+            """Engage with an intelligent RAG-powered conversational agent for
+            complex information retrieval and analysis.
 
             This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
             detailed, context-aware responses based on your document collection. The agent can:
@@ -800,8 +792,7 @@ class RetrievalRouter(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
             effective_settings = self._prepare_search_settings(
-                auth_user, SearchMode.basic, {}
-            )
+                auth_user, SearchMode.basic, {})
 
             if "model" not in rag_generation_config.__fields_set__:
                 rag_generation_config.model = self.config.app.quality_llm
@@ -815,9 +806,8 @@ class RetrievalRouter(BaseRouterV3):
                     task_prompt_override=None,
                     include_title_if_available=False,
                     max_tool_context_length=max_tool_context_length,
-                    conversation_id=(
-                        str(conversation_id) if conversation_id else None
-                    ),
+                    conversation_id=(str(conversation_id)
+                                     if conversation_id else None),
                     use_system_context=False,
                     override_tools=tools,
                     reasoning_agent=True,
@@ -830,7 +820,7 @@ class RetrievalRouter(BaseRouterV3):
                             async for chunk in response:
                                 if len(chunk) > 1024:
                                     for i in range(0, len(chunk), 1024):
-                                        yield chunk[i : i + 1024]
+                                        yield chunk[i:i + 1024]
                                 else:
                                     yield chunk
                         except GeneratorExit:
@@ -838,8 +828,8 @@ class RetrievalRouter(BaseRouterV3):
                             return
 
                     return StreamingResponse(
-                        stream_generator(), media_type="text/event-stream"
-                    )  # type: ignore
+                        stream_generator(),
+                        media_type="text/event-stream")  # type: ignore
                 else:
                     return response
             except Exception as e:
@@ -852,9 +842,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -874,13 +865,13 @@ class RetrievalRouter(BaseRouterV3):
                                     "stream": False
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -903,13 +894,13 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/completion" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -927,8 +918,7 @@ class RetrievalRouter(BaseRouterV3):
                                     "stream": false
                                 }
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -951,7 +941,10 @@ class RetrievalRouter(BaseRouterV3):
                         "role": "assistant",
                         "content": "The capital of France is Paris.",
                     },
-                    {"role": "user", "content": "What about Italy?"},
+                    {
+                        "role": "user",
+                        "content": "What about Italy?"
+                    },
                 ],
             ),
             generation_config: GenerationConfig = Body(
@@ -967,14 +960,15 @@ class RetrievalRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ) -> WrappedLLMChatCompletion:
-            """
-            Generate completions for a list of messages.
+            """Generate completions for a list of messages.
 
-            This endpoint uses the language model to generate completions for the provided messages.
-            The generation process can be customized using the generation_config parameter.
+            This endpoint uses the language model to generate completions for
+            the provided messages. The generation process can be customized
+            using the generation_config parameter.
 
-            The messages list should contain alternating user and assistant messages, with an optional
-            system message at the start. Each message should have a 'role' and 'content'.
+            The messages list should contain alternating user and assistant
+            messages, with an optional system message at the start. Each
+            message should have a 'role' and 'content'.
             """
 
             return await self.services.retrieval.completion(
@@ -989,9 +983,10 @@ class RetrievalRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1000,13 +995,13 @@ class RetrievalRouter(BaseRouterV3):
                             result = client.retrieval.embedding(
                                 text="Who is Aristotle?",
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1018,21 +1013,20 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/embedding" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "text": "Who is Aristotle?",
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1045,13 +1039,12 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEmbeddingResponse:
-            """
-            Generate embeddings for the provided text using the specified model.
+            """Generate embeddings for the provided text using the specified
+            model.
 
-            This endpoint uses the language model to generate embeddings for the provided text.
-            The model parameter specifies the model to use for generating embeddings.
+            This endpoint uses the language model to generate embeddings for
+            the provided text. The model parameter specifies the model to use
+            for generating embeddings.
             """
 
-            return await self.services.retrieval.embedding(
-                text=text,
-            )
+            return await self.services.retrieval.embedding(text=text, )

@@ -50,15 +50,12 @@ class TIFFParser(AsyncParser[str | bytes]):
         except Exception as e:
             raise ValueError(f"Error converting TIFF to JPEG: {str(e)}")
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_img_prompt_name
-                )
-            )
+                    prompt_name=self.config.vision_img_prompt_name))
 
         try:
             # Convert TIFF to JPEG
@@ -74,24 +71,25 @@ class TIFFParser(AsyncParser[str | bytes]):
                 stream=False,
             )
 
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.vision_prompt_text},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
-                            },
+            messages = [{
+                "role":
+                "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": self.vision_prompt_text
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{image_data}"
                         },
-                    ],
-                }
-            ]
+                    },
+                ],
+            }]
 
             response = await self.llm_provider.aget_completion(
-                messages=messages, generation_config=generation_config
-            )
+                messages=messages, generation_config=generation_config)
 
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content

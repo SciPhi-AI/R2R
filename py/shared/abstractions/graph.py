@@ -37,7 +37,11 @@ class Entity(R2RSerializable):
 
 
 class Relationship(R2RSerializable):
-    """A relationship between two entities. This is a generic relationship, and can be used to represent any type of relationship between any two entities."""
+    """A relationship between two entities.
+
+    This is a generic relationship, and can be used to represent any type of
+    relationship between any two entities.
+    """
 
     id: Optional[UUID] = None
     subject: str
@@ -74,12 +78,8 @@ class Community(R2RSerializable):
     rating_explanation: Optional[str] = None
     description_embedding: Optional[list[float]] = None
     attributes: dict[str, Any] | None = None
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-    )
-    updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
-    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, )
+    updated_at: datetime = Field(default_factory=datetime.utcnow, )
 
     def __init__(self, **kwargs):
         if isinstance(kwargs.get("attributes", None), str):
@@ -92,9 +92,8 @@ class Community(R2RSerializable):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | str) -> "Community":
-        parsed_data: dict[str, Any] = (
-            json.loads(data) if isinstance(data, str) else data
-        )
+        parsed_data: dict[str, Any] = (json.loads(data) if isinstance(
+            data, str) else data)
         if isinstance(parsed_data.get("embedding", None), str):
             parsed_data["embedding"] = json.loads(parsed_data["embedding"])
         return cls(**parsed_data)
@@ -111,12 +110,8 @@ class Graph(R2RSerializable):
     id: UUID | None = Field()
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-    )
-    updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
-    )
+    created_at: datetime = Field(default_factory=datetime.utcnow, )
+    updated_at: datetime = Field(default_factory=datetime.utcnow, )
     status: str = "pending"
 
     class Config:
@@ -127,9 +122,8 @@ class Graph(R2RSerializable):
     def from_dict(cls, data: dict[str, Any] | str) -> "Graph":
         """Create a Graph instance from a dictionary."""
         # Convert string to dict if needed
-        parsed_data: dict[str, Any] = (
-            json.loads(data) if isinstance(data, str) else data
-        )
+        parsed_data: dict[str, Any] = (json.loads(data) if isinstance(
+            data, str) else data)
         return cls(**parsed_data)
 
     def __init__(self, **kwargs):
@@ -152,13 +146,11 @@ class GraphCreationSettings(R2RSerializable):
     graph_extraction_prompt: str = Field(
         default="graph_extraction",
         description="The prompt to use for knowledge graph extraction.",
-        alias="graph_extraction",  # TODO - mark deprecated & remove
     )
 
     graph_entity_description_prompt: str = Field(
         default="graph_entity_description",
         description="The prompt to use for entity description generation.",
-        alias="graph_entity_description_prompt",  # TODO - mark deprecated & remove
     )
 
     entity_types: list[str] = Field(
@@ -173,22 +165,26 @@ class GraphCreationSettings(R2RSerializable):
 
     chunk_merge_count: int = Field(
         default=2,
-        description="The number of extractions to merge into a single graph extraction.",
+        description="""The number of extractions to merge into a single graph
+        extraction.""",
     )
 
     max_knowledge_relationships: int = Field(
         default=100,
-        description="The maximum number of knowledge relationships to extract from each chunk.",
+        description="""The maximum number of knowledge relationships to extract
+        from each chunk.""",
     )
 
     max_description_input_length: int = Field(
         default=65536,
-        description="The maximum length of the description for a node in the graph.",
+        description="""The maximum length of the description for a node in the
+        graph.""",
     )
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description="Configuration for text generation during graph enrichment.",
+        description=
+        "Configuration for text generation during graph enrichment.",
     )
 
     automatic_deduplication: bool = Field(
@@ -202,13 +198,13 @@ class GraphEnrichmentSettings(R2RSerializable):
 
     force_graph_search_results_enrichment: bool = Field(
         default=False,
-        description="Force run the enrichment step even if graph creation is still in progress for some documents.",
+        description="""Force run the enrichment step even if graph creation is
+        still in progress for some documents.""",
     )
 
     graph_communities_prompt: str = Field(
         default="graph_communities",
         description="The prompt to use for knowledge graph enrichment.",
-        alias="graph_communities",  # TODO - mark deprecated & remove
     )
 
     max_summary_input_length: int = Field(
@@ -218,7 +214,8 @@ class GraphEnrichmentSettings(R2RSerializable):
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description="Configuration for text generation during graph enrichment.",
+        description=
+        "Configuration for text generation during graph enrichment.",
     )
 
     leiden_params: dict = Field(
@@ -232,7 +229,8 @@ class GraphCommunitySettings(R2RSerializable):
 
     force_graph_search_results_enrichment: bool = Field(
         default=False,
-        description="Force run the enrichment step even if graph creation is still in progress for some documents.",
+        description="""Force run the enrichment step even if graph creation is
+        still in progress for some documents.""",
     )
 
     graph_communities: str = Field(
@@ -247,7 +245,8 @@ class GraphCommunitySettings(R2RSerializable):
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description="Configuration for text generation during graph enrichment.",
+        description=
+        "Configuration for text generation during graph enrichment.",
     )
 
     leiden_params: dict = Field(

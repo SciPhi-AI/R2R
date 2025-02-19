@@ -30,10 +30,9 @@ class AudioParser(AsyncParser[bytes]):
         self.atranscription = atranscription
 
     async def ingest(  # type: ignore
-        self, data: bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        """
-        Ingest audio data and yield a transcription using Whisper via LiteLLM.
+            self, data: bytes, **kwargs) -> AsyncGenerator[str, None]:
+        """Ingest audio data and yield a transcription using Whisper via
+        LiteLLM.
 
         Args:
             data: Raw audio bytes
@@ -44,9 +43,8 @@ class AudioParser(AsyncParser[bytes]):
         """
         try:
             # Create a temporary file to store the audio data
-            with tempfile.NamedTemporaryFile(
-                suffix=".wav", delete=False
-            ) as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=".wav",
+                                             delete=False) as temp_file:
                 temp_file.write(data)
                 temp_file_path = temp_file.name
 

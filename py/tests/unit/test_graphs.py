@@ -14,9 +14,9 @@ class StoreType(str, Enum):
 @pytest.mark.asyncio
 async def test_create_graph(graphs_handler):
     coll_id = uuid.uuid4()
-    resp = await graphs_handler.create(
-        collection_id=coll_id, name="My Graph", description="Test Graph"
-    )
+    resp = await graphs_handler.create(collection_id=coll_id,
+                                       name="My Graph",
+                                       description="Test Graph")
     assert isinstance(resp, GraphResponse)
     assert resp.name == "My Graph"
     assert resp.collection_id == coll_id
@@ -26,9 +26,8 @@ async def test_create_graph(graphs_handler):
 async def test_add_entities_and_relationships(graphs_handler):
     # Create a graph
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="TestGraph"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="TestGraph")
     graph_id = graph_resp.id
 
     # Add an entity
@@ -64,17 +63,16 @@ async def test_add_entities_and_relationships(graphs_handler):
     assert rel.predicate == "lives_in"
 
     # Verify entities retrieval
-    ents, total_ents = await graphs_handler.get_entities(
-        parent_id=graph_id, offset=0, limit=10
-    )
+    ents, total_ents = await graphs_handler.get_entities(parent_id=graph_id,
+                                                         offset=0,
+                                                         limit=10)
     assert total_ents == 2
     names = [e.name for e in ents]
     assert "TestEntity" in names and "AnotherEntity" in names
 
     # Verify relationships retrieval
     rels, total_rels = await graphs_handler.get_relationships(
-        parent_id=graph_id, offset=0, limit=10
-    )
+        parent_id=graph_id, offset=0, limit=10)
     assert total_rels == 1
     assert rels[0].predicate == "lives_in"
 
@@ -83,9 +81,8 @@ async def test_add_entities_and_relationships(graphs_handler):
 async def test_delete_entities_and_relationships(graphs_handler):
     # Create another graph
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="DeletableGraph"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="DeletableGraph")
     graph_id = graph_resp.id
 
     # Add entities
@@ -117,9 +114,9 @@ async def test_delete_entities_and_relationships(graphs_handler):
         entity_ids=[e1.id],
         store_type=StoreType.GRAPHS,
     )
-    ents, count = await graphs_handler.get_entities(
-        parent_id=graph_id, offset=0, limit=10
-    )
+    ents, count = await graphs_handler.get_entities(parent_id=graph_id,
+                                                    offset=0,
+                                                    limit=10)
     assert count == 1
     assert ents[0].id == e2.id
 
@@ -130,8 +127,7 @@ async def test_delete_entities_and_relationships(graphs_handler):
         store_type=StoreType.GRAPHS,
     )
     rels, rel_count = await graphs_handler.get_relationships(
-        parent_id=graph_id, offset=0, limit=10
-    )
+        parent_id=graph_id, offset=0, limit=10)
     assert rel_count == 0
 
 
@@ -181,7 +177,6 @@ async def test_communities(graphs_handler):
 # #     # Try fetching the graph
 # #     overview = await graphs_handler.list_graphs(offset=0, limit=10, filter_graph_ids=[graph_id])
 # #     assert overview["total_entries"] == 0, "Graph should be deleted"
-
 
 # @pytest.mark.asyncio
 # async def test_delete_graph(graphs_handler):
@@ -244,22 +239,22 @@ async def test_create_graph_defaults(graphs_handler):
 @pytest.mark.asyncio
 async def test_update_graph(graphs_handler):
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="OldName", description="OldDescription"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="OldName",
+                                             description="OldDescription")
     graph_id = graph_resp.id
 
     # Update name and description
-    updated_resp = await graphs_handler.update(
-        collection_id=graph_id, name="NewName", description="NewDescription"
-    )
+    updated_resp = await graphs_handler.update(collection_id=graph_id,
+                                               name="NewName",
+                                               description="NewDescription")
     assert updated_resp.name == "NewName"
     assert updated_resp.description == "NewDescription"
 
     # Retrieve and verify
-    overview = await graphs_handler.list_graphs(
-        offset=0, limit=10, filter_graph_ids=[graph_id]
-    )
+    overview = await graphs_handler.list_graphs(offset=0,
+                                                limit=10,
+                                                filter_graph_ids=[graph_id])
     assert overview["total_entries"] == 1
     fetched_graph = overview["results"][0]
     assert fetched_graph.name == "NewName"
@@ -269,16 +264,27 @@ async def test_update_graph(graphs_handler):
 @pytest.mark.asyncio
 async def test_bulk_entities(graphs_handler):
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="BulkEntities"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="BulkEntities")
     graph_id = graph_resp.id
 
     # Add multiple entities
     entities_to_add = [
-        {"name": "EntityA", "category": "CategoryA", "description": "DescA"},
-        {"name": "EntityB", "category": "CategoryB", "description": "DescB"},
-        {"name": "EntityC", "category": "CategoryC", "description": "DescC"},
+        {
+            "name": "EntityA",
+            "category": "CategoryA",
+            "description": "DescA"
+        },
+        {
+            "name": "EntityB",
+            "category": "CategoryB",
+            "description": "DescB"
+        },
+        {
+            "name": "EntityC",
+            "category": "CategoryC",
+            "description": "DescC"
+        },
     ]
     for ent in entities_to_add:
         await graphs_handler.entities.create(
@@ -289,9 +295,9 @@ async def test_bulk_entities(graphs_handler):
             description=ent["description"],
         )
 
-    ents, total = await graphs_handler.get_entities(
-        parent_id=graph_id, offset=0, limit=10
-    )
+    ents, total = await graphs_handler.get_entities(parent_id=graph_id,
+                                                    offset=0,
+                                                    limit=10)
     assert total == 3
     fetched_names = [e.name for e in ents]
     for ent in entities_to_add:
@@ -301,21 +307,20 @@ async def test_bulk_entities(graphs_handler):
 @pytest.mark.asyncio
 async def test_relationship_filtering(graphs_handler):
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="RelFilteringGraph"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="RelFilteringGraph")
     graph_id = graph_resp.id
 
     # Add entities
-    e1 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node1"
-    )
-    e2 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node2"
-    )
-    e3 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="Node3"
-    )
+    e1 = await graphs_handler.entities.create(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS,
+                                              name="Node1")
+    e2 = await graphs_handler.entities.create(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS,
+                                              name="Node2")
+    e3 = await graphs_handler.entities.create(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS,
+                                              name="Node3")
 
     # Add different relationships
     await graphs_handler.relationships.create(
@@ -340,8 +345,7 @@ async def test_relationship_filtering(graphs_handler):
 
     # Get all relationships
     all_rels, all_count = await graphs_handler.get_relationships(
-        parent_id=graph_id, offset=0, limit=10
-    )
+        parent_id=graph_id, offset=0, limit=10)
     assert all_count == 2
 
     # Filter by relationship_type = ["connected_to"]
@@ -358,44 +362,41 @@ async def test_relationship_filtering(graphs_handler):
 @pytest.mark.asyncio
 async def test_delete_all_entities(graphs_handler):
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="DeleteAllEntities"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="DeleteAllEntities")
     graph_id = graph_resp.id
 
     # Add some entities
-    await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E1"
-    )
-    await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E2"
-    )
+    await graphs_handler.entities.create(parent_id=graph_id,
+                                         store_type=StoreType.GRAPHS,
+                                         name="E1")
+    await graphs_handler.entities.create(parent_id=graph_id,
+                                         store_type=StoreType.GRAPHS,
+                                         name="E2")
 
     # Delete all entities without specifying IDs
-    await graphs_handler.entities.delete(
-        parent_id=graph_id, store_type=StoreType.GRAPHS
-    )
-    ents, count = await graphs_handler.get_entities(
-        parent_id=graph_id, offset=0, limit=10
-    )
+    await graphs_handler.entities.delete(parent_id=graph_id,
+                                         store_type=StoreType.GRAPHS)
+    ents, count = await graphs_handler.get_entities(parent_id=graph_id,
+                                                    offset=0,
+                                                    limit=10)
     assert count == 0
 
 
 @pytest.mark.asyncio
 async def test_delete_all_relationships(graphs_handler):
     coll_id = uuid.uuid4()
-    graph_resp = await graphs_handler.create(
-        collection_id=coll_id, name="DeleteAllRels"
-    )
+    graph_resp = await graphs_handler.create(collection_id=coll_id,
+                                             name="DeleteAllRels")
     graph_id = graph_resp.id
 
     # Add two entities and a relationship
-    e1 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E1"
-    )
-    e2 = await graphs_handler.entities.create(
-        parent_id=graph_id, store_type=StoreType.GRAPHS, name="E2"
-    )
+    e1 = await graphs_handler.entities.create(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS,
+                                              name="E1")
+    e2 = await graphs_handler.entities.create(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS,
+                                              name="E2")
     await graphs_handler.relationships.create(
         subject="E1",
         subject_id=e1.id,
@@ -407,12 +408,10 @@ async def test_delete_all_relationships(graphs_handler):
     )
 
     # Delete all relationships
-    await graphs_handler.relationships.delete(
-        parent_id=graph_id, store_type=StoreType.GRAPHS
-    )
+    await graphs_handler.relationships.delete(parent_id=graph_id,
+                                              store_type=StoreType.GRAPHS)
     rels, rel_count = await graphs_handler.get_relationships(
-        parent_id=graph_id, offset=0, limit=10
-    )
+        parent_id=graph_id, offset=0, limit=10)
     assert rel_count == 0
 
 
@@ -421,8 +420,7 @@ async def test_error_handling_invalid_graph_id(graphs_handler):
     # Attempt to get a non-existent graph
     non_existent_id = uuid.uuid4()
     overview = await graphs_handler.list_graphs(
-        offset=0, limit=10, filter_graph_ids=[non_existent_id]
-    )
+        offset=0, limit=10, filter_graph_ids=[non_existent_id])
     assert overview["total_entries"] == 0
 
     # Attempt to delete a non-existent graph
@@ -462,20 +460,19 @@ async def test_filter_by_collection_ids_in_entities(graphs_handler):
         VALUES ($1, $2, $3, $4)
     """
     await graphs_handler.connection_manager.execute_query(
-        insert_entity_sql, [row_id, "TestEntity", some_parent_id, None]
-    )
+        insert_entity_sql, [row_id, "TestEntity", some_parent_id, None])
 
     # 3) Now run your actual test search
     filter_dict = {"collection_ids": {"$in": [str(some_parent_id)]}}
     results = []
     async for row in graphs_handler.graph_search(
-        query="anything",
-        search_type="entities",
-        filters=filter_dict,
-        limit=10,
-        use_fulltext_search=False,
-        use_hybrid_search=False,
-        query_embedding=[0, 0, 0, 0],
+            query="anything",
+            search_type="entities",
+            filters=filter_dict,
+            limit=10,
+            use_fulltext_search=False,
+            use_hybrid_search=False,
+            query_embedding=[0, 0, 0, 0],
     ):
         results.append(row)
 
@@ -487,15 +484,13 @@ async def test_filter_by_collection_ids_in_entities(graphs_handler):
         DELETE FROM "{graphs_handler.project_name}"."graphs_entities" WHERE id = $1
     """
     await graphs_handler.connection_manager.execute_query(
-        delete_entity_sql, [row_id]
-    )
+        delete_entity_sql, [row_id])
 
     delete_graph_sql = f"""
         DELETE FROM "{graphs_handler.project_name}"."graphs" WHERE id = $1
     """
     await graphs_handler.connection_manager.execute_query(
-        delete_graph_sql, [some_parent_id]
-    )
+        delete_graph_sql, [some_parent_id])
 
 
 # # TODO - Fix code to pass this test.

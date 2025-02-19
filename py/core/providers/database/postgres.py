@@ -74,7 +74,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
         config: DatabaseConfig,
         dimension: int | float,
         crypto_provider: "BCryptCryptoProvider | NaClCryptoProvider",
-        quantization_type: VectorQuantizationType = VectorQuantizationType.FP32,
+        quantization_type: VectorQuantizationType = VectorQuantizationType.
+        FP32,
         *args,
         **kwargs,
     ):
@@ -98,11 +99,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
 
         self.port = int(self.port)
 
-        self.project_name = (
-            config.app.project_name
-            or os.getenv("R2R_PROJECT_NAME")
-            or "r2r_default"
-        )
+        self.project_name = (config.app.project_name
+                             or os.getenv("R2R_PROJECT_NAME") or "r2r_default")
 
         if not self.project_name:
             raise ValueError(
@@ -123,28 +121,22 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.config: DatabaseConfig = config
         self.crypto_provider = crypto_provider
         self.postgres_configuration_settings: PostgresConfigurationSettings = (
-            self._get_postgres_configuration_settings(config)
-        )
+            self._get_postgres_configuration_settings(config))
         self.default_collection_name = config.default_collection_name
         self.default_collection_description = (
-            config.default_collection_description
-        )
+            config.default_collection_description)
 
         self.connection_manager: PostgresConnectionManager = (
-            PostgresConnectionManager()
-        )
+            PostgresConnectionManager())
         self.documents_handler = PostgresDocumentsHandler(
-            self.project_name, self.connection_manager, self.dimension
-        )
-        self.token_handler = PostgresTokensHandler(
-            self.project_name, self.connection_manager
-        )
+            self.project_name, self.connection_manager, self.dimension)
+        self.token_handler = PostgresTokensHandler(self.project_name,
+                                                   self.connection_manager)
         self.collections_handler = PostgresCollectionsHandler(
-            self.project_name, self.connection_manager, self.config
-        )
-        self.users_handler = PostgresUserHandler(
-            self.project_name, self.connection_manager, self.crypto_provider
-        )
+            self.project_name, self.connection_manager, self.config)
+        self.users_handler = PostgresUserHandler(self.project_name,
+                                                 self.connection_manager,
+                                                 self.crypto_provider)
         self.chunks_handler = PostgresChunksHandler(
             self.project_name,
             self.connection_manager,
@@ -152,8 +144,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
             self.quantization_type,
         )
         self.conversations_handler = PostgresConversationsHandler(
-            self.project_name, self.connection_manager
-        )
+            self.project_name, self.connection_manager)
         self.entities_handler = PostgresEntitiesHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
@@ -182,12 +173,10 @@ class PostgresDatabaseProvider(DatabaseProvider):
             dimension=self.dimension,
             quantization_type=self.quantization_type,
         )
-        self.prompts_handler = PostgresPromptsHandler(
-            self.project_name, self.connection_manager
-        )
-        self.files_handler = PostgresFilesHandler(
-            self.project_name, self.connection_manager
-        )
+        self.prompts_handler = PostgresPromptsHandler(self.project_name,
+                                                      self.connection_manager)
+        self.files_handler = PostgresFilesHandler(self.project_name,
+                                                  self.connection_manager)
 
         self.limits_handler = PostgresLimitsHandler(
             project_name=self.project_name,
@@ -198,8 +187,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     async def initialize(self):
         logger.info("Initializing `PostgresDatabaseProvider`.")
         self.pool = SemaphoreConnectionPool(
-            self.connection_string, self.postgres_configuration_settings
-        )
+            self.connection_string, self.postgres_configuration_settings)
         await self.pool.initialize()
         await self.connection_manager.initialize(self.pool)
 
@@ -211,8 +199,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
 
             # Create schema if it doesn't exist
             await conn.execute(
-                f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";'
-            )
+                f'CREATE SCHEMA IF NOT EXISTS "{self.project_name}";')
 
         await self.documents_handler.create_tables()
         await self.collections_handler.create_tables()
@@ -229,22 +216,26 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.limits_handler.create_tables()
 
     def _get_postgres_configuration_settings(
-        self, config: DatabaseConfig
-    ) -> PostgresConfigurationSettings:
+            self, config: DatabaseConfig) -> PostgresConfigurationSettings:
         settings = PostgresConfigurationSettings()
 
         env_mapping = {
-            "checkpoint_completion_target": "R2R_POSTGRES_CHECKPOINT_COMPLETION_TARGET",
-            "default_statistics_target": "R2R_POSTGRES_DEFAULT_STATISTICS_TARGET",
+            "checkpoint_completion_target":
+            "R2R_POSTGRES_CHECKPOINT_COMPLETION_TARGET",
+            "default_statistics_target":
+            "R2R_POSTGRES_DEFAULT_STATISTICS_TARGET",
             "effective_cache_size": "R2R_POSTGRES_EFFECTIVE_CACHE_SIZE",
-            "effective_io_concurrency": "R2R_POSTGRES_EFFECTIVE_IO_CONCURRENCY",
+            "effective_io_concurrency":
+            "R2R_POSTGRES_EFFECTIVE_IO_CONCURRENCY",
             "huge_pages": "R2R_POSTGRES_HUGE_PAGES",
             "maintenance_work_mem": "R2R_POSTGRES_MAINTENANCE_WORK_MEM",
             "min_wal_size": "R2R_POSTGRES_MIN_WAL_SIZE",
             "max_connections": "R2R_POSTGRES_MAX_CONNECTIONS",
-            "max_parallel_workers_per_gather": "R2R_POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
+            "max_parallel_workers_per_gather":
+            "R2R_POSTGRES_MAX_PARALLEL_WORKERS_PER_GATHER",
             "max_parallel_workers": "R2R_POSTGRES_MAX_PARALLEL_WORKERS",
-            "max_parallel_maintenance_workers": "R2R_POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
+            "max_parallel_maintenance_workers":
+            "R2R_POSTGRES_MAX_PARALLEL_MAINTENANCE_WORKERS",
             "max_wal_size": "R2R_POSTGRES_MAX_WAL_SIZE",
             "max_worker_processes": "R2R_POSTGRES_MAX_WORKER_PROCESSES",
             "random_page_cost": "R2R_POSTGRES_RANDOM_PAGE_COST",
@@ -255,9 +246,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
         }
 
         for setting, env_var in env_mapping.items():
-            value = getattr(
-                config.postgres_configuration_settings, setting, None
-            )
+            value = getattr(config.postgres_configuration_settings, setting,
+                            None)
             if value is None:
                 value = os.getenv(env_var)
 

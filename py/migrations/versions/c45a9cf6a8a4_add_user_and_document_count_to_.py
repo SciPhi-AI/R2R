@@ -1,9 +1,8 @@
-"""Add user and document count to collection
+"""Add user and document count to collection.
 
 Revision ID: c45a9cf6a8a4
 Revises: 8077140e1e99
 Create Date: 2024-12-10 13:28:07.798167
-
 """
 
 import os
@@ -27,7 +26,7 @@ if not project_name:
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied"""
+    """Check if the upgrade has already been applied."""
     connection = op.get_bind()
     inspector = inspect(connection)
 
@@ -53,22 +52,23 @@ def upgrade():
     # Add the new columns with default value of 0
     op.add_column(
         "collections",
-        sa.Column(
-            "user_count", sa.Integer(), nullable=False, server_default="0"
-        ),
+        sa.Column("user_count",
+                  sa.Integer(),
+                  nullable=False,
+                  server_default="0"),
         schema=project_name,
     )
     op.add_column(
         "collections",
-        sa.Column(
-            "document_count", sa.Integer(), nullable=False, server_default="0"
-        ),
+        sa.Column("document_count",
+                  sa.Integer(),
+                  nullable=False,
+                  server_default="0"),
         schema=project_name,
     )
 
     # Initialize the counts based on existing relationships
-    op.execute(
-        f"""
+    op.execute(f"""
         WITH collection_counts AS (
             SELECT c.id,
                    COUNT(DISTINCT u.id) as user_count,
@@ -83,8 +83,7 @@ def upgrade():
             document_count = COALESCE(cc.document_count, 0)
         FROM collection_counts cc
         WHERE c.id = cc.id
-    """
-    )
+    """)
 
 
 def downgrade():

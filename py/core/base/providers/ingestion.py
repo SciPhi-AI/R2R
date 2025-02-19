@@ -55,84 +55,50 @@ class IngestionConfig(ProviderConfig):
     }
 
     provider: str = Field(
-        default_factory=lambda: IngestionConfig._defaults["provider"]
-    )
+        default_factory=lambda: IngestionConfig._defaults["provider"])
     excluded_parsers: list[str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["excluded_parsers"]
-    )
+        default_factory=lambda: IngestionConfig._defaults["excluded_parsers"])
     chunking_strategy: str | ChunkingStrategy = Field(
-        default_factory=lambda: IngestionConfig._defaults["chunking_strategy"]
-    )
+        default_factory=lambda: IngestionConfig._defaults["chunking_strategy"])
     chunk_size: int = Field(
-        default_factory=lambda: IngestionConfig._defaults["chunk_size"]
-    )
+        default_factory=lambda: IngestionConfig._defaults["chunk_size"])
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "chunk_enrichment_settings"
-        ]
-    )
+            "chunk_enrichment_settings"])
     extra_parsers: dict[str, Any] = Field(
-        default_factory=lambda: IngestionConfig._defaults["extra_parsers"]
-    )
+        default_factory=lambda: IngestionConfig._defaults["extra_parsers"])
     audio_transcription_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "audio_transcription_model"
-        ]
-    )
-    vision_img_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_img_prompt_name"
-        ]
-    )
+            "audio_transcription_model"])
+    vision_img_prompt_name: str = Field(default_factory=lambda: IngestionConfig
+                                        ._defaults["vision_img_prompt_name"])
     vision_img_model: Optional[str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_img_model"]
-    )
-    vision_pdf_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_pdf_prompt_name"
-        ]
-    )
+        default_factory=lambda: IngestionConfig._defaults["vision_img_model"])
+    vision_pdf_prompt_name: str = Field(default_factory=lambda: IngestionConfig
+                                        ._defaults["vision_pdf_prompt_name"])
     vision_pdf_model: Optional[str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_pdf_model"]
-    )
-    skip_document_summary: bool = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "skip_document_summary"
-        ]
-    )
+        default_factory=lambda: IngestionConfig._defaults["vision_pdf_model"])
+    skip_document_summary: bool = Field(default_factory=lambda: IngestionConfig
+                                        ._defaults["skip_document_summary"])
     document_summary_system_prompt: str = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "document_summary_system_prompt"
-        ]
-    )
+            "document_summary_system_prompt"])
     document_summary_task_prompt: str = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "document_summary_task_prompt"
-        ]
-    )
+            "document_summary_task_prompt"])
     chunks_for_document_summary: int = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "chunks_for_document_summary"
-        ]
-    )
+            "chunks_for_document_summary"])
     document_summary_model: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "document_summary_model"
-        ]
-    )
+            "document_summary_model"])
     parser_overrides: dict[str, str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["parser_overrides"]
-    )
-    automatic_extraction: bool = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "automatic_extraction"
-        ]
-    )
+        default_factory=lambda: IngestionConfig._defaults["parser_overrides"])
+    automatic_extraction: bool = Field(default_factory=lambda: IngestionConfig.
+                                       _defaults["automatic_extraction"])
     document_summary_max_length: int = Field(
         default_factory=lambda: IngestionConfig._defaults[
-            "document_summary_max_length"
-        ]
-    )
+            "document_summary_max_length"])
 
     @classmethod
     def set_default(cls, **kwargs):
@@ -141,8 +107,7 @@ class IngestionConfig(ProviderConfig):
                 cls._defaults[key] = value
             else:
                 raise AttributeError(
-                    f"No default attribute '{key}' in IngestionConfig"
-                )
+                    f"No default attribute '{key}' in IngestionConfig")
 
     @property
     def supported_providers(self) -> list[str]:

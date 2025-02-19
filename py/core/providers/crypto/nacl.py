@@ -19,7 +19,8 @@ DEFAULT_NACL_SECRET_KEY = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"  # Repla
 
 
 def encode_bytes_readable(random_bytes: bytes, chars: str) -> str:
-    """Convert random bytes to a readable string using the given character set."""
+    """Convert random bytes to a readable string using the given character
+    set."""
     # Each byte gives us 8 bits of randomness
     # We use modulo to map each byte to our character set
     result = []
@@ -43,6 +44,7 @@ class NaClCryptoConfig(CryptoConfig):
 
 
 class NaClCryptoProvider(CryptoProvider):
+
     def __init__(self, config: NaClCryptoConfig):
         if not isinstance(config, NaClCryptoConfig):
             raise ValueError(
@@ -54,11 +56,8 @@ class NaClCryptoProvider(CryptoProvider):
 
         # Securely load the secret key for JWT
         # Priority: config.secret_key > environment variable > default
-        self.secret_key = (
-            config.secret_key
-            or os.getenv("R2R_SECRET_KEY")
-            or DEFAULT_NACL_SECRET_KEY
-        )
+        self.secret_key = (config.secret_key or os.getenv("R2R_SECRET_KEY")
+                           or DEFAULT_NACL_SECRET_KEY)
 
     def get_password_hash(self, password: str) -> str:
         password_bytes = password.encode("utf-8")
@@ -69,9 +68,8 @@ class NaClCryptoProvider(CryptoProvider):
         )
         return base64.b64encode(hashed).decode("utf-8")
 
-    def verify_password(
-        self, plain_password: str, hashed_password: str
-    ) -> bool:
+    def verify_password(self, plain_password: str,
+                        hashed_password: str) -> bool:
         try:
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
             nacl.pwhash.verify(stored_hash, plain_password.encode("utf-8"))
@@ -86,8 +84,7 @@ class NaClCryptoProvider(CryptoProvider):
     def generate_api_key(self) -> Tuple[str, str]:
         # Define our character set (excluding ambiguous characters)
         chars = string.ascii_letters.replace("l", "").replace("I", "").replace(
-            "O", ""
-        ) + string.digits.replace("0", "").replace("1", "")
+            "O", "") + string.digits.replace("0", "").replace("1", "")
 
         # Generate a unique key_id
         key_id_bytes = nacl.utils.random(16)  # 16 random bytes
@@ -124,9 +121,8 @@ class NaClCryptoProvider(CryptoProvider):
         except Exception as e:
             raise ValueError(f"Invalid private key or signing error: {str(e)}")
 
-    def verify_request_signature(
-        self, public_key: str, signature: str, data: str
-    ) -> bool:
+    def verify_request_signature(self, public_key: str, signature: str,
+                                 data: str) -> bool:
         try:
             key_bytes = base64.b64decode(public_key)
             verify_key = nacl.signing.VerifyKey(key_bytes)
@@ -137,8 +133,8 @@ class NaClCryptoProvider(CryptoProvider):
             return False
 
     def generate_secure_token(self, data: dict, expiry: datetime) -> str:
-        """
-        Generate a secure token using JWT with HS256.
+        """Generate a secure token using JWT with HS256.
+
         The secret_key is used for symmetrical signing.
         """
         now = datetime.now(timezone.utc)
@@ -154,15 +150,12 @@ class NaClCryptoProvider(CryptoProvider):
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
     def verify_secure_token(self, token: str) -> Optional[dict]:
-        """
-        Verify a secure token using the shared secret_key and JWT.
-        """
+        """Verify a secure token using the shared secret_key and JWT."""
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             exp = payload.get("exp")
             if exp is None or datetime.fromtimestamp(
-                exp, tz=timezone.utc
-            ) < datetime.now(timezone.utc):
+                    exp, tz=timezone.utc) < datetime.now(timezone.utc):
                 return None
             return payload
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
@@ -172,8 +165,7 @@ class NaClCryptoProvider(CryptoProvider):
         signing_key = nacl.signing.SigningKey.generate()
         private_key_b64 = base64.b64encode(signing_key.encode()).decode()
         public_key_b64 = base64.b64encode(
-            signing_key.verify_key.encode()
-        ).decode()
+            signing_key.verify_key.encode()).decode()
         # Generate a unique key_id
         key_id_bytes = nacl.utils.random(16)
         key_id = f"sign_{base64.urlsafe_b64encode(key_id_bytes).decode()}"

@@ -34,8 +34,7 @@ class EmbeddingConfig(ProviderConfig):
     initial_backoff: float = 1
     max_backoff: float = 64.0
     quantization_settings: VectorQuantizationSettings = (
-        VectorQuantizationSettings()
-    )
+        VectorQuantizationSettings())
 
     ## deprecated
     rerank_dimension: Optional[int] = None
@@ -51,6 +50,7 @@ class EmbeddingConfig(ProviderConfig):
 
 
 class EmbeddingProvider(Provider):
+
     class Step(Enum):
         BASE = 1
         RERANK = 2
@@ -78,8 +78,7 @@ class EmbeddingProvider(Provider):
                 raise
             except Exception as e:
                 logger.warning(
-                    f"Request failed (attempt {retries + 1}): {str(e)}"
-                )
+                    f"Request failed (attempt {retries + 1}): {str(e)}")
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
@@ -96,8 +95,7 @@ class EmbeddingProvider(Provider):
                 raise
             except Exception as e:
                 logger.warning(
-                    f"Request failed (attempt {retries + 1}): {str(e)}"
-                )
+                    f"Request failed (attempt {retries + 1}): {str(e)}")
                 retries += 1
                 if retries == self.config.max_retries:
                     raise

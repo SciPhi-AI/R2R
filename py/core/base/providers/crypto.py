@@ -18,23 +18,24 @@ class CryptoConfig(ProviderConfig):
 
 
 class CryptoProvider(Provider, ABC):
+
     def __init__(self, config: CryptoConfig):
         if not isinstance(config, CryptoConfig):
             raise ValueError(
-                "CryptoProvider must be initialized with a CryptoConfig"
-            )
+                "CryptoProvider must be initialized with a CryptoConfig")
         super().__init__(config)
 
     @abstractmethod
     def get_password_hash(self, password: str) -> str:
-        """Hash a plaintext password using a secure password hashing algorithm (e.g., Argon2i)."""
+        """Hash a plaintext password using a secure password hashing algorithm
+        (e.g., Argon2i)."""
         pass
 
     @abstractmethod
-    def verify_password(
-        self, plain_password: str, hashed_password: str
-    ) -> bool:
-        """Verify that a plaintext password matches the given hashed password."""
+    def verify_password(self, plain_password: str,
+                        hashed_password: str) -> bool:
+        """Verify that a plaintext password matches the given hashed
+        password."""
         pass
 
     @abstractmethod
@@ -44,8 +45,7 @@ class CryptoProvider(Provider, ABC):
 
     @abstractmethod
     def generate_signing_keypair(self) -> Tuple[str, str, str]:
-        """
-        Generate a new Ed25519 signing keypair for request signing.
+        """Generate a new Ed25519 signing keypair for request signing.
 
         Returns:
             A tuple of (key_id, private_key, public_key).
@@ -57,20 +57,20 @@ class CryptoProvider(Provider, ABC):
 
     @abstractmethod
     def sign_request(self, private_key: str, data: str) -> str:
-        """Sign request data with an Ed25519 private key, returning the signature."""
+        """Sign request data with an Ed25519 private key, returning the
+        signature."""
         pass
 
     @abstractmethod
-    def verify_request_signature(
-        self, public_key: str, signature: str, data: str
-    ) -> bool:
-        """Verify a request signature using the corresponding Ed25519 public key."""
+    def verify_request_signature(self, public_key: str, signature: str,
+                                 data: str) -> bool:
+        """Verify a request signature using the corresponding Ed25519 public
+        key."""
         pass
 
     @abstractmethod
     def generate_api_key(self) -> Tuple[str, str]:
-        """
-        Generate a new API key for a user.
+        """Generate a new API key for a user.
 
         Returns:
             A tuple (key_id, raw_api_key):
@@ -81,8 +81,8 @@ class CryptoProvider(Provider, ABC):
 
     @abstractmethod
     def hash_api_key(self, raw_api_key: str) -> str:
-        """
-        Hash a raw API key for secure storage in the database.
+        """Hash a raw API key for secure storage in the database.
+
         Use strong parameters suitable for long-term secrets.
         """
         pass
@@ -94,8 +94,7 @@ class CryptoProvider(Provider, ABC):
 
     @abstractmethod
     def generate_secure_token(self, data: dict, expiry: datetime) -> str:
-        """
-        Generate a secure, signed token (e.g., JWT) embedding claims.
+        """Generate a secure, signed token (e.g., JWT) embedding claims.
 
         Args:
             data: The claims to include in the token.
@@ -108,8 +107,7 @@ class CryptoProvider(Provider, ABC):
 
     @abstractmethod
     def verify_secure_token(self, token: str) -> Optional[dict]:
-        """
-        Verify a secure token (e.g., JWT).
+        """Verify a secure token (e.g., JWT).
 
         Args:
             token: The token string to verify.

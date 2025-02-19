@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class InnerConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
 
     class Config:
         populate_by_name = True
@@ -17,8 +17,7 @@ class InnerConfig(BaseModel, ABC):
         base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
-            for k, v in kwargs.items()
-            if k in base_args
+            for k, v in kwargs.items() if k in base_args
         }
         instance = cls(**filtered_kwargs)  # type: ignore
         for k, v in kwargs.items():
@@ -78,7 +77,7 @@ class AppConfig(InnerConfig):
 
 
 class ProviderConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
 
     app: AppConfig  # Add an app_config field
     extra_fields: dict[str, Any] = {}
@@ -98,8 +97,7 @@ class ProviderConfig(BaseModel, ABC):
         base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
-            for k, v in kwargs.items()
-            if k in base_args
+            for k, v in kwargs.items() if k in base_args
         }
         instance = cls(**filtered_kwargs)  # type: ignore
         for k, v in kwargs.items():
@@ -114,15 +112,15 @@ class ProviderConfig(BaseModel, ABC):
         pass
 
     @classmethod
-    def from_dict(
-        cls: Type["ProviderConfig"], data: dict[str, Any]
-    ) -> "ProviderConfig":
+    def from_dict(cls: Type["ProviderConfig"],
+                  data: dict[str, Any]) -> "ProviderConfig":
         """Create a new instance of the config from a dictionary."""
         return cls.create(**data)
 
 
 class Provider(ABC):
-    """A base provider class to provide a common interface for all providers."""
+    """A base provider class to provide a common interface for all
+    providers."""
 
     def __init__(self, config: ProviderConfig, *args, **kwargs):
         if config:

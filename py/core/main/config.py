@@ -25,16 +25,14 @@ logger = logging.getLogger()
 class R2RConfig:
     current_file_path = os.path.dirname(__file__)
     config_dir_root = os.path.join(current_file_path, "..", "configs")
-    default_config_path = os.path.join(
-        current_file_path, "..", "..", "r2r", "r2r.toml"
-    )
+    default_config_path = os.path.join(current_file_path, "..", "..", "r2r",
+                                       "r2r.toml")
 
     CONFIG_OPTIONS: dict[str, Optional[str]] = {}
     for file_ in os.listdir(config_dir_root):
         if file_.endswith(".toml"):
             CONFIG_OPTIONS[file_.removesuffix(".toml")] = os.path.join(
-                config_dir_root, file_
-            )
+                config_dir_root, file_)
     CONFIG_OPTIONS["default"] = None
 
     REQUIRED_KEYS: dict[str, list] = {
@@ -95,45 +93,46 @@ class R2RConfig:
             if section in ["graph", "file"] and section not in default_config:
                 continue
             if "provider" in default_config[section] and (
-                default_config[section]["provider"] is not None
-                and default_config[section]["provider"] != "None"
-                and default_config[section]["provider"] != "null"
-            ):
+                    default_config[section]["provider"] is not None
+                    and default_config[section]["provider"] != "None"
+                    and default_config[section]["provider"] != "null"):
                 self._validate_config_section(default_config, section, keys)
             setattr(self, section, default_config[section])
 
         self.app = AppConfig.create(**self.app)  # type: ignore
-        self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
-        self.completion = CompletionConfig.create(
-            **self.completion, app=self.app
-        )  # type: ignore
-        self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
-        self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
-        self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
-        self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
+        self.auth = AuthConfig.create(**self.auth,
+                                      app=self.app)  # type: ignore
+        self.completion = CompletionConfig.create(**self.completion,
+                                                  app=self.app)  # type: ignore
+        self.crypto = CryptoConfig.create(**self.crypto,
+                                          app=self.app)  # type: ignore
+        self.email = EmailConfig.create(**self.email,
+                                        app=self.app)  # type: ignore
+        self.database = DatabaseConfig.create(**self.database,
+                                              app=self.app)  # type: ignore
+        self.embedding = EmbeddingConfig.create(**self.embedding,
+                                                app=self.app)  # type: ignore
         self.completion_embedding = EmbeddingConfig.create(
-            **self.completion_embedding, app=self.app
-        )  # type: ignore
-        self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
-        self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
+            **self.completion_embedding, app=self.app)  # type: ignore
+        self.ingestion = IngestionConfig.create(**self.ingestion,
+                                                app=self.app)  # type: ignore
+        self.agent = AgentConfig.create(**self.agent,
+                                        app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(
-            **self.orchestration, app=self.app
-        )  # type: ignore
+            **self.orchestration, app=self.app)  # type: ignore
 
         IngestionConfig.set_default(**self.ingestion.dict())
 
         # override GenerationConfig defaults
         GenerationConfig.set_default(
-            **self.completion.generation_config.dict()
-        )
+            **self.completion.generation_config.dict())
 
-    def _validate_config_section(
-        self, config_data: dict[str, Any], section: str, keys: list
-    ):
+    def _validate_config_section(self, config_data: dict[str, Any],
+                                 section: str, keys: list):
         if section not in config_data:
             raise ValueError(f"Missing '{section}' section in config")
         if missing_keys := [
-            key for key in keys if key not in config_data[section]
+                key for key in keys if key not in config_data[section]
         ]:
             raise ValueError(
                 f"Missing required keys in '{section}' config: {', '.join(missing_keys)}"
@@ -167,7 +166,7 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
-        """Serialize config section while excluding internal state"""
+        """Serialize config section while excluding internal state."""
         if isinstance(config_section, dict):
             return {
                 R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)

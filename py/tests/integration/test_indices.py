@@ -5,6 +5,7 @@ from r2r import R2RClient, R2RException
 
 @pytest.fixture(scope="session")
 def config():
+
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -90,9 +91,7 @@ def test_list_indices(client: R2RClient):
 def test_error_handling(client: R2RClient):
     # Try to get a non-existent index
     with pytest.raises(R2RException) as exc_info:
-        client.indices.retrieve(
-            index_name="nonexistent_index", table_name="chunks"
-        )
+        client.indices.retrieve(index_name="nonexistent_index",
+                                table_name="chunks")
     assert "not found" in str(exc_info.value).lower(), (
-        "Unexpected error message for non-existent index"
-    )
+        "Unexpected error message for non-existent index")

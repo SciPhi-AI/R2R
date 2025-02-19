@@ -5,14 +5,12 @@
 # from datetime import datetime
 # from r2r import R2RClient, R2RException, LimitSettings
 
-
 # async def test_health_endpoint(aclient):
 #     """Test health endpoint is accessible and not rate limited"""
 #     # Health endpoint doesn't require authentication
 #     for _ in range(20):  # Well above our global limit
 #         response = await aclient.system.health()
 #         assert response["results"]["message"] == "ok"
-
 
 # async def test_system_status(aclient, config):
 #     """Test system status endpoint returns correct data"""
@@ -27,7 +25,6 @@
 #     assert isinstance(stats["memory_usage"], (int, float))
 
 #     datetime.fromisoformat(stats["start_time"])
-
 
 # async def test_per_minute_route_limit(aclient, test_collection):
 #     """Test route-specific per-minute limit for search endpoint"""
@@ -54,7 +51,6 @@
 #     assert "rate limit" in str(exc_info.value).lower()
 #     await aclient.users.logout()
 
-
 # async def test_global_per_minute_limit(aclient, test_collection):
 #     """Test global per-minute limit"""
 #     # Create and login as new user
@@ -77,7 +73,6 @@
 #         await aclient.users.me()
 #     assert "rate limit" in str(exc_info.value).lower()
 #     await aclient.users.logout()
-
 
 # async def test_global_per_minute_limit_split(aclient, test_collection):
 #     """Test global per-minute limit"""
@@ -137,7 +132,6 @@
 # #     assert "monthly" in str(exc_info.value).lower()
 # #     client.users.logout()
 
-
 # async def test_non_superuser_system_access(aclient):
 #     """Test system endpoint access control"""
 #     # Create and login as regular user
@@ -159,7 +153,6 @@
 #         with pytest.raises(R2RException) as exc_info:
 #             await endpoint()
 #         # assert exc_info.value.status_code == 403
-
 
 # async def test_limit_reset(aclient, test_collection):
 #     """Test that per-minute limits reset after one minute"""
@@ -188,7 +181,6 @@
 #     )
 #     assert "results" in response
 
-
 # ## THIS FAILS, BUT WE ARE OK WITH THIS EDGE CASE
 # # async def test_concurrent_requests(aclient, test_collection):
 # #     """Test concurrent requests properly handle rate limits"""
@@ -207,7 +199,6 @@
 # #     results = await asyncio.gather(*tasks, return_exceptions=True)
 # #     success_count = sum(1 for r in results if isinstance(r, dict))
 # #     assert success_count <= 5  # route_per_min limit
-
 
 # async def test_user_specific_limits(aclient, config):
 #     """Test user-specific limit overrides"""
@@ -237,7 +228,6 @@
 #             assert i >= 1  # Should fail after first request
 #             break
 
-
 # async def test_global_monthly_limit(aclient, test_collection):
 #     """Test global monthly limit across all routes"""
 #     test_user = f"test_user_{uuid.uuid4()}@example.com"
@@ -265,7 +255,6 @@
 #         await aclient.users.me()
 #     assert "monthly" in str(exc_info.value).lower()
 
-
 # async def test_mixed_limits(aclient, test_collection):
 #     """Test interaction between different types of limits"""
 #     test_user = f"test_user_{uuid.uuid4()}@example.com"
@@ -282,7 +271,6 @@
 #         for i in range(10):
 #             await aclient.users.me()
 #     assert "rate limit" in str(exc_info.value).lower()
-
 
 # async def test_route_limit_inheritance(aclient, test_collection):
 #     """Test that routes without specific limits inherit global limits"""

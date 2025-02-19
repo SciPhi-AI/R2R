@@ -56,8 +56,7 @@ class AuthProvider(Provider, ABC):
     ):
         if not isinstance(config, AuthConfig):
             raise ValueError(
-                "AuthProvider must be initialized with an AuthConfig"
-            )
+                "AuthProvider must be initialized with an AuthConfig")
         self.config = config
         self.admin_email = config.default_admin_email
         self.admin_password = config.default_admin_password
@@ -70,8 +69,7 @@ class AuthProvider(Provider, ABC):
 
     async def _get_default_admin_user(self) -> User:
         return await self.database_provider.users_handler.get_user_by_email(
-            self.admin_email
-        )
+            self.admin_email)
 
     @abstractmethod
     def create_access_token(self, data: dict) -> str:
@@ -99,14 +97,14 @@ class AuthProvider(Provider, ABC):
 
     @abstractmethod
     async def send_verification_email(
-        self, email: str, user: Optional[User] = None
-    ) -> tuple[str, datetime]:
+            self,
+            email: str,
+            user: Optional[User] = None) -> tuple[str, datetime]:
         pass
 
     @abstractmethod
-    async def verify_email(
-        self, email: str, verification_code: str
-    ) -> dict[str, str]:
+    async def verify_email(self, email: str,
+                           verification_code: str) -> dict[str, str]:
         pass
 
     @abstractmethod
@@ -114,31 +112,28 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    async def refresh_access_token(
-        self, refresh_token: str
-    ) -> dict[str, Token]:
+    async def refresh_access_token(self,
+                                   refresh_token: str) -> dict[str, Token]:
         pass
 
     def auth_wrapper(
         self,
         public: bool = False,
     ):
+
         async def _auth_wrapper(
-            auth: Optional[HTTPAuthorizationCredentials] = Security(
-                self.security
-            ),
-            api_key: Optional[str] = Security(api_key_header),
+                auth: Optional[HTTPAuthorizationCredentials] = Security(
+                    self.security),
+                api_key: Optional[str] = Security(api_key_header),
         ) -> User:
             # If authentication is not required and no credentials are provided, return the default admin user
-            if (
-                ((not self.config.require_authentication) or public)
-                and auth is None
-                and api_key is None
-            ):
+            if (((not self.config.require_authentication) or public)
+                    and auth is None and api_key is None):
                 return await self._get_default_admin_user()
             if not auth and not api_key:
                 raise R2RException(
-                    message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
+                    message=
+                    "No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
                     status_code=401,
                 )
             if auth and api_key:
@@ -152,8 +147,7 @@ class AuthProvider(Provider, ABC):
                 try:
                     token_data = await self.decode_token(credentials)
                     user = await self.database_provider.users_handler.get_user_by_email(
-                        token_data.email
-                    )
+                        token_data.email)
                     if user is not None:
                         return user
                 except R2RException:
@@ -168,16 +162,13 @@ class AuthProvider(Provider, ABC):
                 if "." in credentials:
                     key_id, raw_api_key = credentials.split(".", 1)
                     api_key_record = await self.database_provider.users_handler.get_api_key_record(
-                        key_id
-                    )
+                        key_id)
                     if api_key_record is not None:
                         hashed_key = api_key_record["hashed_key"]
                         if self.crypto_provider.verify_api_key(
-                            raw_api_key, hashed_key
-                        ):
+                                raw_api_key, hashed_key):
                             user = await self.database_provider.users_handler.get_user_by_id(
-                                api_key_record["user_id"]
-                            )
+                                api_key_record["user_id"])
                             if user is not None and user.is_active:
                                 return user
 
@@ -185,16 +176,13 @@ class AuthProvider(Provider, ABC):
             if api_key is not None and "." in api_key:
                 key_id, raw_api_key = api_key.split(".", 1)
                 api_key_record = await self.database_provider.users_handler.get_api_key_record(
-                    key_id
-                )
+                    key_id)
                 if api_key_record is not None:
                     hashed_key = api_key_record["hashed_key"]
                     if self.crypto_provider.verify_api_key(
-                        raw_api_key, hashed_key
-                    ):
+                            raw_api_key, hashed_key):
                         user = await self.database_provider.users_handler.get_user_by_id(
-                            api_key_record["user_id"]
-                        )
+                            api_key_record["user_id"])
                         if user is not None and user.is_active:
                             return user
 
@@ -206,23 +194,22 @@ class AuthProvider(Provider, ABC):
 
         return _auth_wrapper
 
-    def websocket_auth_wrapper(
-        self, superuser_only: bool = False, public: bool = False
-    ):
+    def websocket_auth_wrapper(self,
+                               superuser_only: bool = False,
+                               public: bool = False):
+
         async def _websocket_auth_wrapper(websocket: WebSocket) -> User:
             try:
                 # If authentication is not required and no credentials are provided, return the default admin user
                 auth_header = websocket.headers.get("authorization")
-                if (
-                    (not self.config.require_authentication) or public
-                ) and not auth_header:
+                if ((not self.config.require_authentication)
+                        or public) and not auth_header:
                     return await self._get_default_admin_user()
 
                 # Get authorization header
                 if not auth_header or not auth_header.startswith("Bearer "):
                     await websocket.close(
-                        code=4001, reason="Missing or invalid authorization"
-                    )
+                        code=4001, reason="Missing or invalid authorization")
                     raise R2RException(
                         status_code=401,
                         message="Missing or invalid authorization",
@@ -234,20 +221,16 @@ class AuthProvider(Provider, ABC):
                 try:
                     token_data = await self.decode_token(token)
                     user = await self.database_provider.users_handler.get_user_by_email(
-                        token_data.email
-                    )
+                        token_data.email)
                     if user is None:
-                        await websocket.close(
-                            code=4002, reason="User not found"
-                        )
-                        raise R2RException(
-                            status_code=404, message="User not found"
-                        )
+                        await websocket.close(code=4002,
+                                              reason="User not found")
+                        raise R2RException(status_code=404,
+                                           message="User not found")
 
                     if superuser_only and not user.is_superuser:
                         await websocket.close(
-                            code=4003, reason="Superuser access required"
-                        )
+                            code=4003, reason="Superuser access required")
                         raise R2RException(
                             status_code=403,
                             message="Superuser access required",
@@ -257,28 +240,23 @@ class AuthProvider(Provider, ABC):
 
                 except Exception as e:
                     logger.debug(f"WebSocket auth failed: {e}")
-                    await websocket.close(
-                        code=4002, reason="Authentication failed"
-                    )
-                    raise R2RException(
-                        status_code=401, message="Authentication failed"
-                    )
+                    await websocket.close(code=4002,
+                                          reason="Authentication failed")
+                    raise R2RException(status_code=401,
+                                       message="Authentication failed")
 
             except Exception as e:
                 logger.error(f"WebSocket error during auth: {e}")
-                await websocket.close(
-                    code=4002, reason="Authentication failed"
-                )
-                raise R2RException(
-                    status_code=401, message="Authentication failed"
-                )
+                await websocket.close(code=4002,
+                                      reason="Authentication failed")
+                raise R2RException(status_code=401,
+                                   message="Authentication failed")
 
         return _websocket_auth_wrapper
 
     @abstractmethod
-    async def change_password(
-        self, user: User, current_password: str, new_password: str
-    ) -> dict[str, str]:
+    async def change_password(self, user: User, current_password: str,
+                              new_password: str) -> dict[str, str]:
         pass
 
     @abstractmethod
@@ -286,9 +264,8 @@ class AuthProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    async def confirm_password_reset(
-        self, reset_token: str, new_password: str
-    ) -> dict[str, str]:
+    async def confirm_password_reset(self, reset_token: str,
+                                     new_password: str) -> dict[str, str]:
         pass
 
     @abstractmethod

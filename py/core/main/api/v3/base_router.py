@@ -15,9 +15,9 @@ logger = logging.getLogger()
 
 
 class BaseRouterV3:
-    def __init__(
-        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
-    ):
+
+    def __init__(self, providers: R2RProviders, services: R2RServices,
+                 config: R2RConfig):
         """
         :param providers: Typically includes auth, database, etc.
         :param services: Additional service references (ingestion, etc).
@@ -68,7 +68,8 @@ class BaseRouterV3:
                 raise HTTPException(
                     status_code=500,
                     detail={
-                        "message": f"An error '{e}' occurred during {func.__name__}",
+                        "message":
+                        f"An error '{e}' occurred during {func.__name__}",
                         "error": str(e),
                         "error_type": type(e).__name__,
                     },
@@ -79,9 +80,8 @@ class BaseRouterV3:
 
     @classmethod
     def build_router(cls, engine):
-        """
-        Class method for building a router instance (if you have a standard pattern).
-        """
+        """Class method for building a router instance (if you have a standard
+        pattern)."""
         return cls(engine).router
 
     def _register_workflows(self):
@@ -92,25 +92,23 @@ class BaseRouterV3:
 
     @abstractmethod
     def _setup_routes(self):
-        """
-        Subclasses override this to define actual endpoints.
-        """
+        """Subclasses override this to define actual endpoints."""
         pass
 
     def set_rate_limiting(self):
-        """
-        Adds a yield-based dependency for rate limiting each request.
+        """Adds a yield-based dependency for rate limiting each request.
+
         Checks the limits, then logs the request if the check passes.
         """
 
         async def rate_limit_dependency(
-            request: Request,
-            auth_user=Depends(self.providers.auth.auth_wrapper()),
+                request: Request,
+                auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
-            """
-            1) Fetch the user from the DB (including .limits_overrides).
-            2) Pass it to limits_handler.check_limits.
-            3) After the endpoint completes, call limits_handler.log_request.
+            """1) Fetch the user from the DB (including .limits_overrides).
+
+            2) Pass it to limits_handler.check_limits. 3) After the endpoint
+            completes, call limits_handler.log_request.
             """
             # If the user is superuser, skip checks
             if auth_user.is_superuser:
@@ -122,8 +120,7 @@ class BaseRouterV3:
 
             # 1) Fetch the user from DB
             user = await self.providers.database.users_handler.get_user_by_id(
-                user_id
-            )
+                user_id)
             if not user:
                 raise HTTPException(status_code=404, detail="User not found.")
 
@@ -147,8 +144,7 @@ class BaseRouterV3:
                 # 4) Log only POST and DELETE requests
                 if request.method in ["POST", "DELETE"]:
                     await self.providers.database.limits_handler.log_request(
-                        user_id, route
-                    )
+                        user_id, route)
 
         async def websocket_rate_limit_dependency(websocket: WebSocket):
             # Example: if you want to rate-limit websockets similarly

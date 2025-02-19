@@ -15,56 +15,42 @@ logger = logging.getLogger()
 
 
 def simple_graph_search_results_factory(service: GraphService):
+
     def get_input_data_dict(input_data):
         for key, value in input_data.items():
             if value is None:
                 continue
 
             if key == "document_id":
-                input_data[key] = (
-                    uuid.UUID(value)
-                    if not isinstance(value, uuid.UUID)
-                    else value
-                )
+                input_data[key] = (uuid.UUID(value) if
+                                   not isinstance(value, uuid.UUID) else value)
 
             if key == "collection_id":
-                input_data[key] = (
-                    uuid.UUID(value)
-                    if not isinstance(value, uuid.UUID)
-                    else value
-                )
+                input_data[key] = (uuid.UUID(value) if
+                                   not isinstance(value, uuid.UUID) else value)
 
             if key == "graph_id":
-                input_data[key] = (
-                    uuid.UUID(value)
-                    if not isinstance(value, uuid.UUID)
-                    else value
-                )
+                input_data[key] = (uuid.UUID(value) if
+                                   not isinstance(value, uuid.UUID) else value)
 
             if key in ["graph_creation_settings", "graph_enrichment_settings"]:
                 # Ensure we have a dict (if not already)
-                input_data[key] = (
-                    json.loads(value) if not isinstance(value, dict) else value
-                )
+                input_data[key] = (json.loads(value)
+                                   if not isinstance(value, dict) else value)
 
                 if "generation_config" in input_data[key]:
                     if isinstance(input_data[key]["generation_config"], dict):
                         input_data[key]["generation_config"] = (
                             GenerationConfig(
-                                **input_data[key]["generation_config"]
-                            )
-                        )
-                    elif not isinstance(
-                        input_data[key]["generation_config"], GenerationConfig
-                    ):
+                                **input_data[key]["generation_config"]))
+                    elif not isinstance(input_data[key]["generation_config"],
+                                        GenerationConfig):
                         input_data[key]["generation_config"] = (
-                            GenerationConfig()
-                        )
+                            GenerationConfig())
 
                     input_data[key]["generation_config"].model = (
                         input_data[key]["generation_config"].model
-                        or service.config.app.fast_llm
-                    )
+                        or service.config.app.fast_llm)
 
         return input_data
 
@@ -80,13 +66,12 @@ def simple_graph_search_results_factory(service: GraphService):
             offset = 0
             while True:
                 # Fetch current batch
-                batch = (
-                    await service.providers.database.collections_handler.documents_in_collection(
-                        collection_id=collection_id,
-                        offset=offset,
-                        limit=batch_size,
-                    )
-                )["results"]
+                batch = (await service.providers.database.collections_handler.
+                         documents_in_collection(
+                             collection_id=collection_id,
+                             offset=offset,
+                             limit=batch_size,
+                         ))["results"]
 
                 # If no documents returned, we've reached the end
                 if not batch:
@@ -119,15 +104,13 @@ def simple_graph_search_results_factory(service: GraphService):
             try:
                 extractions = []
                 async for (
-                    extraction
-                ) in service.graph_search_results_extraction(
-                    document_id=document_id,
-                    **input_data["graph_creation_settings"],
-                ):
+                        extraction) in service.graph_search_results_extraction(
+                            document_id=document_id,
+                            **input_data["graph_creation_settings"],
+                        ):
                     extractions.append(extraction)
                 await service.store_graph_search_results_extractions(
-                    extractions
-                )
+                    extractions)
 
                 # Describe the entities in the graph
                 await service.graph_search_results_entity_description(
@@ -142,8 +125,7 @@ def simple_graph_search_results_factory(service: GraphService):
 
             except Exception as e:
                 logger.error(
-                    f"Error in creating graph for document {document_id}: {e}"
-                )
+                    f"Error in creating graph for document {document_id}: {e}")
                 raise e
 
     async def graph_clustering(input_data):
@@ -211,9 +193,8 @@ def simple_graph_search_results_factory(service: GraphService):
 
     async def graph_deduplication(input_data):
         input_data = get_input_data_dict(input_data)
-        await service.deduplicate_document_entities(
-            document_id=input_data.get("document_id", None),
-        )
+        await service.deduplicate_document_entities(document_id=input_data.get(
+            "document_id", None), )
 
     return {
         "graph-extraction": graph_extraction,

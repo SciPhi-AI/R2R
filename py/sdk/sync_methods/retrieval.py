@@ -19,9 +19,7 @@ from ..models import (
 
 
 class RetrievalSDK:
-    """
-    SDK for interacting with documents in the v3 API.
-    """
+    """SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -32,8 +30,7 @@ class RetrievalSDK:
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
-        """
-        Conduct a vector and/or graph search.
+        """Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.
@@ -116,8 +113,8 @@ class RetrievalSDK:
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
     ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
-        """
-        Conducts a Retrieval Augmented Generation (RAG) search with the given query.
+        """Conducts a Retrieval Augmented Generation (RAG) search with the
+        given query.
 
         Args:
             query (str): The query to search for.
@@ -129,9 +126,8 @@ class RetrievalSDK:
         Returns:
             WrappedRAGResponse | AsyncGenerator[RAGResponse, None]: The RAG response
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
+        if rag_generation_config and not isinstance(rag_generation_config,
+                                                    dict):
             rag_generation_config = rag_generation_config.model_dump()
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
@@ -147,8 +143,7 @@ class RetrievalSDK:
             data["search_mode"] = search_mode
 
         if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
+                "stream", False):
             return self.client._make_streaming_request(
                 "POST",
                 "retrieval/rag",
@@ -178,8 +173,7 @@ class RetrievalSDK:
         max_tool_context_length: Optional[int] = None,
         use_extended_prompt: Optional[bool] = True,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent.
+        """Performs a single turn in a conversation with a RAG agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.
@@ -190,9 +184,8 @@ class RetrievalSDK:
         Returns:
             WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
+        if rag_generation_config and not isinstance(rag_generation_config,
+                                                    dict):
             rag_generation_config = rag_generation_config.model_dump()
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
@@ -202,9 +195,8 @@ class RetrievalSDK:
             "search_settings": search_settings,
             "task_prompt_override": task_prompt_override,
             "include_title_if_available": include_title_if_available,
-            "conversation_id": (
-                str(conversation_id) if conversation_id else None
-            ),
+            "conversation_id":
+            (str(conversation_id) if conversation_id else None),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
             "use_extended_prompt": use_extended_prompt,
@@ -213,13 +205,11 @@ class RetrievalSDK:
             data["search_mode"] = search_mode
 
         if message:
-            cast_message: Message = (
-                Message(**message) if isinstance(message, dict) else message
-            )
+            cast_message: Message = (Message(
+                **message) if isinstance(message, dict) else message)
             data["message"] = cast_message.model_dump()
         if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
+                "stream", False):
             return self.client._make_streaming_request(
                 "POST",
                 "retrieval/agent",
@@ -244,8 +234,7 @@ class RetrievalSDK:
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent.
+        """Performs a single turn in a conversation with a RAG agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.
@@ -256,28 +245,24 @@ class RetrievalSDK:
         Returns:
             WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
         """
-        if rag_generation_config and not isinstance(
-            rag_generation_config, dict
-        ):
+        if rag_generation_config and not isinstance(rag_generation_config,
+                                                    dict):
             rag_generation_config = rag_generation_config.model_dump()
 
         data: dict[str, Any] = {
             "rag_generation_config": rag_generation_config or {},
-            "conversation_id": (
-                str(conversation_id) if conversation_id else None
-            ),
+            "conversation_id":
+            (str(conversation_id) if conversation_id else None),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
         }
 
         if message:
-            cast_message: Message = (
-                Message(**message) if isinstance(message, dict) else message
-            )
+            cast_message: Message = (Message(
+                **message) if isinstance(message, dict) else message)
             data["message"] = cast_message.model_dump()
         if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
+                "stream", False):
             return self.client._make_streaming_request(
                 "POST",
                 "retrieval/reasoning_agent",

@@ -1,9 +1,8 @@
-"""add_total_tokens_to_documents
+"""add_total_tokens_to_documents.
 
 Revision ID: 3efc7b3b1b3d
 Revises: 7eb70560f406
 Create Date: 2025-01-21 14:59:00.000000
-
 """
 
 import logging
@@ -28,9 +27,10 @@ project_name = os.getenv("R2R_PROJECT_NAME", "r2r_default")
 
 
 def count_tokens_for_text(text: str, model: str = "gpt-3.5-turbo") -> int:
-    """
-    Count the number of tokens in the given text using tiktoken.
-    Default model is set to "gpt-3.5-turbo". Adjust if you prefer a different model.
+    """Count the number of tokens in the given text using tiktoken.
+
+    Default model is set to "gpt-3.5-turbo". Adjust if you prefer a different
+    model.
     """
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -41,7 +41,7 @@ def count_tokens_for_text(text: str, model: str = "gpt-3.5-turbo") -> int:
 
 
 def check_if_upgrade_needed() -> bool:
-    """Check if the upgrade has already been applied"""
+    """Check if the upgrade has already been applied."""
     connection = op.get_bind()
     inspector = inspect(connection)
 
@@ -114,18 +114,17 @@ def upgrade() -> None:
         )
 
         # Fetch next batch of document IDs
-        batch_docs_query = text(
-            f"""
+        batch_docs_query = text(f"""
             SELECT id
             FROM {project_name}.documents
             ORDER BY id
             LIMIT :limit_val
             OFFSET :offset_val
-            """
-        )
-        batch_docs = connection.execute(
-            batch_docs_query, {"limit_val": BATCH_SIZE, "offset_val": offset}
-        ).fetchall()
+            """)
+        batch_docs = connection.execute(batch_docs_query, {
+            "limit_val": BATCH_SIZE,
+            "offset_val": offset
+        }).fetchall()
 
         if not batch_docs:
             break
@@ -135,35 +134,31 @@ def upgrade() -> None:
 
         # Process each document in the batch
         for doc_id in doc_ids:
-            chunks_query = text(
-                f"""
+            chunks_query = text(f"""
                 SELECT data
                 FROM {project_name}.chunks
                 WHERE document_id = :doc_id
-                """
-            )
-            chunk_rows = connection.execute(
-                chunks_query, {"doc_id": doc_id}
-            ).fetchall()
+                """)
+            chunk_rows = connection.execute(chunks_query, {
+                "doc_id": doc_id
+            }).fetchall()
 
             total_tokens = 0
             for c_row in chunk_rows:
                 chunk_text = c_row["data"] or ""
-                total_tokens += count_tokens_for_text(
-                    chunk_text, model=default_model
-                )
+                total_tokens += count_tokens_for_text(chunk_text,
+                                                      model=default_model)
 
             # Update total_tokens for this document
-            update_query = text(
-                f"""
+            update_query = text(f"""
                 UPDATE {project_name}.documents
                 SET total_tokens = :tokcount
                 WHERE id = :doc_id
-                """
-            )
-            connection.execute(
-                update_query, {"tokcount": total_tokens, "doc_id": doc_id}
-            )
+                """)
+            connection.execute(update_query, {
+                "tokcount": total_tokens,
+                "doc_id": doc_id
+            })
 
         logger.info(f"Finished batch {page_idx + 1}")
 
@@ -171,8 +166,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Remove the total_tokens column on downgrade"""
+    """Remove the total_tokens column on downgrade."""
     logger.info(
-        "Dropping column 'total_tokens' from 'documents' table (downgrade)."
-    )
+        "Dropping column 'total_tokens' from 'documents' table (downgrade).")
     op.drop_column("documents", "total_tokens", schema=project_name)

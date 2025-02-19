@@ -48,8 +48,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
         if config.rerank_model:
             raise ValueError(
-                "OpenAIEmbeddingProvider does not support separate reranking."
-            )
+                "OpenAIEmbeddingProvider does not support separate reranking.")
 
         if config.base_model and "openai/" in config.base_model:
             self.base_model = config.base_model.split("/")[-1]
@@ -64,32 +63,25 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
 
         if self.base_model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(
-                f"OpenAI embedding model {self.base_model} not supported."
-            )
+                f"OpenAI embedding model {self.base_model} not supported.")
 
         if self.base_dimension:
-            if (
-                self.base_dimension
-                not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
-                    self.base_model
-                ]
-            ):
+            if (self.base_dimension
+                    not in OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[
+                        self.base_model]):
                 raise ValueError(
                     f"Dimensions {self.base_dimension} for {self.base_model} are not supported"
                 )
         else:
             # If base_dimension is not set, use the largest available dimension for the model
             self.base_dimension = max(
-                OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model]
-            )
+                OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model])
 
     def _get_dimensions(self):
         return (
-            NOT_GIVEN
-            if self.base_model == "text-embedding-ada-002"
-            else self.base_dimension
-            or OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model][-1]
-        )
+            NOT_GIVEN if self.base_model == "text-embedding-ada-002" else
+            self.base_dimension or
+            OpenAIEmbeddingProvider.MODEL_TO_DIMENSIONS[self.base_model][-1])
 
     def _get_embedding_kwargs(self, **kwargs):
         return {
@@ -143,8 +135,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
+                "OpenAIEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": [text],
@@ -164,8 +155,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
+                "OpenAIEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": [text],
@@ -185,8 +175,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
+                "OpenAIEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": texts,
@@ -205,8 +194,7 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OpenAIEmbeddingProvider only supports search stage."
-            )
+                "OpenAIEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": texts,
@@ -238,6 +226,5 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         if model not in OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER:
             raise ValueError(f"OpenAI embedding model {model} not supported.")
         encoding = tiktoken.get_encoding(
-            OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER[model]
-        )
+            OpenAIEmbeddingProvider.MODEL_TO_TOKENIZER[model])
         return encoding.encode(text)

@@ -16,8 +16,7 @@ ch.setLevel(logging.INFO)
 
 # Create a formatter and set it for the handler
 formatter = logging.Formatter(
-    "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-)
+    "%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 ch.setFormatter(formatter)
 
 # Add the handler to the logger
@@ -28,7 +27,6 @@ logger.propagate = False
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("LiteLLM").setLevel(logging.WARNING)
-
 
 __all__ = [
     "R2RAgent",

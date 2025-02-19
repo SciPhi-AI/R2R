@@ -22,9 +22,9 @@ logger = logging.getLogger()
 
 
 class IndicesRouter(BaseRouterV3):
-    def __init__(
-        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
-    ):
+
+    def __init__(self, providers: R2RProviders, services: R2RServices,
+                 config: R2RConfig):
         logging.info("Initializing IndicesRouter")
         super().__init__(providers, services, config)
 
@@ -37,9 +37,10 @@ class IndicesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -78,13 +79,13 @@ class IndicesRouter(BaseRouterV3):
                                     "concurrently": True
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -109,13 +110,13 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             # Create HNSW Index
                             curl -X POST "https://api.example.com/indices" \\
                                 -H "Content-Type: application/json" \\
@@ -155,8 +156,7 @@ class IndicesRouter(BaseRouterV3):
                                     "concurrently": true
                                 }
                                 }'
-                                """
-                        ),
+                                """),
                     },
                 ]
             },
@@ -166,13 +166,17 @@ class IndicesRouter(BaseRouterV3):
             config: IndexConfig,
             run_with_orchestration: Optional[bool] = Body(
                 True,
-                description="Whether to run index creation as an orchestrated task (recommended for large indices)",
+                description=
+                "Whether to run index creation as an orchestrated task (recommended for large indices)",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'entity', 'document_collections'.
-            Vectors correspond to the chunks of text that are indexed for similarity search, whereas entity and document_collections are created during knowledge graph construction.
+            """Create a new vector similarity search index in over the target
+            table. Allowed tables include 'vectors', 'entity',
+            'document_collections'. Vectors correspond to the chunks of text
+            that are indexed for similarity search, whereas entity and
+            document_collections are created during knowledge graph
+            construction.
 
             This endpoint creates a database index optimized for efficient similarity search over vector embeddings.
             It supports two main indexing methods:
@@ -237,9 +241,10 @@ class IndicesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -249,13 +254,13 @@ class IndicesRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -268,13 +273,13 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json"
@@ -283,8 +288,7 @@ class IndicesRouter(BaseRouterV3):
                             curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_name\":\"vectors\"}" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -295,18 +299,20 @@ class IndicesRouter(BaseRouterV3):
             offset: int = Query(
                 0,
                 ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
+                description=
+                "Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description=
+                "Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedVectorIndicesResponse:
-            """
-            List existing vector similarity search indices with pagination support.
+            """List existing vector similarity search indices with pagination
+            support.
 
             Returns details about each index including:
             - Name and table name
@@ -321,20 +327,18 @@ class IndicesRouter(BaseRouterV3):
             # TODO: Implement index listing logic
             indices_data = (
                 await self.providers.database.chunks_handler.list_indices(
-                    offset=offset, limit=limit
-                )
-            )
+                    offset=offset, limit=limit))
 
-            formatted_indices = VectorIndicesResponse(
-                indices=[
-                    VectorIndexResponse(index=index_data)
-                    for index_data in indices_data["indices"]
-                ]
-            )
+            formatted_indices = VectorIndicesResponse(indices=[
+                VectorIndexResponse(index=index_data)
+                for index_data in indices_data["indices"]
+            ])
 
             return (  # type: ignore
                 formatted_indices,
-                {"total_entries": indices_data["total_entries"]},
+                {
+                    "total_entries": indices_data["total_entries"]
+                },
             )
 
         @self.router.get(
@@ -344,22 +348,23 @@ class IndicesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
 
                             # Get detailed information about a specific index
                             index = client.indices.retrieve("index_1")
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -374,17 +379,16 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/indices/vectors/index_1" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -393,15 +397,14 @@ class IndicesRouter(BaseRouterV3):
         async def get_index(
             table_name: VectorTableName = Path(
                 ...,
-                description="The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
+                description=
+                "The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
             ),
             index_name: str = Path(
-                ..., description="The name of the index to delete"
-            ),
+                ..., description="The name of the index to delete"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedVectorIndexResponse:
-            """
-            Get detailed information about a specific vector index.
+            """Get detailed information about a specific vector index.
 
             Returns comprehensive information about the index including:
             - Configuration details (method, measure, parameters)
@@ -418,20 +421,18 @@ class IndicesRouter(BaseRouterV3):
                 * Recommended optimizations
             """
             # TODO: Implement get index logic
-            indices = (
-                await self.providers.database.chunks_handler.list_indices(
-                    filters={
-                        "index_name": index_name,
-                        "table_name": table_name,
-                    },
-                    limit=1,
-                    offset=0,
-                )
-            )
+            indices = (await
+                       self.providers.database.chunks_handler.list_indices(
+                           filters={
+                               "index_name": index_name,
+                               "table_name": table_name,
+                           },
+                           limit=1,
+                           offset=0,
+                       ))
             if len(indices["indices"]) != 1:
-                raise R2RException(
-                    f"Index '{index_name}' not found", status_code=404
-                )
+                raise R2RException(f"Index '{index_name}' not found",
+                                   status_code=404)
             return {"index": indices["indices"][0]}
 
         # TODO - Implement update index
@@ -500,9 +501,10 @@ class IndicesRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -513,13 +515,13 @@ class IndicesRouter(BaseRouterV3):
                                 table_name="vectors",
                                 run_with_orchestration=True
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -534,18 +536,17 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Shell",
+                        "source":
+                        textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/indices/index_1" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -554,11 +555,11 @@ class IndicesRouter(BaseRouterV3):
         async def delete_index(
             table_name: VectorTableName = Path(
                 default=...,
-                description="The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
+                description=
+                "The table of vector embeddings to delete (e.g. `vectors`, `entity`, `document_collections`)",
             ),
             index_name: str = Path(
-                ..., description="The name of the index to delete"
-            ),
+                ..., description="The name of the index to delete"),
             # concurrently: bool = Body(
             #     default=True,
             #     description="Whether to delete the index concurrently (recommended for large indices)",
@@ -566,8 +567,7 @@ class IndicesRouter(BaseRouterV3):
             # run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Delete an existing vector similarity search index.
+            """Delete an existing vector similarity search index.
 
             This endpoint removes the specified index from the database. Important considerations:
 
@@ -581,8 +581,7 @@ class IndicesRouter(BaseRouterV3):
             The operation returns immediately but cleanup may continue in background.
             """
             logger.info(
-                f"Deleting vector index {index_name} from table {table_name}"
-            )
+                f"Deleting vector index {index_name} from table {table_name}")
 
             return await self.providers.orchestration.run_workflow(  # type: ignore
                 "delete-vector-index",

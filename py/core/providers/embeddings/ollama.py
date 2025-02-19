@@ -16,6 +16,7 @@ logger = logging.getLogger()
 
 
 class OllamaEmbeddingProvider(EmbeddingProvider):
+
     def __init__(self, config: EmbeddingConfig):
         super().__init__(config)
         provider = config.provider
@@ -29,8 +30,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
         if config.rerank_model:
             raise ValueError(
-                "OllamaEmbeddingProvider does not support separate reranking."
-            )
+                "OllamaEmbeddingProvider does not support separate reranking.")
 
         self.base_model = config.base_model
         self.base_dimension = config.base_dimension
@@ -59,13 +59,12 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         try:
             embeddings = []
             for i in range(0, len(texts), self.batch_size):
-                batch = texts[i : i + self.batch_size]
+                batch = texts[i:i + self.batch_size]
                 prefixed_batch = [
                     self.prefixes.get(purpose, "") + text for text in batch
                 ]
-                response = await self.aclient.embed(
-                    input=prefixed_batch, **kwargs
-                )
+                response = await self.aclient.embed(input=prefixed_batch,
+                                                    **kwargs)
                 embeddings.extend(response["embeddings"])
             return embeddings
         except Exception as e:
@@ -81,7 +80,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         try:
             embeddings = []
             for i in range(0, len(texts), self.batch_size):
-                batch = texts[i : i + self.batch_size]
+                batch = texts[i:i + self.batch_size]
                 prefixed_batch = [
                     self.prefixes.get(purpose, "") + text for text in batch
                 ]
@@ -102,8 +101,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OllamaEmbeddingProvider only supports search stage."
-            )
+                "OllamaEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": [text],
@@ -123,8 +121,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OllamaEmbeddingProvider only supports search stage."
-            )
+                "OllamaEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": [text],
@@ -144,8 +141,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OllamaEmbeddingProvider only supports search stage."
-            )
+                "OllamaEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": texts,
@@ -164,8 +160,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "OllamaEmbeddingProvider only supports search stage."
-            )
+                "OllamaEmbeddingProvider only supports search stage.")
 
         task = {
             "texts": texts,

@@ -9,16 +9,15 @@ from shared.api.models import (
 
 
 class SystemSDK:
+
     def __init__(self, client):
         self.client = client
 
     async def health(self) -> WrappedGenericMessageResponse:
-        """
-        Check the health of the R2R server.
-        """
-        response_dict = await self.client._make_request(
-            "GET", "health", version="v3"
-        )
+        """Check the health of the R2R server."""
+        response_dict = await self.client._make_request("GET",
+                                                        "health",
+                                                        version="v3")
 
         return WrappedGenericMessageResponse(**response_dict)
 
@@ -28,8 +27,7 @@ class SystemSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedLogsResponse:
-        """
-        Get logs from the server.
+        """Get logs from the server.
 
         Args:
             run_type_filter (Optional[str]): The run type to filter by.
@@ -45,37 +43,36 @@ class SystemSDK:
                 "run_type_filter": run_type_filter,
                 "offset": offset,
                 "limit": limit,
-            }.items()
-            if value is not None
+            }.items() if value is not None
         }
-        response_dict = await self.client._make_request(
-            "GET", "system/logs", params=params, version="v3"
-        )
+        response_dict = await self.client._make_request("GET",
+                                                        "system/logs",
+                                                        params=params,
+                                                        version="v3")
 
         return WrappedLogsResponse(**response_dict)
 
     async def settings(self) -> WrappedSettingsResponse:
-        """
-        Get the configuration settings for the R2R server.
+        """Get the configuration settings for the R2R server.
 
         Returns:
             dict: The server settings.
         """
-        response_dict = await self.client._make_request(
-            "GET", "system/settings", version="v3"
-        )
+        response_dict = await self.client._make_request("GET",
+                                                        "system/settings",
+                                                        version="v3")
 
         return WrappedSettingsResponse(**response_dict)
 
     async def status(self) -> WrappedServerStatsResponse:
-        """
-        Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
+        """Get statistics about the server, including the start time, uptime,
+        CPU usage, and memory usage.
 
         Returns:
             dict: The server statistics.
         """
-        response_dict = await self.client._make_request(
-            "GET", "system/status", version="v3"
-        )
+        response_dict = await self.client._make_request("GET",
+                                                        "system/status",
+                                                        version="v3")
 
         return WrappedServerStatsResponse(**response_dict)

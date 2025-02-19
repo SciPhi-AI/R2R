@@ -38,9 +38,7 @@ MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH = 128
 
 
 async def _collect_async_results(result_gen: AsyncGenerator) -> list[Any]:
-    """
-    Collects all results from an async generator into a list.
-    """
+    """Collects all results from an async generator into a list."""
     results = []
     async for res in result_gen:
         results.append(res)
@@ -48,6 +46,7 @@ async def _collect_async_results(result_gen: AsyncGenerator) -> list[Any]:
 
 
 class GraphService(Service):
+
     def __init__(
         self,
         config: R2RConfig,
@@ -68,8 +67,7 @@ class GraphService(Service):
         metadata: Optional[dict] = None,
     ) -> Entity:
         description_embedding = str(
-            await self.providers.embedding.async_get_embedding(description)
-        )
+            await self.providers.embedding.async_get_embedding(description))
 
         return await self.providers.database.graphs_handler.entities.create(
             name=name,
@@ -93,8 +91,8 @@ class GraphService(Service):
         description_embedding = None
         if description is not None:
             description_embedding = str(
-                await self.providers.embedding.async_get_embedding(description)
-            )
+                await
+                self.providers.embedding.async_get_embedding(description))
 
         return await self.providers.database.graphs_handler.entities.update(
             entity_id=entity_id,
@@ -153,24 +151,23 @@ class GraphService(Service):
         description_embedding = None
         if description:
             description_embedding = str(
-                await self.providers.embedding.async_get_embedding(description)
-            )
+                await
+                self.providers.embedding.async_get_embedding(description))
 
-        return (
-            await self.providers.database.graphs_handler.relationships.create(
-                subject=subject,
-                subject_id=subject_id,
-                predicate=predicate,
-                object=object,
-                object_id=object_id,
-                parent_id=parent_id,
-                description=description,
-                description_embedding=description_embedding,
-                weight=weight,
-                metadata=metadata,
-                store_type=StoreType.GRAPHS,
-            )
-        )
+        return (await
+                self.providers.database.graphs_handler.relationships.create(
+                    subject=subject,
+                    subject_id=subject_id,
+                    predicate=predicate,
+                    object=object,
+                    object_id=object_id,
+                    parent_id=parent_id,
+                    description=description,
+                    description_embedding=description_embedding,
+                    weight=weight,
+                    metadata=metadata,
+                    store_type=StoreType.GRAPHS,
+                ))
 
     @telemetry_event("delete_relationship")
     async def delete_relationship(
@@ -178,13 +175,12 @@ class GraphService(Service):
         parent_id: UUID,
         relationship_id: UUID,
     ):
-        return (
-            await self.providers.database.graphs_handler.relationships.delete(
-                parent_id=parent_id,
-                relationship_ids=[relationship_id],
-                store_type=StoreType.GRAPHS,
-            )
-        )
+        return (await
+                self.providers.database.graphs_handler.relationships.delete(
+                    parent_id=parent_id,
+                    relationship_ids=[relationship_id],
+                    store_type=StoreType.GRAPHS,
+                ))
 
     @telemetry_event("update_relationship")
     async def update_relationship(
@@ -202,24 +198,23 @@ class GraphService(Service):
         description_embedding = None
         if description is not None:
             description_embedding = str(
-                await self.providers.embedding.async_get_embedding(description)
-            )
+                await
+                self.providers.embedding.async_get_embedding(description))
 
-        return (
-            await self.providers.database.graphs_handler.relationships.update(
-                relationship_id=relationship_id,
-                subject=subject,
-                subject_id=subject_id,
-                predicate=predicate,
-                object=object,
-                object_id=object_id,
-                description=description,
-                description_embedding=description_embedding,
-                weight=weight,
-                metadata=metadata,
-                store_type=StoreType.GRAPHS,
-            )
-        )
+        return (await
+                self.providers.database.graphs_handler.relationships.update(
+                    relationship_id=relationship_id,
+                    subject=subject,
+                    subject_id=subject_id,
+                    predicate=predicate,
+                    object=object,
+                    object_id=object_id,
+                    description=description,
+                    description_embedding=description_embedding,
+                    weight=weight,
+                    metadata=metadata,
+                    store_type=StoreType.GRAPHS,
+                ))
 
     @telemetry_event("get_relationships")
     async def get_relationships(
@@ -250,8 +245,7 @@ class GraphService(Service):
         rating_explanation: Optional[str],
     ) -> Community:
         description_embedding = str(
-            await self.providers.embedding.async_get_embedding(summary)
-        )
+            await self.providers.embedding.async_get_embedding(summary))
         return await self.providers.database.graphs_handler.communities.create(
             parent_id=parent_id,
             store_type=StoreType.GRAPHS,
@@ -276,8 +270,7 @@ class GraphService(Service):
         summary_embedding = None
         if summary is not None:
             summary_embedding = str(
-                await self.providers.embedding.async_get_embedding(summary)
-            )
+                await self.providers.embedding.async_get_embedding(summary))
 
         return await self.providers.database.graphs_handler.communities.update(
             community_id=community_id,
@@ -349,9 +342,7 @@ class GraphService(Service):
 
     @telemetry_event("reset_graph")
     async def reset_graph(self, id: UUID) -> bool:
-        await self.providers.database.graphs_handler.reset(
-            parent_id=id,
-        )
+        await self.providers.database.graphs_handler.reset(parent_id=id, )
         await self.providers.database.documents_handler.set_workflow_status(
             id=id,
             status_type="graph_cluster_status",
@@ -384,8 +375,8 @@ class GraphService(Service):
         batch_size: int = 256,
         **kwargs,
     ):
-        """
-        A new implementation of the old GraphDescriptionPipe logic inline. No references to pipe objects.
+        """A new implementation of the old GraphDescriptionPipe logic inline.
+        No references to pipe objects.
 
         We:
          1) Count how many entities are in the document
@@ -403,11 +394,9 @@ class GraphService(Service):
                 document_id=document_id,
                 distinct=True,
                 entity_table_name="documents_entities",  # or whichever table
-            )
-        )
+            ))
         logger.info(
-            f"GraphService: Found {entity_count} doc-entities to describe."
-        )
+            f"GraphService: Found {entity_count} doc-entities to describe.")
 
         all_results = []
         num_batches = math.ceil(entity_count / batch_size)
@@ -449,8 +438,9 @@ class GraphService(Service):
         limit: int,
         max_description_input_length: int,
     ) -> AsyncGenerator[str, None]:
-        """
-        Core logic that replaces GraphDescriptionPipe._run_logic for a particular document/batch.
+        """Core logic that replaces GraphDescriptionPipe._run_logic for a
+        particular document/batch.
+
         Yields entity-names or some textual result as each entity is updated.
         """
         start_time = time.time()
@@ -459,11 +449,9 @@ class GraphService(Service):
         )
 
         # 1) Get the "entity map" from the DB
-        entity_map = (
-            await self.providers.database.graphs_handler.get_entity_map(
-                offset=offset, limit=limit, document_id=document_id
-            )
-        )
+        entity_map = (await
+                      self.providers.database.graphs_handler.get_entity_map(
+                          offset=offset, limit=limit, document_id=document_id))
         total_entities = len(entity_map)
         logger.info(
             f"_describe_entities_in_document_batch: got {total_entities} items in entity_map for doc={document_id}."
@@ -477,9 +465,7 @@ class GraphService(Service):
                 relationships=entity_info["relationships"],
                 document_id=document_id,
                 max_description_input_length=max_description_input_length,
-            )
-            for entity_name, entity_info in entity_map.items()
-        )
+            ) for entity_name, entity_info in entity_map.items())
 
         # 3) Wait for all tasks, yield as they complete
         idx = 0
@@ -503,17 +489,16 @@ class GraphService(Service):
         document_id: UUID,
         max_description_input_length: int,
     ) -> str:
-        """
-        Adapted from the old process_entity function in GraphDescriptionPipe.
+        """Adapted from the old process_entity function in
+        GraphDescriptionPipe.
+
         If entity has no description, call an LLM to create one, then store it.
         Returns the name of the top entity (or could store more details).
         """
 
         def truncate_info(info_list: list[str], max_length: int) -> str:
-            """
-            Shuffles lines of info to try to keep them distinct, then accumulates
-            until hitting max_length.
-            """
+            """Shuffles lines of info to try to keep them distinct, then
+            accumulates until hitting max_length."""
             random.shuffle(info_list)
             truncated_info = ""
             current_length = 0
@@ -530,9 +515,8 @@ class GraphService(Service):
             limit=1,
             filter_document_ids=[document_id],
         )
-        document_summary = (
-            response["results"][0].summary if response["results"] else None
-        )
+        document_summary = (response["results"][0].summary
+                            if response["results"] else None)
 
         # Synthesize a minimal “entity info” string + relationship summary
         entity_info = [
@@ -550,23 +534,23 @@ class GraphService(Service):
         if not main_entity.description:
             # We only call LLM if the entity is missing a description
             messages = await self.providers.database.prompts_handler.get_message_payload(
-                task_prompt_name=self.providers.database.config.graph_creation_settings.graph_entity_description_prompt,
+                task_prompt_name=self.providers.database.config.
+                graph_creation_settings.graph_entity_description_prompt,
                 task_inputs={
-                    "document_summary": document_summary,
-                    "entity_info": truncate_info(
-                        entity_info, max_description_input_length
-                    ),
-                    "relationships_txt": truncate_info(
-                        relationships_txt, max_description_input_length
-                    ),
+                    "document_summary":
+                    document_summary,
+                    "entity_info":
+                    truncate_info(entity_info, max_description_input_length),
+                    "relationships_txt":
+                    truncate_info(relationships_txt,
+                                  max_description_input_length),
                 },
             )
 
             # Call the LLM
-            gen_config = (
-                self.providers.database.config.graph_creation_settings.generation_config
-                or GenerationConfig(model=self.config.app.fast_llm)
-            )
+            gen_config = (self.providers.database.config.
+                          graph_creation_settings.generation_config
+                          or GenerationConfig(model=self.config.app.fast_llm))
             llm_resp = await self.providers.llm.aget_completion(
                 messages=messages,
                 generation_config=gen_config,
@@ -580,11 +564,8 @@ class GraphService(Service):
                 return main_entity.name
 
             # create embedding
-            embed = (
-                await self.providers.embedding.async_get_embeddings(
-                    [new_description]
-                )
-            )[0]
+            embed = (await self.providers.embedding.async_get_embeddings(
+                [new_description]))[0]
 
             # update DB
             main_entity.description = new_description
@@ -626,12 +607,10 @@ class GraphService(Service):
         generation_config: GenerationConfig,
         leiden_params: dict,
     ) -> dict:
-        """
-        The actual clustering logic (previously in GraphClusteringPipe.cluster_graph_search_results).
-        """
+        """The actual clustering logic (previously in
+        GraphClusteringPipe.cluster_graph_search_results)."""
         clustering_mode = (
-            self.config.database.graph_creation_settings.clustering_mode
-        )
+            self.config.database.graph_creation_settings.clustering_mode)
         num_communities = await self.providers.database.graphs_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
@@ -650,9 +629,10 @@ class GraphService(Service):
         leiden_params: Optional[dict] = None,
         **kwargs,
     ):
-        """
-        Replacement for the old GraphCommunitySummaryPipe logic. Summarizes communities after clustering.
-        Returns an async generator or you can collect into a list.
+        """Replacement for the old GraphCommunitySummaryPipe logic.
+
+        Summarizes communities after clustering. Returns an async generator or
+        you can collect into a list.
         """
         logger.info(
             f"Running inline community summaries for coll={collection_id}, offset={offset}, limit={limit}"
@@ -677,14 +657,14 @@ class GraphService(Service):
         collection_id: UUID,
         leiden_params: dict,
     ) -> AsyncGenerator[dict, None]:
-        """
-        Does the community summary logic from GraphCommunitySummaryPipe._run_logic.
+        """Does the community summary logic from
+        GraphCommunitySummaryPipe._run_logic.
+
         Yields each summary dictionary as it completes.
         """
         start_time = time.time()
         logger.info(
-            f"Starting community summarization for collection={collection_id}"
-        )
+            f"Starting community summarization for collection={collection_id}")
 
         # get all entities & relationships
         (
@@ -708,8 +688,7 @@ class GraphService(Service):
 
         # We can optionally re-run the clustering to produce fresh community assignments
         clustering_mode = (
-            self.config.database.graph_creation_settings.clustering_mode
-        )
+            self.config.database.graph_creation_settings.clustering_mode)
         (
             _,
             community_clusters,
@@ -725,14 +704,10 @@ class GraphService(Service):
         for item in community_clusters:
             # item is either a dict (remote) or an object (local)
             # unify logic accordingly
-            cluster_id = (
-                item["cluster"]
-                if clustering_mode == "remote"
-                else item.cluster
-            )
-            node_name = (
-                item["node"] if clustering_mode == "remote" else item.node
-            )
+            cluster_id = (item["cluster"]
+                          if clustering_mode == "remote" else item.cluster)
+            node_name = (item["node"]
+                         if clustering_mode == "remote" else item.node)
             clusters.setdefault(cluster_id, []).append(node_name)
 
         # create an async job for each cluster
@@ -747,9 +722,7 @@ class GraphService(Service):
                 max_summary_input_length=max_summary_input_length,
                 generation_config=generation_config,
                 collection_id=collection_id,
-            )
-            for nodes in clusters.values()
-        )
+            ) for nodes in clusters.values())
 
         total_jobs = len(tasks)
         results_returned = 0
@@ -792,15 +765,13 @@ class GraphService(Service):
             limit=1,
             filter_collection_ids=[collection_id],
         )
-        collection_description = (
-            response["results"][0].description if response["results"] else None
-        )
+        collection_description = (response["results"][0].description
+                                  if response["results"] else None)
 
         # filter out relevant entities / relationships
         entities = [e for e in all_entities if e.name in nodes]
         relationships = [
-            r
-            for r in all_relationships
+            r for r in all_relationships
             if r.subject in nodes and r.object in nodes
         ]
         if not entities and not relationships:
@@ -821,7 +792,8 @@ class GraphService(Service):
             try:
                 # Build the prompt
                 messages = await self.providers.database.prompts_handler.get_message_payload(
-                    task_prompt_name=self.providers.database.config.graph_enrichment_settings.graph_communities_prompt,
+                    task_prompt_name=self.providers.database.config.
+                    graph_enrichment_settings.graph_communities_prompt,
                     task_inputs={
                         "collection_description": collection_description,
                         "input_text": input_text,
@@ -834,13 +806,11 @@ class GraphService(Service):
                 llm_text = llm_resp.choices[0].message.content or ""
 
                 # find <community>...</community> XML
-                match = re.search(
-                    r"<community>.*?</community>", llm_text, re.DOTALL
-                )
+                match = re.search(r"<community>.*?</community>", llm_text,
+                                  re.DOTALL)
                 if not match:
                     raise ValueError(
-                        "No <community> XML found in LLM response"
-                    )
+                        "No <community> XML found in LLM response")
 
                 xml_content = match.group(0)
                 root = ET.fromstring(xml_content)
@@ -854,32 +824,19 @@ class GraphService(Service):
 
                 name = name_elem.text if name_elem is not None else ""
                 summary = summary_elem.text if summary_elem is not None else ""
-                rating = (
-                    float(rating_elem.text)
-                    if isinstance(rating_elem, Element) and rating_elem.text
-                    else ""
-                )
-                rating_explanation = (
-                    rating_expl_elem.text
-                    if rating_expl_elem is not None
-                    else None
-                )
-                findings = (
-                    [f.text for f in findings_elem.findall("finding")]
-                    if findings_elem is not None
-                    else []
-                )
+                rating = (float(rating_elem.text)
+                          if isinstance(rating_elem, Element)
+                          and rating_elem.text else "")
+                rating_explanation = (rating_expl_elem.text if rating_expl_elem
+                                      is not None else None)
+                findings = ([f.text for f in findings_elem.findall("finding")]
+                            if findings_elem is not None else [])
 
                 # build embedding
-                embed_text = (
-                    "Summary:\n"
-                    + summary
-                    + "\n\nFindings:\n"
-                    + "\n".join(findings)
-                )
+                embed_text = ("Summary:\n" + summary + "\n\nFindings:\n" +
+                              "\n".join(findings))
                 embedding = await self.providers.embedding.async_get_embedding(
-                    embed_text
-                )
+                    embed_text)
 
                 # build Community object
                 community = Community(
@@ -895,8 +852,7 @@ class GraphService(Service):
 
                 # store it
                 await self.providers.database.graphs_handler.add_community(
-                    community
-                )
+                    community)
 
                 return {
                     "community_id": community_id,
@@ -905,8 +861,7 @@ class GraphService(Service):
 
             except Exception as e:
                 logger.error(
-                    f"Error summarizing community {community_id}: {e}"
-                )
+                    f"Error summarizing community {community_id}: {e}")
                 if attempt == 2:
                     return {"community_id": community_id, "error": str(e)}
                 await asyncio.sleep(1)
@@ -920,22 +875,23 @@ class GraphService(Service):
         relationships: list[Relationship],
         max_summary_input_length: int,
     ) -> str:
-        """
-        Gathers the entity/relationship text, tries not to exceed `max_summary_input_length`.
-        """
+        """Gathers the entity/relationship text, tries not to exceed
+        `max_summary_input_length`."""
         # Group them by entity.name
         entity_map: dict[str, dict] = {}
         for e in entities:
-            entity_map.setdefault(
-                e.name, {"entities": [], "relationships": []}
-            )
+            entity_map.setdefault(e.name, {
+                "entities": [],
+                "relationships": []
+            })
             entity_map[e.name]["entities"].append(e)
 
         for r in relationships:
             # subject
-            entity_map.setdefault(
-                r.subject, {"entities": [], "relationships": []}
-            )
+            entity_map.setdefault(r.subject, {
+                "entities": [],
+                "relationships": []
+            })
             entity_map[r.subject]["relationships"].append(r)
 
         # sort by # of relationships
@@ -950,19 +906,16 @@ class GraphService(Service):
         cur_len = 0
         for entity_name, data in sorted_entries:
             block = f"\nEntity: {entity_name}\nDescriptions:\n"
-            block += "\n".join(
-                f"{e.id},{(e.description or '')}" for e in data["entities"]
-            )
+            block += "\n".join(f"{e.id},{(e.description or '')}"
+                               for e in data["entities"])
             block += "\nRelationships:\n"
             block += "\n".join(
                 f"{r.id},{r.subject},{r.object},{r.predicate},{r.description or ''}"
-                for r in data["relationships"]
-            )
+                for r in data["relationships"])
             # check length
             if cur_len + len(block) > max_summary_input_length:
-                prompt_chunks.append(
-                    block[: max_summary_input_length - cur_len]
-                )
+                prompt_chunks.append(block[:max_summary_input_length -
+                                           cur_len])
                 break
             else:
                 prompt_chunks.append(block)
@@ -977,8 +930,7 @@ class GraphService(Service):
         **kwargs,
     ):
         return await self.providers.database.graphs_handler.delete(
-            collection_id=collection_id,
-        )
+            collection_id=collection_id, )
 
     async def graph_search_results_extraction(
         self,
@@ -992,9 +944,8 @@ class GraphService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[GraphExtraction | R2RDocumentProcessingError, None]:
-        """
-        The original “extract Graph from doc” logic, but inlined instead of referencing a pipe.
-        """
+        """The original “extract Graph from doc” logic, but inlined instead of
+        referencing a pipe."""
         start_time = time.time()
 
         logger.info(
@@ -1019,8 +970,7 @@ class GraphService(Service):
                     collection_ids=chunk["collection_ids"],
                     data=chunk["text"],
                     metadata=chunk["metadata"],
-                )
-                for chunk in chunk_req["results"]
+                ) for chunk in chunk_req["results"]
             ]
             chunks.extend(new_chunk_objs)
             if len(chunk_req["results"]) < limit:
@@ -1037,8 +987,7 @@ class GraphService(Service):
         # Possibly filter out any chunks that have already been processed
         if filter_out_existing_chunks:
             existing_chunk_ids = await self.providers.database.graphs_handler.get_existing_document_entity_chunk_ids(
-                document_id=document_id
-            )
+                document_id=document_id)
             before_count = len(chunks)
             chunks = [c for c in chunks if c.id not in existing_chunk_ids]
             logger.info(
@@ -1055,7 +1004,7 @@ class GraphService(Service):
 
         # group them
         grouped_chunks = [
-            chunks[i : i + chunk_merge_count]
+            chunks[i:i + chunk_merge_count]
             for i in range(0, len(chunks), chunk_merge_count)
         ]
 
@@ -1071,9 +1020,7 @@ class GraphService(Service):
                     relation_types,
                     task_id=i,
                     total_tasks=len(grouped_chunks),
-                )
-            )
-            for i, chunk_group in enumerate(grouped_chunks)
+                )) for i, chunk_group in enumerate(grouped_chunks)
         ]
 
         completed_tasks = 0
@@ -1107,10 +1054,8 @@ class GraphService(Service):
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
     ) -> GraphExtraction:
-        """
-        (Equivalent to _extract_graph_search_results in old code.)
-        Merges chunk data, calls LLM, parses XML, returns GraphExtraction object.
-        """
+        """(Equivalent to _extract_graph_search_results in old code.) Merges
+        chunk data, calls LLM, parses XML, returns GraphExtraction object."""
         combined_extraction: str = " ".join([c.data for c in chunks if c.data])
 
         # Possibly get doc-level summary
@@ -1120,9 +1065,8 @@ class GraphService(Service):
             limit=1,
             filter_document_ids=[doc_id],
         )
-        document_summary = (
-            response["results"][0].summary if response["results"] else None
-        )
+        document_summary = (response["results"][0].summary
+                            if response["results"] else None)
 
         # Build messages/prompt
         prompt_name = self.providers.database.config.graph_creation_settings.graph_extraction_prompt
@@ -1135,14 +1079,12 @@ class GraphService(Service):
                     "entity_types": "\n".join(entity_types),
                     "relation_types": "\n".join(relation_types),
                 },
-            )
-        )
+            ))
 
         for attempt in range(retries):
             try:
                 resp = await self.providers.llm.aget_completion(
-                    messages, generation_config=generation_config
-                )
+                    messages, generation_config=generation_config)
                 graph_search_results_str = resp.choices[0].message.content
 
                 if not graph_search_results_str:
@@ -1156,11 +1098,9 @@ class GraphService(Service):
                     entities,
                     relationships,
                 ) = await self._parse_graph_search_results_extraction_xml(
-                    graph_search_results_str, chunks
-                )
-                return GraphExtraction(
-                    entities=entities, relationships=relationships
-                )
+                    graph_search_results_str, chunks)
+                return GraphExtraction(entities=entities,
+                                       relationships=relationships)
 
             except Exception as e:
                 if attempt < retries - 1:
@@ -1177,9 +1117,8 @@ class GraphService(Service):
     async def _parse_graph_search_results_extraction_xml(
         self, response_str: str, chunks: list[DocumentChunk]
     ) -> tuple[list[Entity], list[Relationship]]:
-        """
-        Helper to parse the LLM's XML format, handle edge cases/cleanup, produce Entities/Relationships.
-        """
+        """Helper to parse the LLM's XML format, handle edge cases/cleanup,
+        produce Entities/Relationships."""
 
         def sanitize_xml(r: str) -> str:
             # Remove markdown fences
@@ -1199,14 +1138,11 @@ class GraphService(Service):
             root = ET.fromstring(wrapped)
         except ET.ParseError as e:
             raise R2RException(
-                f"Failed to parse XML: {e}\nData: {wrapped[:1000]}...", 400
-            )
+                f"Failed to parse XML: {e}\nData: {wrapped[:1000]}...", 400)
 
         entities_elems = root.findall(".//entity")
-        if (
-            len(response_str) > MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH
-            and len(entities_elems) == 0
-        ):
+        if (len(response_str) > MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH
+                and len(entities_elems) == 0):
             raise R2RException(
                 f"No <entity> found in LLM XML, possibly malformed. Response excerpt: {response_str[:300]}",
                 400,
@@ -1223,8 +1159,7 @@ class GraphService(Service):
             category = type_elem.text if type_elem is not None else None
             desc = desc_elem.text if desc_elem is not None else None
             desc_embed = await self.providers.embedding.async_get_embedding(
-                desc or ""
-            )
+                desc or "")
             ent = Entity(
                 category=category,
                 description=desc,
@@ -1250,14 +1185,11 @@ class GraphService(Service):
                 object_ = target_elem.text if target_elem is not None else ""
                 predicate = type_elem.text if type_elem is not None else ""
                 desc = desc_elem.text if desc_elem is not None else ""
-                weight = (
-                    float(weight_elem.text)
-                    if isinstance(weight_elem, Element) and weight_elem.text
-                    else ""
-                )
+                weight = (float(weight_elem.text)
+                          if isinstance(weight_elem, Element)
+                          and weight_elem.text else "")
                 embed = await self.providers.embedding.async_get_embedding(
-                    desc or ""
-                )
+                    desc or "")
 
                 rel = Relationship(
                     subject=subject,
@@ -1279,9 +1211,7 @@ class GraphService(Service):
         self,
         graph_search_results_extractions: list[GraphExtraction],
     ):
-        """
-        Stores a batch of knowledge graph extractions in the DB.
-        """
+        """Stores a batch of knowledge graph extractions in the DB."""
         for extraction in graph_search_results_extractions:
             # Map name->id after creation
             entities_id_map = {}
@@ -1304,9 +1234,8 @@ class GraphService(Service):
                 object_id = entities_id_map.get(rel.object)
                 parent_id = rel.parent_id
 
-                if any(
-                    id is None for id in (subject_id, object_id, parent_id)
-                ):
+                if any(id is None
+                       for id in (subject_id, object_id, parent_id)):
                     logger.warning(f"Missing ID for relationship: {rel}")
                     continue
 
@@ -1347,18 +1276,17 @@ class GraphService(Service):
             limit=1,
             filter_document_ids=[document_id],
         )
-        document_summary = (
-            response["results"][0].summary if response["results"] else None
-        )
+        document_summary = (response["results"][0].summary
+                            if response["results"] else None)
 
         # For each merged entity
         for original_entities, merged_entity in merged_results:
             # Summarize them with LLM
-            entity_info = "\n".join(
-                e.description for e in original_entities if e.description
-            )
+            entity_info = "\n".join(e.description for e in original_entities
+                                    if e.description)
             messages = await self.providers.database.prompts_handler.get_message_payload(
-                task_prompt_name=self.providers.database.config.graph_creation_settings.graph_entity_description_prompt,
+                task_prompt_name=self.providers.database.config.
+                graph_creation_settings.graph_entity_description_prompt,
                 task_inputs={
                     "document_summary": document_summary,
                     "entity_info": f"{merged_entity.name}\n{entity_info}",
@@ -1367,16 +1295,13 @@ class GraphService(Service):
             )
             gen_config = (
                 self.config.database.graph_creation_settings.generation_config
-                or GenerationConfig(model=self.config.app.fast_llm)
-            )
+                or GenerationConfig(model=self.config.app.fast_llm))
             resp = await self.providers.llm.aget_completion(
-                messages, generation_config=gen_config
-            )
+                messages, generation_config=gen_config)
             new_description = resp.choices[0].message.content
 
             new_embedding = await self.providers.embedding.async_get_embedding(
-                new_description or ""
-            )
+                new_description or "")
 
             await self.providers.database.graphs_handler.entities.update(
                 entity_id=merged_entity.id,

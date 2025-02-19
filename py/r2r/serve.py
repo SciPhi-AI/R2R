@@ -11,8 +11,7 @@ try:
     from core.utils.logging_config import configure_logging
 except ImportError as e:
     logger.error(
-        f"Failed to start server: core dependencies not installed: {e}"
-    )
+        f"Failed to start server: core dependencies not installed: {e}")
     logger.error("To run the server, install the required dependencies:")
     logger.error("pip install 'r2r[core]'")
     sys.exit(1)
@@ -33,16 +32,14 @@ async def create_app(
 
     try:
         r2r_instance = await R2RBuilder(
-            config=R2RConfig.load(config_name, config_path)
-        ).build()
+            config=R2RConfig.load(config_name, config_path)).build()
 
         await r2r_instance.orchestration_provider.start_worker()
         return r2r_instance
     except ImportError as e:
         logger.error(f"Failed to initialize R2R: {e}")
         logger.error(
-            "Please check your configuration and installed dependencies"
-        )
+            "Please check your configuration and installed dependencies")
         sys.exit(1)
 
 

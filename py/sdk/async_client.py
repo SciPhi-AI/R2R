@@ -22,9 +22,7 @@ from .base.base_client import BaseClient
 
 
 class R2RAsyncClient(BaseClient):
-    """
-    Asynchronous client for interacting with the R2R API.
-    """
+    """Asynchronous client for interacting with the R2R API."""
 
     def __init__(
         self,
@@ -45,21 +43,20 @@ class R2RAsyncClient(BaseClient):
         self.system = SystemSDK(self)
         self.users = UsersSDK(self)
 
-    async def _make_request(
-        self, method: str, endpoint: str, version: str = "v3", **kwargs
-    ):
+    async def _make_request(self,
+                            method: str,
+                            endpoint: str,
+                            version: str = "v3",
+                            **kwargs):
         url = self._get_full_url(endpoint, version)
-        if (
-            "https://api.cloud.sciphi.ai" in url
-            and ("login" not in endpoint)
-            and ("create" not in endpoint)
-            and ("users" not in endpoint)
-            and ("health" not in endpoint)
-            and (not self.access_token and not self.api_key)
-        ):
+        if ("https://api.cloud.sciphi.ai" in url and ("login" not in endpoint)
+                and ("create" not in endpoint) and ("users" not in endpoint)
+                and ("health" not in endpoint)
+                and (not self.access_token and not self.api_key)):
             raise R2RException(
                 status_code=401,
-                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
+                message=
+                "Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
             )
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
@@ -77,9 +74,11 @@ class R2RAsyncClient(BaseClient):
                 message=f"Request failed: {str(e)}",
             ) from e
 
-    async def _make_streaming_request(
-        self, method: str, endpoint: str, version: str = "v3", **kwargs
-    ) -> AsyncGenerator[Any, None]:
+    async def _make_streaming_request(self,
+                                      method: str,
+                                      endpoint: str,
+                                      version: str = "v3",
+                                      **kwargs) -> AsyncGenerator[Any, None]:
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
@@ -98,13 +97,10 @@ class R2RAsyncClient(BaseClient):
             try:
                 error_content = response.json()
                 if isinstance(error_content, dict):
-                    message = (
-                        error_content.get("detail", {}).get(
-                            "message", str(error_content)
-                        )
-                        if isinstance(error_content.get("detail"), dict)
-                        else error_content.get("detail", str(error_content))
-                    )
+                    message = (error_content.get("detail", {}).get(
+                        "message", str(error_content)) if isinstance(
+                            error_content.get("detail"), dict) else
+                               error_content.get("detail", str(error_content)))
                 else:
                     message = str(error_content)
             except json.JSONDecodeError:
@@ -112,9 +108,8 @@ class R2RAsyncClient(BaseClient):
             except Exception as e:
                 message = str(e)
 
-            raise R2RException(
-                status_code=response.status_code, message=message
-            )
+            raise R2RException(status_code=response.status_code,
+                               message=message)
 
     async def close(self):
         await self.client.aclose()

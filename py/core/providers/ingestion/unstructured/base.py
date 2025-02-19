@@ -101,12 +101,16 @@ class UnstructuredIngestionProvider(IngestionProvider):
     }
 
     EXTRA_PARSERS = {
-        DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
+        DocumentType.CSV: {
+            "advanced": parsers.CSVParserAdvanced
+        },  # type: ignore
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,  # type: ignore
             "zerox": parsers.VLMPDFParser,  # type: ignore
         },
-        DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
+        DocumentType.XLSX: {
+            "advanced": parsers.XLSXParserAdvanced
+        },  # type: ignore
     }
 
     IMAGE_TYPES = {
@@ -122,20 +126,16 @@ class UnstructuredIngestionProvider(IngestionProvider):
         self,
         config: UnstructuredIngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: (
-            LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ),
+        llm_provider: (LiteLLMCompletionProvider
+                       | OpenAICompletionProvider
+                       | R2RCompletionProvider),
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: UnstructuredIngestionConfig = config
         self.database_provider: PostgresDatabaseProvider = database_provider
-        self.llm_provider: (
-            LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ) = llm_provider
+        self.llm_provider: (LiteLLMCompletionProvider
+                            | OpenAICompletionProvider
+                            | R2RCompletionProvider) = llm_provider
 
         if config.provider == "unstructured_api":
             try:
@@ -160,8 +160,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         else:
             try:
                 self.local_unstructured_url = os.environ[
-                    "UNSTRUCTURED_SERVICE_URL"
-                ]
+                    "UNSTRUCTURED_SERVICE_URL"]
             except KeyError as e:
                 raise ValueError(
                     "UNSTRUCTURED_SERVICE_URL environment variable is not set"
@@ -175,10 +174,8 @@ class UnstructuredIngestionProvider(IngestionProvider):
     def _initialize_parsers(self):
         for doc_type, parsers in self.R2R_FALLBACK_PARSERS.items():
             for parser in parsers:
-                if (
-                    doc_type not in self.config.excluded_parsers
-                    and doc_type not in self.parsers
-                ):
+                if (doc_type not in self.config.excluded_parsers
+                        and doc_type not in self.parsers):
                     # will choose the first parser in the list
                     self.parsers[doc_type] = parser(
                         config=self.config,
@@ -188,14 +185,12 @@ class UnstructuredIngestionProvider(IngestionProvider):
         # TODO - Reduce code duplication between Unstructured & R2R
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
             self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
-                UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
-                    doc_parser_name
-                ](
+                UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type]
+                [doc_parser_name](
                     config=self.config,
                     database_provider=self.database_provider,
                     llm_provider=self.llm_provider,
-                )
-            )
+                ))
 
     async def parse_fallback(
         self,
@@ -205,16 +200,14 @@ class UnstructuredIngestionProvider(IngestionProvider):
     ) -> AsyncGenerator[FallbackElement, None]:
         context = ""
         async for text in self.parsers[parser_name].ingest(
-            file_content, **ingestion_config
-        ):  # type: ignore
+                file_content, **ingestion_config):  # type: ignore
             if text is not None:
                 context += text + "\n\n"
         logging.info(f"Fallback ingestion with config = {ingestion_config}")
 
         if not context.strip():
             logging.warning(
-                "No valid text content was extracted during parsing"
-            )
+                "No valid text content was extracted during parsing")
             return
 
         loop = asyncio.get_event_loop()
@@ -222,9 +215,8 @@ class UnstructuredIngestionProvider(IngestionProvider):
             chunk_size=ingestion_config["new_after_n_chars"],
             chunk_overlap=ingestion_config["overlap"],
         )
-        chunks = await loop.run_in_executor(
-            None, splitter.create_documents, [context]
-        )
+        chunks = await loop.run_in_executor(None, splitter.create_documents,
+                                            [context])
 
         for chunk_id, text_chunk in enumerate(chunks):
             yield FallbackElement(
@@ -239,20 +231,17 @@ class UnstructuredIngestionProvider(IngestionProvider):
         document: Document,
         ingestion_config_override: dict,
     ) -> AsyncGenerator[DocumentChunk, None]:
-        ingestion_config = copy(
-            {
-                **self.config.to_ingestion_request(),
-                **(ingestion_config_override or {}),
-            }
-        )
+        ingestion_config = copy({
+            **self.config.to_ingestion_request(),
+            **(ingestion_config_override or {}),
+        })
         # cleanup extra fields
         ingestion_config.pop("provider", None)
         ingestion_config.pop("excluded_parsers", None)
 
         t0 = time.time()
         parser_overrides = ingestion_config_override.get(
-            "parser_overrides", {}
-        )
+            "parser_overrides", {})
         elements = []
 
         # TODO - Cleanup this approach to be less hardcoded
@@ -262,9 +251,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
             )
             async for element in self.parse_fallback(
-                file_content,
-                ingestion_config=ingestion_config,
-                parser_name=f"zerox_{DocumentType.PDF.value}",
+                    file_content,
+                    ingestion_config=ingestion_config,
+                    parser_name=f"zerox_{DocumentType.PDF.value}",
             ):
                 elements.append(element)
 
@@ -273,9 +262,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 f"Parsing {document.document_type}: {document.id} with fallback parser"
             )
             async for element in self.parse_fallback(
-                file_content,
-                ingestion_config=ingestion_config,
-                parser_name=document.document_type,
+                    file_content,
+                    ingestion_config=ingestion_config,
+                    parser_name=document.document_type,
             ):
                 elements.append(element)
         else:
@@ -300,8 +289,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     self.shared.PartitionParameters(
                         files=files,
                         **ingestion_config,
-                    )
-                )
+                    ))
                 elements = self.client.general.partition(req)  # type: ignore
                 elements = list(elements.elements)  # type: ignore
 
@@ -310,9 +298,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     f"Using local unstructured fastapi server to parse document {document.id}"
                 )
                 # Base64 encode the file content
-                encoded_content = base64.b64encode(file_content.read()).decode(  # type: ignore
-                    "utf-8"
-                )
+                encoded_content = base64.b64encode(
+                    file_content.read()).decode(  # type: ignore
+                        "utf-8")
 
                 logger.info(
                     f"Sending a request to {self.local_unstructured_url}/partition"
@@ -331,8 +319,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 if response.status_code != 200:
                     logger.error(f"Error partitioning file: {response.text}")
                     raise ValueError(
-                        f"Error partitioning file: {response.text}"
-                    )
+                        f"Error partitioning file: {response.text}")
                 elements = response.json().get("elements", [])
 
         iteration = 0  # if there are no chunks
@@ -342,9 +329,8 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 metadata = copy(document.metadata)
                 metadata.update(element.metadata)
             else:
-                element_dict = (
-                    element if isinstance(element, dict) else element.to_dict()
-                )
+                element_dict = (element if isinstance(element, dict) else
+                                element.to_dict())
                 text = element_dict.get("text", "")
                 if text == "":
                     continue

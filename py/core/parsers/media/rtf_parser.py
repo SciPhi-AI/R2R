@@ -25,9 +25,8 @@ class RTFParser(AsyncParser[str | bytes]):
         self.config = config
         self.striprtf = rtf_to_text
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8", errors="ignore")
 

@@ -12,7 +12,6 @@ from .base import R2RSerializable
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
-
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
 
@@ -45,36 +44,24 @@ class GenerationConfig(R2RSerializable):
     }
 
     model: Optional[str] = Field(
-        default_factory=lambda: GenerationConfig._defaults["model"]
-    )
+        default_factory=lambda: GenerationConfig._defaults["model"])
     temperature: float = Field(
-        default_factory=lambda: GenerationConfig._defaults["temperature"]
-    )
+        default_factory=lambda: GenerationConfig._defaults["temperature"])
     top_p: float = Field(
-        default_factory=lambda: GenerationConfig._defaults["top_p"],
-    )
-    max_tokens_to_sample: int = Field(
-        default_factory=lambda: GenerationConfig._defaults[
-            "max_tokens_to_sample"
-        ],
-    )
+        default_factory=lambda: GenerationConfig._defaults["top_p"], )
+    max_tokens_to_sample: int = Field(default_factory=lambda: GenerationConfig.
+                                      _defaults["max_tokens_to_sample"], )
     stream: bool = Field(
-        default_factory=lambda: GenerationConfig._defaults["stream"]
-    )
+        default_factory=lambda: GenerationConfig._defaults["stream"])
     functions: Optional[list[dict]] = Field(
-        default_factory=lambda: GenerationConfig._defaults["functions"]
-    )
+        default_factory=lambda: GenerationConfig._defaults["functions"])
     tools: Optional[list[dict]] = Field(
-        default_factory=lambda: GenerationConfig._defaults["tools"]
-    )
+        default_factory=lambda: GenerationConfig._defaults["tools"])
     add_generation_kwargs: Optional[dict] = Field(
         default_factory=lambda: GenerationConfig._defaults[
-            "add_generation_kwargs"
-        ],
-    )
+            "add_generation_kwargs"], )
     api_base: Optional[str] = Field(
-        default_factory=lambda: GenerationConfig._defaults["api_base"],
-    )
+        default_factory=lambda: GenerationConfig._defaults["api_base"], )
     response_format: Optional[dict | BaseModel] = None
 
     @classmethod
@@ -84,15 +71,12 @@ class GenerationConfig(R2RSerializable):
                 cls._defaults[key] = value
             else:
                 raise AttributeError(
-                    f"No default attribute '{key}' in GenerationConfig"
-                )
+                    f"No default attribute '{key}' in GenerationConfig")
 
     def __init__(self, **data):
-        if (
-            "response_format" in data
-            and isinstance(data["response_format"], type)
-            and issubclass(data["response_format"], BaseModel)
-        ):
+        if ("response_format" in data
+                and isinstance(data["response_format"], type)
+                and issubclass(data["response_format"], BaseModel)):
             model_class = data["response_format"]
             data["response_format"] = {
                 "type": "json_schema",

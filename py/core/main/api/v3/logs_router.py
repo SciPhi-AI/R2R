@@ -15,6 +15,7 @@ from .base_router import BaseRouterV3
 
 
 class LogsRouter(BaseRouterV3):
+
     def __init__(
         self,
         providers: R2RProviders,
@@ -68,6 +69,7 @@ class LogsRouter(BaseRouterV3):
             return f"Error accessing log file: {str(e)}"
 
     def _setup_routes(self):
+
         @self.router.websocket(
             "/logs/stream",
             dependencies=[Depends(self.websocket_rate_limit_dependency)],
@@ -75,8 +77,8 @@ class LogsRouter(BaseRouterV3):
         async def stream_logs(
             websocket: WebSocket,
             auth_user=Depends(
-                self.providers.auth.websocket_auth_wrapper(superuser_only=True)
-            ),
+                self.providers.auth.websocket_auth_wrapper(
+                    superuser_only=True)),
         ):
             if not auth_user:
                 return
@@ -104,6 +106,5 @@ class LogsRouter(BaseRouterV3):
             dependencies=[Depends(self.rate_limit_dependency)],
         )
         async def get_log_viewer(request: Request) -> _TemplateResponse:
-            return self.templates.TemplateResponse(
-                "log_viewer.html", {"request": request}
-            )
+            return self.templates.TemplateResponse("log_viewer.html",
+                                                   {"request": request})

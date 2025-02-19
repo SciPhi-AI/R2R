@@ -26,9 +26,8 @@ class PPTXParser(AsyncParser[str | bytes]):
         self.config = config
         self.Presentation = Presentation
 
-    async def ingest(
-        self, data: str | bytes, **kwargs
-    ) -> AsyncGenerator[str, None]:  # type: ignore
+    async def ingest(self, data: str | bytes,
+                     **kwargs) -> AsyncGenerator[str, None]:  # type: ignore
         """Ingest PPT data and yield text from each slide."""
         if isinstance(data, str):
             raise ValueError("PPT data must be in bytes format.")

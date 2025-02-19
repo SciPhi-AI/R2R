@@ -14,8 +14,7 @@ class VectorType(str, Enum):
 
 
 class IndexMethod(str, Enum):
-    """
-    An enum representing the index methods available.
+    """An enum representing the index methods available.
 
     This class currently only supports the 'ivfflat' method but may
     expand in the future.
@@ -35,8 +34,8 @@ class IndexMethod(str, Enum):
 
 
 class IndexMeasure(str, Enum):
-    """
-    An enum representing the types of distance measures available for indexing.
+    """An enum representing the types of distance measures available for
+    indexing.
 
     Attributes:
         cosine_distance (str): The cosine distance measure for indexing.
@@ -78,9 +77,8 @@ class IndexMeasure(str, Enum):
 
 
 class IndexArgsIVFFlat(R2RSerializable):
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an IVFFlat type index.
+    """A class for arguments that can optionally be supplied to the index
+    creation method when building an IVFFlat type index.
 
     Attributes:
         nlist (int): The number of IVF centroids that the index should use
@@ -90,9 +88,8 @@ class IndexArgsIVFFlat(R2RSerializable):
 
 
 class IndexArgsHNSW(R2RSerializable):
-    """
-    A class for arguments that can optionally be supplied to the index creation
-    method when building an HNSW type index.
+    """A class for arguments that can optionally be supplied to the index
+    creation method when building an HNSW type index.
 
     Ref: https://github.com/pgvector/pgvector#index-options
 
@@ -110,9 +107,7 @@ class IndexArgsHNSW(R2RSerializable):
 
 
 class VectorTableName(str, Enum):
-    """
-    This enum represents the different tables where we store vectors.
-    """
+    """This enum represents the different tables where we store vectors."""
 
     CHUNKS = "chunks"
     ENTITIES_DOCUMENT = "documents_entities"
@@ -126,8 +121,7 @@ class VectorTableName(str, Enum):
 
 
 class VectorQuantizationType(str, Enum):
-    """
-    An enum representing the types of quantization available for vectors.
+    """An enum representing the types of quantization available for vectors.
 
     Attributes:
         FP32 (str): 32-bit floating point quantization.
@@ -157,8 +151,7 @@ class VectorQuantizationType(str, Enum):
 
 class VectorQuantizationSettings(R2RSerializable):
     quantization_type: VectorQuantizationType = Field(
-        default=VectorQuantizationType.FP32
-    )
+        default=VectorQuantizationType.FP32)
 
 
 class Vector(R2RSerializable):
@@ -170,14 +163,10 @@ class Vector(R2RSerializable):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if (
-            self.type == VectorType.FIXED
-            and self.length > 0
-            and len(self.data) != self.length
-        ):
+        if (self.type == VectorType.FIXED and self.length > 0
+                and len(self.data) != self.length):
             raise ValueError(
-                f"Vector must be exactly {self.length} elements long."
-            )
+                f"Vector must be exactly {self.length} elements long.")
 
     def __repr__(self) -> str:
         return (
@@ -186,7 +175,8 @@ class Vector(R2RSerializable):
 
 
 class VectorEntry(R2RSerializable):
-    """A vector entry that can be stored directly in supported vector databases."""
+    """A vector entry that can be stored directly in supported vector
+    databases."""
 
     id: UUID
     document_id: UUID
@@ -198,16 +188,14 @@ class VectorEntry(R2RSerializable):
 
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""
-        return (
-            f"VectorEntry("
-            f"chunk_id={self.id}, "
-            f"document_id={self.document_id}, "
-            f"owner_id={self.owner_id}, "
-            f"collection_ids={self.collection_ids}, "
-            f"vector={self.vector}, "
-            f"text={self.text}, "
-            f"metadata={self.metadata})"
-        )
+        return (f"VectorEntry("
+                f"chunk_id={self.id}, "
+                f"document_id={self.document_id}, "
+                f"owner_id={self.owner_id}, "
+                f"collection_ids={self.collection_ids}, "
+                f"vector={self.vector}, "
+                f"text={self.text}, "
+                f"metadata={self.metadata})")
 
     def __repr__(self) -> str:
         """Return an unambiguous string representation of the VectorEntry."""
@@ -236,9 +224,8 @@ class IndexConfig(BaseModel):
     table_name: Optional[str] = Field(default=VectorTableName.CHUNKS)
     index_method: Optional[str] = Field(default=IndexMethod.hnsw)
     index_measure: Optional[str] = Field(default=IndexMeasure.cosine_distance)
-    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Field(
-        default=None
-    )
+    index_arguments: Optional[IndexArgsIVFFlat
+                              | IndexArgsHNSW] = Field(default=None)
     index_name: Optional[str] = Field(default=None)
     index_column: Optional[str] = Field(default=None)
     concurrently: Optional[bool] = Field(default=True)

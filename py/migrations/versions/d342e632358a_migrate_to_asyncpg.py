@@ -1,9 +1,8 @@
-"""migrate_to_asyncpg
+"""migrate_to_asyncpg.
 
 Revision ID: d342e632358a
 Revises:
 Create Date: 2024-10-22 11:55:49.461015
-
 """
 
 import os
@@ -21,7 +20,6 @@ down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-
 project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_default"
 
 new_vector_table_name = "vectors"
@@ -29,19 +27,19 @@ old_vector_table_name = project_name
 
 
 class Vector(UserDefinedType):
+
     def get_col_spec(self, **kw):
         return "vector"
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     connection = op.get_bind()
     inspector = inspect(connection)
 
     # First check if the old table exists - if it doesn't, we don't need this migration
-    has_old_table = inspector.has_table(
-        old_vector_table_name, schema=project_name
-    )
+    has_old_table = inspector.has_table(old_vector_table_name,
+                                        schema=project_name)
     if not has_old_table:
         print(
             f"Migration not needed: Original '{old_vector_table_name}' table doesn't exist"
@@ -50,9 +48,8 @@ def check_if_upgrade_needed():
         return False
 
     # Only if the old table exists, check if we need to migrate it
-    has_new_table = inspector.has_table(
-        new_vector_table_name, schema=project_name
-    )
+    has_new_table = inspector.has_table(new_vector_table_name,
+                                        schema=project_name)
     if has_new_table:
         print(
             f"Migration not needed: '{new_vector_table_name}' table already exists"
@@ -104,8 +101,7 @@ def upgrade() -> None:
                 postgresql.TSVECTOR,
                 nullable=False,
                 server_default=sa.text(
-                    "to_tsvector('english'::regconfig, '')"
-                ),
+                    "to_tsvector('english'::regconfig, '')"),
             ),
             sa.Column(
                 "metadata",
@@ -150,8 +146,7 @@ def upgrade() -> None:
 
         # Migrate data from old table (assuming old table name is 'old_vectors')
         # Note: You'll need to replace 'old_schema' and 'old_vectors' with your actual names
-        op.execute(
-            f"""
+        op.execute(f"""
             INSERT INTO {project_name}.{new_vector_table_name}
                 (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
             SELECT
@@ -163,23 +158,18 @@ def upgrade() -> None:
                 text,
                 metadata
             FROM {project_name}.{old_vector_table_name}
-        """
-        )
+        """)
 
         # Verify data migration
-        op.execute(
-            f"""
+        op.execute(f"""
             SELECT COUNT(*) old_count FROM {project_name}.{old_vector_table_name};
             SELECT COUNT(*) new_count FROM {project_name}.{new_vector_table_name};
-        """
-        )
+        """)
 
         # If we get here, migration was successful, so drop the old table
-        op.execute(
-            f"""
+        op.execute(f"""
         DROP TABLE IF EXISTS {project_name}.{old_vector_table_name};
-        """
-        )
+        """)
 
 
 def downgrade() -> None:

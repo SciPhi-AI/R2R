@@ -66,8 +66,7 @@ class PostgresCollectionsHandler(Handler):
         HAVING COUNT(*) > 1
         """
         duplicates = await self.connection_manager.fetch_query(
-            check_duplicates_query
-        )
+            check_duplicates_query)
         if duplicates:
             logger.warning(
                 "Cannot add unique constraint (owner_id, name) because duplicates exist. "
@@ -78,8 +77,7 @@ class PostgresCollectionsHandler(Handler):
 
         # 3. Parse the qualified table name into schema and table.
         qualified_table = self._get_table_name(
-            PostgresCollectionsHandler.TABLE_NAME
-        )
+            PostgresCollectionsHandler.TABLE_NAME)
         if "." in qualified_table:
             schema, table = qualified_table.split(".", 1)
         else:
@@ -115,8 +113,7 @@ class PostgresCollectionsHandler(Handler):
             WHERE id = $1
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [collection_id]
-        )
+            query, [collection_id])
         return result is not None
 
     async def create_collection(
@@ -149,9 +146,8 @@ class PostgresCollectionsHandler(Handler):
                 params=params,
             )
             if not result:
-                raise R2RException(
-                    status_code=404, message="Collection not found"
-                )
+                raise R2RException(status_code=404,
+                                   message="Collection not found")
 
             return CollectionResponse(
                 id=result["id"],
@@ -224,12 +220,10 @@ class PostgresCollectionsHandler(Handler):
         """
         try:
             result = await self.connection_manager.fetchrow_query(
-                query, params
-            )
+                query, params)
             if not result:
-                raise R2RException(
-                    status_code=404, message="Collection not found"
-                )
+                raise R2RException(status_code=404,
+                                   message="Collection not found")
 
             return CollectionResponse(
                 id=result["id"],
@@ -256,9 +250,8 @@ class PostgresCollectionsHandler(Handler):
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE $1 = ANY(collection_ids)
         """
-        await self.connection_manager.execute_query(
-            user_update_query, [collection_id]
-        )
+        await self.connection_manager.execute_query(user_update_query,
+                                                    [collection_id])
 
         # Remove collection_id from documents
         document_update_query = f"""
@@ -270,9 +263,8 @@ class PostgresCollectionsHandler(Handler):
             )
             SELECT COUNT(*) AS affected_rows FROM updated
         """
-        await self.connection_manager.fetchrow_query(
-            document_update_query, [collection_id]
-        )
+        await self.connection_manager.fetchrow_query(document_update_query,
+                                                     [collection_id])
 
         # Delete the collection
         delete_query = f"""
@@ -281,17 +273,16 @@ class PostgresCollectionsHandler(Handler):
             RETURNING id
         """
         deleted = await self.connection_manager.fetchrow_query(
-            delete_query, [collection_id]
-        )
+            delete_query, [collection_id])
 
         if not deleted:
             raise R2RException(status_code=404, message="Collection not found")
 
     async def documents_in_collection(
-        self, collection_id: UUID, offset: int, limit: int
-    ) -> dict[str, list[DocumentResponse] | int]:
-        """
-        Get all documents in a specific collection with pagination.
+            self, collection_id: UUID, offset: int,
+            limit: int) -> dict[str, list[DocumentResponse] | int]:
+        """Get all documents in a specific collection with pagination.
+
         Args:
             collection_id (UUID): The ID of the collection to get documents from.
             offset (int): The number of documents to skip.
@@ -331,13 +322,11 @@ class PostgresCollectionsHandler(Handler):
                 size_in_bytes=row["size_in_bytes"],
                 ingestion_status=IngestionStatus(row["ingestion_status"]),
                 extraction_status=GraphExtractionStatus(
-                    row["extraction_status"]
-                ),
+                    row["extraction_status"]),
                 created_at=row["created_at"],
                 updated_at=row["updated_at"],
                 summary=row["summary"],
-            )
-            for row in results
+            ) for row in results
         ]
         total_entries = results[0]["total_entries"] if results else 0
 
@@ -356,28 +345,24 @@ class PostgresCollectionsHandler(Handler):
         param_index = 1
 
         if filter_user_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
             param_index += 1
 
         if filter_document_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
                     FROM {self.project_name}.documents
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_document_ids)
             param_index += 1
 
@@ -386,9 +371,8 @@ class PostgresCollectionsHandler(Handler):
             params.append(filter_collection_ids)
             param_index += 1
 
-        where_clause = (
-            f"WHERE {' AND '.join(conditions)}" if conditions else ""
-        )
+        where_clause = (f"WHERE {' AND '.join(conditions)}"
+                        if conditions else "")
 
         query = f"""
             SELECT
@@ -428,8 +412,7 @@ class PostgresCollectionsHandler(Handler):
         document_id: UUID,
         collection_id: UUID,
     ) -> UUID:
-        """
-        Assign a document to a collection.
+        """Assign a document to a collection.
 
         Args:
             document_id (UUID): The ID of the document to assign.
@@ -441,9 +424,8 @@ class PostgresCollectionsHandler(Handler):
         """
         try:
             if not await self.collection_exists(collection_id):
-                raise R2RException(
-                    status_code=404, message="Collection not found"
-                )
+                raise R2RException(status_code=404,
+                                   message="Collection not found")
 
             # First, check if the document exists
             document_check_query = f"""
@@ -451,13 +433,11 @@ class PostgresCollectionsHandler(Handler):
                 WHERE id = $1
             """
             document_exists = await self.connection_manager.fetchrow_query(
-                document_check_query, [document_id]
-            )
+                document_check_query, [document_id])
 
             if not document_exists:
-                raise R2RException(
-                    status_code=404, message="Document not found"
-                )
+                raise R2RException(status_code=404,
+                                   message="Document not found")
 
             # If document exists, proceed with the assignment
             assign_query = f"""
@@ -467,8 +447,7 @@ class PostgresCollectionsHandler(Handler):
                 RETURNING id
             """
             result = await self.connection_manager.fetchrow_query(
-                assign_query, [collection_id, document_id]
-            )
+                assign_query, [collection_id, document_id])
 
             if not result:
                 # Document exists but was already assigned to the collection
@@ -483,8 +462,7 @@ class PostgresCollectionsHandler(Handler):
                 WHERE id = $1
             """
             await self.connection_manager.execute_query(
-                query=update_collection_query, params=[collection_id]
-            )
+                query=update_collection_query, params=[collection_id])
 
             return collection_id
 
@@ -494,14 +472,13 @@ class PostgresCollectionsHandler(Handler):
         except Exception as e:
             raise HTTPException(
                 status_code=500,
-                detail=f"An error '{e}' occurred while assigning the document to the collection",
+                detail=
+                f"An error '{e}' occurred while assigning the document to the collection",
             ) from e
 
     async def remove_document_from_collection_relational(
-        self, document_id: UUID, collection_id: UUID
-    ) -> None:
-        """
-        Remove a document from a collection.
+            self, document_id: UUID, collection_id: UUID) -> None:
+        """Remove a document from a collection.
 
         Args:
             document_id (UUID): The ID of the document to remove.
@@ -520,8 +497,7 @@ class PostgresCollectionsHandler(Handler):
             RETURNING id
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [collection_id, document_id]
-        )
+            query, [collection_id, document_id])
 
         if not result:
             raise R2RException(
@@ -530,14 +506,13 @@ class PostgresCollectionsHandler(Handler):
             )
 
         await self.decrement_collection_document_count(
-            collection_id=collection_id
-        )
+            collection_id=collection_id)
 
-    async def decrement_collection_document_count(
-        self, collection_id: UUID, decrement_by: int = 1
-    ) -> None:
-        """
-        Decrement the document count for a collection.
+    async def decrement_collection_document_count(self,
+                                                  collection_id: UUID,
+                                                  decrement_by: int = 1
+                                                  ) -> None:
+        """Decrement the document count for a collection.
 
         Args:
             collection_id (UUID): The ID of the collection to update
@@ -549,8 +524,7 @@ class PostgresCollectionsHandler(Handler):
             WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            collection_query, [decrement_by, collection_id]
-        )
+            collection_query, [decrement_by, collection_id])
 
     async def export_to_csv(
         self,
@@ -558,9 +532,8 @@ class PostgresCollectionsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "owner_id",
@@ -630,12 +603,13 @@ class PostgresCollectionsHandler(Handler):
 
         temp_file = None
         try:
-            temp_file = tempfile.NamedTemporaryFile(
-                mode="w", delete=True, suffix=".csv"
-            )
+            temp_file = tempfile.NamedTemporaryFile(mode="w",
+                                                    delete=True,
+                                                    suffix=".csv")
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+            async with self.connection_manager.pool.get_connection(
+            ) as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 
@@ -674,10 +648,9 @@ class PostgresCollectionsHandler(Handler):
             ) from e
 
     async def get_collection_by_name(
-        self, owner_id: UUID, name: str
-    ) -> Optional[CollectionResponse]:
-        """
-        Fetch a collection by owner_id + name combination.
+            self, owner_id: UUID, name: str) -> Optional[CollectionResponse]:
+        """Fetch a collection by owner_id + name combination.
+
         Return None if not found.
         """
         query = f"""
@@ -689,8 +662,7 @@ class PostgresCollectionsHandler(Handler):
             LIMIT 1
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [owner_id, name]
-        )
+            query, [owner_id, name])
         if not result:
             raise R2RException(
                 status_code=404,

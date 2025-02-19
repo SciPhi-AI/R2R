@@ -123,8 +123,7 @@ class GraphCommunityResult(R2RSerializable):
 
     def __str__(self) -> str:
         return (
-            f"GraphCommunityResult(name={self.name}, summary={self.summary})"
-        )
+            f"GraphCommunityResult(name={self.name}, summary={self.summary})")
 
 
 class GraphSearchResult(R2RSerializable):
@@ -180,17 +179,20 @@ class WebSearchResult(R2RSerializable):
     class Config:
         json_schema_extra = {
             "example": {
-                "title": "Page Title",
-                "link": "https://example.com/page",
-                "snippet": "Page snippet",
-                "position": 1,
-                "date": "2021-01-01",
-                "sitelinks": [
-                    {
-                        "title": "Sitelink Title",
-                        "link": "https://example.com/sitelink",
-                    }
-                ],
+                "title":
+                "Page Title",
+                "link":
+                "https://example.com/page",
+                "snippet":
+                "Page snippet",
+                "position":
+                1,
+                "date":
+                "2021-01-01",
+                "sitelinks": [{
+                    "title": "Sitelink Title",
+                    "link": "https://example.com/sitelink",
+                }],
             }
         }
 
@@ -238,10 +240,8 @@ class WebSearchResponse(R2RSerializable):
 
 
 class ContextDocumentResult(R2RSerializable):
-    """
-    Holds a single 'document' plus its 'chunks', exactly as your
-    content_method returns them, or tidied up a bit.
-    """
+    """Holds a single 'document' plus its 'chunks', exactly as your
+    content_method returns them, or tidied up a bit."""
 
     document: dict[str, Any]  # or create a formal Document model
     chunks: list[str] = Field(default_factory=list)
@@ -279,86 +279,74 @@ class AggregateSearchResult(R2RSerializable):
 
     def as_dict(self) -> dict:
         return {
-            "chunk_search_results": (
-                [result.as_dict() for result in self.chunk_search_results]
-                if self.chunk_search_results
-                else []
-            ),
-            "graph_search_results": (
-                [result.to_dict() for result in self.graph_search_results]
-                if self.graph_search_results
-                else []
-            ),
-            "web_search_results": (
-                [result.to_dict() for result in self.web_search_results]
-                if self.web_search_results
-                else []
-            ),
-            "context_document_results": (
-                [cdr.to_dict() for cdr in self.context_document_results]
-                if self.context_document_results
-                else []
-            ),
+            "chunk_search_results":
+            ([result.as_dict() for result in self.chunk_search_results]
+             if self.chunk_search_results else []),
+            "graph_search_results":
+            ([result.to_dict() for result in self.graph_search_results]
+             if self.graph_search_results else []),
+            "web_search_results":
+            ([result.to_dict() for result in self.web_search_results]
+             if self.web_search_results else []),
+            "context_document_results":
+            ([cdr.to_dict() for cdr in self.context_document_results]
+             if self.context_document_results else []),
         }
 
     class Config:
         populate_by_name = True
         json_schema_extra = {
             "example": {
-                "chunk_search_results": [
-                    {
+                "chunk_search_results": [{
+                    "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                    "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                    "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                    "collection_ids": [],
+                    "score": 0.23943702876567796,
+                    "text": "Example text from the document",
+                    "metadata": {
+                        "title": "example_document.pdf",
+                        "associated_query": "What is the capital of France?",
+                    },
+                }],
+                "graph_search_results": [{
+                    "content": {
                         "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                        "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                        "collection_ids": [],
-                        "score": 0.23943702876567796,
-                        "text": "Example text from the document",
-                        "metadata": {
-                            "title": "example_document.pdf",
-                            "associated_query": "What is the capital of France?",
-                        },
-                    }
-                ],
-                "graph_search_results": [
-                    {
-                        "content": {
-                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "name": "Entity Name",
-                            "description": "Entity Description",
-                            "metadata": {},
-                        },
-                        "result_type": "entity",
-                        "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-                        "metadata": {
-                            "associated_query": "What is the capital of France?"
-                        },
-                    }
-                ],
-                "web_search_results": [
-                    {
-                        "title": "Page Title",
-                        "link": "https://example.com/page",
-                        "snippet": "Page snippet",
-                        "position": 1,
-                        "date": "2021-01-01",
-                        "sitelinks": [
-                            {
-                                "title": "Sitelink Title",
-                                "link": "https://example.com/sitelink",
-                            }
-                        ],
-                    }
-                ],
-                "context_document_results": [
-                    {
-                        "document": {
-                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "title": "Document Title",
-                            "chunks": ["Chunk 1", "Chunk 2"],
-                            "metadata": {},
-                        },
-                    }
-                ],
+                        "name": "Entity Name",
+                        "description": "Entity Description",
+                        "metadata": {},
+                    },
+                    "result_type":
+                    "entity",
+                    "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+                    "metadata": {
+                        "associated_query": "What is the capital of France?"
+                    },
+                }],
+                "web_search_results": [{
+                    "title":
+                    "Page Title",
+                    "link":
+                    "https://example.com/page",
+                    "snippet":
+                    "Page snippet",
+                    "position":
+                    1,
+                    "date":
+                    "2021-01-01",
+                    "sitelinks": [{
+                        "title": "Sitelink Title",
+                        "link": "https://example.com/sitelink",
+                    }],
+                }],
+                "context_document_results": [{
+                    "document": {
+                        "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                        "title": "Document Title",
+                        "chunks": ["Chunk 1", "Chunk 2"],
+                        "metadata": {},
+                    },
+                }],
             }
         }
 
@@ -367,18 +355,15 @@ class HybridSearchSettings(R2RSerializable):
     """Settings for hybrid search combining full-text and semantic search."""
 
     full_text_weight: float = Field(
-        default=1.0, description="Weight to apply to full text search"
-    )
+        default=1.0, description="Weight to apply to full text search")
     semantic_weight: float = Field(
-        default=5.0, description="Weight to apply to semantic search"
-    )
+        default=5.0, description="Weight to apply to semantic search")
     full_text_limit: int = Field(
         default=200,
         description="Maximum number of results to return from full text search",
     )
-    rrf_k: int = Field(
-        default=50, description="K-value for RRF (Rank Reciprocal Fusion)"
-    )
+    rrf_k: int = Field(default=50,
+                       description="K-value for RRF (Rank Reciprocal Fusion)")
 
 
 class ChunkSearchSettings(R2RSerializable):
@@ -390,11 +375,13 @@ class ChunkSearchSettings(R2RSerializable):
     )
     probes: int = Field(
         default=10,
-        description="Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
+        description=
+        "Number of ivfflat index lists to query. Higher increases accuracy but decreases speed.",
     )
     ef_search: int = Field(
         default=40,
-        description="Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
+        description=
+        "Size of the dynamic candidate list for HNSW index search. Higher increases accuracy but decreases speed.",
     )
     enabled: bool = Field(
         default=True,
@@ -409,15 +396,9 @@ class GraphSearchSettings(R2RSerializable):
         default=None,
         description="Configuration for text generation during graph search.",
     )
-    max_community_description_length: int = Field(
-        default=65536,
-    )
-    max_llm_queries_for_global_search: int = Field(
-        default=250,
-    )
-    limits: dict[str, int] = Field(
-        default={},
-    )
+    max_community_description_length: int = Field(default=65536, )
+    max_llm_queries_for_global_search: int = Field(default=250, )
+    limits: dict[str, int] = Field(default={}, )
     enabled: bool = Field(
         default=True,
         description="Whether to enable graph search",
@@ -425,12 +406,14 @@ class GraphSearchSettings(R2RSerializable):
 
 
 class SearchSettings(R2RSerializable):
-    """Main search settings class that combines shared settings with specialized settings for chunks and graph."""
+    """Main search settings class that combines shared settings with
+    specialized settings for chunks and graph."""
 
     # Search type flags
     use_hybrid_search: bool = Field(
         default=False,
-        description="Whether to perform a hybrid search. This is equivalent to setting `use_semantic_search=True` and `use_fulltext_search=True`, e.g. combining vector and keyword search.",
+        description=
+        "Whether to perform a hybrid search. This is equivalent to setting `use_semantic_search=True` and `use_fulltext_search=True`, e.g. combining vector and keyword search.",
     )
     use_semantic_search: bool = Field(
         default=True,
@@ -444,7 +427,8 @@ class SearchSettings(R2RSerializable):
     # Common search parameters
     filters: dict[str, Any] = Field(
         default_factory=dict,
-        description="""Filters to apply to the search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
+        description=
+        """Filters to apply to the search. Allowed operators include `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`, `ilike`, `in`, and `nin`.
 
       Commonly seen filters include operations include the following:
 
@@ -473,17 +457,20 @@ class SearchSettings(R2RSerializable):
     )
     include_scores: bool = Field(
         default=True,
-        description="Whether to include search score values in the search results",
+        description="""Whether to include search score values in the
+        search results""",
     )
 
     # Search strategy and settings
     search_strategy: str = Field(
         default="vanilla",
-        description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
+        description="""Search strategy to use
+        (e.g., 'vanilla', 'query_fusion', 'hyde')""",
     )
     hybrid_settings: HybridSearchSettings = Field(
         default_factory=HybridSearchSettings,
-        description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
+        description="""Settings for hybrid search (only used if
+        `use_semantic_search` and `use_fulltext_search` are both true)""",
     )
 
     # Specialized settings
@@ -504,7 +491,9 @@ class SearchSettings(R2RSerializable):
                 "use_semantic_search": True,
                 "use_fulltext_search": False,
                 "use_hybrid_search": False,
-                "filters": {"category": "technology"},
+                "filters": {
+                    "category": "technology"
+                },
                 "limit": 20,
                 "offset": 0,
                 "search_strategy": "vanilla",
@@ -523,7 +512,8 @@ class SearchSettings(R2RSerializable):
                 },
                 "graph_settings": {
                     "enabled": True,
-                    "generation_config": GenerationConfig.Config.json_schema_extra,
+                    "generation_config":
+                    GenerationConfig.Config.json_schema_extra,
                     "max_community_description_length": 65536,
                     "max_llm_queries_for_global_search": 250,
                     "limits": {
@@ -595,15 +585,22 @@ def select_search_filters(
 
         if selected_collections:
             allowed_collections = user_collections.intersection(
-                selected_collections
-            )
+                selected_collections)
         else:
             allowed_collections = user_collections
         # for non-superusers, we filter by user_id and selected & allowed collections
         collection_filters = {
             "$or": [
-                {"owner_id": {"$eq": auth_user.id}},
-                {"collection_ids": {"$overlap": list(allowed_collections)}},
+                {
+                    "owner_id": {
+                        "$eq": auth_user.id
+                    }
+                },
+                {
+                    "collection_ids": {
+                        "$overlap": list(allowed_collections)
+                    }
+                },
             ]  # type: ignore
         }
 

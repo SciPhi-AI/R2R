@@ -15,6 +15,7 @@ from shared.api.models import (
 
 
 class ConversationsSDK:
+
     def __init__(self, client):
         self.client = client
 
@@ -22,8 +23,7 @@ class ConversationsSDK:
         self,
         name: Optional[str] = None,
     ) -> WrappedConversationResponse:
-        """
-        Create a new conversation.
+        """Create a new conversation.
 
         Returns:
             WrappedConversationResponse
@@ -47,8 +47,7 @@ class ConversationsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedConversationsResponse:
-        """
-        List conversations with pagination and sorting options.
+        """List conversations with pagination and sorting options.
 
         Args:
             ids (Optional[list[str | UUID]]): List of conversation IDs to retrieve
@@ -78,8 +77,7 @@ class ConversationsSDK:
         self,
         id: str | UUID,
     ) -> WrappedConversationMessagesResponse:
-        """
-        Get detailed information about a specific conversation.
+        """Get detailed information about a specific conversation.
 
         Args:
             id (str | UUID): The ID of the conversation to retrieve
@@ -100,8 +98,7 @@ class ConversationsSDK:
         id: str | UUID,
         name: str,
     ) -> WrappedConversationResponse:
-        """
-        Update an existing conversation.
+        """Update an existing conversation.
 
         Args:
             id (str | UUID): The ID of the conversation to update
@@ -127,8 +124,7 @@ class ConversationsSDK:
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Delete a conversation.
+        """Delete a conversation.
 
         Args:
             id (str | UUID): The ID of the conversation to delete
@@ -152,8 +148,7 @@ class ConversationsSDK:
         metadata: Optional[dict] = None,
         parent_id: Optional[str] = None,
     ) -> WrappedMessageResponse:
-        """
-        Add a new message to a conversation.
+        """Add a new message to a conversation.
 
         Args:
             id (str | UUID): The ID of the conversation to add the message to
@@ -190,8 +185,7 @@ class ConversationsSDK:
         content: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> WrappedMessageResponse:
-        """
-        Update an existing message in a conversation.
+        """Update an existing message in a conversation.
 
         Args:
             id (str | UUID): The ID of the conversation containing the message
@@ -221,8 +215,8 @@ class ConversationsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """
-        Export conversations to a CSV file, streaming the results directly to disk.
+        """Export conversations to a CSV file, streaming the results directly
+        to disk.
 
         Args:
             output_path (str | Path): Local path where the CSV file should be saved
@@ -234,9 +228,8 @@ class ConversationsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
+        output_path = (str(output_path)
+                       if isinstance(output_path, Path) else output_path)
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -248,12 +241,12 @@ class ConversationsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                f"{self.client.base_url}/v3/conversations/export",
-                json=data,
-                headers={
-                    "Accept": "text/csv",
-                    **self.client._get_auth_header(),
-                },
+                    f"{self.client.base_url}/v3/conversations/export",
+                    json=data,
+                    headers={
+                        "Accept": "text/csv",
+                        **self.client._get_auth_header(),
+                    },
             ) as response:
                 if response.status != 200:
                     raise ValueError(
@@ -272,8 +265,8 @@ class ConversationsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """
-        Export messages to a CSV file, streaming the results directly to disk.
+        """Export messages to a CSV file, streaming the results directly to
+        disk.
 
         Args:
             output_path (str | Path): Local path where the CSV file should be saved
@@ -285,9 +278,8 @@ class ConversationsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
+        output_path = (str(output_path)
+                       if isinstance(output_path, Path) else output_path)
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -299,12 +291,12 @@ class ConversationsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                f"{self.client.base_url}/v3/conversations/export_messages",
-                json=data,
-                headers={
-                    "Accept": "text/csv",
-                    **self.client._get_auth_header(),
-                },
+                    f"{self.client.base_url}/v3/conversations/export_messages",
+                    json=data,
+                    headers={
+                        "Accept": "text/csv",
+                        **self.client._get_auth_header(),
+                    },
             ) as response:
                 if response.status != 200:
                     raise ValueError(

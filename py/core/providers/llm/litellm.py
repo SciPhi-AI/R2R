@@ -11,6 +11,7 @@ logger = logging.getLogger()
 
 
 class LiteLLMCompletionProvider(CompletionProvider):
+
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         litellm.modify_params = True

@@ -4,9 +4,11 @@ from uuid import UUID
 
 
 class R2RException(Exception):
-    def __init__(
-        self, message: str, status_code: int, detail: Optional[Any] = None
-    ):
+
+    def __init__(self,
+                 message: str,
+                 status_code: int,
+                 detail: Optional[Any] = None):
         self.message = message
         self.status_code = status_code
         super().__init__(self.message)
@@ -21,9 +23,11 @@ class R2RException(Exception):
 
 
 class R2RDocumentProcessingError(R2RException):
-    def __init__(
-        self, error_message: str, document_id: UUID, status_code: int = 500
-    ):
+
+    def __init__(self,
+                 error_message: str,
+                 document_id: UUID,
+                 status_code: int = 500):
         detail = {
             "document_id": str(document_id),
             "error_type": "document_processing_error",
@@ -37,7 +41,7 @@ class R2RDocumentProcessingError(R2RException):
 
 
 class PDFParsingError(R2RException):
-    """Custom exception for PDF parsing errors"""
+    """Custom exception for PDF parsing errors."""
 
     def __init__(
         self,
@@ -55,8 +59,7 @@ class PopplerNotFoundError(PDFParsingError):
     """Specific error for when Poppler is not installed."""
 
     def __init__(self):
-        installation_instructions = textwrap.dedent(
-            """
+        installation_instructions = textwrap.dedent("""
             PDF processing requires Poppler to be installed. Please install Poppler and ensure it's in your system PATH.
 
             Installing poppler:
@@ -68,8 +71,7 @@ class PopplerNotFoundError(PDFParsingError):
               2. Move extracted directory to desired location
               3. Add bin/ directory to PATH
               4. Test by running 'pdftoppm -h' in terminal
-        """
-        )
+        """)
         super().__init__(
             message=installation_instructions,
             status_code=422,

@@ -29,7 +29,6 @@ from .base_router import BaseRouterV3
 
 logger = logging.getLogger()
 
-
 from enum import Enum
 
 
@@ -42,11 +41,11 @@ class CollectionAction(str, Enum):
     REMOVE_DOCUMENT = "remove_document"
 
 
-async def authorize_collection_action(
-    auth_user, collection_id: UUID, action: CollectionAction, services
-) -> bool:
-    """
-    Authorize a user's action on a given collection based on:
+async def authorize_collection_action(auth_user, collection_id: UUID,
+                                      action: CollectionAction,
+                                      services) -> bool:
+    """Authorize a user's action on a given collection based on:
+
     - If user is superuser (admin): Full access.
     - If user is owner of the collection: Full access.
     - If user is a member of the collection (in `collection_ids`): VIEW only.
@@ -58,11 +57,8 @@ async def authorize_collection_action(
         return True
 
     # Fetch collection details: owner_id and members
-    results = (
-        await services.management.collections_overview(
-            0, 1, collection_ids=[collection_id]
-        )
-    )["results"]
+    results = (await services.management.collections_overview(
+        0, 1, collection_ids=[collection_id]))["results"]
     if len(results) == 0:
         raise R2RException("The specified collection does not exist.", 404)
     details = results[0]
@@ -79,22 +75,22 @@ async def authorize_collection_action(
         if action == CollectionAction.VIEW:
             return True
         else:
-            raise R2RException(
-                "Insufficient permissions for this action.", 403
-            )
+            raise R2RException("Insufficient permissions for this action.",
+                               403)
 
     # User is neither owner nor member
     raise R2RException("You do not have access to this collection.", 403)
 
 
 class CollectionsRouter(BaseRouterV3):
-    def __init__(
-        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
-    ):
+
+    def __init__(self, providers: R2RProviders, services: R2RServices,
+                 config: R2RConfig):
         logging.info("Initializing CollectionsRouter")
         super().__init__(providers, services, config)
 
     def _setup_routes(self):
+
         @self.router.post(
             "/collections",
             summary="Create a new collection",
@@ -102,9 +98,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -114,13 +111,13 @@ class CollectionsRouter(BaseRouterV3):
                                 name="My New Collection",
                                 description="This is a sample collection"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -133,19 +130,18 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/collections" \\
                                  -H "Content-Type: application/json" \\
                                  -H "Authorization: Bearer YOUR_API_KEY" \\
                                  -d '{"name": "My New Collection", "description": "This is a sample collection"}'
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -154,26 +150,24 @@ class CollectionsRouter(BaseRouterV3):
         async def create_collection(
             name: str = Body(..., description="The name of the collection"),
             description: Optional[str] = Body(
-                None, description="An optional description of the collection"
-            ),
+                None, description="An optional description of the collection"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
-            """
-            Create a new collection and automatically add the creating user to it.
+            """Create a new collection and automatically add the creating user
+            to it.
 
-            This endpoint allows authenticated users to create a new collection with a specified name
-            and optional description. The user creating the collection is automatically added as a member.
+            This endpoint allows authenticated users to create a new collection
+            with a specified name and optional description. The user creating
+            the collection is automatically added as a member.
             """
             user_collections_count = (
                 await self.services.management.collections_overview(
-                    user_ids=[auth_user.id], limit=1, offset=0
-                )
-            )["total_entries"]
+                    user_ids=[auth_user.id], limit=1,
+                    offset=0))["total_entries"]
             user_max_collections = (
-                await self.services.management.get_user_max_collections(
-                    auth_user.id
-                )
-            )
+                await
+                self.services.management.get_user_max_collections(auth_user.id
+                                                                  ))
             if (user_collections_count + 1) >= user_max_collections:
                 raise R2RException(
                     f"User has reached the maximum number of collections allowed ({user_max_collections}).",
@@ -186,8 +180,7 @@ class CollectionsRouter(BaseRouterV3):
             )
             # Add the creating user to the collection
             await self.services.management.add_user_to_collection(
-                auth_user.id, collection.id
-            )
+                auth_user.id, collection.id)
             return collection
 
         @self.router.post(
@@ -197,9 +190,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -210,13 +204,13 @@ class CollectionsRouter(BaseRouterV3):
                                 columns=["id", "name", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -230,21 +224,20 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/collections/export" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "name", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -253,19 +246,14 @@ class CollectionsRouter(BaseRouterV3):
         async def export_collections(
             background_tasks: BackgroundTasks,
             columns: Optional[list[str]] = Body(
-                None, description="Specific columns to export"
-            ),
+                None, description="Specific columns to export"),
             filters: Optional[dict] = Body(
-                None, description="Filters to apply to the export"
-            ),
+                None, description="Filters to apply to the export"),
             include_header: Optional[bool] = Body(
-                True, description="Whether to include column headers"
-            ),
+                True, description="Whether to include column headers"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export collections as a CSV file.
-            """
+            """Export collections as a CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -297,9 +285,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -309,13 +298,13 @@ class CollectionsRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10,
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -325,17 +314,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/collections?offset=0&limit=10&name=Sample" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -344,32 +332,36 @@ class CollectionsRouter(BaseRouterV3):
         async def list_collections(
             ids: list[str] = Query(
                 [],
-                description="A list of collection IDs to retrieve. If not provided, all collections will be returned.",
+                description=
+                "A list of collection IDs to retrieve. If not provided, all collections will be returned.",
             ),
             offset: int = Query(
                 0,
                 ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
+                description=
+                "Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description=
+                "Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
-            """
-            Returns a paginated list of collections the authenticated user has access to.
+            """Returns a paginated list of collections the authenticated user
+            has access to.
 
-            Results can be filtered by providing specific collection IDs. Regular users will only see
-            collections they own or have access to. Superusers can see all collections.
+            Results can be filtered by providing specific collection IDs.
+            Regular users will only see collections they own or have access to.
+            Superusers can see all collections.
 
-            The collections are returned in order of last modification, with most recent first.
+            The collections are returned in order of last modification, with
+            most recent first.
             """
-            requesting_user_id = (
-                None if auth_user.is_superuser else [auth_user.id]
-            )
+            requesting_user_id = (None if auth_user.is_superuser else
+                                  [auth_user.id])
 
             collection_uuids = [UUID(collection_id) for collection_id in ids]
 
@@ -379,15 +371,13 @@ class CollectionsRouter(BaseRouterV3):
                     collection_ids=collection_uuids,
                     offset=offset,
                     limit=limit,
-                )
-            )
+                ))
 
             return (  # type: ignore
                 collections_overview_response["results"],
                 {
-                    "total_entries": collections_overview_response[
-                        "total_entries"
-                    ]
+                    "total_entries":
+                    collections_overview_response["total_entries"]
                 },
             )
 
@@ -398,22 +388,23 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.collections.retrieve("123e4567-e89b-12d3-a456-426614174000")
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -423,17 +414,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -441,19 +431,18 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_collection(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
-            """
-            Get details of a specific collection.
+            """Get details of a specific collection.
 
-            This endpoint retrieves detailed information about a single collection identified by its UUID.
-            The user must have access to the collection to view its details.
+            This endpoint retrieves detailed information about a single
+            collection identified by its UUID. The user must have access to the
+            collection to view its details.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.VIEW, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.VIEW,
+                                              self.services)
 
             collections_overview_response = (
                 await self.services.management.collections_overview(
@@ -461,8 +450,7 @@ class CollectionsRouter(BaseRouterV3):
                     collection_ids=[id],
                     offset=0,
                     limit=1,
-                )
-            )
+                ))
             overview = collections_overview_response["results"]
 
             if len(overview) == 0:
@@ -479,9 +467,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -492,13 +481,13 @@ class CollectionsRouter(BaseRouterV3):
                                 name="Updated Collection Name",
                                 description="Updated description"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -512,19 +501,18 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000" \\
                                  -H "Content-Type: application/json" \\
                                  -H "Authorization: Bearer YOUR_API_KEY" \\
                                  -d '{"name": "Updated Collection Name", "description": "Updated description"}'
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -536,26 +524,25 @@ class CollectionsRouter(BaseRouterV3):
                 description="The unique identifier of the collection to update",
             ),
             name: Optional[str] = Body(
-                None, description="The name of the collection"
-            ),
+                None, description="The name of the collection"),
             description: Optional[str] = Body(
-                None, description="An optional description of the collection"
-            ),
+                None, description="An optional description of the collection"),
             generate_description: Optional[bool] = Body(
                 False,
-                description="Whether to generate a new synthetic description for the collection",
+                description=
+                "Whether to generate a new synthetic description for the collection",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
-            """
-            Update an existing collection's configuration.
+            """Update an existing collection's configuration.
 
-            This endpoint allows updating the name and description of an existing collection.
-            The user must have appropriate permissions to modify the collection.
+            This endpoint allows updating the name and description of an
+            existing collection. The user must have appropriate permissions to
+            modify the collection.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.EDIT, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.EDIT,
+                                              self.services)
 
             if generate_description and description is not None:
                 raise R2RException(
@@ -577,22 +564,23 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.collections.delete("123e4567-e89b-12d3-a456-426614174000")
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -602,17 +590,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -625,21 +612,21 @@ class CollectionsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Delete an existing collection.
+            """Delete an existing collection.
 
-            This endpoint allows deletion of a collection identified by its UUID.
-            The user must have appropriate permissions to delete the collection.
-            Deleting a collection removes all associations but does not delete the documents within it.
+            This endpoint allows deletion of a collection identified by its
+            UUID. The user must have appropriate permissions to delete the
+            collection. Deleting a collection removes all associations but does
+            not delete the documents within it.
             """
             if id == generate_default_user_collection_id(auth_user.id):
                 raise R2RException(
                     "Cannot delete the default user collection.",
                     400,
                 )
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.DELETE, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.DELETE,
+                                              self.services)
 
             await self.services.management.delete_collection(collection_id=id)
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -651,9 +638,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -663,13 +651,13 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 "456e789a-b12c-34d5-e678-901234567890"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -682,17 +670,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents/456e789a-b12c-34d5-e678-901234567890" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -703,18 +690,14 @@ class CollectionsRouter(BaseRouterV3):
             document_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Add a document to a collection.
-            """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.ADD_DOCUMENT, self.services
-            )
+            """Add a document to a collection."""
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.ADD_DOCUMENT,
+                                              self.services)
 
-            return (
-                await self.services.management.assign_document_to_collection(
-                    document_id, id
-                )
-            )
+            return (await
+                    self.services.management.assign_document_to_collection(
+                        document_id, id))
 
         @self.router.get(
             "/collections/{id}/documents",
@@ -723,9 +706,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -736,13 +720,13 @@ class CollectionsRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10,
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -752,17 +736,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -770,42 +753,42 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_collection_documents(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             offset: int = Query(
                 0,
                 ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
+                description=
+                "Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description=
+                "Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
-            """
-            Get all documents in a collection with pagination and sorting options.
+            """Get all documents in a collection with pagination and sorting
+            options.
 
-            This endpoint retrieves a paginated list of documents associated with a specific collection.
-            It supports sorting options to customize the order of returned documents.
+            This endpoint retrieves a paginated list of documents associated
+            with a specific collection. It supports sorting options to
+            customize the order of returned documents.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.VIEW, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.VIEW,
+                                              self.services)
 
             documents_in_collection_response = (
                 await self.services.management.documents_in_collection(
-                    id, offset, limit
-                )
-            )
+                    id, offset, limit))
 
-            return documents_in_collection_response["results"], {  # type: ignore
-                "total_entries": documents_in_collection_response[
-                    "total_entries"
-                ]
-            }
+            return documents_in_collection_response[
+                "results"], {  # type: ignore
+                    "total_entries":
+                    documents_in_collection_response["total_entries"]
+                }
 
         @self.router.delete(
             "/collections/{id}/documents/{document_id}",
@@ -814,9 +797,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -826,13 +810,13 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 "456e789a-b12c-34d5-e678-901234567890"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -845,17 +829,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/documents/456e789a-b12c-34d5-e678-901234567890" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -863,26 +846,24 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def remove_document_from_collection(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             document_id: UUID = Path(
                 ...,
                 description="The unique identifier of the document to remove",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Remove a document from a collection.
+            """Remove a document from a collection.
 
-            This endpoint removes the association between a document and a collection.
-            It does not delete the document itself. The user must have permissions to modify the collection.
+            This endpoint removes the association between a document and a
+            collection. It does not delete the document itself. The user must
+            have permissions to modify the collection.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.REMOVE_DOCUMENT, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.REMOVE_DOCUMENT,
+                                              self.services)
             await self.services.management.remove_document_from_collection(
-                document_id, id
-            )
+                document_id, id)
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.get(
@@ -892,9 +873,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -905,13 +887,13 @@ class CollectionsRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10,
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -923,17 +905,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users?offset=0&limit=10" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -941,38 +922,39 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_collection_users(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             offset: int = Query(
                 0,
                 ge=0,
-                description="Specifies the number of objects to skip. Defaults to 0.",
+                description=
+                "Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description=
+                "Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUsersResponse:
-            """
-            Get all users in a collection with pagination and sorting options.
+            """Get all users in a collection with pagination and sorting
+            options.
 
-            This endpoint retrieves a paginated list of users who have access to a specific collection.
-            It supports sorting options to customize the order of returned users.
+            This endpoint retrieves a paginated list of users who have access
+            to a specific collection. It supports sorting options to customize
+            the order of returned users.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.VIEW, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.VIEW,
+                                              self.services)
 
             users_in_collection_response = (
                 await self.services.management.get_users_in_collection(
                     collection_id=id,
                     offset=offset,
                     limit=min(max(limit, 1), 1000),
-                )
-            )
+                ))
 
             return users_in_collection_response["results"], {  # type: ignore
                 "total_entries": users_in_collection_response["total_entries"]
@@ -985,9 +967,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -997,13 +980,13 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 "789a012b-c34d-5e6f-g789-012345678901"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1016,17 +999,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users/789a012b-c34d-5e6f-g789-012345678901" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -1034,26 +1016,23 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def add_user_to_collection(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             user_id: UUID = Path(
-                ..., description="The unique identifier of the user to add"
-            ),
+                ..., description="The unique identifier of the user to add"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Add a user to a collection.
+            """Add a user to a collection.
 
-            This endpoint grants a user access to a specific collection.
-            The authenticated user must have admin permissions for the collection to add new users.
+            This endpoint grants a user access to a specific collection. The
+            authenticated user must have admin permissions for the collection
+            to add new users.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.MANAGE_USERS, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.MANAGE_USERS,
+                                              self.services)
 
             result = await self.services.management.add_user_to_collection(
-                user_id, id
-            )
+                user_id, id)
             return GenericBooleanResponse(success=result)  # type: ignore
 
         @self.router.delete(
@@ -1063,9 +1042,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1075,13 +1055,13 @@ class CollectionsRouter(BaseRouterV3):
                                 "123e4567-e89b-12d3-a456-426614174000",
                                 "789a012b-c34d-5e6f-g789-012345678901"
                             )
-                        """
-                        ),
+                        """),
                     },
                     {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "JavaScript",
+                        "source":
+                        textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1094,17 +1074,16 @@ class CollectionsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
-                        "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "cURL",
+                        "source":
+                        textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/collections/123e4567-e89b-12d3-a456-426614174000/users/789a012b-c34d-5e6f-g789-012345678901" \\
                                  -H "Authorization: Bearer YOUR_API_KEY"
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -1112,28 +1091,25 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def remove_user_from_collection(
             id: UUID = Path(
-                ..., description="The unique identifier of the collection"
-            ),
+                ..., description="The unique identifier of the collection"),
             user_id: UUID = Path(
-                ..., description="The unique identifier of the user to remove"
-            ),
+                ...,
+                description="The unique identifier of the user to remove"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Remove a user from a collection.
+            """Remove a user from a collection.
 
-            This endpoint revokes a user's access to a specific collection.
-            The authenticated user must have admin permissions for the collection to remove users.
+            This endpoint revokes a user's access to a specific collection. The
+            authenticated user must have admin permissions for the collection
+            to remove users.
             """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.MANAGE_USERS, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.MANAGE_USERS,
+                                              self.services)
 
-            result = (
-                await self.services.management.remove_user_from_collection(
-                    user_id, id
-                )
-            )
+            result = (await
+                      self.services.management.remove_user_from_collection(
+                          user_id, id))
             return GenericBooleanResponse(success=True)  # type: ignore
 
         @self.router.post(
@@ -1143,9 +1119,10 @@ class CollectionsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "lang":
+                        "Python",
+                        "source":
+                        textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1154,8 +1131,7 @@ class CollectionsRouter(BaseRouterV3):
                             result = client.documents.extract(
                                 id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
                             )
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1164,27 +1140,30 @@ class CollectionsRouter(BaseRouterV3):
         async def extract(
             id: UUID = Path(
                 ...,
-                description="The ID of the document to extract entities and relationships from.",
+                description=
+                "The ID of the document to extract entities and relationships from.",
             ),
             settings: Optional[GraphCreationSettings] = Body(
                 default=None,
-                description="Settings for the entities and relationships extraction process.",
+                description=
+                "Settings for the entities and relationships extraction process.",
             ),
             run_with_orchestration: Optional[bool] = Query(
                 default=True,
-                description="Whether to run the entities and relationships extraction process with orchestration.",
+                description=
+                "Whether to run the entities and relationships extraction process with orchestration.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
+            """Extracts entities and relationships from a document.
+
+            The entities and relationships extraction process involves:
+            1. Parsing documents into semantic chunks
+            2. Extracting entities and relationships using LLMs
             """
-            Extracts entities and relationships from a document.
-                The entities and relationships extraction process involves:
-                1. Parsing documents into semantic chunks
-                2. Extracting entities and relationships using LLMs
-            """
-            await authorize_collection_action(
-                auth_user, id, CollectionAction.EDIT, self.services
-            )
+            await authorize_collection_action(auth_user, id,
+                                              CollectionAction.EDIT,
+                                              self.services)
 
             settings = settings.dict() if settings else None  # type: ignore
             if not auth_user.is_superuser:
@@ -1192,8 +1171,7 @@ class CollectionsRouter(BaseRouterV3):
 
             # Apply runtime settings overrides
             server_graph_creation_settings = (
-                self.providers.database.config.graph_creation_settings
-            )
+                self.providers.database.config.graph_creation_settings)
 
             if settings:
                 server_graph_creation_settings = update_settings_from_dict(
@@ -1203,30 +1181,29 @@ class CollectionsRouter(BaseRouterV3):
             if run_with_orchestration:
                 try:
                     workflow_input = {
-                        "collection_id": str(id),
-                        "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
+                        "collection_id":
+                        str(id),
+                        "graph_creation_settings":
+                        server_graph_creation_settings.model_dump_json(),
+                        "user":
+                        auth_user.json(),
                     }
 
                     return await self.providers.orchestration.run_workflow(  # type: ignore
-                        "graph-extraction", {"request": workflow_input}, {}
-                    )
+                        "graph-extraction", {"request": workflow_input}, {})
                 except Exception as e:  # TODO: Need to find specific error (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated extraction: {e} \n\nAttempting to run without orchestration."
                     )
 
             from core.main.orchestration import (
-                simple_graph_search_results_factory,
-            )
+                simple_graph_search_results_factory, )
 
             logger.info("Running extract-triples without orchestration.")
             simple_graph_search_results = simple_graph_search_results_factory(
-                self.services.graph
-            )
+                self.services.graph)
             await simple_graph_search_results["graph-extraction"](
-                workflow_input
-            )  # type: ignore
+                workflow_input)  # type: ignore
             return {  # type: ignore
                 "message": "Graph created successfully.",
                 "task_id": None,
@@ -1240,18 +1217,18 @@ class CollectionsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_collection_by_name(
             collection_name: str = Path(
-                ..., description="The name of the collection"
-            ),
+                ..., description="The name of the collection"),
             owner_id: Optional[UUID] = Query(
                 None,
-                description="(Superuser only) Specify the owner_id to retrieve a collection by name",
+                description=
+                "(Superuser only) Specify the owner_id to retrieve a collection by name",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionResponse:
-            """
-            Retrieve a collection by its (owner_id, name) combination.
-            The authenticated user can only fetch collections they own,
-            or, if superuser, from anyone.
+            """Retrieve a collection by its (owner_id, name) combination.
+
+            The authenticated user can only fetch collections they own, or, if
+            superuser, from anyone.
             """
             if auth_user.is_superuser:
                 if not owner_id:
@@ -1265,12 +1242,11 @@ class CollectionsRouter(BaseRouterV3):
                 # If you want superusers to do /collections/name/<string>?owner_id=...
                 # just parse it from the query. For now, let's say it's not implemented.
                 raise R2RException(
-                    "Superuser must specify an owner_id to fetch by name.", 400
-                )
+                    "Superuser must specify an owner_id to fetch by name.",
+                    400)
 
             collection = await self.providers.database.collections_handler.get_collection_by_name(
-                owner_id, collection_name
-            )
+                owner_id, collection_name)
             if not collection:
                 raise R2RException("Collection not found.", 404)
 
