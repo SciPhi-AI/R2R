@@ -3,6 +3,7 @@ from .csv_parser import CSVParser, CSVParserAdvanced
 from .eml_parser import EMLParser
 from .epub_parser import EPUBParser
 from .json_parser import JSONParser
+
 # from .msg_parser import MSGParser
 from .org_parser import ORGParser
 from .p7s_parser import P7SParser

@@ -36,10 +36,11 @@ COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed comp
 
 
 class SearchResultsCollector:
-    """
-    Collects search results in the form (source_type, result_obj, aggregator_index).
-    aggregator_index increments globally so that the nth item appended
-    is always aggregator_index == n, across the entire conversation.
+    """Collects search results in the form (source_type, result_obj,
+    aggregator_index).
+
+    aggregator_index increments globally so that the nth item appended is
+    always aggregator_index == n, across the entire conversation.
     """
 
     def __init__(self):
@@ -48,10 +49,9 @@ class SearchResultsCollector:
         self._next_index = 1  # 1-based indexing
 
     def add_aggregate_result(self, agg: "AggregateSearchResult"):
-        """
-        Flatten the chunk_search_results, graph_search_results, web_search_results,
-        and context_document_results, each assigned a unique aggregator index.
-        """
+        """Flatten the chunk_search_results, graph_search_results,
+        web_search_results, and context_document_results, each assigned a
+        unique aggregator index."""
         if agg.chunk_search_results:
             for c in agg.chunk_search_results:
                 self._results_in_order.append(("chunk", c, self._next_index))
@@ -75,10 +75,8 @@ class SearchResultsCollector:
                 self._next_index += 1
 
     def get_all_results(self) -> list[Tuple[str, Any, int]]:
-        """
-        Return list of (source_type, result_obj, aggregator_index),
-        in the order appended.
-        """
+        """Return list of (source_type, result_obj, aggregator_index), in the
+        order appended."""
         return self._results_in_order
 
 
@@ -87,14 +85,13 @@ def num_tokens(text, model="gpt-4o"):
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
         encoding = tiktoken.get_encoding("cl100k_base")
-
     """Return the number of tokens used by a list of messages for both user and assistant."""
     return len(encoding.encode(text, disallowed_special=()))
 
 
 class RAGAgentMixin:
-    """
-    A Mixin for adding local_search, web_search, and content tools
+    """A Mixin for adding local_search, web_search, and content tools.
+
     to your R2R Agents. This allows your agent to:
       - call local_search_method (semantic/hybrid search)
       - call content_method (fetch entire doc/chunk structures)
@@ -121,10 +118,8 @@ class RAGAgentMixin:
         super().__init__(*args, **kwargs)
 
     def _register_tools(self):
-        """
-        Called by the base agent to register all requested tools
-        from self.config.tools.
-        """
+        """Called by the base agent to register all requested tools from
+        self.config.tools."""
         if not self.config.tools:
             return
         for tool_name in set(self.config.tools):
@@ -141,10 +136,8 @@ class RAGAgentMixin:
 
     # Local Search Tool
     def local_search(self) -> Tool:
-        """
-        Tool to do a semantic/hybrid search on the local knowledge base
-        using self.local_search_method.
-        """
+        """Tool to do a semantic/hybrid search on the local knowledge base
+        using self.local_search_method."""
         return Tool(
             name="local_search",
             description=(
@@ -172,9 +165,10 @@ class RAGAgentMixin:
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
-        """
-        Calls the passed-in `local_search_method(query, search_settings)`.
-        Expects either an AggregateSearchResult or a dict with chunk_search_results, etc.
+        """Calls the passed-in `local_search_method(query, search_settings)`.
+
+        Expects either an AggregateSearchResult or a dict with
+        chunk_search_results, etc.
         """
         if not self.local_search_method:
             raise ValueError(
@@ -203,9 +197,10 @@ class RAGAgentMixin:
 
     # 2) Local Context
     def content(self) -> Tool:
-        """
-        Tool to fetch entire documents from the local database. Typically used if the agent needs
-        deeper or more structured context from documents, not just chunk-level hits.
+        """Tool to fetch entire documents from the local database.
+
+        Typically used if the agent needs deeper or more structured context
+        from documents, not just chunk-level hits.
         """
         if "gemini" in self.rag_generation_config.model:
             tool = Tool(
@@ -269,9 +264,10 @@ class RAGAgentMixin:
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
-        """
-        Calls the passed-in `content_method(filters, options)` to fetch
-        doc+chunk structures. Typically returns a list of dicts:
+        """Calls the passed-in `content_method(filters, options)` to fetch
+        doc+chunk structures.
+
+        Typically returns a list of dicts:
         [
             { 'document': {...}, 'chunks': [ {...}, {...}, ... ] },
             ...
@@ -395,9 +391,8 @@ class RAGAgentMixin:
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
-    """
-    Non-streaming RAG Agent that supports local_search, content, web_search.
-    """
+    """Non-streaming RAG Agent that supports local_search, content,
+    web_search."""
 
     def __init__(
         self,
@@ -438,9 +433,8 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
 
 
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
-    """
-    Streaming-capable RAG Agent that supports local_search, content, web_search.
-    """
+    """Streaming-capable RAG Agent that supports local_search, content,
+    web_search."""
 
     def __init__(
         self,
@@ -484,9 +478,8 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
 
 
 class R2RStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
-    """
-    Streaming-capable RAG Agent that supports local_search, content, web_search.
-    """
+    """Streaming-capable RAG Agent that supports local_search, content,
+    web_search."""
 
     def __init__(
         self,
@@ -574,8 +567,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
+        """Iterative approach with chain-of-thought wrapped in
+        <Thought>...</Thought> each iteration.
+
         1) In each iteration (up to max_steps):
             a) Call _generate_thinking_response(conversation_context).
             b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
@@ -717,8 +711,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 return
 
     def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
-        """
-        Converts system+user+assistant messages into a single text prompt.
+        """Converts system+user+assistant messages into a single text prompt.
+
         Overridable if you want a different style.
         """
         system_msgs = []
@@ -737,8 +731,7 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 
     @staticmethod
     def _parse_tool_calls(text: str) -> list[dict]:
-        """
-        Parse tool calls from XML-like text.
+        """Parse tool calls from XML-like text.
 
         This function locates <Action> blocks (or, if not present, the entire text)
         and then extracts all <ToolCall> blocks within. It patches incomplete tags and
@@ -885,9 +878,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 class GeminiXMLToolsStreamingReasoningRAGAgent(
     R2RXMLToolsStreamingReasoningRAGAgent
 ):
-    """
-    A Gemini-based implementation that uses the `XMLToolsStreamingRAGAgentBase`.
-    """
+    """A Gemini-based implementation that uses the
+    `XMLToolsStreamingRAGAgentBase`."""
 
     def __init__(
         self,
@@ -920,8 +912,9 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
+        """Iterative approach with chain-of-thought wrapped in
+        <Thought>...</Thought> each iteration.
+
         1) In each iteration (up to max_steps):
             a) Call _generate_thinking_response(conversation_context).
             b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
@@ -1096,8 +1089,8 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
         initial_delay: float = 1.0,
         **kwargs,
     ) -> AsyncGenerator[tuple[bool, str], None]:
-        """
-        Generate thinking response with retry logic for handling transient failures.
+        """Generate thinking response with retry logic for handling transient
+        failures.
 
         Args:
             user_prompt: The prompt to send to Gemini
@@ -1159,9 +1152,8 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                     return
 
     def _parse_action_blocks(self, text: str) -> list[dict]:
-        """
-        Find <Action>...</Action> blocks in 'text' using simple regex,
-        then parse out <ToolCall> blocks within each <Action>.
+        """Find <Action>...</Action> blocks in 'text' using simple regex, then
+        parse out <ToolCall> blocks within each <Action>.
 
         Returns a list of dicts, each with:
         {

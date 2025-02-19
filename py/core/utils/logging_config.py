@@ -7,9 +7,10 @@ from pathlib import Path
 
 
 class HTTPStatusFilter(logging.Filter):
-    """
-    This filter inspects uvicorn.access log records. It uses record.getMessage() to retrieve
-    the fully formatted log message. Then it searches for HTTP status codes and adjusts the
+    """This filter inspects uvicorn.access log records. It uses
+    record.getMessage() to retrieve the fully formatted log message. Then it
+    searches for HTTP status codes and adjusts the.
+
     record's log level based on that status:
       - 4xx: WARNING
       - 5xx: ERROR

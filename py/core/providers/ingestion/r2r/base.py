@@ -16,7 +16,6 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDatabaseProvider

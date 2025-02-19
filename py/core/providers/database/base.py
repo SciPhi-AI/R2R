@@ -198,8 +198,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
                         else await conn.fetch(query)
                     )
         except asyncpg.exceptions.DuplicatePreparedStatementError:
-            error_msg = textwrap.dedent(
-                """
+            error_msg = textwrap.dedent("""
                 Database Configuration Error
 
                 Your database provider does not support statement caching.
@@ -213,8 +212,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
 
                 This is required when using connection poolers like PgBouncer or
                 managed database services like Supabase.
-            """
-            ).strip()
+            """).strip()
             raise ValueError(error_msg) from None
 
     async def fetchrow_query(self, query, params=None):
@@ -229,8 +227,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
 
     @asynccontextmanager
     async def transaction(self, isolation_level=None):
-        """
-        Async context manager for database transactions.
+        """Async context manager for database transactions.
 
         Args:
             isolation_level: Optional isolation level for the transaction

@@ -14,7 +14,6 @@ from .assembly import R2RBuilder, R2RConfig
 
 logger, log_file = configure_logging()
 
-
 # Global scheduler
 scheduler = AsyncIOScheduler()
 

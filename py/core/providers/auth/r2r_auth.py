@@ -29,9 +29,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
 def normalize_email(email: str) -> str:
-    """
-    Normalizes an email address by converting it to lowercase.
-    This ensures consistent email handling throughout the application.
+    """Normalizes an email address by converting it to lowercase. This ensures
+    consistent email handling throughout the application.
 
     Args:
         email: The email address to normalize
@@ -146,16 +145,16 @@ class R2RAuthProvider(AuthProvider):
         )
 
     async def authenticate_api_key(self, api_key: str) -> User:
-        """
-        Authenticate using an API key of the form "public_key.raw_key".
+        """Authenticate using an API key of the form "public_key.raw_key".
+
         Returns a User if successful, or raises R2RException if not.
         """
         try:
             key_id, raw_key = api_key.split(".", 1)
-        except ValueError:
+        except ValueError as e:
             raise R2RException(
                 status_code=401, message="Invalid API key format"
-            )
+            ) from e
 
         key_record = (
             await self.database_provider.users_handler.get_api_key_record(
@@ -181,9 +180,7 @@ class R2RAuthProvider(AuthProvider):
         return user
 
     async def user(self, token: str = Depends(oauth2_scheme)) -> User:
-        """
-        Attempt to authenticate via JWT first, then fallback to API key.
-        """
+        """Attempt to authenticate via JWT first, then fallback to API key."""
         # Try JWT auth
         try:
             token_data = await self.decode_token(token=token)
@@ -260,7 +257,7 @@ class R2RAuthProvider(AuthProvider):
                 owner_id=new_user.id,
             )
         )
-        graph_result = await self.database_provider.graphs_handler.create(
+        await self.database_provider.graphs_handler.create(
             collection_id=default_collection.id,
             name=default_collection.name,
             description=default_collection.description,
@@ -620,10 +617,12 @@ class R2RAuthProvider(AuthProvider):
     async def oauth_callback_handler(
         self, provider: str, oauth_id: str, email: str
     ) -> dict[str, Token]:
-        """
-        Handles a login/registration flow for OAuth providers (e.g., Google or GitHub).
+        """Handles a login/registration flow for OAuth providers (e.g., Google
+        or GitHub).
+
         :param provider: "google" or "github"
-        :param oauth_id: The unique ID from the OAuth provider (e.g. Google's 'sub')
+        :param oauth_id: The unique ID from the OAuth provider (e.g. Google's
+            'sub')
         :param email: The user's email from the provider, if available.
         :return: dict with access_token and refresh_token
         """
@@ -641,7 +640,7 @@ class R2RAuthProvider(AuthProvider):
                             status_code=401,
                             message="User already exists and is not linked to Google account",
                         )
-                except:
+                except Exception:
                     # Create new user
                     user = await self.register(
                         email=normalize_email(email)
@@ -661,7 +660,7 @@ class R2RAuthProvider(AuthProvider):
                             status_code=401,
                             message="User already exists and is not linked to Github account",
                         )
-                except:
+                except Exception:
                     # Create new user
                     user = await self.register(
                         email=normalize_email(email)
@@ -676,7 +675,7 @@ class R2RAuthProvider(AuthProvider):
             # If no user found or creation fails
             raise R2RException(
                 status_code=401, message="Could not create or fetch user"
-            )
+            ) from None
 
         # If user is inactive, etc.
         if not user.is_active:

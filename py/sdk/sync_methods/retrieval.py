@@ -19,9 +19,7 @@ from ..models import (
 
 
 class RetrievalSDK:
-    """
-    SDK for interacting with documents in the v3 API.
-    """
+    """SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -32,8 +30,7 @@ class RetrievalSDK:
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
-        """
-        Conduct a vector and/or graph search.
+        """Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.
@@ -116,8 +113,8 @@ class RetrievalSDK:
         task_prompt_override: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
     ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
-        """
-        Conducts a Retrieval Augmented Generation (RAG) search with the given query.
+        """Conducts a Retrieval Augmented Generation (RAG) search with the
+        given query.
 
         Args:
             query (str): The query to search for.
@@ -178,8 +175,7 @@ class RetrievalSDK:
         max_tool_context_length: Optional[int] = None,
         use_extended_prompt: Optional[bool] = True,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent.
+        """Performs a single turn in a conversation with a RAG agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.
@@ -244,8 +240,7 @@ class RetrievalSDK:
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent.
+        """Performs a single turn in a conversation with a RAG agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.

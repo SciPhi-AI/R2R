@@ -138,7 +138,7 @@ class Agent(ABC):
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
             and "ollama" in self.rag_generation_config.model
-            or self.config.include_tools == False
+            or not self.config.include_tools
         ):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(
@@ -207,7 +207,7 @@ class Agent(ABC):
                 raise R2RException(
                     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
                     status_code=400,
-                )
+                ) from e
 
             merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)

@@ -2,7 +2,6 @@
 # URL: https://github.com/langchain-ai/langchain/blob/6a5b084704afa22ca02f78d0464f35aed75d1ff2/libs/langchain/langchain/text_splitter.py#L851
 """**Text Splitters** are classes for splitting text.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -18,7 +17,6 @@ Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive 
 .. code-block::
 
     Document, Tokenizer, Language, LineType, HeaderType
-
 """  # noqa: E501
 
 from __future__ import annotations
@@ -124,15 +122,13 @@ class Serializable(BaseModel, ABC):
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids.
 
-        For example,
-            {"openai_api_key": "OPENAI_API_KEY"}
+        For example,     {"openai_api_key": "OPENAI_API_KEY"}
         """
         return {}
 
     @property
     def lc_attributes(self) -> dict:
-        """
-        List of attribute names that should be included in the serialized
+        """List of attribute names that should be included in the serialized
         kwargs.
 
         These attributes must be accepted by the constructor.
@@ -143,8 +139,8 @@ class Serializable(BaseModel, ABC):
     def lc_id(cls) -> list[str]:
         """A unique identifier for this class for serialization purposes.
 
-        The unique identifier is a list of strings that describes the path
-        to the object.
+        The unique identifier is a list of strings that describes the path to
+        the object.
         """
         return [*cls.get_lc_namespace(), cls.__name__]
 
@@ -297,9 +293,8 @@ class SplitterDocument(Serializable):
     page_content: str
     """String text."""
     metadata: dict = Field(default_factory=dict)
-    """Arbitrary metadata about the page content (e.g., source, relationships to other
-        documents, etc.).
-    """
+    """Arbitrary metadata about the page content (e.g., source, relationships
+    to other documents, etc.)."""
     type: Literal["Document"] = "Document"
 
     def __init__(self, page_content: str, **kwargs: Any) -> None:
@@ -350,7 +345,6 @@ class BaseDocumentTransformer(ABC):
                     self, documents: Sequence[Document], **kwargs: Any
                 ) -> Sequence[Document]:
                     raise NotImplementedError
-
     """  # noqa: E501
 
     @abstractmethod
@@ -390,8 +384,8 @@ def _make_spacy_pipe_for_splitting(
         import spacy
     except ImportError:
         raise ImportError(
-            "Spacy is not installed, please install it with `pip install spacy`."
-        )
+            "Spacy is not installed, run `pip install spacy`."
+        ) from None
     if pipe == "sentencizer":
         from spacy.lang.en import English
 
@@ -443,9 +437,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             chunk_overlap: Overlap in characters between chunks
             length_function: Function that measures the length of given chunks
             keep_separator: Whether to keep the separator in the chunks
-            add_start_index: If `True`, includes chunk's start index in metadata
-            strip_whitespace: If `True`, strips whitespace from the start and end of
-                              every document
+            add_start_index: If `True`, includes chunk's start index in
+                metadata
+            strip_whitespace: If `True`, strips whitespace from the start and
+                end of every document
         """
         if chunk_overlap > chunk_size:
             raise ValueError(
@@ -570,7 +565,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             raise ValueError(
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
-            )
+            ) from None
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
@@ -586,11 +581,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         try:
             import tiktoken
         except ImportError:
-            raise ImportError(
-                "Could not import tiktoken python package. "
-                "This is needed in order to calculate max_tokens_for_prompt. "
-                "Please install it with `pip install tiktoken`."
-            )
+            raise ImportError("""Could not import tiktoken python package.
+                This is needed in order to calculate max_tokens_for_prompt.
+                Please install it with `pip install tiktoken`.""") from None
 
         if model is not None:
             enc = tiktoken.encoding_for_model(model)
@@ -882,8 +875,8 @@ class ElementType(TypedDict):
 
 
 class HTMLHeaderTextSplitter:
-    """
-    Splitting HTML files based on specified headers.
+    """Splitting HTML files based on specified headers.
+
     Requires lxml package.
     """
 
@@ -895,9 +888,10 @@ class HTMLHeaderTextSplitter:
         """Create a new HTMLHeaderTextSplitter.
 
         Args:
-            headers_to_split_on: list of tuples of headers we want to track mapped to
-                (arbitrary) keys for metadata. Allowed header values: h1, h2, h3, h4,
-                h5, h6 e.g. [("h1", "Header 1"), ("h2", "Header 2)].
+            headers_to_split_on: list of tuples of headers we want to track
+            mapped to (arbitrary) keys for metadata. Allowed header values:
+            h1, h2, h3, h4, h5, h6
+            e.g. [("h1", "Header 1"), ("h2", "Header 2)].
             return_each_element: Return each element w/ associated headers.
         """
         # Output element-by-element or aggregated into chunks w/ common headers
@@ -907,10 +901,11 @@ class HTMLHeaderTextSplitter:
     def aggregate_elements_to_chunks(
         self, elements: list[ElementType]
     ) -> list[SplitterDocument]:
-        """Combine elements with common metadata into chunks
+        """Combine elements with common metadata into chunks.
 
         Args:
-            elements: HTML element content with associated identifying info and metadata
+            elements: HTML element content with associated identifying
+            info and metadata
         """
         aggregated_chunks: list[ElementType] = []
 
@@ -935,7 +930,7 @@ class HTMLHeaderTextSplitter:
         ]
 
     def split_text_from_url(self, url: str) -> list[SplitterDocument]:
-        """Split HTML from web URL
+        """Split HTML from web URL.
 
         Args:
             url: web URL
@@ -944,7 +939,7 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(BytesIO(r.content))
 
     def split_text(self, text: str) -> list[SplitterDocument]:
-        """Split HTML text string
+        """Split HTML text string.
 
         Args:
             text: HTML text
@@ -952,25 +947,26 @@ class HTMLHeaderTextSplitter:
         return self.split_text_from_file(StringIO(text))
 
     def split_text_from_file(self, file: Any) -> list[SplitterDocument]:
-        """Split HTML file
+        """Split HTML file.
 
         Args:
             file: HTML file
         """
         try:
             from lxml import etree
-        except ImportError as e:
+        except ImportError:
             raise ImportError(
-                "Unable to import lxml, please install with `pip install lxml`."
-            ) from e
+                "Unable to import lxml, run `pip install lxml`."
+            ) from None
         # use lxml library to parse html document and return xml ElementTree
         # Explicitly encoding in utf-8 allows non-English
         # html files to be processed without garbled characters
         parser = etree.HTMLParser(encoding="utf-8")
         tree = etree.parse(file, parser)
 
-        # document transformation for "structure-aware" chunking is handled with xsl.
-        # see comments in html_chunks_with_headers.xslt for more detailed information.
+        # document transformation for "structure-aware" chunking is handled
+        # with xsl. See comments in html_chunks_with_headers.xslt for more
+        # detailed information.
         xslt_path = (
             pathlib.Path(__file__).parent
             / "document_transformers/xsl/html_chunks_with_headers.xslt"
@@ -1013,8 +1009,8 @@ class HTMLHeaderTextSplitter:
                             ]
                         ),
                         metadata={
-                            # Add text of specified headers to metadata using header
-                            # mapping.
+                            # Add text of specified headers to
+                            # metadata using header mapping.
                             header_mapping[node.tag]: node.text
                             for node in filter(
                                 lambda x: x.tag in header_filter,
@@ -1044,13 +1040,13 @@ class Tokenizer:
     """Tokenizer data class."""
 
     chunk_overlap: int
-    """Overlap in tokens between chunks"""
+    """Overlap in tokens between chunks."""
     tokens_per_chunk: int
-    """Maximum number of tokens per chunk"""
+    """Maximum number of tokens per chunk."""
     decode: Callable[[list[int]], str]
-    """ Function to decode a list of token ids to a string"""
+    """Function to decode a list of token ids to a string."""
     encode: Callable[[str], list[int]]
-    """ Function to encode a string to a list of token ids"""
+    """Function to encode a string to a list of token ids."""
 
 
 def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
@@ -1090,7 +1086,7 @@ class TokenTextSplitter(TextSplitter):
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
-            )
+            ) from None
 
         if model is not None:
             enc = tiktoken.encoding_for_model(model)
@@ -1135,10 +1131,12 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             from sentence_transformers import SentenceTransformer
         except ImportError:
             raise ImportError(
-                "Could not import sentence_transformer python package. "
-                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
-                "Please install it with `pip install sentence-transformers`."
-            )
+                """Could not import sentence_transformer python package.
+                This is needed in order to for
+                SentenceTransformersTokenTextSplitter.
+                Please install it with `pip install sentence-transformers`.
+                """
+            ) from None
 
         self.model = model
         self._model = SentenceTransformer(self.model, trust_remote_code=True)
@@ -1221,8 +1219,7 @@ class Language(str, Enum):
 class RecursiveCharacterTextSplitter(TextSplitter):
     """Splitting text by recursively look at characters.
 
-    Recursively tries to split by different characters to find one
-    that works.
+    Recursively tries to split by different characters to find one that works.
     """
 
     def __init__(
@@ -1580,9 +1577,11 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
         elif language == Language.MARKDOWN:
             return [
-                # First, try to split along Markdown headings (starting with level 2)
+                # First, try to split along Markdown headings
+                # (starting with level 2)
                 "\n#{1,6} ",
-                # Note the alternative syntax for headings (below) is not handled here
+                # Note the alternative syntax for headings (below)
+                # is not handled here
                 # Heading level 2
                 # ---------------
                 # End of code block
@@ -1593,7 +1592,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 "\n___+\n",
                 # Note that this splitter doesn't handle
                 # horizontal lines defined
-                # by *three or more* of ***, ---, or ___, but this is not handled
+                # by *three or more* of ***, ---, or ___,
+                # but this is not handled
                 "\n\n",
                 "\n",
                 " ",
@@ -1775,9 +1775,8 @@ class NLTKTextSplitter(TextSplitter):
 
             self._tokenizer = sent_tokenize
         except ImportError:
-            raise ImportError(
-                "NLTK is not installed, please install it with `pip install nltk`."
-            )
+            raise ImportError("""NLTK is not installed, please install it with
+                `pip install nltk`.""") from None
         self._separator = separator
         self._language = language
 
@@ -1790,7 +1789,6 @@ class NLTKTextSplitter(TextSplitter):
 
 class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
-
 
     Per default, Spacy's `en_core_web_sm` model is used and
     its default max_length is 1000000 (it is the length of maximum character
@@ -1835,12 +1833,10 @@ class KonlpyTextSplitter(TextSplitter):
         try:
             from konlpy.tag import Kkma
         except ImportError:
-            raise ImportError(
-                """
+            raise ImportError("""
                 Konlpy is not installed, please install it with
                 `pip install konlpy`
-                """
-            )
+                """) from None
         self.kkma = Kkma()
 
     def split_text(self, text: str) -> list[str]:
@@ -1914,18 +1910,22 @@ class RecursiveJsonSplitter:
                 for i, item in enumerate(data)
             }
         else:
-            # Base case: the item is neither a dict nor a list, so return it unchanged
+            # The item is neither a dict nor a list, return unchanged
             return data
 
     def _json_split(
         self,
         data: dict[str, Any],
-        current_path: list[str] = [],
-        chunks: list[dict] = [{}],
+        current_path: list[str] | None = None,
+        chunks: list[dict] | None = None,
     ) -> list[dict]:
-        """
-        Split json into maximum size dictionaries while preserving structure.
-        """
+        """Split json into maximum size dictionaries while preserving
+        structure."""
+        if current_path is None:
+            current_path = []
+        if chunks is None:
+            chunks = [{}]
+
         if isinstance(data, dict):
             for key, value in data.items():
                 new_path = current_path + [key]
@@ -1953,7 +1953,7 @@ class RecursiveJsonSplitter:
         json_data: dict[str, Any],
         convert_lists: bool = False,
     ) -> list[dict]:
-        """Splits JSON into a list of JSON chunks"""
+        """Splits JSON into a list of JSON chunks."""
 
         if convert_lists:
             chunks = self._json_split(
@@ -1970,7 +1970,7 @@ class RecursiveJsonSplitter:
     def split_text(
         self, json_data: dict[str, Any], convert_lists: bool = False
     ) -> list[str]:
-        """Splits JSON into a list of JSON formatted strings"""
+        """Splits JSON into a list of JSON formatted strings."""
 
         chunks = self.split_json(
             json_data=json_data, convert_lists=convert_lists

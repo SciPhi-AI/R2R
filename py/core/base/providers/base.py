@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class InnerConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
 
     class Config:
         populate_by_name = True
@@ -78,7 +78,7 @@ class AppConfig(InnerConfig):
 
 
 class ProviderConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
 
     app: AppConfig  # Add an app_config field
     extra_fields: dict[str, Any] = {}
@@ -122,7 +122,8 @@ class ProviderConfig(BaseModel, ABC):
 
 
 class Provider(ABC):
-    """A base provider class to provide a common interface for all providers."""
+    """A base provider class to provide a common interface for all
+    providers."""
 
     def __init__(self, config: ProviderConfig, *args, **kwargs):
         if config:

@@ -6,9 +6,8 @@ import os
 
 # TODO - Move process json to dedicated data processing module
 def process_json(json_object, indent=0):
-    """
-    Recursively traverses the JSON object (dicts and lists) to create an unstructured text blob.
-    """
+    """Recursively traverses the JSON object (dicts and lists) to create an
+    unstructured text blob."""
     text_blob = ""
     if isinstance(json_object, dict):
         for key, value in json_object.items():

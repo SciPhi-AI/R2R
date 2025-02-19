@@ -79,9 +79,8 @@ class BaseRouterV3:
 
     @classmethod
     def build_router(cls, engine):
-        """
-        Class method for building a router instance (if you have a standard pattern).
-        """
+        """Class method for building a router instance (if you have a standard
+        pattern)."""
         return cls(engine).router
 
     def _register_workflows(self):
@@ -92,14 +91,12 @@ class BaseRouterV3:
 
     @abstractmethod
     def _setup_routes(self):
-        """
-        Subclasses override this to define actual endpoints.
-        """
+        """Subclasses override this to define actual endpoints."""
         pass
 
     def set_rate_limiting(self):
-        """
-        Adds a yield-based dependency for rate limiting each request.
+        """Adds a yield-based dependency for rate limiting each request.
+
         Checks the limits, then logs the request if the check passes.
         """
 
@@ -107,10 +104,10 @@ class BaseRouterV3:
             request: Request,
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
-            """
-            1) Fetch the user from the DB (including .limits_overrides).
-            2) Pass it to limits_handler.check_limits.
-            3) After the endpoint completes, call limits_handler.log_request.
+            """1) Fetch the user from the DB (including .limits_overrides).
+
+            2) Pass it to limits_handler.check_limits. 3) After the endpoint
+            completes, call limits_handler.log_request.
             """
             # If the user is superuser, skip checks
             if auth_user.is_superuser:
@@ -135,7 +132,7 @@ class BaseRouterV3:
                 )
             except ValueError as e:
                 # If check_limits raises ValueError -> 429 Too Many Requests
-                raise HTTPException(status_code=429, detail=str(e))
+                raise HTTPException(status_code=429, detail=str(e)) from e
 
             request.state.user_id = user_id
             request.state.route = route

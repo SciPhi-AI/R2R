@@ -150,7 +150,8 @@ class OpenAICompletionProvider(CompletionProvider):
             )
 
     def _get_client_and_model(self, model: str):
-        """Determine which client to use based on model prefix and return the appropriate client and model name."""
+        """Determine which client to use based on model prefix and return the
+        appropriate client and model name."""
         if model.startswith("azure/"):
             if not self.azure_client:
                 raise ValueError(

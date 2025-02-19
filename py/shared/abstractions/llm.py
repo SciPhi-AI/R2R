@@ -12,7 +12,6 @@ from .base import R2RSerializable
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
-
 LLMChatCompletion = ChatCompletion
 LLMChatCompletionChunk = ChatCompletionChunk
 

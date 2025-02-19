@@ -46,9 +46,8 @@ class VLMPDFParser(AsyncParser[str | bytes]):
     async def convert_pdf_to_images(
         self, data: str | bytes
     ) -> list[Image.Image]:
-        """
-        Convert PDF pages to images asynchronously using in-memory conversion.
-        """
+        """Convert PDF pages to images asynchronously using in-memory
+        conversion."""
         logger.info("Starting PDF conversion to images.")
         start_time = time.perf_counter()
         options = {
@@ -71,16 +70,18 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 f"PDF conversion completed in {elapsed:.2f} seconds, total pages: {len(images)}"
             )
             return images
-        except PDFInfoNotInstalledError:
+        except PDFInfoNotInstalledError as e:
             logger.error(
                 "PDFInfoNotInstalledError encountered during PDF conversion."
             )
-            raise PopplerNotFoundError()
+            raise PopplerNotFoundError() from e
         except Exception as err:
             logger.error(
                 f"Error converting PDF to images: {err} type: {type(err)}"
             )
-            raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
+            raise PDFParsingError(
+                f"Failed to process PDF: {str(err)}", err
+            ) from err
 
     async def process_page(
         self, image: Image.Image, page_num: int
@@ -147,8 +148,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
     async def ingest(
         self, data: str | bytes, maintain_order: bool = True, **kwargs
     ) -> AsyncGenerator[dict[str, str | int], None]:
-        """
-        Ingest PDF data and yield the text description for each page using the vision model.
+        """Ingest PDF data and yield the text description for each page using
+        the vision model.
+
         (This version yields a string per page rather than a dictionary.)
         """
         ingest_start = time.perf_counter()

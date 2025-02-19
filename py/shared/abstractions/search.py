@@ -134,18 +134,6 @@ class GraphSearchResult(R2RSerializable):
     metadata: dict[str, Any] = {}
     score: Optional[float] = None
 
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "content": GraphEntityResult.Config.json_schema_extra,
-                "result_type": "entity",
-                "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-                "metadata": {
-                    "associated_query": "What is the capital of France?"
-                },
-            }
-        }
-
     def __str__(self) -> str:
         return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
 
@@ -238,10 +226,8 @@ class WebSearchResponse(R2RSerializable):
 
 
 class ContextDocumentResult(R2RSerializable):
-    """
-    Holds a single 'document' plus its 'chunks', exactly as your
-    content_method returns them, or tidied up a bit.
-    """
+    """Holds a single 'document' plus its 'chunks', exactly as your
+    content_method returns them, or tidied up a bit."""
 
     document: dict[str, Any]  # or create a formal Document model
     chunks: list[str] = Field(default_factory=list)
@@ -425,7 +411,8 @@ class GraphSearchSettings(R2RSerializable):
 
 
 class SearchSettings(R2RSerializable):
-    """Main search settings class that combines shared settings with specialized settings for chunks and graph."""
+    """Main search settings class that combines shared settings with
+    specialized settings for chunks and graph."""
 
     # Search type flags
     use_hybrid_search: bool = Field(
@@ -473,17 +460,20 @@ class SearchSettings(R2RSerializable):
     )
     include_scores: bool = Field(
         default=True,
-        description="Whether to include search score values in the search results",
+        description="""Whether to include search score values in the
+        search results""",
     )
 
     # Search strategy and settings
     search_strategy: str = Field(
         default="vanilla",
-        description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
+        description="""Search strategy to use
+        (e.g., 'vanilla', 'query_fusion', 'hyde')""",
     )
     hybrid_settings: HybridSearchSettings = Field(
         default_factory=HybridSearchSettings,
-        description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
+        description="""Settings for hybrid search (only used if
+        `use_semantic_search` and `use_fulltext_search` are both true)""",
     )
 
     # Specialized settings

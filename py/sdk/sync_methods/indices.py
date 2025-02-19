@@ -17,8 +17,7 @@ class IndicesSDK:
         config: dict,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """
-        Create a new vector similarity search index in the database.
+        """Create a new vector similarity search index in the database.
 
         Args:
             config (dict | IndexConfig): Configuration for the vector index.
@@ -49,8 +48,8 @@ class IndicesSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 10,
     ) -> WrappedVectorIndicesResponse:
-        """
-        List existing vector similarity search indices with pagination support.
+        """List existing vector similarity search indices with pagination
+        support.
 
         Args:
             filters (Optional[dict]): Filter criteria for indices.
@@ -80,8 +79,7 @@ class IndicesSDK:
         index_name: str,
         table_name: str = "vectors",
     ) -> WrappedVectorIndexResponse:
-        """
-        Get detailed information about a specific vector index.
+        """Get detailed information about a specific vector index.
 
         Args:
             index_name (str): The name of the index to retrieve.
@@ -103,8 +101,7 @@ class IndicesSDK:
         index_name: str,
         table_name: str = "vectors",
     ) -> WrappedGenericMessageResponse:
-        """
-        Delete an existing vector index.
+        """Delete an existing vector index.
 
         Args:
             index_name (str): The name of the index to retrieve.

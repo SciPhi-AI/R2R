@@ -60,10 +60,9 @@ class RetrievalRouter(BaseRouterV3):
         search_mode: SearchMode,
         search_settings: Optional[SearchSettings],
     ) -> SearchSettings:
-        """
-        Prepare the effective search settings based on the provided search_mode,
-        optional user-overrides in search_settings, and applied filters.
-        """
+        """Prepare the effective search settings based on the provided
+        search_mode, optional user-overrides in search_settings, and applied
+        filters."""
         if search_mode != SearchMode.custom:
             # Start from mode defaults
             effective_settings = SearchSettings.get_default(search_mode.value)
@@ -91,8 +90,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -125,13 +123,11 @@ class RetrievalRouter(BaseRouterV3):
                                     "chunk_settings": {"index_measure": "l2_distance"}
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -147,13 +143,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/search" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -164,8 +158,7 @@ class RetrievalRouter(BaseRouterV3):
                                     use_semantic_search: true
                                 }
                             }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -198,8 +191,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSearchResponse:
-            """
-            Perform a search query against vector and/or graph-based databases.
+            """Perform a search query against vector and/or graph-based
+            databases.
 
             **Search Modes:**
             - `basic`: Defaults to semantic search. Simple and easy to use.
@@ -250,8 +243,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -273,13 +265,11 @@ class RetrievalRouter(BaseRouterV3):
                                     "max_tokens": 150
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -303,13 +293,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/rag" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -329,8 +317,7 @@ class RetrievalRouter(BaseRouterV3):
                                     max_tokens: 150
                                 }
                             }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -372,8 +359,7 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
-            """
-            Execute a RAG (Retrieval-Augmented Generation) query.
+            """Execute a RAG (Retrieval-Augmented Generation) query.
 
             This endpoint combines search results with language model generation.
             It supports the same filtering capabilities as the search endpoint,
@@ -425,8 +411,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                         from r2r import R2RClient
 
                         client = R2RClient()
@@ -456,13 +441,11 @@ class RetrievalRouter(BaseRouterV3):
                             include_title_if_available=True,
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -495,13 +478,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/agent" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -524,8 +505,7 @@ class RetrievalRouter(BaseRouterV3):
                                 "include_title_if_available": true,
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -591,8 +571,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
-            """
-            Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
+            """Engage with an intelligent RAG-powered conversational agent for
+            complex information retrieval and analysis.
 
             This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
             detailed, context-aware responses based on your document collection. The agent can:
@@ -665,7 +645,7 @@ class RetrievalRouter(BaseRouterV3):
                 else:
                     return response
             except Exception as e:
-                raise R2RException(str(e), 500)
+                raise R2RException(str(e), 500) from e
 
         @self.router.post(
             "/retrieval/reasoning_agent",
@@ -675,8 +655,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                         from r2r import R2RClient
 
                         client = R2RClient()
@@ -694,13 +673,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
                             conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
                         )
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -721,13 +698,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/agent" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -738,8 +713,7 @@ class RetrievalRouter(BaseRouterV3):
                                 },
                                 "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -768,8 +742,8 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
-            """
-            Engage with an intelligent RAG-powered conversational agent for complex information retrieval and analysis.
+            """Engage with an intelligent RAG-powered conversational agent for
+            complex information retrieval and analysis.
 
             This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
             detailed, context-aware responses based on your document collection. The agent can:
@@ -843,7 +817,7 @@ class RetrievalRouter(BaseRouterV3):
                 else:
                     return response
             except Exception as e:
-                raise R2RException(str(e), 500)
+                raise R2RException(str(e), 500) from e
 
         @self.router.post(
             "/retrieval/completion",
@@ -853,8 +827,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -874,13 +847,11 @@ class RetrievalRouter(BaseRouterV3):
                                     "stream": False
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -903,13 +874,11 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/completion" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
@@ -927,8 +896,7 @@ class RetrievalRouter(BaseRouterV3):
                                     "stream": false
                                 }
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -967,14 +935,15 @@ class RetrievalRouter(BaseRouterV3):
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
         ) -> WrappedLLMChatCompletion:
-            """
-            Generate completions for a list of messages.
+            """Generate completions for a list of messages.
 
-            This endpoint uses the language model to generate completions for the provided messages.
-            The generation process can be customized using the generation_config parameter.
+            This endpoint uses the language model to generate completions for
+            the provided messages. The generation process can be customized
+            using the generation_config parameter.
 
-            The messages list should contain alternating user and assistant messages, with an optional
-            system message at the start. Each message should have a 'role' and 'content'.
+            The messages list should contain alternating user and assistant
+            messages, with an optional system message at the start. Each
+            message should have a 'role' and 'content'.
             """
 
             return await self.services.retrieval.completion(
@@ -990,8 +959,7 @@ class RetrievalRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1000,13 +968,11 @@ class RetrievalRouter(BaseRouterV3):
                             result = client.retrieval.embedding(
                                 text="Who is Aristotle?",
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1018,21 +984,18 @@ class RetrievalRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/retrieval/embedding" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -d '{
                                 "text": "Who is Aristotle?",
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1045,11 +1008,12 @@ class RetrievalRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEmbeddingResponse:
-            """
-            Generate embeddings for the provided text using the specified model.
+            """Generate embeddings for the provided text using the specified
+            model.
 
-            This endpoint uses the language model to generate embeddings for the provided text.
-            The model parameter specifies the model to use for generating embeddings.
+            This endpoint uses the language model to generate embeddings for
+            the provided text. The model parameter specifies the model to use
+            for generating embeddings.
             """
 
             return await self.services.retrieval.embedding(

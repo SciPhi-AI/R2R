@@ -94,10 +94,9 @@ class DocumentsRouter(BaseRouterV3):
         search_mode: SearchMode,
         search_settings: Optional[SearchSettings],
     ) -> SearchSettings:
-        """
-        Prepare the effective search settings based on the provided search_mode,
-        optional user-overrides in search_settings, and applied filters.
-        """
+        """Prepare the effective search settings based on the provided
+        search_mode, optional user-overrides in search_settings, and applied
+        filters."""
 
         if search_mode != SearchMode.custom:
             # Start from mode defaults
@@ -195,8 +194,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -207,13 +205,11 @@ class DocumentsRouter(BaseRouterV3):
                                 metadata={"metadata_1":"some random metadata"},
                                 id=None
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -226,21 +222,18 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/documents" \\
                             -H "Content-Type: multipart/form-data" \\
                             -H "Authorization: Bearer YOUR_API_KEY" \\
                             -F "file=@pg_essay_1.html;type=text/html" \\
                             -F 'metadata={}' \\
                             -F 'id=null'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -578,8 +571,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -590,13 +582,11 @@ class DocumentsRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -610,21 +600,18 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/documents/export" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -643,9 +630,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -679,24 +664,20 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             client.documents.download_zip(
                                 document_ids=["uuid1", "uuid2"],
                                 start_date="2024-01-01",
                                 end_date="2024-12-31"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/download_zip?document_ids=uuid1,uuid2&start_date=2024-01-01&end_date=2024-12-31" \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -717,8 +698,8 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> StreamingResponse:
-            """
-            Export multiple documents as a zip file. Documents can be filtered by IDs and/or date range.
+            """Export multiple documents as a zip file. Documents can be
+            filtered by IDs and/or date range.
 
             The endpoint allows downloading:
             - Specific documents by providing their IDs
@@ -780,8 +761,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -791,13 +771,11 @@ class DocumentsRouter(BaseRouterV3):
                                 limit=10,
                                 offset=0
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -810,17 +788,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -848,13 +823,15 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
-            """
-            Returns a paginated list of documents the authenticated user has access to.
+            """Returns a paginated list of documents the authenticated user has
+            access to.
 
-            Results can be filtered by providing specific document IDs. Regular users will only see
-            documents they own or have access to through collections. Superusers can see all documents.
+            Results can be filtered by providing specific document IDs. Regular
+            users will only see documents they own or have access to through
+            collections. Superusers can see all documents.
 
-            The documents are returned in order of last modification, with most recent first.
+            The documents are returned in order of last modification, with most
+            recent first.
             """
             requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
@@ -894,8 +871,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -904,13 +880,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -922,17 +896,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -945,8 +916,8 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentResponse:
-            """
-            Retrieves detailed information about a specific document by its ID.
+            """Retrieves detailed information about a specific document by its
+            ID.
 
             This endpoint returns the document's metadata, status, and system information. It does not
             return the document's content - use the `/documents/{id}/download` endpoint for that.
@@ -982,8 +953,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -992,13 +962,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.list_chunks(
                                 id="32b6a70f-a995-5c51-85d2-834f06283a1e"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1010,17 +978,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/chunks"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"\
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1048,16 +1013,16 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedChunksResponse:
-            """
-            Retrieves the text chunks that were generated from a document during ingestion.
-            Chunks represent semantic sections of the document and are used for retrieval
-            and analysis.
+            """Retrieves the text chunks that were generated from a document
+            during ingestion. Chunks represent semantic sections of the
+            document and are used for retrieval and analysis.
 
-            Users can only access chunks from documents they own or have access to through
-            collections. Vector embeddings are only included if specifically requested.
+            Users can only access chunks from documents they own or have access
+            to through collections. Vector embeddings are only included if
+            specifically requested.
 
-            Results are returned in chunk sequence order, representing their position in
-            the original document.
+            Results are returned in chunk sequence order, representing their
+            position in the original document.
             """
             list_document_chunks = (
                 await self.services.management.list_document_chunks(
@@ -1108,8 +1073,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1118,13 +1082,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.download(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1136,17 +1098,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/download"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1156,20 +1115,20 @@ class DocumentsRouter(BaseRouterV3):
             id: str = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> StreamingResponse:
-            """
-            Downloads the original file content of a document.
+            """Downloads the original file content of a document.
 
-            For uploaded files, returns the original file with its proper MIME type.
-            For text-only documents, returns the content as plain text.
+            For uploaded files, returns the original file with its proper MIME
+            type. For text-only documents, returns the content as plain text.
 
-            Users can only download documents they own or have access to through collections.
+            Users can only download documents they own or have access to
+            through collections.
             """
             try:
                 document_uuid = UUID(id)
             except ValueError:
                 raise R2RException(
                     status_code=422, message="Invalid document ID format."
-                )
+                ) from None
 
             # Retrieve the document's information
             documents_overview_response = (
@@ -1253,25 +1212,21 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
                             client = R2RClient()
                             # when using auth, do client.login(...)
                             response = client.documents.delete_by_filter(
                                 filters={"document_type": {"$eq": "txt"}}
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/documents/by-filter?filters=%7B%22document_type%22%3A%7B%22%24eq%22%3A%22text%22%7D%2C%22created_at%22%3A%7B%22%24lt%22%3A%222023-01-01T00%3A00%3A00Z%22%7D%7D" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1283,8 +1238,9 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Delete documents based on provided filters. Allowed operators
+            """Delete documents based on provided filters.
+
+            Allowed operators
             include: `eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `like`,
             `ilike`, `in`, and `nin`. Deletion requests are limited to a
             user's own documents.
@@ -1309,8 +1265,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1319,13 +1274,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.delete(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1337,17 +1290,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa" \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1357,8 +1307,9 @@ class DocumentsRouter(BaseRouterV3):
             id: UUID = Path(..., description="Document ID"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Delete a specific document. All chunks corresponding to the document are deleted, and all other references to the document are removed.
+            """Delete a specific document. All chunks corresponding to the
+            document are deleted, and all other references to the document are
+            removed.
 
             NOTE - Deletions do not yet impact the knowledge graph or other derived data. This feature is planned for a future release.
             """
@@ -1384,8 +1335,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1394,13 +1344,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.list_collections(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa", offset=0, limit=10
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1412,17 +1360,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/collections"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1443,9 +1388,9 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
-            """
-            Retrieves all collections that contain the specified document. This endpoint is restricted
-            to superusers only and provides a system-wide view of document organization.
+            """Retrieves all collections that contain the specified document.
+            This endpoint is restricted to superusers only and provides a
+            system-wide view of document organization.
 
             Collections are used to organize documents and manage access control. A document can belong
             to multiple collections, and users can access documents through collection membership.
@@ -1481,8 +1426,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1491,8 +1435,7 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.extract(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1513,8 +1456,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Extracts entities and relationships from a document.
+            """Extracts entities and relationships from a document.
 
             The entities and relationships extraction process involves:
 
@@ -1606,8 +1548,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1615,11 +1556,11 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.deduplicate(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
+                    },
+                    {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1631,15 +1572,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
+                    },
+                    {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/deduplicate"  \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1660,9 +1600,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Deduplicates entities from a document.
-            """
+            """Deduplicates entities from a document."""
 
             settings = settings.model_dump() if settings else None  # type: ignore
             documents_overview_response = (
@@ -1745,8 +1683,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1755,8 +1692,7 @@ class DocumentsRouter(BaseRouterV3):
                             response = client.documents.extract(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1784,14 +1720,16 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedEntitiesResponse:
-            """
-            Retrieves the entities that were extracted from a document. These represent
-            important semantic elements like people, places, organizations, concepts, etc.
+            """Retrieves the entities that were extracted from a document.
+            These represent important semantic elements like people, places,
+            organizations, concepts, etc.
 
-            Users can only access entities from documents they own or have access to through
-            collections. Entity embeddings are only included if specifically requested.
+            Users can only access entities from documents they own or have
+            access to through collections. Entity embeddings are only included
+            if specifically requested.
 
-            Results are returned in the order they were extracted from the document.
+            Results are returned in the order they were extracted from the
+            document.
             """
             # if (
             #     not auth_user.is_superuser
@@ -1844,8 +1782,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -1857,13 +1794,11 @@ class DocumentsRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -1878,21 +1813,18 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/documents/export_entities" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1915,9 +1847,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -1951,8 +1881,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1963,13 +1892,11 @@ class DocumentsRouter(BaseRouterV3):
                                 offset=0,
                                 limit=100
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1983,17 +1910,14 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/documents/b4ac4dd6-5f27-596e-a55b-7cf242ca30aa/relationships" \\
                             -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -2025,14 +1949,16 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
-            """
-            Retrieves the relationships between entities that were extracted from a document. These represent
-            connections and interactions between entities found in the text.
+            """Retrieves the relationships between entities that were extracted
+            from a document. These represent connections and interactions
+            between entities found in the text.
 
-            Users can only access relationships from documents they own or have access to through
-            collections. Results can be filtered by entity names and relationship types.
+            Users can only access relationships from documents they own or have
+            access to through collections. Results can be filtered by entity
+            names and relationship types.
 
-            Results are returned in the order they were extracted from the document.
+            Results are returned in the order they were extracted from the
+            document.
             """
             # if (
             #     not auth_user.is_superuser
@@ -2086,8 +2012,7 @@ class DocumentsRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -2099,13 +2024,11 @@ class DocumentsRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -2120,21 +2043,18 @@ class DocumentsRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/documents/export_entities" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -2157,9 +2077,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -2214,8 +2132,8 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentSearchResponse:
-            """
-            Perform a search query on the automatically generated document summaries in the system.
+            """Perform a search query on the automatically generated document
+            summaries in the system.
 
             This endpoint allows for complex filtering of search results using PostgreSQL-based queries.
             Filters can be applied to various fields such as document_id, and internal metadata values.

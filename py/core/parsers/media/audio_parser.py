@@ -32,8 +32,8 @@ class AudioParser(AsyncParser[bytes]):
     async def ingest(  # type: ignore
         self, data: bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
-        """
-        Ingest audio data and yield a transcription using Whisper via LiteLLM.
+        """Ingest audio data and yield a transcription using Whisper via
+        LiteLLM.
 
         Args:
             data: Raw audio bytes

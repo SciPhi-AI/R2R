@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import Field
 
 from .base import R2RSerializable
+from .llm import GenerationConfig
 
 logger = logging.getLogger()
 
@@ -194,7 +195,8 @@ class DocumentResponse(R2RSerializable):
     total_tokens: Optional[int] = None
 
     def convert_to_db_entry(self):
-        """Prepare the document info for database entry, extracting certain fields from metadata."""
+        """Prepare the document info for database entry, extracting certain
+        fields from metadata."""
         now = datetime.now()
 
         # Format the embedding properly for Postgres vector type
@@ -283,13 +285,8 @@ class IngestionMode(str, Enum):
     custom = "custom"
 
 
-from .llm import GenerationConfig
-
-
 class ChunkEnrichmentSettings(R2RSerializable):
-    """
-    Settings for chunk enrichment.
-    """
+    """Settings for chunk enrichment."""
 
     enable_chunk_enrichment: bool = Field(
         default=False,

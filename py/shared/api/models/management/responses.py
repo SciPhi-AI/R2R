@@ -170,7 +170,6 @@ WrappedChunksResponse = PaginatedR2RResult[list[ChunkResponse]]
 WrappedCollectionResponse = R2RResults[CollectionResponse]
 WrappedCollectionsResponse = PaginatedR2RResult[list[CollectionResponse]]
 
-
 # Conversation Responses
 WrappedConversationMessagesResponse = R2RResults[list[MessageResponse]]
 WrappedConversationResponse = R2RResults[ConversationResponse]

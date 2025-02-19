@@ -41,10 +41,8 @@ STARTING_VERSION = "v0"
 
 
 class IngestionService:
-    """
-    A refactored IngestionService that inlines all pipe logic for parsing,
-    embedding, and vector storage directly in its methods.
-    """
+    """A refactored IngestionService that inlines all pipe logic for parsing,
+    embedding, and vector storage directly in its methods."""
 
     def __init__(
         self,
@@ -66,9 +64,11 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        """
-        Pre-ingests a file by creating or validating the DocumentResponse entry.
-        Does not actually parse/ingest the content. (See parse_file() for that step.)
+        """Pre-ingests a file by creating or validating the DocumentResponse
+        entry.
+
+        Does not actually parse/ingest the content. (See parse_file() for that
+        step.)
         """
         try:
             if not file_data:
@@ -137,7 +137,7 @@ class IngestionService:
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
-            )
+            ) from e
 
     def create_document_info_from_file(
         self,
@@ -210,11 +210,9 @@ class IngestionService:
         document_info: DocumentResponse,
         ingestion_config: dict | None,
     ) -> AsyncGenerator[DocumentChunk, None]:
-        """
-        Inline replacement for the old parsing_pipe.run(...)
-        Reads the file content from the DB, calls the ingestion provider to parse,
-        and yields DocumentChunk objects.
-        """
+        """Inline replacement for the old parsing_pipe.run(...) Reads the file
+        content from the DB, calls the ingestion provider to parse, and yields
+        DocumentChunk objects."""
         version = document_info.version or "v0"
         ingestion_config_override = ingestion_config or {}
 
@@ -278,14 +276,14 @@ class IngestionService:
                 error_message=e.message,
                 document_id=document_info.id,
                 status_code=e.status_code,
-            )
+            ) from None
         except Exception as e:
             if isinstance(e, R2RException):
                 raise
             raise R2RDocumentProcessingError(
                 document_id=document_info.id,
                 error_message=f"Error parsing document: {str(e)}",
-            )
+            ) from e
 
     async def augment_document_info(
         self,
@@ -336,8 +334,8 @@ class IngestionService:
         chunked_documents: list[dict],
         embedding_batch_size: int = 8,
     ) -> AsyncGenerator[VectorEntry, None]:
-        """
-        Inline replacement for the old embedding_pipe.run(...).
+        """Inline replacement for the old embedding_pipe.run(...).
+
         Batches the embedding calls and yields VectorEntry objects.
         """
         if not chunked_documents:
@@ -423,10 +421,10 @@ class IngestionService:
         embeddings: Sequence[dict | VectorEntry],
         storage_batch_size: int = 128,
     ) -> AsyncGenerator[str, None]:
-        """
-        Inline replacement for the old vector_storage_pipe.run(...).
-        Batches up the vector entries, enforces usage limits, stores them,
-        and yields a success/error string (or you could yield a StorageResult).
+        """Inline replacement for the old vector_storage_pipe.run(...).
+
+        Batches up the vector entries, enforces usage limits, stores them, and
+        yields a success/error string (or you could yield a StorageResult).
         """
         if not embeddings:
             return
@@ -520,10 +518,8 @@ class IngestionService:
     async def finalize_ingestion(
         self, document_info: DocumentResponse
     ) -> None:
-        """
-        Called at the end of a successful ingestion pipeline to
-        set the document status to SUCCESS or similar final steps.
-        """
+        """Called at the end of a successful ingestion pipeline to set the
+        document status to SUCCESS or similar final steps."""
 
         async def empty_generator():
             yield document_info
@@ -566,9 +562,8 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> DocumentResponse:
-        """
-        Directly ingest user-provided text chunks (rather than from a file).
-        """
+        """Directly ingest user-provided text chunks (rather than from a
+        file)."""
         if not chunks:
             raise R2RException(
                 status_code=400, message="No chunks provided for ingestion."
@@ -619,9 +614,8 @@ class IngestionService:
         *args: Any,
         **kwargs: Any,
     ) -> dict:
-        """
-        Update an individual chunk's text and metadata, re-embed, and re-store it.
-        """
+        """Update an individual chunk's text and metadata, re-embed, and re-
+        store it."""
         # Verify chunk exists and user has access
         existing_chunks = (
             await self.providers.database.chunks_handler.list_document_chunks(
@@ -696,9 +690,9 @@ class IngestionService:
         chunk_enrichment_settings: ChunkEnrichmentSettings,
         list_document_chunks: list[dict],
     ) -> VectorEntry:
-        """
-        Helper for chunk_enrichment. Leverages an LLM to rewrite or expand chunk text,
-        then re-embeds it.
+        """Helper for chunk_enrichment.
+
+        Leverages an LLM to rewrite or expand chunk text, then re-embeds it.
         """
         preceding_chunks = [
             list_document_chunks[idx]["text"]
@@ -782,10 +776,8 @@ class IngestionService:
         document_summary: str | None,
         chunk_enrichment_settings: ChunkEnrichmentSettings,
     ) -> int:
-        """
-        Example function that modifies chunk text via an LLM then re-embeds
-        and re-stores all chunks for the given document.
-        """
+        """Example function that modifies chunk text via an LLM then re-embeds
+        and re-stores all chunks for the given document."""
         list_document_chunks = (
             await self.providers.database.chunks_handler.list_document_chunks(
                 document_id=document_id,

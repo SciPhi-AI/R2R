@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncSMTPEmailProvider(EmailProvider):
-    """Email provider implementation using Brevo SMTP relay"""
+    """Email provider implementation using Brevo SMTP relay."""
 
     def __init__(self, config: EmailConfig):
         super().__init__(config)
@@ -45,7 +45,7 @@ class AsyncSMTPEmailProvider(EmailProvider):
         self.ssl_context = ssl.create_default_context()
 
     async def _send_email_sync(self, msg: MIMEMultipart) -> None:
-        """Synchronous email sending wrapped in asyncio executor"""
+        """Synchronous email sending wrapped in asyncio executor."""
         loop = asyncio.get_running_loop()
 
         def _send():
@@ -90,10 +90,10 @@ class AsyncSMTPEmailProvider(EmailProvider):
             logger.info("Initializing SMTP connection...")
             async with asyncio.timeout(30):  # Overall timeout
                 await self._send_email_sync(msg)
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as e:
             error_msg = "Operation timed out while trying to send email"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise RuntimeError(error_msg) from e
         except Exception as e:
             error_msg = f"Failed to send email: {str(e)}"
             logger.error(error_msg)

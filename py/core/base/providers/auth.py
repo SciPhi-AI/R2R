@@ -262,7 +262,7 @@ class AuthProvider(Provider, ABC):
                     )
                     raise R2RException(
                         status_code=401, message="Authentication failed"
-                    )
+                    ) from None
 
             except Exception as e:
                 logger.error(f"WebSocket error during auth: {e}")
@@ -271,7 +271,7 @@ class AuthProvider(Provider, ABC):
                 )
                 raise R2RException(
                     status_code=401, message="Authentication failed"
-                )
+                ) from None
 
         return _websocket_auth_wrapper
 

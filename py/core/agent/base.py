@@ -326,8 +326,8 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        Revised processing for the reasoning agent.
+        """Revised processing for the reasoning agent.
+
         This version:
           1. Accumulates tool calls in a list (each with a unique internal_id).
           2. When finish_reason == "tool_calls", it records the tool calls in the conversation,
@@ -420,7 +420,7 @@ class R2RStreamingReasoningAgent(R2RStreamingAgent):
                     await self.conversation.add_message(assistant_msg)
 
                     # Execute tool calls in parallel
-                    for idx, tool_call in pending_tool_calls.items():
+                    for _idx, tool_call in pending_tool_calls.items():
                         if inside_thoughts:
                             yield "</Thought>"
                         yield "<Thought>"

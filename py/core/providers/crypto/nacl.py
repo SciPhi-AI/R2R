@@ -19,7 +19,8 @@ DEFAULT_NACL_SECRET_KEY = "wNFbczH3QhUVcPALwtWZCPi0lrDlGV3P1DPRVEQCPbM"  # Repla
 
 
 def encode_bytes_readable(random_bytes: bytes, chars: str) -> str:
-    """Convert random bytes to a readable string using the given character set."""
+    """Convert random bytes to a readable string using the given character
+    set."""
     # Each byte gives us 8 bits of randomness
     # We use modulo to map each byte to our character set
     result = []
@@ -122,7 +123,9 @@ class NaClCryptoProvider(CryptoProvider):
             signature = signing_key.sign(data.encode())
             return base64.b64encode(signature.signature).decode()
         except Exception as e:
-            raise ValueError(f"Invalid private key or signing error: {str(e)}")
+            raise ValueError(
+                f"Invalid private key or signing error: {str(e)}"
+            ) from e
 
     def verify_request_signature(
         self, public_key: str, signature: str, data: str
@@ -137,8 +140,8 @@ class NaClCryptoProvider(CryptoProvider):
             return False
 
     def generate_secure_token(self, data: dict, expiry: datetime) -> str:
-        """
-        Generate a secure token using JWT with HS256.
+        """Generate a secure token using JWT with HS256.
+
         The secret_key is used for symmetrical signing.
         """
         now = datetime.now(timezone.utc)
@@ -154,9 +157,7 @@ class NaClCryptoProvider(CryptoProvider):
         return jwt.encode(to_encode, self.secret_key, algorithm="HS256")
 
     def verify_secure_token(self, token: str) -> Optional[dict]:
-        """
-        Verify a secure token using the shared secret_key and JWT.
-        """
+        """Verify a secure token using the shared secret_key and JWT."""
         try:
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             exp = payload.get("exp")

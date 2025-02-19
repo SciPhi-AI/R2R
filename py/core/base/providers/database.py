@@ -71,11 +71,12 @@ class Handler(ABC):
 
 
 class PostgresConfigurationSettings(BaseModel):
-    """
-    Configuration settings with defaults defined by the PGVector docker image.
+    """Configuration settings with defaults defined by the PGVector docker
+    image.
 
-    These settings are helpful in managing the connections to the database.
-    To tune these settings for a specific deployment, see https://pgtune.leopard.in.ua/
+    These settings are helpful in managing the connections to the database. To
+    tune these settings for a specific deployment, see
+    https://pgtune.leopard.in.ua/
     """
 
     checkpoint_completion_target: Optional[float] = 0.9
@@ -114,7 +115,7 @@ class LimitSettings(BaseModel):
 
 
 class DatabaseConfig(ProviderConfig):
-    """A base database configuration class"""
+    """A base database configuration class."""
 
     provider: str = "postgres"
     user: Optional[str] = None

@@ -13,9 +13,7 @@ class SystemSDK:
         self.client = client
 
     async def health(self) -> WrappedGenericMessageResponse:
-        """
-        Check the health of the R2R server.
-        """
+        """Check the health of the R2R server."""
         response_dict = await self.client._make_request(
             "GET", "health", version="v3"
         )
@@ -28,8 +26,7 @@ class SystemSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedLogsResponse:
-        """
-        Get logs from the server.
+        """Get logs from the server.
 
         Args:
             run_type_filter (Optional[str]): The run type to filter by.
@@ -55,8 +52,7 @@ class SystemSDK:
         return WrappedLogsResponse(**response_dict)
 
     async def settings(self) -> WrappedSettingsResponse:
-        """
-        Get the configuration settings for the R2R server.
+        """Get the configuration settings for the R2R server.
 
         Returns:
             dict: The server settings.
@@ -68,8 +64,8 @@ class SystemSDK:
         return WrappedSettingsResponse(**response_dict)
 
     async def status(self) -> WrappedServerStatsResponse:
-        """
-        Get statistics about the server, including the start time, uptime, CPU usage, and memory usage.
+        """Get statistics about the server, including the start time, uptime,
+        CPU usage, and memory usage.
 
         Returns:
             dict: The server statistics.

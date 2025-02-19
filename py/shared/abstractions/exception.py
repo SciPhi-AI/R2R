@@ -37,7 +37,7 @@ class R2RDocumentProcessingError(R2RException):
 
 
 class PDFParsingError(R2RException):
-    """Custom exception for PDF parsing errors"""
+    """Custom exception for PDF parsing errors."""
 
     def __init__(
         self,
@@ -55,8 +55,7 @@ class PopplerNotFoundError(PDFParsingError):
     """Specific error for when Poppler is not installed."""
 
     def __init__(self):
-        installation_instructions = textwrap.dedent(
-            """
+        installation_instructions = textwrap.dedent("""
             PDF processing requires Poppler to be installed. Please install Poppler and ensure it's in your system PATH.
 
             Installing poppler:
@@ -68,8 +67,7 @@ class PopplerNotFoundError(PDFParsingError):
               2. Move extracted directory to desired location
               3. Add bin/ directory to PATH
               4. Test by running 'pdftoppm -h' in terminal
-        """
-        )
+        """)
         super().__init__(
             message=installation_instructions,
             status_code=422,

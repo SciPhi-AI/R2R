@@ -113,7 +113,7 @@ class EPUBParser(AsyncParser[str | bytes]):
 
         except Exception as e:
             logger.error(f"Error processing EPUB file: {str(e)}")
-            raise ValueError(f"Error processing EPUB file: {str(e)}")
+            raise ValueError(f"Error processing EPUB file: {str(e)}") from e
         finally:
             try:
                 file_obj.close()

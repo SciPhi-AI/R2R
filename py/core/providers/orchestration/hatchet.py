@@ -15,7 +15,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         except ImportError:
             raise ImportError(
                 "Hatchet SDK not installed. Please install it using `pip install hatchet-sdk`."
-            )
+            ) from None
         root_logger = logging.getLogger()
 
         self.orchestrator = Hatchet(

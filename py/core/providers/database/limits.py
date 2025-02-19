@@ -48,10 +48,8 @@ class PostgresLimitsHandler(Handler):
         route: Optional[str],
         since: datetime,
     ) -> int:
-        """
-        Count how many requests a user (optionally for a specific route)
-        has made since the given datetime.
-        """
+        """Count how many requests a user (optionally for a specific route) has
+        made since the given datetime."""
         if route:
             query = f"""
             SELECT COUNT(*)::int
@@ -82,9 +80,10 @@ class PostgresLimitsHandler(Handler):
         user_id: UUID,
         route: Optional[str] = None,  # <--- ADDED THIS
     ) -> int:
-        """
-        Count the number of requests so far this month for a given user.
-        If route is provided, count only for that route. Otherwise, count globally.
+        """Count the number of requests so far this month for a given user.
+
+        If route is provided, count only for that route. Otherwise, count
+        globally.
         """
         now = datetime.now(timezone.utc)
         start_of_month = now.replace(
@@ -154,8 +153,7 @@ class PostgresLimitsHandler(Handler):
         return effective
 
     async def check_limits(self, user: User, route: str):
-        """
-        Perform rate limit checks for a user on a specific route.
+        """Perform rate limit checks for a user on a specific route.
 
         :param user: The fully-fetched User object with .limits_overrides, etc.
         :param route: The route/path being accessed.
@@ -212,9 +210,7 @@ class PostgresLimitsHandler(Handler):
                 raise ValueError("Monthly rate limit exceeded")
 
     async def log_request(self, user_id: UUID, route: str):
-        """
-        Log a successful request to the request_log table.
-        """
+        """Log a successful request to the request_log table."""
         query = f"""
         INSERT INTO {self._get_table_name(PostgresLimitsHandler.TABLE_NAME)}
         (time, user_id, route)
@@ -235,7 +231,6 @@ class PostgresLimitsHandler(Handler):
 # from .base import PostgresConnectionManager
 
 # logger = logging.getLogger(__name__)
-
 
 # class PostgresLimitsHandler(Handler):
 #     TABLE_NAME = "request_log"

@@ -83,6 +83,6 @@ class PPTParser(AsyncParser[str | bytes]):
                     current_position += 1
 
         except Exception as e:
-            raise ValueError(f"Error processing PPT file: {str(e)}")
+            raise ValueError(f"Error processing PPT file: {str(e)}") from e
         finally:
             ole.close()

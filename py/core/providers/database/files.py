@@ -243,11 +243,11 @@ class PostgresFilesHandler(Handler):
                     if not chunk:
                         break
                     file_data.write(chunk)
-            except asyncpg.exceptions.UndefinedObjectError as e:
+            except asyncpg.exceptions.UndefinedObjectError:
                 raise R2RException(
                     status_code=404,
-                    message=f"Failed to read large object {oid}: {e}",
-                )
+                    message=f"Failed to read large object {oid}",
+                ) from None
             finally:
                 await conn.execute("SELECT lo_close($1)", lobject)
 

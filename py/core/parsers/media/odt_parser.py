@@ -55,6 +55,6 @@ class ODTParser(AsyncParser[str | bytes]):
                         yield text.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing ODT file: {str(e)}")
+            raise ValueError(f"Error processing ODT file: {str(e)}") from e
         finally:
             file_obj.close()

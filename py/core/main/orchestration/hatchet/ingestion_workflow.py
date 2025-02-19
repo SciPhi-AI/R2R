@@ -296,12 +296,12 @@ def hatchet_ingestion_factory(
                 raise R2RException(
                     status_code=401,
                     message="Authentication error: Invalid API key or credentials.",
-                )
+                ) from None
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during ingestion: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
@@ -605,7 +605,7 @@ def hatchet_ingestion_factory(
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during chunk update: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
@@ -692,7 +692,7 @@ def hatchet_ingestion_factory(
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during document metadata update: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:

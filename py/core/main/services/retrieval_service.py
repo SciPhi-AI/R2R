@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Optional
 from uuid import UUID
 
+import tiktoken
 from fastapi import HTTPException
 
 from core import (
@@ -50,9 +51,6 @@ from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger()
-
-
-import tiktoken
 
 
 def convert_nonserializable_objects(obj):
@@ -124,7 +122,8 @@ def tokens_count_for_message(message, encoding):
 
 
 def num_tokens_from_messages(messages, model="gpt-4o"):
-    """Return the number of tokens used by a list of messages for both user and assistant."""
+    """Return the number of tokens used by a list of messages for both user and
+    assistant."""
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
@@ -132,7 +131,7 @@ def num_tokens_from_messages(messages, model="gpt-4o"):
         encoding = tiktoken.get_encoding("cl100k_base")
 
     tokens = 0
-    for i, message in enumerate(messages):
+    for i, _message in enumerate(messages):
         tokens += tokens_count_for_message(messages[i], encoding)
 
         tokens += 3  # every reply is primed with assistant
@@ -158,8 +157,9 @@ class RetrievalService(Service):
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
-        """
-        Replaces your pipeline-based `SearchPipeline.run(...)` with a single method.
+        """Replaces your pipeline-based `SearchPipeline.run(...)` with a single
+        method.
+
         Does parallel vector + graph search, returning an aggregated result.
         """
 
@@ -230,12 +230,10 @@ class RetrievalService(Service):
         query: str,
         search_settings: SearchSettings,
     ) -> list[ChunkSearchResult]:
-        """
-        Equivalent to your old VectorSearchPipe.search, but simplified:
-         • embed query
-         • do fulltext, semantic, or hybrid search
-         • optional re-rank
-         • return list of ChunkSearchResult
+        """Equivalent to your old VectorSearchPipe.search, but simplified:
+
+        • embed query • do fulltext, semantic, or hybrid search • optional re-
+        rank • return list of ChunkSearchResult
         """
         # If chunk search is disabled, just return empty
         if not search_settings.chunk_settings.enabled:
@@ -343,7 +341,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception:
                     pass
 
             # store
@@ -392,7 +390,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception:
                     pass
 
             results.append(
@@ -439,7 +437,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception:
                     pass
 
             results.append(
@@ -612,11 +610,11 @@ class RetrievalService(Service):
                 raise HTTPException(
                     status_code=502,
                     detail="Server not reachable or returned an invalid response",
-                )
+                ) from e
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal RAG Error - {str(e)}",
-            )
+            ) from e
 
     async def stream_rag_response(
         self,
@@ -641,10 +639,10 @@ class RetrievalService(Service):
                     raise HTTPException(
                         status_code=502,
                         detail="Server not reachable or returned an invalid response",
-                    )
+                    ) from e
                 raise HTTPException(
                     status_code=500, detail=f"Internal RAG Error - {str(e)}"
-                )
+                ) from e
 
         return stream_response()
 
@@ -1060,19 +1058,18 @@ class RetrievalService(Service):
                 raise HTTPException(
                     status_code=502,
                     detail="Server not reachable or returned an invalid response",
-                )
+                ) from e
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal Server Error - {str(e)}",
-            )
+            ) from e
 
     async def get_context(
         self,
         filters: dict[str, Any],
         options: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        """
-        Return an ordered list of documents (with minimal overview fields),
+        """Return an ordered list of documents (with minimal overview fields),
         plus all associated chunks in ascending chunk order.
 
         Only the filters: owner_id, collection_ids, and document_id
@@ -1174,10 +1171,8 @@ class RetrievalService(Service):
         max_summary_length: int = 128,
         limit: int = 1000,
     ) -> str:
-        """
-        Fetches documents matching the given filters and returns a formatted string
-        enumerating them.
-        """
+        """Fetches documents matching the given filters and returns a formatted
+        string enumerating them."""
         # We only want up to `limit` documents for brevity
         docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
@@ -1213,10 +1208,8 @@ class RetrievalService(Service):
         filter_collection_ids: Optional[list[UUID]] = None,
         limit: int = 5,
     ) -> str:
-        """
-        Fetches collections matching the given filters and returns a formatted string
-        enumerating them.
-        """
+        """Fetches collections matching the given filters and returns a
+        formatted string enumerating them."""
         coll_data = await self.providers.database.collections_handler.get_collections_overview(
             offset=0,
             limit=limit,
@@ -1309,7 +1302,9 @@ class RetrievalServiceAdapter:
             try:
                 user_data = json.loads(user_data)
             except json.JSONDecodeError:
-                raise ValueError(f"Invalid user data format: {user_data}")
+                raise ValueError(
+                    f"Invalid user data format: {user_data}"
+                ) from None
         return User.from_dict(user_data)
 
     @staticmethod

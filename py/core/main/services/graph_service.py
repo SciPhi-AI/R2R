@@ -38,9 +38,7 @@ MIN_VALID_GRAPH_EXTRACTION_RESPONSE_LENGTH = 128
 
 
 async def _collect_async_results(result_gen: AsyncGenerator) -> list[Any]:
-    """
-    Collects all results from an async generator into a list.
-    """
+    """Collects all results from an async generator into a list."""
     results = []
     async for res in result_gen:
         results.append(res)
@@ -384,8 +382,8 @@ class GraphService(Service):
         batch_size: int = 256,
         **kwargs,
     ):
-        """
-        A new implementation of the old GraphDescriptionPipe logic inline. No references to pipe objects.
+        """A new implementation of the old GraphDescriptionPipe logic inline.
+        No references to pipe objects.
 
         We:
          1) Count how many entities are in the document
@@ -449,8 +447,9 @@ class GraphService(Service):
         limit: int,
         max_description_input_length: int,
     ) -> AsyncGenerator[str, None]:
-        """
-        Core logic that replaces GraphDescriptionPipe._run_logic for a particular document/batch.
+        """Core logic that replaces GraphDescriptionPipe._run_logic for a
+        particular document/batch.
+
         Yields entity-names or some textual result as each entity is updated.
         """
         start_time = time.time()
@@ -503,17 +502,16 @@ class GraphService(Service):
         document_id: UUID,
         max_description_input_length: int,
     ) -> str:
-        """
-        Adapted from the old process_entity function in GraphDescriptionPipe.
+        """Adapted from the old process_entity function in
+        GraphDescriptionPipe.
+
         If entity has no description, call an LLM to create one, then store it.
         Returns the name of the top entity (or could store more details).
         """
 
         def truncate_info(info_list: list[str], max_length: int) -> str:
-            """
-            Shuffles lines of info to try to keep them distinct, then accumulates
-            until hitting max_length.
-            """
+            """Shuffles lines of info to try to keep them distinct, then
+            accumulates until hitting max_length."""
             random.shuffle(info_list)
             truncated_info = ""
             current_length = 0
@@ -626,9 +624,8 @@ class GraphService(Service):
         generation_config: GenerationConfig,
         leiden_params: dict,
     ) -> dict:
-        """
-        The actual clustering logic (previously in GraphClusteringPipe.cluster_graph_search_results).
-        """
+        """The actual clustering logic (previously in
+        GraphClusteringPipe.cluster_graph_search_results)."""
         clustering_mode = (
             self.config.database.graph_creation_settings.clustering_mode
         )
@@ -650,9 +647,10 @@ class GraphService(Service):
         leiden_params: Optional[dict] = None,
         **kwargs,
     ):
-        """
-        Replacement for the old GraphCommunitySummaryPipe logic. Summarizes communities after clustering.
-        Returns an async generator or you can collect into a list.
+        """Replacement for the old GraphCommunitySummaryPipe logic.
+
+        Summarizes communities after clustering. Returns an async generator or
+        you can collect into a list.
         """
         logger.info(
             f"Running inline community summaries for coll={collection_id}, offset={offset}, limit={limit}"
@@ -677,8 +675,9 @@ class GraphService(Service):
         collection_id: UUID,
         leiden_params: dict,
     ) -> AsyncGenerator[dict, None]:
-        """
-        Does the community summary logic from GraphCommunitySummaryPipe._run_logic.
+        """Does the community summary logic from
+        GraphCommunitySummaryPipe._run_logic.
+
         Yields each summary dictionary as it completes.
         """
         start_time = time.time()
@@ -920,9 +919,8 @@ class GraphService(Service):
         relationships: list[Relationship],
         max_summary_input_length: int,
     ) -> str:
-        """
-        Gathers the entity/relationship text, tries not to exceed `max_summary_input_length`.
-        """
+        """Gathers the entity/relationship text, tries not to exceed
+        `max_summary_input_length`."""
         # Group them by entity.name
         entity_map: dict[str, dict] = {}
         for e in entities:
@@ -992,9 +990,8 @@ class GraphService(Service):
         *args: Any,
         **kwargs: Any,
     ) -> AsyncGenerator[GraphExtraction | R2RDocumentProcessingError, None]:
-        """
-        The original “extract Graph from doc” logic, but inlined instead of referencing a pipe.
-        """
+        """The original “extract Graph from doc” logic, but inlined instead of
+        referencing a pipe."""
         start_time = time.time()
 
         logger.info(
@@ -1107,10 +1104,8 @@ class GraphService(Service):
         task_id: Optional[int] = None,
         total_tasks: Optional[int] = None,
     ) -> GraphExtraction:
-        """
-        (Equivalent to _extract_graph_search_results in old code.)
-        Merges chunk data, calls LLM, parses XML, returns GraphExtraction object.
-        """
+        """(Equivalent to _extract_graph_search_results in old code.) Merges
+        chunk data, calls LLM, parses XML, returns GraphExtraction object."""
         combined_extraction: str = " ".join([c.data for c in chunks if c.data])
 
         # Possibly get doc-level summary
@@ -1177,9 +1172,8 @@ class GraphService(Service):
     async def _parse_graph_search_results_extraction_xml(
         self, response_str: str, chunks: list[DocumentChunk]
     ) -> tuple[list[Entity], list[Relationship]]:
-        """
-        Helper to parse the LLM's XML format, handle edge cases/cleanup, produce Entities/Relationships.
-        """
+        """Helper to parse the LLM's XML format, handle edge cases/cleanup,
+        produce Entities/Relationships."""
 
         def sanitize_xml(r: str) -> str:
             # Remove markdown fences
@@ -1197,10 +1191,10 @@ class GraphService(Service):
         wrapped = f"<root>{cleaned_xml}</root>"
         try:
             root = ET.fromstring(wrapped)
-        except ET.ParseError as e:
+        except ET.ParseError:
             raise R2RException(
-                f"Failed to parse XML: {e}\nData: {wrapped[:1000]}...", 400
-            )
+                f"Failed to parse XML:\nData: {wrapped[:1000]}...", 400
+            ) from None
 
         entities_elems = root.findall(".//entity")
         if (
@@ -1279,9 +1273,7 @@ class GraphService(Service):
         self,
         graph_search_results_extractions: list[GraphExtraction],
     ):
-        """
-        Stores a batch of knowledge graph extractions in the DB.
-        """
+        """Stores a batch of knowledge graph extractions in the DB."""
         for extraction in graph_search_results_extractions:
             # Map name->id after creation
             entities_id_map = {}

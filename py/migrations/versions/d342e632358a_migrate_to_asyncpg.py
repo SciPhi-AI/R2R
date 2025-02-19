@@ -1,9 +1,8 @@
-"""migrate_to_asyncpg
+"""migrate_to_asyncpg.
 
 Revision ID: d342e632358a
 Revises:
 Create Date: 2024-10-22 11:55:49.461015
-
 """
 
 import os
@@ -21,7 +20,6 @@ down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-
 project_name = os.getenv("R2R_PROJECT_NAME") or "r2r_default"
 
 new_vector_table_name = "vectors"
@@ -34,7 +32,7 @@ class Vector(UserDefinedType):
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     connection = op.get_bind()
     inspector = inspect(connection)
 
@@ -150,8 +148,7 @@ def upgrade() -> None:
 
         # Migrate data from old table (assuming old table name is 'old_vectors')
         # Note: You'll need to replace 'old_schema' and 'old_vectors' with your actual names
-        op.execute(
-            f"""
+        op.execute(f"""
             INSERT INTO {project_name}.{new_vector_table_name}
                 (extraction_id, document_id, user_id, collection_ids, vec, text, metadata)
             SELECT
@@ -163,23 +160,18 @@ def upgrade() -> None:
                 text,
                 metadata
             FROM {project_name}.{old_vector_table_name}
-        """
-        )
+        """)
 
         # Verify data migration
-        op.execute(
-            f"""
+        op.execute(f"""
             SELECT COUNT(*) old_count FROM {project_name}.{old_vector_table_name};
             SELECT COUNT(*) new_count FROM {project_name}.{new_vector_table_name};
-        """
-        )
+        """)
 
         # If we get here, migration was successful, so drop the old table
-        op.execute(
-            f"""
+        op.execute(f"""
         DROP TABLE IF EXISTS {project_name}.{old_vector_table_name};
-        """
-        )
+        """)
 
 
 def downgrade() -> None:

@@ -67,6 +67,6 @@ class ORGParser(AsyncParser[str | bytes]):
                         yield content.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing ORG file: {str(e)}")
+            raise ValueError(f"Error processing ORG file: {str(e)}") from e
         finally:
             file_obj.close()

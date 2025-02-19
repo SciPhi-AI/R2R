@@ -8,7 +8,6 @@ from shared.abstractions import (
     LLMChatCompletion,
     Message,
 )
-from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
 from shared.api.models.management.responses import DocumentResponse
 
@@ -16,10 +15,10 @@ from ....abstractions import R2RSerializable
 
 
 class Citation(R2RSerializable):
-    """
-    Represents a single citation reference in the RAG response.
-    Combines both bracket metadata (start/end offsets, snippet range)
-    and the mapped source fields (id, doc ID, chunk text, etc.).
+    """Represents a single citation reference in the RAG response.
+
+    Combines both bracket metadata (start/end offsets, snippet range) and the
+    mapped source fields (id, doc ID, chunk text, etc.).
     """
 
     # Bracket references
@@ -242,7 +241,40 @@ class AgentResponse(R2RSerializable):
                 "messages": [
                     {
                         "role": "assistant",
-                        "content": "Aristotle (384–322 BC) was an Ancient Greek philosopher and polymath whose contributions have had a profound impact on various fields of knowledge. Here are some key points about his life and work:\n\n1. **Early Life**: Aristotle was born in 384 BC in Stagira, Chalcidice, which is near modern-day Thessaloniki, Greece. His father, Nicomachus, was the personal physician to King Amyntas of Macedon, which exposed Aristotle to medical and biological knowledge from a young age [C].\n\n2. **Education and Career**: After the death of his parents, Aristotle was sent to Athens to study at Plato's Academy, where he remained for about 20 years. After Plato's death, Aristotle left Athens and eventually became the tutor of Alexander the Great [C].\n\n3. **Philosophical Contributions**: Aristotle founded the Lyceum in Athens, where he established the Peripatetic school of philosophy. His works cover a wide range of subjects, including metaphysics, ethics, politics, logic, biology, and aesthetics. His writings laid the groundwork for many modern scientific and philosophical inquiries [A].\n\n4. **Legacy**: Aristotle's influence extends beyond philosophy to the natural sciences, linguistics, economics, and psychology. His method of systematic observation and analysis has been foundational to the development of modern science [A].\n\nAristotle's comprehensive approach to knowledge and his systematic methodology have earned him a lasting legacy as one of the greatest philosophers of all time.\n\nSources:\n- [A] Aristotle's broad range of writings and influence on modern science.\n- [C] Details about Aristotle's early life and education.",
+                        "content": """Aristotle (384–322 BC) was an Ancient
+                        Greek philosopher and polymath whose contributions
+                        have had a profound impact on various fields of
+                        knowledge.
+                        Here are some key points about his life and work:
+                        \n\n1. **Early Life**: Aristotle was born in 384 BC in
+                        Stagira, Chalcidice, which is near modern-day
+                        Thessaloniki, Greece. His father, Nicomachus, was the
+                        personal physician to King Amyntas of Macedon, which
+                        exposed Aristotle to medical and biological knowledge
+                        from a young age [C].\n\n2. **Education and Career**:
+                        After the death of his parents, Aristotle was sent to
+                        Athens to study at Plato's Academy, where he remained
+                        for about 20 years. After Plato's death, Aristotle
+                        left Athens and eventually became the tutor of
+                        Alexander the Great [C].
+                        \n\n3. **Philosophical Contributions**: Aristotle
+                        founded the Lyceum in Athens, where he established the
+                        Peripatetic school of philosophy. His works cover a
+                        wide range of subjects, including metaphysics, ethics,
+                        politics, logic, biology, and aesthetics. His writings
+                        laid the groundwork for many modern scientific and
+                        philosophical inquiries [A].\n\n4. **Legacy**:
+                        Aristotle's influence extends beyond philosophy to the
+                          natural sciences, linguistics, economics, and
+                          psychology. His method of systematic observation and
+                          analysis has been foundational to the development of
+                          modern science [A].\n\nAristotle's comprehensive
+                          approach to knowledge and his systematic methodology
+                          have earned him a lasting legacy as one of the
+                          greatest philosophers of all time.\n\nSources:
+                          \n- [A] Aristotle's broad range of writings and
+                          influence on modern science.\n- [C] Details about
+                          Aristotle's early life and education.""",
                         "name": None,
                         "function_call": None,
                         "tool_calls": None,
@@ -257,13 +289,20 @@ class AgentResponse(R2RSerializable):
                                     "snippetEndIndex": 418,
                                     "sourceType": "chunk",
                                     "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
-                                    "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
-                                    "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                                    "document_id": """
+                                    e43864f5-a36f-548e-aacd-6f8d48b30c7f
+                                    """,
+                                    "owner_id": """
+                                    2acb499e-8428-543b-bd85-0d9098718220
+                                    """,
                                     "collection_ids": [
                                         "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
                                     ],
                                     "score": 0.64,
-                                    "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
+                                    "text": """
+                                    Document Title: DeepSeek_R1.pdf
+                                    \n\nText: could achieve an accuracy of ...
+                                    """,
                                     "metadata": {
                                         "title": "DeepSeek_R1.pdf",
                                         "license": "CC-BY-4.0",

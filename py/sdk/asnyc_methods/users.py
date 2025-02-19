@@ -27,8 +27,7 @@ class UsersSDK:
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
     ) -> WrappedUserResponse:
-        """
-        Register a new user.
+        """Register a new user.
 
         Args:
             email (str): User's email address
@@ -62,9 +61,7 @@ class UsersSDK:
     async def send_verification_email(
         self, email: str
     ) -> WrappedGenericMessageResponse:
-        """
-        Request that a verification email to a user.
-        """
+        """Request that a verification email to a user."""
         response_dict = await self.client._make_request(
             "POST",
             "users/send-verification-email",
@@ -77,9 +74,8 @@ class UsersSDK:
     async def delete(
         self, id: str | UUID, password: str
     ) -> WrappedBooleanResponse:
-        """
-        Delete a specific user.
-        Users can only delete their own account unless they are superusers.
+        """Delete a specific user. Users can only delete their own account
+        unless they are superusers.
 
         Args:
             id (str | UUID): User ID to delete
@@ -103,8 +99,7 @@ class UsersSDK:
     async def verify_email(
         self, email: str, verification_code: str
     ) -> WrappedGenericMessageResponse:
-        """
-        Verify a user's email address.
+        """Verify a user's email address.
 
         Args:
             email (str): User's email address
@@ -127,8 +122,7 @@ class UsersSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def login(self, email: str, password: str) -> WrappedLoginResponse:
-        """
-        Log in a user.
+        """Log in a user.
 
         Args:
             email (str): User's email address
@@ -202,8 +196,7 @@ class UsersSDK:
     async def change_password(
         self, current_password: str, new_password: str
     ) -> WrappedGenericMessageResponse:
-        """
-        Change the user's password.
+        """Change the user's password.
 
         Args:
             current_password (str): User's current password
@@ -228,8 +221,7 @@ class UsersSDK:
     async def request_password_reset(
         self, email: str
     ) -> WrappedGenericMessageResponse:
-        """
-        Request a password reset.
+        """Request a password reset.
 
         Args:
             email (str): User's email address
@@ -249,8 +241,7 @@ class UsersSDK:
     async def reset_password(
         self, reset_token: str, new_password: str
     ) -> WrappedGenericMessageResponse:
-        """
-        Reset password using a reset token.
+        """Reset password using a reset token.
 
         Args:
             reset_token (str): Password reset token
@@ -278,8 +269,7 @@ class UsersSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedUsersResponse:
-        """
-        List users with pagination and filtering options.
+        """List users with pagination and filtering options.
 
         Args:
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
@@ -308,8 +298,7 @@ class UsersSDK:
         self,
         id: str | UUID,
     ) -> WrappedUserResponse:
-        """
-        Get a specific user.
+        """Get a specific user.
 
         Args:
             id (str | UUID): User ID to retrieve
@@ -328,8 +317,7 @@ class UsersSDK:
     async def me(
         self,
     ) -> WrappedUserResponse:
-        """
-        Get detailed information about the currently authenticated user.
+        """Get detailed information about the currently authenticated user.
 
         Returns:
             dict: Detailed user information
@@ -353,8 +341,7 @@ class UsersSDK:
         limits_overrides: dict | None = None,
         metadata: dict[str, str | None] | None = None,
     ) -> WrappedUserResponse:
-        """
-        Update user information.
+        """Update user information.
 
         Args:
             id (str | UUID): User ID to update
@@ -398,8 +385,7 @@ class UsersSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
-        """
-        Get all collections associated with a specific user.
+        """Get all collections associated with a specific user.
 
         Args:
             id (str | UUID): User ID to get collections for
@@ -428,8 +414,7 @@ class UsersSDK:
         id: str | UUID,
         collection_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Add a user to a collection.
+        """Add a user to a collection.
 
         Args:
             id (str | UUID): User ID to add
@@ -448,8 +433,7 @@ class UsersSDK:
         id: str | UUID,
         collection_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove a user from a collection.
+        """Remove a user from a collection.
 
         Args:
             id (str | UUID): User ID to remove
@@ -472,8 +456,7 @@ class UsersSDK:
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> WrappedAPIKeyResponse:
-        """
-        Create a new API key for the specified user.
+        """Create a new API key for the specified user.
 
         Args:
             id (str | UUID): User ID to create API key for
@@ -502,8 +485,7 @@ class UsersSDK:
         self,
         id: str | UUID,
     ) -> WrappedAPIKeysResponse:
-        """
-        List all API keys for the specified user.
+        """List all API keys for the specified user.
 
         Args:
             id (str | UUID): User ID to list API keys for
@@ -524,8 +506,7 @@ class UsersSDK:
         id: str | UUID,
         key_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Delete a specific API key for the specified user.
+        """Delete a specific API key for the specified user.
 
         Args:
             id (str | UUID): User ID
@@ -552,8 +533,8 @@ class UsersSDK:
         return WrappedLimitsResponse(**response_dict)
 
     async def oauth_google_authorize(self) -> WrappedGenericMessageResponse:
-        """
-        Get Google OAuth 2.0 authorization URL from the server.
+        """Get Google OAuth 2.0 authorization URL from the server.
+
         Returns:
             WrappedGenericMessageResponse
         """
@@ -566,8 +547,8 @@ class UsersSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def oauth_github_authorize(self) -> WrappedGenericMessageResponse:
-        """
-        Get GitHub OAuth 2.0 authorization URL from the server.
+        """Get GitHub OAuth 2.0 authorization URL from the server.
+
         Returns:
             WrappedGenericMessageResponse
         """
@@ -582,9 +563,8 @@ class UsersSDK:
     async def oauth_google_callback(
         self, code: str, state: str
     ) -> WrappedLoginResponse:
-        """
-        Exchange `code` and `state` with the Google OAuth 2.0 callback route.
-        """
+        """Exchange `code` and `state` with the Google OAuth 2.0 callback
+        route."""
         response_dict = await self.client._make_request(
             "GET",
             "users/oauth/google/callback",
@@ -597,9 +577,8 @@ class UsersSDK:
     async def oauth_github_callback(
         self, code: str, state: str
     ) -> WrappedLoginResponse:
-        """
-        Exchange `code` and `state` with the GitHub OAuth 2.0 callback route.
-        """
+        """Exchange `code` and `state` with the GitHub OAuth 2.0 callback
+        route."""
         response_dict = await self.client._make_request(
             "GET",
             "users/oauth/github/callback",

@@ -17,9 +17,7 @@ from shared.api.models import (
 
 
 class GraphsSDK:
-    """
-    SDK for interacting with knowledge graphs in the v3 API.
-    """
+    """SDK for interacting with knowledge graphs in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -30,8 +28,7 @@ class GraphsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedGraphsResponse:
-        """
-        List graphs with pagination and filtering options.
+        """List graphs with pagination and filtering options.
 
         Args:
             ids (Optional[list[str | UUID]]): Filter graphs by ids
@@ -58,8 +55,7 @@ class GraphsSDK:
         self,
         collection_id: str | UUID,
     ) -> WrappedGraphResponse:
-        """
-        Get detailed information about a specific graph.
+        """Get detailed information about a specific graph.
 
         Args:
             collection_id (str | UUID): Graph ID to retrieve
@@ -77,8 +73,7 @@ class GraphsSDK:
         self,
         collection_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Deletes a graph and all its associated data.
+        """Deletes a graph and all its associated data.
 
         This endpoint permanently removes the specified graph along with all
         entities and relationships that belong to only this graph.
@@ -103,8 +98,7 @@ class GraphsSDK:
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> WrappedGraphResponse:
-        """
-        Update graph information.
+        """Update graph information.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -135,8 +129,7 @@ class GraphsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedEntitiesResponse:
-        """
-        List entities in a graph.
+        """List entities in a graph.
 
         Args:
             collection_id (str | UUID): Graph ID to list entities from
@@ -165,8 +158,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         entity_id: str | UUID,
     ) -> WrappedEntityResponse:
-        """
-        Get entity information in a graph.
+        """Get entity information in a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -188,8 +180,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         entity_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove an entity from a graph.
+        """Remove an entity from a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -212,8 +203,7 @@ class GraphsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedRelationshipsResponse:
-        """
-        List relationships in a graph.
+        """List relationships in a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -242,8 +232,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         relationship_id: str | UUID,
     ) -> WrappedRelationshipResponse:
-        """
-        Get relationship information in a graph.
+        """Get relationship information in a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -265,8 +254,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         relationship_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove a relationship from a graph.
+        """Remove a relationship from a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -289,8 +277,7 @@ class GraphsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: bool = True,
     ) -> WrappedGenericMessageResponse:
-        """
-        Build a graph.
+        """Build a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -320,8 +307,7 @@ class GraphsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCommunitiesResponse:
-        """
-        List communities in a graph.
+        """List communities in a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -350,8 +336,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         community_id: str | UUID,
     ) -> WrappedCommunityResponse:
-        """
-        Get community information in a graph.
+        """Get community information in a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -380,8 +365,7 @@ class GraphsSDK:
         level: Optional[int] = None,
         attributes: Optional[dict] = None,
     ) -> WrappedCommunityResponse:
-        """
-        Update community information.
+        """Update community information.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -427,8 +411,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         community_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Remove a community from a graph.
+        """Remove a community from a graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -449,8 +432,8 @@ class GraphsSDK:
         self,
         collection_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Adds documents to a graph by copying their entities and relationships.
+        """Adds documents to a graph by copying their entities and
+        relationships.
 
         This endpoint:
             1. Copies document entities to the graphs_entities table
@@ -483,8 +466,7 @@ class GraphsSDK:
         collection_id: str | UUID,
         document_id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Removes a document from a graph and removes any associated entities
+        """Removes a document from a graph and removes any associated entities.
 
         This endpoint:
             1. Removes the document ID from the graph's document_ids array
@@ -511,8 +493,7 @@ class GraphsSDK:
         category: Optional[str] = None,
         metadata: Optional[dict] = None,
     ) -> WrappedEntityResponse:
-        """
-        Creates a new entity in the graph.
+        """Creates a new entity in the graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -554,8 +535,7 @@ class GraphsSDK:
         weight: Optional[float] = None,
         metadata: Optional[dict] = None,
     ) -> WrappedRelationshipResponse:
-        """
-        Creates a new relationship in the graph.
+        """Creates a new relationship in the graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph
@@ -602,8 +582,7 @@ class GraphsSDK:
         rating: Optional[float] = None,
         rating_explanation: Optional[str] = None,
     ) -> WrappedCommunityResponse:
-        """
-        Creates a new community in the graph.
+        """Creates a new community in the graph.
 
         Args:
             collection_id (str | UUID): The collection ID corresponding to the graph

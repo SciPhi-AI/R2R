@@ -119,6 +119,7 @@ __all__ = [
     "GraphCommunityResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
+    "ContextDocumentResult",
     "ChunkSearchResult",
     "SearchSettings",
     "select_search_filters",

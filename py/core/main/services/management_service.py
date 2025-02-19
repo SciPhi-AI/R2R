@@ -73,9 +73,8 @@ class ManagementService(Service):
         self,
         filters: dict[str, Any],
     ):
-        """
-        Delete chunks matching the given filters. If any documents are now empty
-        (i.e., have no remaining chunks), delete those documents as well.
+        """Delete chunks matching the given filters. If any documents are now
+        empty (i.e., have no remaining chunks), delete those documents as well.
 
         Args:
             filters (dict[str, Any]): Filters specifying which chunks to delete.
@@ -90,8 +89,9 @@ class ManagementService(Service):
         def transform_chunk_id_to_id(
             filters: dict[str, Any],
         ) -> dict[str, Any]:
-            """
-            Example transformation function if your filters use `chunk_id` instead of `id`.
+            """Example transformation function if your filters use `chunk_id`
+            instead of `id`.
+
             Recursively transform `chunk_id` to `id`.
             """
             if isinstance(filters, dict):
@@ -562,7 +562,7 @@ class ManagementService(Service):
             name=name,
             description=description,
         )
-        graph_result = await self.providers.database.graphs_handler.create(
+        await self.providers.database.graphs_handler.create(
             collection_id=result.id,
             name=name,
             description=description,
@@ -706,7 +706,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' added successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
 
     @telemetry_event("GetPrompt")
     async def get_cached_prompt(
@@ -726,7 +726,7 @@ class ManagementService(Service):
                 )
             }
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetPrompt")
     async def get_prompt(
@@ -742,7 +742,7 @@ class ManagementService(Service):
                 prompt_override=prompt_override,
             )
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
@@ -761,7 +761,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' updated successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
@@ -769,7 +769,7 @@ class ManagementService(Service):
             await self.providers.database.prompts_handler.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetConversation")
     async def get_conversation(
@@ -890,9 +890,9 @@ class ManagementService(Service):
     async def get_max_upload_size_by_type(
         self, user_id: UUID, file_type_or_ext: str
     ) -> int:
-        """
-        Return the maximum allowed upload size (in bytes) for the given user's file type/extension.
-        Respects user-level overrides if present, falling back to the system config.
+        """Return the maximum allowed upload size (in bytes) for the given
+        user's file type/extension. Respects user-level overrides if present,
+        falling back to the system config.
 
         ```json
         {
@@ -907,7 +907,6 @@ class ManagementService(Service):
             }
         }
         ```
-
         """
         # 1. Normalize extension
         ext = file_type_or_ext.lower().lstrip(".")

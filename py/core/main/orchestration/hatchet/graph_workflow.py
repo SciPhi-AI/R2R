@@ -5,6 +5,7 @@ import logging
 import math
 import time
 import uuid
+from typing import TYPE_CHECKING
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
@@ -17,20 +18,19 @@ from core.base.abstractions import (
 
 from ...services import GraphService
 
-logger = logging.getLogger()
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
+
+logger = logging.getLogger()
 
 
 def hatchet_graph_search_results_factory(
     orchestration_provider: OrchestrationProvider, service: GraphService
 ) -> dict[str, "Hatchet.Workflow"]:
     def convert_to_dict(input_data):
-        """
-        Converts input data back to a plain dictionary format, handling special cases like UUID and GenerationConfig.
-        This is the inverse of get_input_data_dict.
+        """Converts input data back to a plain dictionary format, handling
+        special cases like UUID and GenerationConfig. This is the inverse of
+        get_input_data_dict.
 
         Args:
             input_data: Dictionary containing the input data with potentially special types

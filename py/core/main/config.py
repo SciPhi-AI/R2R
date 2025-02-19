@@ -167,7 +167,7 @@ class R2RConfig:
 
     @staticmethod
     def _serialize_config(config_section: Any) -> dict:
-        """Serialize config section while excluding internal state"""
+        """Serialize config section while excluding internal state."""
         if isinstance(config_section, dict):
             return {
                 R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)

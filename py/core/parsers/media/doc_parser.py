@@ -68,7 +68,7 @@ class DOCParser(AsyncParser[str | bytes]):
                     yield paragraph.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing DOC file: {str(e)}")
+            raise ValueError(f"Error processing DOC file: {str(e)}") from e
         finally:
             ole.close()
             file_obj.close()
@@ -89,7 +89,7 @@ class DOCParser(AsyncParser[str | bytes]):
 
             return text
         except Exception as e:
-            raise ValueError(f"Error extracting text: {str(e)}")
+            raise ValueError(f"Error extracting text: {str(e)}") from e
 
     def _clean_text(self, text: str) -> list[str]:
         """Clean and split the extracted text into paragraphs."""

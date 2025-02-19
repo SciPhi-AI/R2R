@@ -17,7 +17,8 @@ from .base import PostgresConnectionManager
 
 
 def _json_default(obj: Any) -> str:
-    """Default handler for objects not serializable by the standard json encoder."""
+    """Default handler for objects not serializable by the standard json
+    encoder."""
     if isinstance(obj, datetime):
         # Return ISO8601 string
         return obj.isoformat()
@@ -107,15 +108,13 @@ class PostgresConversationsHandler(Handler):
         param_index = 1
 
         if filter_user_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
             param_index += 1
 
@@ -350,15 +349,13 @@ class PostgresConversationsHandler(Handler):
 
         if filter_user_ids:
             param_index = 2
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
 
         query = f"""
@@ -439,15 +436,13 @@ class PostgresConversationsHandler(Handler):
 
         if filter_user_ids:
             param_index = 2
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
 
         conv_query = f"""
@@ -482,9 +477,8 @@ class PostgresConversationsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "user_id",
@@ -585,9 +579,8 @@ class PostgresConversationsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "conversation_id",

@@ -15,11 +15,6 @@ from core.base import (
     IngestionConfig,
     OrchestrationConfig,
 )
-
-from ..abstractions import R2RProviders
-from ..config import R2RConfig
-
-logger = logging.getLogger()
 from core.providers import (
     AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
@@ -46,6 +41,11 @@ from core.providers import (
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
+
+from ..abstractions import R2RProviders
+from ..config import R2RConfig
+
+logger = logging.getLogger()
 
 
 class R2RProviderFactory:

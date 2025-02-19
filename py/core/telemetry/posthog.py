@@ -9,9 +9,10 @@ logger = logging.getLogger()
 
 
 class PosthogClient:
-    """
-    This is a write-only project API key, so it can only create new events. It can't
-    read events or any of your other data stored with PostHog, so it's safe to use in public apps.
+    """This is a write-only project API key, so it can only create new events.
+
+    It can't read events or any of your other data stored with PostHog, so it's
+    safe to use in public apps.
     """
 
     def __init__(

@@ -236,7 +236,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise R2RException(
                 status_code=401,
                 message="Authentication error: Invalid API key or credentials.",
-            )
+            ) from e
         except Exception as e:
             if document_info is not None:
                 await service.update_document_status(
@@ -248,7 +248,7 @@ def simple_ingestion_factory(service: IngestionService):
                 raise
             raise HTTPException(
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
-            )
+            ) from e
 
     async def update_files(input_data):
         from core.main import IngestionServiceAdapter
@@ -267,12 +267,12 @@ def simple_ingestion_factory(service: IngestionService):
         if not file_datas:
             raise R2RException(
                 status_code=400, message="No files provided for update."
-            )
+            ) from None
         if len(document_ids) != len(file_datas):
             raise R2RException(
                 status_code=400,
                 message="Number of ids does not match number of files.",
-            )
+            ) from None
 
         documents_overview = (
             await service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
@@ -287,7 +287,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise R2RException(
                 status_code=404,
                 message="One or more documents not found.",
-            )
+            ) from None
 
         results = []
 
@@ -333,7 +333,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise R2RException(
                 status_code=501,
                 message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
-            )
+            ) from None
 
     async def ingest_chunks(input_data):
         document_info = None
@@ -461,7 +461,7 @@ def simple_ingestion_factory(service: IngestionService):
                         raise R2RException(
                             status_code=501,
                             message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
-                        )
+                        ) from None
 
             except Exception as e:
                 logger.error(
@@ -478,7 +478,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500,
                 detail=f"Error during chunk ingestion: {str(e)}",
-            )
+            ) from e
 
     async def update_chunk(input_data):
         from core.main import IngestionServiceAdapter
@@ -511,7 +511,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500,
                 detail=f"Error during chunk update: {str(e)}",
-            )
+            ) from e
 
     async def create_vector_index(input_data):
         try:
@@ -531,7 +531,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500,
                 detail=f"Error during vector index creation: {str(e)}",
-            )
+            ) from e
 
     async def delete_vector_index(input_data):
         try:
@@ -553,7 +553,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500,
                 detail=f"Error during vector index deletion: {str(e)}",
-            )
+            ) from e
 
     async def update_document_metadata(input_data):
         try:
@@ -585,7 +585,7 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500,
                 detail=f"Error during document metadata update: {str(e)}",
-            )
+            ) from e
 
     return {
         "ingest-files": ingest_files,

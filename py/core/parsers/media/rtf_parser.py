@@ -42,4 +42,4 @@ class RTFParser(AsyncParser[str | bytes]):
                     yield paragraph.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing RTF file: {str(e)}")
+            raise ValueError(f"Error processing RTF file: {str(e)}") from e

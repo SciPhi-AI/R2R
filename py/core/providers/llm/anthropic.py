@@ -30,8 +30,7 @@ def generate_tool_id() -> str:
 
 
 def openai_message_to_anthropic_block(msg: dict) -> dict:
-    """
-    Converts a single OpenAI-style message (including function/tool calls)
+    """Converts a single OpenAI-style message (including function/tool calls)
     into one Anthropic-style message.
 
     Expected keys in `msg` can include:
@@ -112,8 +111,7 @@ class AnthropicCompletionProvider(CompletionProvider):
         logger.debug("AnthropicCompletionProvider initialized successfully")
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
-        """
-        Build the arguments dictionary for Anthropic's messages.create().
+        """Build the arguments dictionary for Anthropic's messages.create().
 
         Handles tool configuration according to Anthropic's schema:
         {
@@ -175,10 +173,8 @@ class AnthropicCompletionProvider(CompletionProvider):
         return args
 
     def _convert_to_chat_completion(self, anthropic_msg: Message) -> dict:
-        """
-        Convert a **non-streaming** Anthropic `Message` response into
-        an OpenAI-style dict.
-        """
+        """Convert a **non-streaming** Anthropic `Message` response into an
+        OpenAI-style dict."""
         # anthropic_msg.content is a list of blocks; gather text from "text" blocks
         content_text = ""
         if anthropic_msg.content:
@@ -239,9 +235,8 @@ class AnthropicCompletionProvider(CompletionProvider):
     def _split_system_messages(
         self, messages: list[dict]
     ) -> (list[dict], Optional[str]):
-        """
-        Extract the system message and properly group tool results with their calls.
-        """
+        """Extract the system message and properly group tool results with
+        their calls."""
         system_msg = None
         filtered = []
         pending_tool_results = []
@@ -299,8 +294,9 @@ class AnthropicCompletionProvider(CompletionProvider):
         return filtered, system_msg
 
     async def _execute_task(self, task: dict[str, Any]):
-        """
-        Async entry point. Decide if streaming or not, then call the appropriate helper.
+        """Async entry point.
+
+        Decide if streaming or not, then call the appropriate helper.
         """
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -357,9 +353,8 @@ class AnthropicCompletionProvider(CompletionProvider):
     async def _execute_task_async_streaming(
         self, args: dict
     ) -> AsyncGenerator[dict, None]:
-        """
-        Streaming call (async): yields partial tokens in OpenAI-like SSE format.
-        """
+        """Streaming call (async): yields partial tokens in OpenAI-like SSE
+        format."""
         # The `stream=True` is typically handled by Anthropics from the original args,
         # but we remove it to avoid conflicts and rely on `messages.stream()`.
         args.pop("stream", None)
@@ -390,9 +385,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             raise
 
     def _execute_task_sync(self, task: dict[str, Any]):
-        """
-        Synchronous entry point.
-        """
+        """Synchronous entry point."""
         messages = task["messages"]
         generation_config = task["generation_config"]
         extra_kwargs = task["kwargs"]
@@ -412,9 +405,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             return self._execute_task_sync_nonstreaming(args)
 
     def _execute_task_sync_nonstreaming(self, args: dict) -> LLMChatCompletion:
-        """
-        Non-streaming synchronous call.
-        """
+        """Non-streaming synchronous call."""
         try:
             response = self.client.messages.create(**args)
             logger.debug("Anthropic sync non-stream call succeeded.")
