@@ -673,22 +673,6 @@ typing-extensions = ">=4.6.0"
 aio = ["azure-core[aio] (>=1.30.0)"]
 
 [[package]]
-name = "babel"
-version = "2.17.0"
-description = "Internationalization utilities"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "babel-2.17.0-py3-none-any.whl", hash = "sha256:4d0b53093fdfb4b21c92b5213dba5a1b23885afa8383709427046b21c366e5f2"},
-    {file = "babel-2.17.0.tar.gz", hash = "sha256:0c54cffb19f690cdcc52a3b50bcbf71e07a808d1c80d549f2459b9d2cf0afb9d"},
-]
-
-[package.extras]
-dev = ["backports.zoneinfo", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest (>=6.0)", "pytest-cov", "pytz", "setuptools", "tzdata"]
-
-[[package]]
 name = "backoff"
 version = "2.2.1"
 description = "Function decoration for backoff and retry"
@@ -742,19 +726,20 @@ typecheck = ["mypy"]
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.12.3"
+version = "4.13.3"
 description = "Screen-scraping library"
 optional = true
-python-versions = ">=3.6.0"
+python-versions = ">=3.7.0"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "beautifulsoup4-4.12.3-py3-none-any.whl", hash = "sha256:b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed"},
-    {file = "beautifulsoup4-4.12.3.tar.gz", hash = "sha256:74e3d1928edc070d21748185c46e3fb33490f22f52a3addee9aee0f4f7781051"},
+    {file = "beautifulsoup4-4.13.3-py3-none-any.whl", hash = "sha256:99045d7d3f08f91f0d656bc9b7efbae189426cd913d830294a15eefa0ea4df16"},
+    {file = "beautifulsoup4-4.13.3.tar.gz", hash = "sha256:1bd32405dacc920b42b83ba01644747ed77456a65760e285fbc47633ceddaf8b"},
 ]
 
 [package.dependencies]
 soupsieve = ">1.2"
+typing-extensions = ">=4.0.0"
 
 [package.extras]
 cchardet = ["cchardet"]
@@ -765,19 +750,19 @@ lxml = ["lxml"]
 
 [[package]]
 name = "boto3"
-version = "1.36.22"
+version = "1.36.24"
 description = "The AWS SDK for Python"
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "boto3-1.36.22-py3-none-any.whl", hash = "sha256:39957eabdce009353d72d131046489fbbfa15891865d5f069f1e8bfa414e6b81"},
-    {file = "boto3-1.36.22.tar.gz", hash = "sha256:768c8a4d4a6227fe2258105efa086f1424cba5ca915a5eb2305b2cd979306ad1"},
+    {file = "boto3-1.36.24-py3-none-any.whl", hash = "sha256:c9055fe6a33f79c43053c06db432092cfcf88f4b4181950f5ca8f2f0cb6abb87"},
+    {file = "boto3-1.36.24.tar.gz", hash = "sha256:777ec08a6fe0ad77fa0607b431542c51d2d2e4145fecd512bee9f383ee4184f2"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.22,<1.37.0"
+botocore = ">=1.36.24,<1.37.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.11.0,<0.12.0"
 
@@ -786,15 +771,15 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.22"
+version = "1.36.24"
 description = "Low-level, data-driven core of boto 3."
 optional = true
 python-versions = ">=3.8"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "botocore-1.36.22-py3-none-any.whl", hash = "sha256:75d6b34acb0686ee4d54ff6eb285e78ccfe318407428769d1e3e13351714d890"},
-    {file = "botocore-1.36.22.tar.gz", hash = "sha256:59520247d5a479731724f97c995d5a1c2aae3b303b324f39d99efcfad1d3019e"},
+    {file = "botocore-1.36.24-py3-none-any.whl", hash = "sha256:b8b2ad60e6545aaef3a40163793c39555fcfd67fb081a38695018026c4f4db25"},
+    {file = "botocore-1.36.24.tar.gz", hash = "sha256:7d35ba92ccbed7aa7e1563b12bb339bde612d5f845c89bfdd79a6db8c26b9f2e"},
 ]
 
 [package.dependencies]
@@ -820,25 +805,24 @@ files = [
 
 [[package]]
 name = "cel-python"
-version = "0.1.5"
-description = "Pure Python CEL Implementation"
+version = "0.2.0"
+description = "Pure Python implementation of Google Common Expression Language"
 optional = true
-python-versions = ">=3.7, <4"
+python-versions = "<4.0,>=3.8"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "cel-python-0.1.5.tar.gz", hash = "sha256:d3911bb046bc3ed12792bd88ab453f72d98c66923b72a2fa016bcdffd96e2f98"},
-    {file = "cel_python-0.1.5-py3-none-any.whl", hash = "sha256:ac81fab8ba08b633700a45d84905be2863529c6a32935c9da7ef53fc06844f1a"},
+    {file = "cel_python-0.2.0-py3-none-any.whl", hash = "sha256:478ff73def7b39d51e6982f95d937a57c2b088c491c578fe5cecdbd79f476f60"},
+    {file = "cel_python-0.2.0.tar.gz", hash = "sha256:75de72a5cf223ec690b236f0cc24da267219e667bd3e7f8f4f20595fcc1c0c0f"},
 ]
 
 [package.dependencies]
-babel = ">=2.9.0"
-jmespath = ">=0.10.0"
-lark-parser = ">=0.10.1"
-python-dateutil = ">=2.8.1"
-pyyaml = ">=5.4.1"
-requests = ">=2.25.1"
-urllib3 = ">=1.26.4"
+jmespath = ">=1.0.1,<2.0.0"
+lark = ">=0.12.0,<0.13.0"
+python-dateutil = ">=2.9.0.post0,<3.0.0"
+pyyaml = ">=6.0.1,<7.0.0"
+types-python-dateutil = ">=2.9.0.20240316,<3.0.0.0"
+types-pyyaml = ">=6.0.12.20240311,<7.0.0.0"
 
 [[package]]
 name = "certifi"
@@ -1076,19 +1060,6 @@ files = [
 ]
 
 [[package]]
-name = "colorclass"
-version = "2.2.2"
-description = "Colorful worry-free console applications for Linux, Mac OS X, and Windows."
-optional = true
-python-versions = ">=2.6"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "colorclass-2.2.2-py2.py3-none-any.whl", hash = "sha256:6f10c273a0ef7a1150b1120b6095cbdd68e5cf36dfd5d0fc957a2500bbf99a55"},
-    {file = "colorclass-2.2.2.tar.gz", hash = "sha256:6d4fe287766166a98ca7bc6f6312daf04a0481b1eda43e7173484051c0ab4366"},
-]
-
-[[package]]
 name = "colorlog"
 version = "6.9.0"
 description = "Add colours to the output of Python's logging module."
@@ -1106,18 +1077,6 @@ colorama = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
 development = ["black", "flake8", "mypy", "pytest", "types-colorama"]
-
-[[package]]
-name = "compressed-rtf"
-version = "1.0.6"
-description = "Compressed Rich Text Format (RTF) compression and decompression package"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "compressed_rtf-1.0.6.tar.gz", hash = "sha256:c1c827f1d124d24608981a56e8b8691eb1f2a69a78ccad6440e7d92fde1781dd"},
-]
 
 [[package]]
 name = "coverage"
@@ -1385,31 +1344,6 @@ files = [
 ]
 
 [[package]]
-name = "easygui"
-version = "0.98.3"
-description = "EasyGUI is a module for very simple, very easy GUI programming in Python.  EasyGUI is different from other GUI generators in that EasyGUI is NOT event-driven.  Instead, all GUI interactions are invoked by simple function calls."
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "easygui-0.98.3-py2.py3-none-any.whl", hash = "sha256:33498710c68b5376b459cd3fc48d1d1f33822139eb3ed01defbc0528326da3ba"},
-    {file = "easygui-0.98.3.tar.gz", hash = "sha256:d653ff79ee1f42f63b5a090f2f98ce02335d86ad8963b3ce2661805cafe99a04"},
-]
-
-[[package]]
-name = "ebcdic"
-version = "1.1.1"
-description = "Additional EBCDIC codecs"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "ebcdic-1.1.1-py2.py3-none-any.whl", hash = "sha256:33b4cb729bc2d0bf46cc1847b0e5946897cb8d3f53520c5b9aa5fa98d7e735f1"},
-]
-
-[[package]]
 name = "email-validator"
 version = "2.2.0"
 description = "A robust email address syntax and deliverability validation library."
@@ -1481,35 +1415,6 @@ files = [
 
 [package.extras]
 testing = ["hatch", "pre-commit", "pytest", "tox"]
-
-[[package]]
-name = "extract-msg"
-version = "0.52.0"
-description = "Extracts emails and attachments saved in Microsoft Outlook's .msg files"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "extract_msg-0.52.0-py3-none-any.whl", hash = "sha256:93c919846bac2a6034cf7d0dcf8e825d640b6ddb8539e42f7f1817869cd1eeaf"},
-    {file = "extract_msg-0.52.0.tar.gz", hash = "sha256:c21c548c43e1f0cdce5616102d33e590e2b46fbdc9d04f21af4eb62dcbf296dd"},
-]
-
-[package.dependencies]
-beautifulsoup4 = ">=4.11.1,<4.13"
-compressed-rtf = ">=1.0.6,<2"
-ebcdic = ">=1.1.1,<2"
-olefile = "0.47"
-red-black-tree-mod = "1.20"
-RTFDE = ">=0.1.1,<0.2"
-tzlocal = ">=4.2,<6"
-
-[package.extras]
-all = ["extract-msg[encoding]", "extract-msg[image]", "extract-msg[mime]"]
-encoding = ["chardet (>=3.0.0,<6)"]
-image = ["Pillow (>=9.5.0,<10)"]
-mime = ["python-magic (>=0.4.27,<0.5)"]
-readthedocs = ["sphinx-rtd-theme"]
 
 [[package]]
 name = "fastapi"
@@ -1804,25 +1709,6 @@ pillow = ">=10.0.0,<12.0.0"
 pydantic = ">=2.0.0,<3.0.0dev"
 requests = ">=2.28.1,<3.0.0dev"
 websockets = ">=13.0,<15.0dev"
-
-[[package]]
-name = "googleapis-common-protos"
-version = "1.67.0"
-description = "Common protobufs used in Google APIs"
-optional = true
-python-versions = ">=3.7"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "googleapis_common_protos-1.67.0-py2.py3-none-any.whl", hash = "sha256:579de760800d13616f51cf8be00c876f00a9f146d3e6510e19d1f4111758b741"},
-    {file = "googleapis_common_protos-1.67.0.tar.gz", hash = "sha256:21398025365f138be356d5923e9168737d94d46a72aefee4a6110a1f23463c86"},
-]
-
-[package.dependencies]
-protobuf = ">=3.20.2,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
-
-[package.extras]
-grpc = ["grpcio (>=1.44.0,<2.0.0.dev0)"]
 
 [[package]]
 name = "gotrue"
@@ -2122,22 +2008,22 @@ hyperframe = ">=6.1,<7"
 
 [[package]]
 name = "hatchet-sdk"
-version = "0.44.2"
+version = "0.47.0"
 description = ""
 optional = true
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "hatchet_sdk-0.44.2-py3-none-any.whl", hash = "sha256:6af53eeb0a252e0cfa6fdcfdeb4da63331383ccef05e87bf1c1c92ec88907f5f"},
-    {file = "hatchet_sdk-0.44.2.tar.gz", hash = "sha256:478fcf1a771a88df75adb789d8a88ab82ca8d24d6fca1732f9a2cafc3897b22b"},
+    {file = "hatchet_sdk-0.47.0-py3-none-any.whl", hash = "sha256:16df6b2506712700ddef3793c4480002160e14db2a5c8e52b7ca551c09438f25"},
+    {file = "hatchet_sdk-0.47.0.tar.gz", hash = "sha256:a1a084574b8ac5bf8bfcfcac3ef328e6d91ad5dd0fccad47ac178d920a2045ce"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.10.5,<4.0.0"
 aiohttp-retry = ">=2.8.3,<3.0.0"
 aiostream = ">=0.5.2,<0.6.0"
-cel-python = ">=0.1.5,<0.2.0"
+cel-python = ">=0.2.0,<0.3.0"
 grpcio = [
     {version = ">=1.64.1,<1.68.dev0 || >=1.69.dev0", markers = "python_version < \"3.13\""},
     {version = ">=1.69.0", markers = "python_version >= \"3.13\""},
@@ -2146,14 +2032,7 @@ grpcio-tools = [
     {version = ">=1.64.1,<1.68.dev0 || >=1.69.dev0", markers = "python_version < \"3.13\""},
     {version = ">=1.69.0", markers = "python_version >= \"3.13\""},
 ]
-loguru = ">=0.7.2,<0.8.0"
 nest-asyncio = ">=1.6.0,<2.0.0"
-opentelemetry-api = ">=1.28.0,<2.0.0"
-opentelemetry-distro = ">=0.49b0"
-opentelemetry-exporter-otlp = ">=1.28.0,<2.0.0"
-opentelemetry-exporter-otlp-proto-http = ">=1.28.0,<2.0.0"
-opentelemetry-instrumentation = ">=0.49b0"
-opentelemetry-sdk = ">=1.28.0,<2.0.0"
 prometheus-client = ">=0.21.1,<0.22.0"
 protobuf = ">=5.29.1,<6.0.0"
 pydantic = ">=2.6.3,<3.0.0"
@@ -2162,6 +2041,9 @@ python-dotenv = ">=1.0.0,<2.0.0"
 pyyaml = ">=6.0.1,<7.0.0"
 tenacity = ">=8.4.1"
 urllib3 = ">=1.26.20"
+
+[package.extras]
+otel = ["opentelemetry-api (>=1.28.0,<2.0.0)", "opentelemetry-distro (>=0.49b0)", "opentelemetry-exporter-otlp (>=1.28.0,<2.0.0)", "opentelemetry-exporter-otlp-proto-http (>=1.28.0,<2.0.0)", "opentelemetry-instrumentation (>=0.49b0)", "opentelemetry-sdk (>=1.28.0,<2.0.0)"]
 
 [[package]]
 name = "hpack"
@@ -2227,15 +2109,15 @@ zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "huggingface-hub"
-version = "0.28.1"
+version = "0.29.0"
 description = "Client library to download and publish models, datasets and other repos on the huggingface.co hub"
 optional = true
 python-versions = ">=3.8.0"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "huggingface_hub-0.28.1-py3-none-any.whl", hash = "sha256:aa6b9a3ffdae939b72c464dbb0d7f99f56e649b55c3d52406f49e0a5a620c0a7"},
-    {file = "huggingface_hub-0.28.1.tar.gz", hash = "sha256:893471090c98e3b6efbdfdacafe4052b20b84d59866fb6f54c33d9af18c303ae"},
+    {file = "huggingface_hub-0.29.0-py3-none-any.whl", hash = "sha256:c02daa0b6bafbdacb1320fdfd1dc7151d0940825c88c4ef89837fdb1f6ea0afe"},
+    {file = "huggingface_hub-0.29.0.tar.gz", hash = "sha256:64034c852be270cac16c5743fe1f659b14515a9de6342d6f42cbb2ede191fc80"},
 ]
 
 [package.dependencies]
@@ -2526,25 +2408,6 @@ referencing = ">=0.31.0"
 
 [[package]]
 name = "lark"
-version = "1.1.9"
-description = "a modern parsing library"
-optional = true
-python-versions = ">=3.6"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "lark-1.1.9-py3-none-any.whl", hash = "sha256:a0dd3a87289f8ccbb325901e4222e723e7d745dbfc1803eaf5f3d2ace19cf2db"},
-    {file = "lark-1.1.9.tar.gz", hash = "sha256:15fa5236490824c2c4aba0e22d2d6d823575dcaf4cdd1848e34b6ad836240fba"},
-]
-
-[package.extras]
-atomic-cache = ["atomicwrites"]
-interegular = ["interegular (>=0.3.1,<0.4.0)"]
-nearley = ["js2py"]
-regex = ["regex"]
-
-[[package]]
-name = "lark-parser"
 version = "0.12.0"
 description = "a modern parsing library"
 optional = true
@@ -2552,8 +2415,8 @@ python-versions = "*"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "lark-parser-0.12.0.tar.gz", hash = "sha256:15967db1f1214013dca65b1180745047b9be457d73da224fcda3d9dd4e96a138"},
-    {file = "lark_parser-0.12.0-py2.py3-none-any.whl", hash = "sha256:0eaf30cb5ba787fe404d73a7d6e61df97b21d5a63ac26c5008c78a494373c675"},
+    {file = "lark-0.12.0-py2.py3-none-any.whl", hash = "sha256:ed1d891cbcf5151ead1c1d14663bf542443e579e63a76ae175b01b899bd854ca"},
+    {file = "lark-0.12.0.tar.gz", hash = "sha256:7da76fcfddadabbbbfd949bbae221efd33938451d90b1fefbbc423c3cccf48ef"},
 ]
 
 [package.extras]
@@ -2563,15 +2426,15 @@ regex = ["regex"]
 
 [[package]]
 name = "litellm"
-version = "1.61.8"
+version = "1.61.9"
 description = "Library to easily interface with LLM API providers"
 optional = true
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "litellm-1.61.8-py3-none-any.whl", hash = "sha256:da895efefb86b71d2213257d2b57ed38c42c48c590c474c65473cdc4791e8b32"},
-    {file = "litellm-1.61.8.tar.gz", hash = "sha256:efebcafeb014c76ca992a5a49f5f2c6c8a944723c6a91b0cc70442911c3a656f"},
+    {file = "litellm-1.61.9-py3-none-any.whl", hash = "sha256:b2ba755dc8bfbc095947cc2a548f08117ec29c9176d8f67b3a83eaf52776fbc2"},
+    {file = "litellm-1.61.9.tar.gz", hash = "sha256:792263ab0e40ce10e5bb05f789bbef4578a0caaf40b7a4fc1c373a6eabf9aa0d"},
 ]
 
 [package.dependencies]
@@ -2590,26 +2453,6 @@ tokenizers = "*"
 [package.extras]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "resend (>=0.8.0,<0.9.0)"]
 proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=22.0.0,<23.0.0)", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0)"]
-
-[[package]]
-name = "loguru"
-version = "0.7.3"
-description = "Python logging made (stupidly) simple"
-optional = true
-python-versions = "<4.0,>=3.5"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "loguru-0.7.3-py3-none-any.whl", hash = "sha256:31a33c10c8e1e10422bfd431aeb5d351c7cf7fa671e3c4df004162264b28220c"},
-    {file = "loguru-0.7.3.tar.gz", hash = "sha256:19480589e77d47b8d85b2c827ad95d49bf31b0dcde16593892eb51dd18706eb6"},
-]
-
-[package.dependencies]
-colorama = {version = ">=0.3.4", markers = "sys_platform == \"win32\""}
-win32-setctime = {version = ">=1.0.0", markers = "sys_platform == \"win32\""}
-
-[package.extras]
-dev = ["Sphinx (==8.1.3)", "build (==1.2.2)", "colorama (==0.4.5)", "colorama (==0.4.6)", "exceptiongroup (==1.1.3)", "freezegun (==1.1.0)", "freezegun (==1.5.0)", "mypy (==v0.910)", "mypy (==v0.971)", "mypy (==v1.13.0)", "mypy (==v1.4.1)", "myst-parser (==4.0.0)", "pre-commit (==4.0.1)", "pytest (==6.1.2)", "pytest (==8.3.2)", "pytest-cov (==2.12.1)", "pytest-cov (==5.0.0)", "pytest-cov (==6.0.0)", "pytest-mypy-plugins (==1.9.3)", "pytest-mypy-plugins (==3.1.0)", "sphinx-rtd-theme (==3.0.2)", "tox (==3.27.1)", "tox (==4.23.2)", "twine (==6.0.1)"]
 
 [[package]]
 name = "lxml"
@@ -2907,23 +2750,6 @@ files = [
     {file = "monotonic-1.6-py2.py3-none-any.whl", hash = "sha256:68687e19a14f11f26d140dd5c86f3dba4bf5df58003000ed467e0e2a69bca96c"},
     {file = "monotonic-1.6.tar.gz", hash = "sha256:3a55207bcfed53ddd5c5bae174524062935efed17792e9de2ad0205ce9ad63f7"},
 ]
-
-[[package]]
-name = "msoffcrypto-tool"
-version = "5.4.2"
-description = "Python tool and library for decrypting and encrypting MS Office files using a password or other keys"
-optional = true
-python-versions = "<4.0,>=3.8"
-groups = ["main"]
-markers = "platform_python_implementation != \"PyPy\" and extra == \"core\" or (platform_system != \"Windows\" and platform_system != \"Darwin\") and extra == \"core\""
-files = [
-    {file = "msoffcrypto_tool-5.4.2-py3-none-any.whl", hash = "sha256:274fe2181702d1e5a107ec1b68a4c9fea997a44972ae1cc9ae0cb4f6a50fef0e"},
-    {file = "msoffcrypto_tool-5.4.2.tar.gz", hash = "sha256:44b545adba0407564a0cc3d6dde6ca36b7c0fdf352b85bca51618fa1d4817370"},
-]
-
-[package.dependencies]
-cryptography = ">=39.0"
-olefile = ">=0.46"
 
 [[package]]
 name = "msrest"
@@ -3249,30 +3075,6 @@ files = [
 tests = ["pytest", "pytest-cov"]
 
 [[package]]
-name = "oletools"
-version = "0.60.2"
-description = "Python tools to analyze security characteristics of MS Office and OLE files (also called Structured Storage, Compound File Binary Format or Compound Document File Format), for Malware Analysis and Incident Response #DFIR"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "oletools-0.60.2-py2.py3-none-any.whl", hash = "sha256:72ad8bd748fd0c4e7b5b4733af770d11543ebb2bf2697455f99f975fcd50cc96"},
-    {file = "oletools-0.60.2.zip", hash = "sha256:ad452099f4695ffd8855113f453348200d195ee9fa341a09e197d66ee7e0b2c3"},
-]
-
-[package.dependencies]
-colorclass = "*"
-easygui = "*"
-msoffcrypto-tool = {version = "*", markers = "platform_python_implementation != \"PyPy\" or python_version >= \"3\" and (platform_system != \"Windows\" and platform_system != \"Darwin\")"}
-olefile = ">=0.46"
-pcodedmp = ">=1.2.5"
-pyparsing = ">=2.1.0,<4"
-
-[package.extras]
-full = ["XLMMacroDeobfuscator"]
-
-[[package]]
 name = "ollama"
 version = "0.3.3"
 description = "The official Python client for Ollama."
@@ -3346,104 +3148,6 @@ files = [
 [package.dependencies]
 deprecated = ">=1.2.6"
 importlib-metadata = ">=6.0,<=8.5.0"
-
-[[package]]
-name = "opentelemetry-distro"
-version = "0.51b0"
-description = "OpenTelemetry Python Distro"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_distro-0.51b0-py3-none-any.whl", hash = "sha256:60b5d18449ef6c1fc5bc71e4d48ba20b3711f42f4a84b455ecc66a8cf4d9ad80"},
-    {file = "opentelemetry_distro-0.51b0.tar.gz", hash = "sha256:4890d285f2f6bfc84e260aa5f8243b2b32aafcc896b0d9290007d9f306246011"},
-]
-
-[package.dependencies]
-opentelemetry-api = ">=1.12,<2.0"
-opentelemetry-instrumentation = "0.51b0"
-opentelemetry-sdk = ">=1.13,<2.0"
-
-[package.extras]
-otlp = ["opentelemetry-exporter-otlp (==1.30.0)"]
-
-[[package]]
-name = "opentelemetry-exporter-otlp"
-version = "1.30.0"
-description = "OpenTelemetry Collector Exporters"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_exporter_otlp-1.30.0-py3-none-any.whl", hash = "sha256:44e11054ec571ccfed73a83c6429dee5d334d061d0e0572e3160d6de97156dbc"},
-    {file = "opentelemetry_exporter_otlp-1.30.0.tar.gz", hash = "sha256:da7769f95cd5be5b09dd4188ac153a33709eda652217f2d10aed6518c8e60f0d"},
-]
-
-[package.dependencies]
-opentelemetry-exporter-otlp-proto-grpc = "1.30.0"
-opentelemetry-exporter-otlp-proto-http = "1.30.0"
-
-[[package]]
-name = "opentelemetry-exporter-otlp-proto-common"
-version = "1.30.0"
-description = "OpenTelemetry Protobuf encoding"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_exporter_otlp_proto_common-1.30.0-py3-none-any.whl", hash = "sha256:5468007c81aa9c44dc961ab2cf368a29d3475977df83b4e30aeed42aa7bc3b38"},
-    {file = "opentelemetry_exporter_otlp_proto_common-1.30.0.tar.gz", hash = "sha256:ddbfbf797e518411857d0ca062c957080279320d6235a279f7b64ced73c13897"},
-]
-
-[package.dependencies]
-opentelemetry-proto = "1.30.0"
-
-[[package]]
-name = "opentelemetry-exporter-otlp-proto-grpc"
-version = "1.30.0"
-description = "OpenTelemetry Collector Protobuf over gRPC Exporter"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_exporter_otlp_proto_grpc-1.30.0-py3-none-any.whl", hash = "sha256:2906bcae3d80acc54fd1ffcb9e44d324e8631058b502ebe4643ca71d1ff30830"},
-    {file = "opentelemetry_exporter_otlp_proto_grpc-1.30.0.tar.gz", hash = "sha256:d0f10f0b9b9a383b7d04a144d01cb280e70362cccc613987e234183fd1f01177"},
-]
-
-[package.dependencies]
-deprecated = ">=1.2.6"
-googleapis-common-protos = ">=1.52,<2.0"
-grpcio = ">=1.63.2,<2.0.0"
-opentelemetry-api = ">=1.15,<2.0"
-opentelemetry-exporter-otlp-proto-common = "1.30.0"
-opentelemetry-proto = "1.30.0"
-opentelemetry-sdk = ">=1.30.0,<1.31.0"
-
-[[package]]
-name = "opentelemetry-exporter-otlp-proto-http"
-version = "1.30.0"
-description = "OpenTelemetry Collector Protobuf over HTTP Exporter"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_exporter_otlp_proto_http-1.30.0-py3-none-any.whl", hash = "sha256:9578e790e579931c5ffd50f1e6975cbdefb6a0a0a5dea127a6ae87df10e0a589"},
-    {file = "opentelemetry_exporter_otlp_proto_http-1.30.0.tar.gz", hash = "sha256:c3ae75d4181b1e34a60662a6814d0b94dd33b628bee5588a878bed92cee6abdc"},
-]
-
-[package.dependencies]
-deprecated = ">=1.2.6"
-googleapis-common-protos = ">=1.52,<2.0"
-opentelemetry-api = ">=1.15,<2.0"
-opentelemetry-exporter-otlp-proto-common = "1.30.0"
-opentelemetry-proto = "1.30.0"
-opentelemetry-sdk = ">=1.30.0,<1.31.0"
-requests = ">=2.7,<3.0"
 
 [[package]]
 name = "opentelemetry-instrumentation"
@@ -3682,22 +3386,6 @@ opentelemetry-semantic-conventions = "0.51b0"
 opentelemetry-util-http = "0.51b0"
 
 [[package]]
-name = "opentelemetry-proto"
-version = "1.30.0"
-description = "OpenTelemetry Python Proto"
-optional = true
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "opentelemetry_proto-1.30.0-py3-none-any.whl", hash = "sha256:c6290958ff3ddacc826ca5abbeb377a31c2334387352a259ba0df37c243adc11"},
-    {file = "opentelemetry_proto-1.30.0.tar.gz", hash = "sha256:afe5c9c15e8b68d7c469596e5b32e8fc085eb9febdd6fb4e20924a93a0389179"},
-]
-
-[package.dependencies]
-protobuf = ">=5.0,<6.0"
-
-[[package]]
 name = "opentelemetry-resource-detector-azure"
 version = "0.1.5"
 description = "Azure Resource Detector for OpenTelemetry"
@@ -3803,23 +3491,6 @@ files = [
     {file = "packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"},
 ]
 markers = {main = "extra == \"core\""}
-
-[[package]]
-name = "pcodedmp"
-version = "1.2.6"
-description = "A VBA p-code disassembler"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "pcodedmp-1.2.6-py2.py3-none-any.whl", hash = "sha256:4441f7c0ab4cbda27bd4668db3b14f36261d86e5059ce06c0828602cbe1c4278"},
-    {file = "pcodedmp-1.2.6.tar.gz", hash = "sha256:025f8c809a126f45a082ffa820893e6a8d990d9d7ddb68694b5a9f0a6dbcd955"},
-]
-
-[package.dependencies]
-oletools = ">=0.54"
-win-unicode-console = {version = "*", markers = "platform_system == \"Windows\" and platform_python_implementation != \"PyPy\""}
 
 [[package]]
 name = "pdf2image"
@@ -4399,6 +4070,7 @@ files = [
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:bb89f0a835bcfc1d42ccd5f41f04870c1b936d8507c6df12b7737febc40f0909"},
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_ppc64le.whl", hash = "sha256:f0c2d907a1e102526dd2986df638343388b94c33860ff3bbe1384130828714b1"},
     {file = "psycopg2_binary-2.9.10-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:f8157bed2f51db683f31306aa497311b560f2265998122abe1dce6428bd86567"},
+    {file = "psycopg2_binary-2.9.10-cp313-cp313-win_amd64.whl", hash = "sha256:27422aa5f11fbcd9b18da48373eb67081243662f9b46e6fd07c3eb46e4535142"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-macosx_12_0_x86_64.whl", hash = "sha256:eb09aa7f9cecb45027683bb55aebaaf45a0df8bf6de68801a6afdc7947bb09d4"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b73d6d7f0ccdad7bc43e6d34273f70d587ef62f824d7261c4ae9b8b1b6af90e8"},
     {file = "psycopg2_binary-2.9.10-cp38-cp38-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ce5ab4bf46a211a8e924d307c1b1fcda82368586a19d0a24f8ae166f5c784864"},
@@ -4663,22 +4335,6 @@ cffi = ">=1.4.1"
 [package.extras]
 docs = ["sphinx (>=1.6.5)", "sphinx-rtd-theme"]
 tests = ["hypothesis (>=3.27.0)", "pytest (>=3.2.1,!=3.3.0)"]
-
-[[package]]
-name = "pyparsing"
-version = "3.2.1"
-description = "pyparsing module - Classes and methods to define and execute parsing grammars"
-optional = true
-python-versions = ">=3.9"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "pyparsing-3.2.1-py3-none-any.whl", hash = "sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1"},
-    {file = "pyparsing-3.2.1.tar.gz", hash = "sha256:61980854fd66de3a90028d679a954d5f2623e83144b5afe5ee86f43d762e5f0a"},
-]
-
-[package.extras]
-diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pypdf"
@@ -5035,34 +4691,22 @@ markers = {main = "extra == \"core\""}
 
 [[package]]
 name = "realtime"
-version = "2.3.0"
+version = "2.4.0"
 description = ""
 optional = true
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 markers = "extra == \"core\""
 files = [
-    {file = "realtime-2.3.0-py3-none-any.whl", hash = "sha256:6c241681d0517a3bc5e0132842bffd8b592286131b01a68b41cf7e0be94828fc"},
-    {file = "realtime-2.3.0.tar.gz", hash = "sha256:4071b095d7f750fcd68ec322e05045fce067b5cd5309a7ca809fcc87e50f56a1"},
+    {file = "realtime-2.4.0-py3-none-any.whl", hash = "sha256:0015219bb398edfdd5e993bc77a42424ed6d6890b7234a0114fe0de4d21e4f8b"},
+    {file = "realtime-2.4.0.tar.gz", hash = "sha256:4ffc61a9c0f8dbda7e6a48496254a018d5b2d90569f56d1d89c9618f56616c3b"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.11.11,<4.0.0"
+aiohttp = ">=3.11.12,<4.0.0"
 python-dateutil = ">=2.8.1,<3.0.0"
 typing-extensions = ">=4.12.2,<5.0.0"
 websockets = ">=11,<15"
-
-[[package]]
-name = "red-black-tree-mod"
-version = "1.20"
-description = "Flexible python implementation of red black trees"
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "red-black-tree-mod-1.20.tar.gz", hash = "sha256:2448e6fc9cbf1be204c753f352c6ee49aa8156dbf1faa57dfc26bd7705077e0a"},
-]
 
 [[package]]
 name = "referencing"
@@ -5374,26 +5018,6 @@ files = [
 
 [package.dependencies]
 pyasn1 = ">=0.1.3"
-
-[[package]]
-name = "rtfde"
-version = "0.1.2"
-description = "A library for extracting HTML content from RTF encapsulated HTML as commonly found in the exchange MSG email format."
-optional = true
-python-versions = "~=3.8"
-groups = ["main"]
-markers = "extra == \"core\""
-files = [
-    {file = "RTFDE-0.1.2-py3-none-any.whl", hash = "sha256:f6d1450c99b04e930da130e8b419aa33b1f953623e1b94ad5c0f67f0362eb737"},
-]
-
-[package.dependencies]
-lark = ">=1.1.8,<1.2.0"
-oletools = ">=0.56"
-
-[package.extras]
-dev = ["coverage (>=7.2.2,<7.3.0)", "lxml (>=4.6,<5.0)", "mypy (>=1.1,<2.0)", "pdoc3 (>=0.10.0,<0.11.0)"]
-msg-parse = ["extract-msg (>=0.27,<1.0)"]
 
 [[package]]
 name = "ruff"
@@ -6079,6 +5703,32 @@ files = [
 ]
 
 [[package]]
+name = "types-python-dateutil"
+version = "2.9.0.20241206"
+description = "Typing stubs for python-dateutil"
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"core\""
+files = [
+    {file = "types_python_dateutil-2.9.0.20241206-py3-none-any.whl", hash = "sha256:e248a4bc70a486d3e3ec84d0dc30eec3a5f979d6e7ee4123ae043eedbb987f53"},
+    {file = "types_python_dateutil-2.9.0.20241206.tar.gz", hash = "sha256:18f493414c26ffba692a72369fea7a154c502646301ebfe3d56a04b3767284cb"},
+]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.20241230"
+description = "Typing stubs for PyYAML"
+optional = true
+python-versions = ">=3.8"
+groups = ["main"]
+markers = "extra == \"core\""
+files = [
+    {file = "types_PyYAML-6.0.12.20241230-py3-none-any.whl", hash = "sha256:fa4d32565219b68e6dee5f67534c722e53c00d1cfc09c435ef04d7353e1e96e6"},
+    {file = "types_pyyaml-6.0.12.20241230.tar.gz", hash = "sha256:7f07622dbd34bb9c8b264fe860a17e0efcad00d50b5f27e93984909d9363498c"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.32.0.20241016"
 description = "Typing stubs for requests"
@@ -6368,34 +6018,6 @@ files = [
 ]
 
 [[package]]
-name = "win-unicode-console"
-version = "0.5"
-description = "Enable Unicode input and display when running Python from Windows console."
-optional = true
-python-versions = "*"
-groups = ["main"]
-markers = "platform_system == \"Windows\" and platform_python_implementation != \"PyPy\" and extra == \"core\""
-files = [
-    {file = "win_unicode_console-0.5.zip", hash = "sha256:d4142d4d56d46f449d6f00536a73625a871cba040f0bc1a2e305a04578f07d1e"},
-]
-
-[[package]]
-name = "win32-setctime"
-version = "1.2.0"
-description = "A small Python utility to set file creation time on Windows"
-optional = true
-python-versions = ">=3.5"
-groups = ["main"]
-markers = "extra == \"core\" and sys_platform == \"win32\""
-files = [
-    {file = "win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390"},
-    {file = "win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0"},
-]
-
-[package.extras]
-dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
-
-[[package]]
 name = "wrapt"
 version = "1.17.2"
 description = "Module for decorators, wrappers and monkey patching."
@@ -6636,9 +6258,9 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 type = ["pytest-mypy"]
 
 [extras]
-core = ["aiohttp", "aioshutil", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "azure-ai-inference", "azure-ai-ml", "bcrypt", "beautifulsoup4", "boto3", "colorlog", "docutils", "epub", "extract-msg", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "gunicorn", "hatchet-sdk", "litellm", "markdown", "networkx", "numpy", "olefile", "ollama", "openpyxl", "orgparse", "pdf2image", "pillow", "pillow-heif", "psutil", "pydantic", "pyjwt", "pynacl", "pypdf", "pypdf2", "python-docx", "python-multipart", "python-pptx", "pyyaml", "sendgrid", "sentry-sdk", "sqlalchemy", "striprtf", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs", "xlrd"]
+core = ["aiohttp", "aioshutil", "aiosqlite", "anthropic", "apscheduler", "asyncpg", "azure-ai-inference", "azure-ai-ml", "bcrypt", "beautifulsoup4", "boto3", "colorlog", "docutils", "epub", "fsspec", "future", "google-auth", "google-auth-oauthlib", "google-genai", "gunicorn", "hatchet-sdk", "litellm", "markdown", "networkx", "numpy", "olefile", "ollama", "openpyxl", "orgparse", "pdf2image", "pillow", "pillow-heif", "psutil", "pydantic", "pyjwt", "pynacl", "pypdf", "pypdf2", "python-docx", "python-multipart", "python-pptx", "pyyaml", "sendgrid", "sentry-sdk", "sqlalchemy", "striprtf", "supabase", "tiktoken", "tokenizers", "unstructured-client", "uvicorn", "vecs", "xlrd"]
 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10,<3.14"
-content-hash = "3f2d939f58551dba886b8557bb894a49106858c5b8208ccd8110784c351b8615"
+content-hash = "fe0986c81f99fba73b315096d97513dd3b08029d162e7be332e0926092bbe3e3"
