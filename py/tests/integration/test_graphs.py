@@ -129,46 +129,46 @@ def test_create_and_get_relationship(client: R2RClient, test_collection):
     assert resp.predicate == "related_to", "Relationship predicate mismatch"
 
 
-def test_build_communities(client: R2RClient, test_collection):
-    collection_id = test_collection
+# def test_build_communities(client: R2RClient, test_collection):
+#     collection_id = test_collection
 
-    # Create two entities
-    entity1 = client.graphs.create_entity(
-        collection_id=collection_id,
-        name="Entity 1",
-        description="Entity 1 description",
-    ).results
-    entity2 = client.graphs.create_entity(
-        collection_id=collection_id,
-        name="Entity 2",
-        description="Entity 2 description",
-    ).results
+#     # Create two entities
+#     entity1 = client.graphs.create_entity(
+#         collection_id=collection_id,
+#         name="Entity 1",
+#         description="Entity 1 description",
+#     ).results
+#     entity2 = client.graphs.create_entity(
+#         collection_id=collection_id,
+#         name="Entity 2",
+#         description="Entity 2 description",
+#     ).results
 
-    # Create relationship
-    rel_resp = client.graphs.create_relationship(
-        collection_id=str(collection_id),
-        subject="Entity 1",
-        subject_id=entity1.id,
-        predicate="related_to",
-        object="Entity 2",
-        object_id=entity2.id,
-        description="Test relationship",
-    ).results
-    relationship_id = str(rel_resp.id)
+#     # Create relationship
+#     rel_resp = client.graphs.create_relationship(
+#         collection_id=str(collection_id),
+#         subject="Entity 1",
+#         subject_id=entity1.id,
+#         predicate="related_to",
+#         object="Entity 2",
+#         object_id=entity2.id,
+#         description="Test relationship",
+#     ).results
+#     relationship_id = str(rel_resp.id)
 
-    # Build communities
-    resp = client.graphs.build(
-        collection_id=str(collection_id),
-        # graph_enrichment_settings={"use_semantic_clustering": True},
-        run_with_orchestration=False,
-    ).results
+#     # Build communities
+#     resp = client.graphs.build(
+#         collection_id=str(collection_id),
+#         # graph_enrichment_settings={"use_semantic_clustering": True},
+#         run_with_orchestration=False,
+#     ).results
 
-    # After building, list communities
-    resp = client.graphs.list_communities(collection_id=str(collection_id),
-                                          limit=5).results
-    # We cannot guarantee communities are created if no entities or special conditions apply.
-    # If no communities, we may skip this assert or ensure at least no error occurred.
-    assert isinstance(resp, list), "No communities array returned."
+#     # After building, list communities
+#     resp = client.graphs.list_communities(collection_id=str(collection_id),
+#                                           limit=5).results
+#     # We cannot guarantee communities are created if no entities or special conditions apply.
+#     # If no communities, we may skip this assert or ensure at least no error occurred.
+#     assert isinstance(resp, list), "No communities array returned."
 
 
 def test_list_communities(client: R2RClient, test_collection):

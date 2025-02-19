@@ -5,7 +5,6 @@ from ..config import R2RConfig
 
 
 class Service(ABC):
-
     def __init__(
         self,
         config: R2RConfig,

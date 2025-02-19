@@ -51,8 +51,10 @@ async def create_r2r_app(
 ):
     config = R2RConfig.load(config_name=config_name, config_path=config_path)
 
-    if (config.embedding.provider == "openai"
-            and "OPENAI_API_KEY" not in os.environ):
+    if (
+        config.embedding.provider == "openai"
+        and "OPENAI_API_KEY" not in os.environ
+    ):
         raise ValueError(
             "Must set OPENAI_API_KEY in order to initialize OpenAIEmbeddingProvider."
         )
@@ -80,12 +82,15 @@ logger.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
 
 logger.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
 logger.info(
-    f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}")
+    f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}"
+)
 logger.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
 logger.info(
-    f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}")
+    f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}"
+)
 logger.info(
-    f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}")
+    f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}"
+)
 
 # Create the FastAPI app
 app = FastAPI(

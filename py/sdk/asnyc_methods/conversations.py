@@ -15,7 +15,6 @@ from shared.api.models import (
 
 
 class ConversationsSDK:
-
     def __init__(self, client):
         self.client = client
 
@@ -228,8 +227,9 @@ class ConversationsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -241,12 +241,12 @@ class ConversationsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                    f"{self.client.base_url}/v3/conversations/export",
-                    json=data,
-                    headers={
-                        "Accept": "text/csv",
-                        **self.client._get_auth_header(),
-                    },
+                f"{self.client.base_url}/v3/conversations/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_header(),
+                },
             ) as response:
                 if response.status != 200:
                     raise ValueError(
@@ -278,8 +278,9 @@ class ConversationsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -291,12 +292,12 @@ class ConversationsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                    f"{self.client.base_url}/v3/conversations/export_messages",
-                    json=data,
-                    headers={
-                        "Accept": "text/csv",
-                        **self.client._get_auth_header(),
-                    },
+                f"{self.client.base_url}/v3/conversations/export_messages",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_header(),
+                },
             ) as response:
                 if response.status != 200:
                     raise ValueError(

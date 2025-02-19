@@ -84,8 +84,9 @@ class PostgresDocumentsHandler(Handler):
             f"Creating table, if not exists: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
 
-        vector_dim = (""
-                      if math.isnan(self.dimension) else f"({self.dimension})")
+        vector_dim = (
+            "" if math.isnan(self.dimension) else f"({self.dimension})"
+        )
         vector_type = f"vector{vector_dim}"
 
         try:
@@ -136,7 +137,8 @@ class PostgresDocumentsHandler(Handler):
             # existing_columns = await self.connection_manager.fetch_query(column_check_query)
             # 2) Parse the table name for schema checks
             table_full_name = self._get_table_name(
-                PostgresDocumentsHandler.TABLE_NAME)
+                PostgresDocumentsHandler.TABLE_NAME
+            )
             parsed_schema = "public"
             parsed_table_name = table_full_name
             if "." in table_full_name:
@@ -154,11 +156,11 @@ class PostgresDocumentsHandler(Handler):
             AND table_schema = '{parsed_schema}'
             """
             existing_columns = await self.connection_manager.fetch_query(
-                column_check_query)
+                column_check_query
+            )
 
             existing_column_names = {
-                row["column_name"]
-                for row in existing_columns
+                row["column_name"] for row in existing_columns
             }
 
             if "total_tokens" not in existing_column_names:
@@ -167,12 +169,14 @@ class PostgresDocumentsHandler(Handler):
                 # doc_count = await self.connection_manager.fetchval(doc_count_query)
                 doc_count_query = f"SELECT COUNT(*) AS doc_count FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
                 row = await self.connection_manager.fetchrow_query(
-                    doc_count_query)
+                    doc_count_query
+                )
                 if row is None:
                     doc_count = 0
                 else:
                     doc_count = row[
-                        "doc_count"]  # or row[0] if you prefer positional indexing
+                        "doc_count"
+                    ]  # or row[0] if you prefer positional indexing
 
                 if doc_count > 0:
                     # We already have documents, but no total_tokens column
@@ -192,7 +196,7 @@ class PostgresDocumentsHandler(Handler):
             raise e
 
     async def upsert_documents_overview(
-            self, documents_overview: DocumentResponse | list[DocumentResponse]
+        self, documents_overview: DocumentResponse | list[DocumentResponse]
     ) -> None:
         if isinstance(documents_overview, DocumentResponse):
             documents_overview = [documents_overview]
@@ -203,8 +207,9 @@ class PostgresDocumentsHandler(Handler):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with (self.connection_manager.pool.get_connection()
-                                as conn):  # type: ignore
+                    async with (
+                        self.connection_manager.pool.get_connection() as conn
+                    ):  # type: ignore
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
@@ -212,28 +217,33 @@ class PostgresDocumentsHandler(Handler):
                             WHERE id = $1 FOR UPDATE
                             """
                             existing_doc = await conn.fetchrow(
-                                check_query, document.id)
+                                check_query, document.id
+                            )
 
                             db_entry = document.convert_to_db_entry()
 
                             if existing_doc:
                                 db_version = existing_doc[
-                                    "ingestion_attempt_number"]
+                                    "ingestion_attempt_number"
+                                ]
                                 db_status = existing_doc["ingestion_status"]
                                 new_version = db_entry[
-                                    "ingestion_attempt_number"]
+                                    "ingestion_attempt_number"
+                                ]
 
                                 # Only increment version if status is changing to 'success' or if it's a new version
-                                if (db_status != "success"
-                                        and db_entry["ingestion_status"]
-                                        == "success") or (new_version
-                                                          > db_version):
+                                if (
+                                    db_status != "success"
+                                    and db_entry["ingestion_status"]
+                                    == "success"
+                                ) or (new_version > db_version):
                                     new_attempt_number = db_version + 1
                                 else:
                                     new_attempt_number = db_version
 
                                 db_entry["ingestion_attempt_number"] = (
-                                    new_attempt_number)
+                                    new_attempt_number
+                                )
 
                                 update_query = f"""
                                 UPDATE {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
@@ -270,7 +280,8 @@ class PostgresDocumentsHandler(Handler):
                                     db_entry["summary"],
                                     db_entry["summary_embedding"],
                                     db_entry[
-                                        "total_tokens"],  # pass the new field here
+                                        "total_tokens"
+                                    ],  # pass the new field here
                                     document.id,
                                 )
                             else:
@@ -303,8 +314,8 @@ class PostgresDocumentsHandler(Handler):
 
                     break  # Success, exit the retry loop
                 except (
-                        asyncpg.exceptions.UniqueViolationError,
-                        asyncpg.exceptions.DeadlockDetectedError,
+                    asyncpg.exceptions.UniqueViolationError,
+                    asyncpg.exceptions.DeadlockDetectedError,
                 ) as e:
                     retries += 1
                     if retries == max_retries:
@@ -316,9 +327,9 @@ class PostgresDocumentsHandler(Handler):
                         wait_time = 0.1 * (2**retries)  # Exponential backoff
                         await asyncio.sleep(wait_time)
 
-    async def delete(self,
-                     document_id: UUID,
-                     version: Optional[str] = None) -> None:
+    async def delete(
+        self, document_id: UUID, version: Optional[str] = None
+    ) -> None:
         query = f"""
         DELETE FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
         WHERE id = $1
@@ -377,7 +388,8 @@ class PostgresDocumentsHandler(Handler):
             WHERE {status_type} = ANY($1) and $2 = ANY(collection_ids)
         """
         records = await self.connection_manager.fetch_query(
-            query, [status, collection_id])
+            query, [status, collection_id]
+        )
         return [record["id"] for record in records]
 
     async def _set_status_in_table(
@@ -420,11 +432,13 @@ class PostgresDocumentsHandler(Handler):
         elif status_type in {"graph_cluster_status", "graph_sync_status"}:
             return GraphConstructionStatus
         else:
-            raise R2RException(status_code=400,
-                               message=f"Invalid status type: {status_type}")
+            raise R2RException(
+                status_code=400, message=f"Invalid status type: {status_type}"
+            )
 
-    async def get_workflow_status(self, id: UUID | list[UUID],
-                                  status_type: str):
+    async def get_workflow_status(
+        self, id: UUID | list[UUID], status_type: str
+    ):
         """Get the workflow status for a given document or list of documents.
 
         Args:
@@ -447,8 +461,9 @@ class PostgresDocumentsHandler(Handler):
         result = [out_model[status.upper()] for status in result]
         return result[0] if isinstance(id, UUID) else result
 
-    async def set_workflow_status(self, id: UUID | list[UUID],
-                                  status_type: str, status: str):
+    async def set_workflow_status(
+        self, id: UUID | list[UUID], status_type: str, status: str
+    ):
         """Set the workflow status for a given document or list of documents.
 
         Args:
@@ -485,8 +500,9 @@ class PostgresDocumentsHandler(Handler):
             status = [status]
 
         out_model = self._get_status_model(status_type)
-        return await self._get_ids_from_table(status, out_model.table_name(),
-                                              status_type, collection_id)
+        return await self._get_ids_from_table(
+            status, out_model.table_name(), status_type, collection_id
+        )
 
     async def get_documents_overview(
         self,
@@ -513,15 +529,19 @@ class PostgresDocumentsHandler(Handler):
 
         # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
         # This keeps the query logic unambiguous.
-        if filters and any([
+        if filters and any(
+            [
                 filter_user_ids,
                 filter_document_ids,
                 filter_collection_ids,
-        ]):
+            ]
+        ):
             raise HTTPException(
                 status_code=400,
-                detail=("Cannot use both the 'filters' dictionary "
-                        "and the 'filter_*_ids' parameters simultaneously."),
+                detail=(
+                    "Cannot use both the 'filters' dictionary "
+                    "and the 'filter_*_ids' parameters simultaneously."
+                ),
             )
 
         conditions = []
@@ -534,7 +554,8 @@ class PostgresDocumentsHandler(Handler):
         if filters:
             # Apply the filters to generate a WHERE clause
             filter_condition, filter_params = apply_filters(
-                filters, params, mode="condition_only")
+                filters, params, mode="condition_only"
+            )
             if filter_condition:
                 conditions.append(filter_condition)
             # Make sure we keep adding to the same params list
@@ -620,16 +641,20 @@ class PostgresDocumentsHandler(Handler):
             for row in results:
                 # Safely handle the embedding
                 embedding = None
-                if ("summary_embedding" in row
-                        and row["summary_embedding"] is not None):
+                if (
+                    "summary_embedding" in row
+                    and row["summary_embedding"] is not None
+                ):
                     try:
                         # The embedding is stored as a string like "[0.1, 0.2, ...]"
                         embedding_str = row["summary_embedding"]
                         if embedding_str.startswith(
-                                "[") and embedding_str.endswith("]"):
+                            "["
+                        ) and embedding_str.endswith("]"):
                             embedding = [
                                 float(x)
-                                for x in embedding_str[1:-1].split(",") if x
+                                for x in embedding_str[1:-1].split(",")
+                                if x
                             ]
                     except Exception as e:
                         logger.warning(
@@ -647,16 +672,20 @@ class PostgresDocumentsHandler(Handler):
                         version=row["version"],
                         size_in_bytes=row["size_in_bytes"],
                         ingestion_status=IngestionStatus(
-                            row["ingestion_status"]),
+                            row["ingestion_status"]
+                        ),
                         extraction_status=GraphExtractionStatus(
-                            row["extraction_status"]),
+                            row["extraction_status"]
+                        ),
                         created_at=row["created_at"],
                         updated_at=row["updated_at"],
                         summary=row["summary"] if "summary" in row else None,
                         summary_embedding=(
-                            embedding if include_summary_embedding else None),
+                            embedding if include_summary_embedding else None
+                        ),
                         total_tokens=row["total_tokens"],
-                    ))
+                    )
+                )
             return {"results": documents, "total_entries": total_entries}
         except Exception as e:
             logger.error(f"Error in get_documents_overview: {str(e)}")
@@ -666,22 +695,22 @@ class PostgresDocumentsHandler(Handler):
             ) from e
 
     async def semantic_document_search(
-            self, query_embedding: list[float],
-            search_settings: SearchSettings) -> list[DocumentResponse]:
+        self, query_embedding: list[float], search_settings: SearchSettings
+    ) -> list[DocumentResponse]:
         """Search documents using semantic similarity with their summary
         embeddings."""
 
         where_clauses = ["summary_embedding IS NOT NULL"]
         params: list[str | int | bytes] = [str(query_embedding)]
 
-        vector_dim = (""
-                      if math.isnan(self.dimension) else f"({self.dimension})")
+        vector_dim = (
+            "" if math.isnan(self.dimension) else f"({self.dimension})"
+        )
         filters = copy.deepcopy(search_settings.filters)
         if filters:
             filter_condition, params = apply_filters(
-                transform_filter_fields(filters),
-                params,
-                mode="condition_only")
+                transform_filter_fields(filters), params, mode="condition_only"
+            )
             if filter_condition:
                 where_clauses.append(filter_condition)
 
@@ -757,8 +786,8 @@ class PostgresDocumentsHandler(Handler):
         ]
 
     async def full_text_document_search(
-            self, query_text: str,
-            search_settings: SearchSettings) -> list[DocumentResponse]:
+        self, query_text: str, search_settings: SearchSettings
+    ) -> list[DocumentResponse]:
         """Enhanced full-text search using generated tsvector."""
 
         where_clauses = ["raw_tsvector @@ websearch_to_tsquery('english', $1)"]
@@ -767,9 +796,8 @@ class PostgresDocumentsHandler(Handler):
         filters = copy.deepcopy(search_settings.filters)
         if filters:
             filter_condition, params = apply_filters(
-                transform_filter_fields(filters),
-                params,
-                mode="condition_only")
+                transform_filter_fields(filters), params, mode="condition_only"
+            )
             if filter_condition:
                 where_clauses.append(filter_condition)
 
@@ -861,9 +889,11 @@ class PostgresDocumentsHandler(Handler):
 
         # Get results from both search methods
         semantic_results = await self.semantic_document_search(
-            query_embedding, extended_settings)
+            query_embedding, extended_settings
+        )
         full_text_results = await self.full_text_document_search(
-            query_text, extended_settings)
+            query_text, extended_settings
+        )
 
         # Combine results using RRF
         doc_scores: dict[str, dict] = {}
@@ -873,8 +903,8 @@ class PostgresDocumentsHandler(Handler):
             doc_id = str(result.id)
             doc_scores[doc_id] = {
                 "semantic_rank": rank,
-                "full_text_rank":
-                len(full_text_results) + 1,  # Default rank if not found
+                "full_text_rank": len(full_text_results)
+                + 1,  # Default rank if not found
                 "data": result,
             }
 
@@ -885,8 +915,8 @@ class PostgresDocumentsHandler(Handler):
                 doc_scores[doc_id]["full_text_rank"] = rank
             else:
                 doc_scores[doc_id] = {
-                    "semantic_rank":
-                    len(semantic_results) + 1,  # Default rank if not found
+                    "semantic_rank": len(semantic_results)
+                    + 1,  # Default rank if not found
                     "full_text_rank": rank,
                     "data": result,
                 }
@@ -901,17 +931,20 @@ class PostgresDocumentsHandler(Handler):
             full_text_score = 1 / (rrf_k + scores["full_text_rank"])
 
             # Weighted combination
-            combined_score = (semantic_score * semantic_weight +
-                              full_text_score * full_text_weight) / (
-                                  semantic_weight + full_text_weight)
+            combined_score = (
+                semantic_score * semantic_weight
+                + full_text_score * full_text_weight
+            ) / (semantic_weight + full_text_weight)
 
             scores["final_score"] = combined_score
 
         # Sort by final score and apply offset/limit
         sorted_results = sorted(
-            doc_scores.values(), key=lambda x: x["final_score"],
-            reverse=True)[search_settings.offset:search_settings.offset +
-                          search_settings.limit]
+            doc_scores.values(), key=lambda x: x["final_score"], reverse=True
+        )[
+            search_settings.offset : search_settings.offset
+            + search_settings.limit
+        ]
 
         return [
             DocumentResponse(
@@ -944,19 +977,24 @@ class PostgresDocumentsHandler(Handler):
         if settings is None:
             settings = SearchSettings()
 
-        if (settings.use_semantic_search and
-                settings.use_fulltext_search) or settings.use_hybrid_search:
+        if (
+            settings.use_semantic_search and settings.use_fulltext_search
+        ) or settings.use_hybrid_search:
             if query_embedding is None:
                 raise ValueError(
-                    "query_embedding is required for hybrid search")
-            return await self.hybrid_document_search(query_text,
-                                                     query_embedding, settings)
+                    "query_embedding is required for hybrid search"
+                )
+            return await self.hybrid_document_search(
+                query_text, query_embedding, settings
+            )
         elif settings.use_semantic_search:
             if query_embedding is None:
                 raise ValueError(
-                    "query_embedding is required for vector search")
-            return await self.semantic_document_search(query_embedding,
-                                                       settings)
+                    "query_embedding is required for vector search"
+                )
+            return await self.semantic_document_search(
+                query_embedding, settings
+            )
         else:
             return await self.full_text_document_search(query_text, settings)
 
@@ -1047,13 +1085,12 @@ class PostgresDocumentsHandler(Handler):
 
         temp_file = None
         try:
-            temp_file = tempfile.NamedTemporaryFile(mode="w",
-                                                    delete=True,
-                                                    suffix=".csv")
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection(
-            ) as conn:  # type: ignore
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 

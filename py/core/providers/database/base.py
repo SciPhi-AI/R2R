@@ -12,7 +12,6 @@ logger = logging.getLogger()
 
 
 class SemaphoreConnectionPool:
-
     def __init__(self, connection_string, postgres_configuration_settings):
         self.connection_string = connection_string
         self.postgres_configuration_settings = postgres_configuration_settings
@@ -24,14 +23,13 @@ class SemaphoreConnectionPool:
             )
 
             self.semaphore = asyncio.Semaphore(
-                int(self.postgres_configuration_settings.max_connections *
-                    0.9))
+                int(self.postgres_configuration_settings.max_connections * 0.9)
+            )
 
             self.pool = await asyncpg.create_pool(
                 self.connection_string,
                 max_size=self.postgres_configuration_settings.max_connections,
-                statement_cache_size=self.postgres_configuration_settings.
-                statement_cache_size,
+                statement_cache_size=self.postgres_configuration_settings.statement_cache_size,
             )
 
             logger.info(
@@ -53,12 +51,10 @@ class SemaphoreConnectionPool:
 
 
 class QueryBuilder:
-
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: list = [
-        ]  # Changed from dict to list for PostgreSQL $1, $2 style
+        self.params: list = []  # Changed from dict to list for PostgreSQL $1, $2 style
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None
@@ -113,16 +109,17 @@ class QueryBuilder:
 
         elif self.operation == "INSERT":
             columns = ", ".join(self.insert_data.keys())
-            placeholders = ", ".join(f"${i}"
-                                     for i in range(1,
-                                                    len(self.insert_data) + 1))
+            placeholders = ", ".join(
+                f"${i}" for i in range(1, len(self.insert_data) + 1)
+            )
             query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
             self.params.extend(list(self.insert_data.values()))
 
         elif self.operation == "UPDATE":
             set_clauses = []
-            for i, (key, value) in enumerate(self.update_data.items(),
-                                             start=len(self.params) + 1):
+            for i, (key, value) in enumerate(
+                self.update_data.items(), start=len(self.params) + 1
+            ):
                 set_clauses.append(f"{key} = ${i}")
                 self.params.append(value)
             query = f"UPDATE {self.table_name} SET {', '.join(set_clauses)}"
@@ -152,7 +149,6 @@ class QueryBuilder:
 
 
 class PostgresConnectionManager(DatabaseConnectionManager):
-
     def __init__(self):
         self.pool: Optional[SemaphoreConnectionPool] = None
 
@@ -183,7 +179,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
                 if params:
                     results = []
                     for i in range(0, len(params), batch_size):
-                        param_batch = params[i:i + batch_size]
+                        param_batch = params[i : i + batch_size]
                         result = await conn.executemany(query, param_batch)
                         results.append(result)
                     return results
@@ -196,8 +192,11 @@ class PostgresConnectionManager(DatabaseConnectionManager):
         try:
             async with self.pool.get_connection() as conn:
                 async with conn.transaction():
-                    return (await conn.fetch(query, *params)
-                            if params else await conn.fetch(query))
+                    return (
+                        await conn.fetch(query, *params)
+                        if params
+                        else await conn.fetch(query)
+                    )
         except asyncpg.exceptions.DuplicatePreparedStatementError:
             error_msg = textwrap.dedent("""
                 Database Configuration Error

@@ -10,10 +10,7 @@ client.ingest_files(file_paths=["test.txt"])
 # Call RAG directly on an R2R object
 rag_response = client.rag(
     query="Who is john",
-    rag_generation_config={
-        "model": "gpt-4o-mini",
-        "temperature": 0.0
-    },
+    rag_generation_config={"model": "gpt-4o-mini", "temperature": 0.0},
 )
 results = rag_response["results"]
 print(f"Search Results:\n{results['search_results']}")

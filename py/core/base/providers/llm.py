@@ -40,7 +40,6 @@ class CompletionConfig(ProviderConfig):
 
 
 class CompletionProvider(Provider):
-
     def __init__(self, config: CompletionConfig) -> None:
         if not isinstance(config, CompletionConfig):
             raise ValueError(
@@ -51,7 +50,8 @@ class CompletionProvider(Provider):
         self.config: CompletionConfig = config
         self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
         self.thread_pool = ThreadPoolExecutor(
-            max_workers=config.concurrent_request_limit)
+            max_workers=config.concurrent_request_limit
+        )
 
     async def _execute_with_backoff_async(self, task: dict[str, Any]):
         retries = 0
@@ -64,7 +64,8 @@ class CompletionProvider(Provider):
                 raise
             except Exception as e:
                 logger.warning(
-                    f"Request failed (attempt {retries + 1}): {str(e)}")
+                    f"Request failed (attempt {retries + 1}): {str(e)}"
+                )
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
@@ -72,7 +73,8 @@ class CompletionProvider(Provider):
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     async def _execute_with_backoff_async_stream(
-            self, task: dict[str, Any]) -> AsyncGenerator[Any, None]:
+        self, task: dict[str, Any]
+    ) -> AsyncGenerator[Any, None]:
         retries = 0
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
@@ -101,7 +103,8 @@ class CompletionProvider(Provider):
                 return self._execute_task_sync(task)
             except Exception as e:
                 logger.warning(
-                    f"Request failed (attempt {retries + 1}): {str(e)}")
+                    f"Request failed (attempt {retries + 1}): {str(e)}"
+                )
                 retries += 1
                 if retries == self.config.max_retries:
                     raise
@@ -109,7 +112,8 @@ class CompletionProvider(Provider):
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     def _execute_with_backoff_sync_stream(
-            self, task: dict[str, Any]) -> Generator[Any, None, None]:
+        self, task: dict[str, Any]
+    ) -> Generator[Any, None, None]:
         retries = 0
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
@@ -168,11 +172,13 @@ class CompletionProvider(Provider):
 
             chunk.choices[0].finish_reason = (
                 chunk.choices[0].finish_reason
-                if chunk.choices[0].finish_reason != "" else None
+                if chunk.choices[0].finish_reason != ""
+                else None
             )  # handle error output conventions
             chunk.choices[0].finish_reason = (
                 chunk.choices[0].finish_reason
-                if chunk.choices[0].finish_reason != "eos" else "stop"
+                if chunk.choices[0].finish_reason != "eos"
+                else "stop"
             )  # hardcode `eos` to `stop` for consistency
             try:
                 yield LLMChatCompletionChunk(**(chunk.dict()))

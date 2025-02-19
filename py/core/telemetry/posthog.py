@@ -15,10 +15,9 @@ class PosthogClient:
     safe to use in public apps.
     """
 
-    def __init__(self,
-                 api_key: str,
-                 enabled: bool = True,
-                 debug: bool = False):
+    def __init__(
+        self, api_key: str, enabled: bool = True, debug: bool = False
+    ):
         self.enabled = enabled
         self.debug = debug
 

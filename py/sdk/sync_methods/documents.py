@@ -61,9 +61,13 @@ class DocumentsSDK:
         """
         if not file_path and not raw_text and not chunks:
             raise ValueError(
-                "Either `file_path`, `raw_text` or `chunks` must be provided")
-        if ((file_path and raw_text) or (file_path and chunks)
-                or (raw_text and chunks)):
+                "Either `file_path`, `raw_text` or `chunks` must be provided"
+            )
+        if (
+            (file_path and raw_text)
+            or (file_path and chunks)
+            or (raw_text and chunks)
+        ):
             raise ValueError(
                 "Only one of `file_path`, `raw_text` or `chunks` may be provided"
             )
@@ -78,8 +82,11 @@ class DocumentsSDK:
         if ingestion_config:
             if isinstance(ingestion_config, IngestionMode):
                 ingestion_config = {"mode": ingestion_config.value}
-            app_config: dict[str, Any] = ({} if isinstance(
-                ingestion_config, dict) else ingestion_config["app"])
+            app_config: dict[str, Any] = (
+                {}
+                if isinstance(ingestion_config, dict)
+                else ingestion_config["app"]
+            )
             ingestion_config = dict(ingestion_config)
             ingestion_config["app"] = app_config
             data["ingestion_config"] = json.dumps(ingestion_config)
@@ -95,10 +102,12 @@ class DocumentsSDK:
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
-            files = [(
-                "file",
-                (file_path, file_instance, "application/octet-stream"),
-            )]
+            files = [
+                (
+                    "file",
+                    (file_path, file_instance, "application/octet-stream"),
+                )
+            ]
             try:
                 response_dict = self.client._make_request(
                     "POST",
@@ -189,8 +198,11 @@ class DocumentsSDK:
             raise ValueError("Expected BytesIO response")
 
         if output_path:
-            output_path = (Path(output_path)
-                           if isinstance(output_path, str) else output_path)
+            output_path = (
+                Path(output_path)
+                if isinstance(output_path, str)
+                else output_path
+            )
             with open(output_path, "wb") as f:
                 f.write(response.getvalue())
             return None
@@ -217,8 +229,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         data: dict[str, Any] = {"include_header": include_header}
         if columns:
@@ -267,8 +280,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -318,8 +332,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -669,9 +684,9 @@ class DocumentsSDK:
         # Create a temporary file.
         # We use binary mode ("wb") for both PDFs and text files because the `create`
         # method will open the file in binary mode.
-        temp_file = tempfile.NamedTemporaryFile(mode="wb",
-                                                delete=False,
-                                                suffix=f"_{filename}")
+        temp_file = tempfile.NamedTemporaryFile(
+            mode="wb", delete=False, suffix=f"_{filename}"
+        )
         try:
             response = requests.get(sample_file_url)
             response.raise_for_status()

@@ -148,8 +148,11 @@ class Serializable(BaseModel, ABC):
         extra = "ignore"
 
     def __repr_args__(self) -> Any:
-        return [(k, v) for k, v in super().__repr_args__()
-                if (k not in self.__fields__ or try_neq_default(v, k, self))]
+        return [
+            (k, v)
+            for k, v in super().__repr_args__()
+            if (k not in self.__fields__ or try_neq_default(v, k, self))
+        ]
 
     _lc_kwargs: dict[str, Any] = PrivateAttr(default_factory=dict)
 
@@ -157,7 +160,9 @@ class Serializable(BaseModel, ABC):
         super().__init__(**kwargs)
         self._lc_kwargs = kwargs
 
-    def to_json(self, ) -> SerializedConstructor | SerializedNotImplemented:
+    def to_json(
+        self,
+    ) -> SerializedConstructor | SerializedNotImplemented:
         if not self.is_lc_serializable():
             return self.to_json_not_implemented()
 
@@ -165,8 +170,8 @@ class Serializable(BaseModel, ABC):
         # Get latest values for kwargs if there is an attribute with same name
         lc_kwargs = {
             k: getattr(self, k, v)
-            for k, v in self._lc_kwargs.items() if not (
-                self.__exclude_fields__ or {}).get(k, False)  # type: ignore
+            for k, v in self._lc_kwargs.items()
+            if not (self.__exclude_fields__ or {}).get(k, False)  # type: ignore
         }
 
         # Merge the lc_secrets and lc_attributes from every class in the MRO
@@ -186,11 +191,13 @@ class Serializable(BaseModel, ABC):
                         raise ValueError(
                             f"Class {self.__class__} has a deprecated "
                             f"attribute {attr}. Please use the corresponding "
-                            f"classmethod instead.")
+                            f"classmethod instead."
+                        )
 
             # Get a reference to self bound to each class in the MRO
-            this = cast(Serializable,
-                        self if cls is None else super(cls, self))
+            this = cast(
+                Serializable, self if cls is None else super(cls, self)
+            )
 
             secrets.update(this.lc_secrets)
             # Now also add the aliases for the secrets
@@ -211,22 +218,23 @@ class Serializable(BaseModel, ABC):
                 lc_kwargs.update({key: secret_value})
 
         return {
-            "lc":
-            1,
-            "type":
-            "constructor",
-            "id":
-            self.lc_id(),
-            "kwargs": (lc_kwargs if not secrets else _replace_secrets(
-                lc_kwargs, secrets)),
+            "lc": 1,
+            "type": "constructor",
+            "id": self.lc_id(),
+            "kwargs": (
+                lc_kwargs
+                if not secrets
+                else _replace_secrets(lc_kwargs, secrets)
+            ),
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
         return to_json_not_implemented(self)
 
 
-def _replace_secrets(root: dict[Any, Any],
-                     secrets_map: dict[str, str]) -> dict[Any, Any]:
+def _replace_secrets(
+    root: dict[Any, Any], secrets_map: dict[str, str]
+) -> dict[Any, Any]:
     result = root.copy()
     for path, secret_id in secrets_map.items():
         [*parts, last] = path.split(".")
@@ -340,8 +348,9 @@ class BaseDocumentTransformer(ABC):
     """  # noqa: E501
 
     @abstractmethod
-    def transform_documents(self, documents: Sequence[SplitterDocument],
-                            **kwargs: Any) -> Sequence[SplitterDocument]:
+    def transform_documents(
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Transform a list of documents.
 
         Args:
@@ -352,8 +361,8 @@ class BaseDocumentTransformer(ABC):
         """
 
     async def atransform_documents(
-            self, documents: Sequence[SplitterDocument],
-            **kwargs: Any) -> Sequence[SplitterDocument]:
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Asynchronously transform a list of documents.
 
         Args:
@@ -369,14 +378,14 @@ class BaseDocumentTransformer(ABC):
 
 
 def _make_spacy_pipe_for_splitting(
-        pipe: str,
-        *,
-        max_length: int = 1_000_000) -> Any:  # avoid importing spacy
+    pipe: str, *, max_length: int = 1_000_000
+) -> Any:  # avoid importing spacy
     try:
         import spacy
-    except ImportError as e:
+    except ImportError:
         raise ImportError(
-            "Spacy is not installed, run `pip install spacy`.") from e
+            "Spacy is not installed, run `pip install spacy`."
+        ) from None
     if pipe == "sentencizer":
         from spacy.lang.en import English
 
@@ -388,8 +397,9 @@ def _make_spacy_pipe_for_splitting(
     return sentencizer
 
 
-def _split_text_with_regex(text: str, separator: str,
-                           keep_separator: bool) -> list[str]:
+def _split_text_with_regex(
+    text: str, separator: str, keep_separator: bool
+) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
         if keep_separator:
@@ -435,7 +445,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         if chunk_overlap > chunk_size:
             raise ValueError(
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
-                f"({chunk_size}), should be smaller.")
+                f"({chunk_size}), should be smaller."
+            )
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
@@ -448,9 +459,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Split text into multiple components."""
 
     def create_documents(
-            self,
-            texts: list[str],
-            metadatas: Optional[list[dict]] = None) -> list[SplitterDocument]:
+        self, texts: list[str], metadatas: Optional[list[dict]] = None
+    ) -> list[SplitterDocument]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -464,14 +474,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     index = text.find(chunk, max(0, offset))
                     metadata["start_index"] = index
                     previous_chunk_len = len(chunk)
-                new_doc = SplitterDocument(page_content=chunk,
-                                           metadata=metadata)
+                new_doc = SplitterDocument(
+                    page_content=chunk, metadata=metadata
+                )
                 documents.append(new_doc)
         return documents
 
     def split_documents(
-            self,
-            documents: Iterable[SplitterDocument]) -> list[SplitterDocument]:
+        self, documents: Iterable[SplitterDocument]
+    ) -> list[SplitterDocument]:
         """Split documents."""
         texts, metadatas = [], []
         for doc in documents:
@@ -488,8 +499,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         else:
             return text
 
-    def _merge_splits(self, splits: Iterable[str],
-                      separator: str) -> list[str]:
+    def _merge_splits(
+        self, splits: Iterable[str], separator: str
+    ) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
@@ -499,8 +511,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         total = 0
         for d in splits:
             _len = self._length_function(d)
-            if (total + _len + (separator_len if len(current_doc) > 0 else 0)
-                    > self._chunk_size):
+            if (
+                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                > self._chunk_size
+            ):
                 if total > self._chunk_size:
                     logger.warning(
                         f"Created a chunk of size {total}, "
@@ -514,11 +528,15 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                            total + _len +
-                        (separator_len if len(current_doc) > 0 else 0)
-                            > self._chunk_size and total > 0):
+                        total
+                        + _len
+                        + (separator_len if len(current_doc) > 0 else 0)
+                        > self._chunk_size
+                        and total > 0
+                    ):
                         total -= self._length_function(current_doc[0]) + (
-                            separator_len if len(current_doc) > 1 else 0)
+                            separator_len if len(current_doc) > 1 else 0
+                        )
                         current_doc = current_doc[1:]
             current_doc.append(d)
             total += _len + (separator_len if len(current_doc) > 1 else 0)
@@ -528,8 +546,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return docs
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any,
-                                   **kwargs: Any) -> TextSplitter:
+    def from_huggingface_tokenizer(
+        cls, tokenizer: Any, **kwargs: Any
+    ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
             from transformers import PreTrainedTokenizerBase
@@ -542,10 +561,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.encode(text))
 
-        except ImportError as e:
+        except ImportError:
             raise ValueError(
                 "Could not import transformers python package. "
-                "Please install it with `pip install transformers`.") from e
+                "Please install it with `pip install transformers`."
+            ) from None
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
@@ -560,10 +580,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
-        except ImportError as e:
+        except ImportError:
             raise ImportError("""Could not import tiktoken python package.
                 This is needed in order to calculate max_tokens_for_prompt.
-                Please install it with `pip install tiktoken`.""") from e
+                Please install it with `pip install tiktoken`.""") from None
 
         if model is not None:
             enc = tiktoken.encoding_for_model(model)
@@ -576,7 +596,8 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     text,
                     allowed_special=allowed_special,
                     disallowed_special=disallowed_special,
-                ))
+                )
+            )
 
         if issubclass(cls, TokenTextSplitter):
             extra_kwargs = {
@@ -589,8 +610,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
-    def transform_documents(self, documents: Sequence[SplitterDocument],
-                            **kwargs: Any) -> Sequence[SplitterDocument]:
+    def transform_documents(
+        self, documents: Sequence[SplitterDocument], **kwargs: Any
+    ) -> Sequence[SplitterDocument]:
         """Transform sequence of documents by splitting them."""
         return self.split_documents(list(documents))
 
@@ -614,8 +636,11 @@ class CharacterTextSplitter(TextSplitter):
     def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
-        separator = (self._separator if self._is_separator_regex else
-                     re.escape(self._separator))
+        separator = (
+            self._separator
+            if self._is_separator_regex
+            else re.escape(self._separator)
+        )
         splits = _split_text_with_regex(text, separator, self._keep_separator)
         _separator = "" if self._keep_separator else self._separator
         return self._merge_splits(splits, _separator)
@@ -656,14 +681,15 @@ class MarkdownHeaderTextSplitter:
         self.return_each_line = return_each_line
         # Given the headers we want to split on,
         # (e.g., "#, ##, etc") order by length
-        self.headers_to_split_on = sorted(headers_to_split_on,
-                                          key=lambda split: len(split[0]),
-                                          reverse=True)
+        self.headers_to_split_on = sorted(
+            headers_to_split_on, key=lambda split: len(split[0]), reverse=True
+        )
         # Strip headers split headers from the content of the chunk
         self.strip_headers = strip_headers
 
     def aggregate_lines_to_chunks(
-            self, lines: list[LineType]) -> list[SplitterDocument]:
+        self, lines: list[LineType]
+    ) -> list[SplitterDocument]:
         """Combine lines with common metadata into chunks
         Args:
             lines: Line of text / associated header metadata
@@ -671,19 +697,23 @@ class MarkdownHeaderTextSplitter:
         aggregated_chunks: list[LineType] = []
 
         for line in lines:
-            if (aggregated_chunks
-                    and aggregated_chunks[-1]["metadata"] == line["metadata"]):
+            if (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == line["metadata"]
+            ):
                 # If the last line in the aggregated list
                 # has the same metadata as the current line,
                 # append the current content to the last lines's content
                 aggregated_chunks[-1]["content"] += "  \n" + line["content"]
-            elif (aggregated_chunks
-                  and aggregated_chunks[-1]["metadata"] != line["metadata"]
-                  # may be issues if other metadata is present
-                  and len(aggregated_chunks[-1]["metadata"]) < len(
-                      line["metadata"]) and
-                  aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
-                  and not self.strip_headers):
+            elif (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] != line["metadata"]
+                # may be issues if other metadata is present
+                and len(aggregated_chunks[-1]["metadata"])
+                < len(line["metadata"])
+                and aggregated_chunks[-1]["content"].split("\n")[-1][0] == "#"
+                and not self.strip_headers
+            ):
                 # If the last line in the aggregated list
                 # has different metadata as the current line,
                 # and has shallower header level than the current line,
@@ -698,8 +728,9 @@ class MarkdownHeaderTextSplitter:
                 aggregated_chunks.append(line)
 
         return [
-            SplitterDocument(page_content=chunk["content"],
-                             metadata=chunk["metadata"])
+            SplitterDocument(
+                page_content=chunk["content"], metadata=chunk["metadata"]
+            )
             for chunk in aggregated_chunks
         ]
 
@@ -728,8 +759,10 @@ class MarkdownHeaderTextSplitter:
 
             if not in_code_block:
                 # Exclude inline code spans
-                if (stripped_line.startswith("```")
-                        and stripped_line.count("```") == 1):
+                if (
+                    stripped_line.startswith("```")
+                    and stripped_line.count("```") == 1
+                ):
                     in_code_block = True
                     opening_fence = "```"
                 elif stripped_line.startswith("~~~"):
@@ -748,18 +781,22 @@ class MarkdownHeaderTextSplitter:
             for sep, name in self.headers_to_split_on:
                 # Check if line starts with a header that we intend to split on
                 if stripped_line.startswith(sep) and (
-                        # Header with no text OR header is followed by space
-                        # Both are valid conditions that sep is being used a header
-                        len(stripped_line) == len(sep)
-                        or stripped_line[len(sep)] == " "):
+                    # Header with no text OR header is followed by space
+                    # Both are valid conditions that sep is being used a header
+                    len(stripped_line) == len(sep)
+                    or stripped_line[len(sep)] == " "
+                ):
                     # Ensure we are tracking the header as metadata
                     if name is not None:
                         # Get the current header level
                         current_header_level = sep.count("#")
 
                         # Pop out headers of lower or same level from the stack
-                        while (header_stack and header_stack[-1]["level"]
-                               >= current_header_level):
+                        while (
+                            header_stack
+                            and header_stack[-1]["level"]
+                            >= current_header_level
+                        ):
                             # We have encountered a new header
                             # at the same or higher level
                             popped_header = header_stack.pop()
@@ -772,7 +809,7 @@ class MarkdownHeaderTextSplitter:
                         header: HeaderType = {
                             "level": current_header_level,
                             "name": name,
-                            "data": stripped_line[len(sep):].strip(),
+                            "data": stripped_line[len(sep) :].strip(),
                         }
                         header_stack.append(header)
                         # Update initial_metadata with the current header
@@ -781,12 +818,12 @@ class MarkdownHeaderTextSplitter:
                     # Add the previous line to the lines_with_metadata
                     # only if current_content is not empty
                     if current_content:
-                        lines_with_metadata.append({
-                            "content":
-                            "\n".join(current_content),
-                            "metadata":
-                            current_metadata.copy(),
-                        })
+                        lines_with_metadata.append(
+                            {
+                                "content": "\n".join(current_content),
+                                "metadata": current_metadata.copy(),
+                            }
+                        )
                         current_content.clear()
 
                     if not self.strip_headers:
@@ -797,21 +834,23 @@ class MarkdownHeaderTextSplitter:
                 if stripped_line:
                     current_content.append(stripped_line)
                 elif current_content:
-                    lines_with_metadata.append({
-                        "content":
-                        "\n".join(current_content),
-                        "metadata":
-                        current_metadata.copy(),
-                    })
+                    lines_with_metadata.append(
+                        {
+                            "content": "\n".join(current_content),
+                            "metadata": current_metadata.copy(),
+                        }
+                    )
                     current_content.clear()
 
             current_metadata = initial_metadata.copy()
 
         if current_content:
-            lines_with_metadata.append({
-                "content": "\n".join(current_content),
-                "metadata": current_metadata,
-            })
+            lines_with_metadata.append(
+                {
+                    "content": "\n".join(current_content),
+                    "metadata": current_metadata,
+                }
+            )
 
         # lines_with_metadata has each line with associated header metadata
         # aggregate these into chunks based on common metadata
@@ -819,8 +858,9 @@ class MarkdownHeaderTextSplitter:
             return self.aggregate_lines_to_chunks(lines_with_metadata)
         else:
             return [
-                SplitterDocument(page_content=chunk["content"],
-                                 metadata=chunk["metadata"])
+                SplitterDocument(
+                    page_content=chunk["content"], metadata=chunk["metadata"]
+                )
                 for chunk in lines_with_metadata
             ]
 
@@ -859,7 +899,8 @@ class HTMLHeaderTextSplitter:
         self.headers_to_split_on = sorted(headers_to_split_on)
 
     def aggregate_elements_to_chunks(
-            self, elements: list[ElementType]) -> list[SplitterDocument]:
+        self, elements: list[ElementType]
+    ) -> list[SplitterDocument]:
         """Combine elements with common metadata into chunks.
 
         Args:
@@ -869,8 +910,10 @@ class HTMLHeaderTextSplitter:
         aggregated_chunks: list[ElementType] = []
 
         for element in elements:
-            if (aggregated_chunks and aggregated_chunks[-1]["metadata"]
-                    == element["metadata"]):
+            if (
+                aggregated_chunks
+                and aggregated_chunks[-1]["metadata"] == element["metadata"]
+            ):
                 # If the last element in the aggregated list
                 # has the same metadata as the current element,
                 # append the current content to the last element's content
@@ -880,8 +923,9 @@ class HTMLHeaderTextSplitter:
                 aggregated_chunks.append(element)
 
         return [
-            SplitterDocument(page_content=chunk["content"],
-                             metadata=chunk["metadata"])
+            SplitterDocument(
+                page_content=chunk["content"], metadata=chunk["metadata"]
+            )
             for chunk in aggregated_chunks
         ]
 
@@ -910,9 +954,10 @@ class HTMLHeaderTextSplitter:
         """
         try:
             from lxml import etree
-        except ImportError as e:
+        except ImportError:
             raise ImportError(
-                "Unable to import lxml, run `pip install lxml`.") from e
+                "Unable to import lxml, run `pip install lxml`."
+            ) from None
         # use lxml library to parse html document and return xml ElementTree
         # Explicitly encoding in utf-8 allows non-English
         # html files to be processed without garbled characters
@@ -922,8 +967,10 @@ class HTMLHeaderTextSplitter:
         # document transformation for "structure-aware" chunking is handled
         # with xsl. See comments in html_chunks_with_headers.xslt for more
         # detailed information.
-        xslt_path = (pathlib.Path(__file__).parent /
-                     "document_transformers/xsl/html_chunks_with_headers.xslt")
+        xslt_path = (
+            pathlib.Path(__file__).parent
+            / "document_transformers/xsl/html_chunks_with_headers.xslt"
+        )
         xslt_tree = etree.parse(xslt_path)
         transform = etree.XSLT(xslt_tree)
         result = transform(tree)
@@ -940,37 +987,48 @@ class HTMLHeaderTextSplitter:
         elements = []
         for element in result_dom.findall("*//*", ns_map):
             if element.findall("*[@class='headers']") or element.findall(
-                    "*[@class='chunk']"):
+                "*[@class='chunk']"
+            ):
                 elements.append(
                     ElementType(
                         url=file,
-                        xpath="".join([
-                            node.text for node in element.findall(
-                                "*[@class='xpath']", ns_map)
-                        ]),
-                        content="".join([
-                            node.text for node in element.findall(
-                                "*[@class='chunk']", ns_map)
-                        ]),
+                        xpath="".join(
+                            [
+                                node.text
+                                for node in element.findall(
+                                    "*[@class='xpath']", ns_map
+                                )
+                            ]
+                        ),
+                        content="".join(
+                            [
+                                node.text
+                                for node in element.findall(
+                                    "*[@class='chunk']", ns_map
+                                )
+                            ]
+                        ),
                         metadata={
                             # Add text of specified headers to
                             # metadata using header mapping.
-                            header_mapping[node.tag]:
-                            node.text
+                            header_mapping[node.tag]: node.text
                             for node in filter(
                                 lambda x: x.tag in header_filter,
-                                element.findall("*[@class='headers']/*",
-                                                ns_map),
+                                element.findall(
+                                    "*[@class='headers']/*", ns_map
+                                ),
                             )
                         },
-                    ))
+                    )
+                )
 
         if not self.return_each_element:
             return self.aggregate_elements_to_chunks(elements)
         else:
             return [
-                SplitterDocument(page_content=chunk["content"],
-                                 metadata=chunk["metadata"])
+                SplitterDocument(
+                    page_content=chunk["content"], metadata=chunk["metadata"]
+                )
                 for chunk in elements
             ]
 
@@ -1023,11 +1081,12 @@ class TokenTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         try:
             import tiktoken
-        except ImportError as e:
+        except ImportError:
             raise ImportError(
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
-                "Please install it with `pip install tiktoken`.") from e
+                "Please install it with `pip install tiktoken`."
+            ) from None
 
         if model is not None:
             enc = tiktoken.encoding_for_model(model)
@@ -1038,7 +1097,6 @@ class TokenTextSplitter(TextSplitter):
         self._disallowed_special = disallowed_special
 
     def split_text(self, text: str) -> list[str]:
-
         def _encode(_text: str) -> list[int]:
             return self._tokenizer.encode(
                 _text,
@@ -1071,13 +1129,14 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         try:
             from sentence_transformers import SentenceTransformer
-        except ImportError as e:
+        except ImportError:
             raise ImportError(
                 """Could not import sentence_transformer python package.
                 This is needed in order to for
                 SentenceTransformersTokenTextSplitter.
                 Please install it with `pip install sentence-transformers`.
-                """) from e
+                """
+            ) from None
 
         self.model = model
         self._model = SentenceTransformer(self.model, trust_remote_code=True)
@@ -1085,7 +1144,8 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
     def _initialize_chunk_configuration(
-            self, *, tokens_per_chunk: Optional[int]) -> None:
+        self, *, tokens_per_chunk: Optional[int]
+    ) -> None:
         self.maximum_tokens_per_chunk = cast(int, self._model.max_seq_length)
 
         if tokens_per_chunk is None:
@@ -1098,10 +1158,10 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
                 f"The token limit of the models '{self.model}'"
                 f" is: {self.maximum_tokens_per_chunk}."
                 f" Argument tokens_per_chunk={self.tokens_per_chunk}"
-                f" > maximum token limit.")
+                f" > maximum token limit."
+            )
 
     def split_text(self, text: str) -> list[str]:
-
         def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
             return self._encode(text)[1:-1]
 
@@ -1196,11 +1256,12 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 break
             if re.search(_separator, text):
                 separator = _s
-                new_separators = separators[i + 1:]
+                new_separators = separators[i + 1 :]
                 break
 
-        _separator = (separator
-                      if self._is_separator_regex else re.escape(separator))
+        _separator = (
+            separator if self._is_separator_regex else re.escape(separator)
+        )
         splits = _split_text_with_regex(text, _separator, self._keep_separator)
 
         # Now go merging things, recursively splitting longer texts.
@@ -1228,8 +1289,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
         return self._split_text(text, self._separators)
 
     @classmethod
-    def from_language(cls, language: Language,
-                      **kwargs: Any) -> RecursiveCharacterTextSplitter:
+    def from_language(
+        cls, language: Language, **kwargs: Any
+    ) -> RecursiveCharacterTextSplitter:
         separators = cls.get_separators_for_language(language)
         return cls(separators=separators, is_separator_regex=True, **kwargs)
 
@@ -1694,26 +1756,27 @@ class RecursiveCharacterTextSplitter(TextSplitter):
             ]
 
         else:
-            raise ValueError(f"Language {language} is not supported! "
-                             f"Please choose from {list(Language)}")
+            raise ValueError(
+                f"Language {language} is not supported! "
+                f"Please choose from {list(Language)}"
+            )
 
 
 class NLTKTextSplitter(TextSplitter):
     """Splitting text using NLTK package."""
 
-    def __init__(self,
-                 separator: str = "\n\n",
-                 language: str = "english",
-                 **kwargs: Any) -> None:
+    def __init__(
+        self, separator: str = "\n\n", language: str = "english", **kwargs: Any
+    ) -> None:
         """Initialize the NLTK splitter."""
         super().__init__(**kwargs)
         try:
             from nltk.tokenize import sent_tokenize
 
             self._tokenizer = sent_tokenize
-        except ImportError as e:
+        except ImportError:
             raise ImportError("""NLTK is not installed, please install it with
-                `pip install nltk`.""") from e
+                `pip install nltk`.""") from None
         self._separator = separator
         self._language = language
 
@@ -1742,8 +1805,9 @@ class SpacyTextSplitter(TextSplitter):
     ) -> None:
         """Initialize the spacy text splitter."""
         super().__init__(**kwargs)
-        self._tokenizer = _make_spacy_pipe_for_splitting(pipe,
-                                                         max_length=max_length)
+        self._tokenizer = _make_spacy_pipe_for_splitting(
+            pipe, max_length=max_length
+        )
         self._separator = separator
 
     def split_text(self, text: str) -> list[str]:
@@ -1768,11 +1832,11 @@ class KonlpyTextSplitter(TextSplitter):
         self._separator = separator
         try:
             from konlpy.tag import Kkma
-        except ImportError as e:
+        except ImportError:
             raise ImportError("""
                 Konlpy is not installed, please install it with
                 `pip install konlpy`
-                """) from e
+                """) from None
         self.kkma = Kkma()
 
     def split_text(self, text: str) -> list[str]:
@@ -1810,14 +1874,16 @@ class LatexTextSplitter(RecursiveCharacterTextSplitter):
 
 
 class RecursiveJsonSplitter:
-
-    def __init__(self,
-                 max_chunk_size: int = 2000,
-                 min_chunk_size: Optional[int] = None):
+    def __init__(
+        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
+    ):
         super().__init__()
         self.max_chunk_size = max_chunk_size
-        self.min_chunk_size = (min_chunk_size if min_chunk_size is not None
-                               else max(max_chunk_size - 200, 50))
+        self.min_chunk_size = (
+            min_chunk_size
+            if min_chunk_size is not None
+            else max(max_chunk_size - 200, 50)
+        )
 
     @staticmethod
     def _json_size(data: dict) -> int:
@@ -1835,8 +1901,7 @@ class RecursiveJsonSplitter:
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {
-                k: self._list_to_dict_preprocessing(v)
-                for k, v in data.items()
+                k: self._list_to_dict_preprocessing(v) for k, v in data.items()
             }
         elif isinstance(data, list):
             # Convert the list to a dictionary with index-based keys
@@ -1892,7 +1957,8 @@ class RecursiveJsonSplitter:
 
         if convert_lists:
             chunks = self._json_split(
-                self._list_to_dict_preprocessing(json_data))
+                self._list_to_dict_preprocessing(json_data)
+            )
         else:
             chunks = self._json_split(json_data)
 
@@ -1901,13 +1967,14 @@ class RecursiveJsonSplitter:
             chunks.pop()
         return chunks
 
-    def split_text(self,
-                   json_data: dict[str, Any],
-                   convert_lists: bool = False) -> list[str]:
+    def split_text(
+        self, json_data: dict[str, Any], convert_lists: bool = False
+    ) -> list[str]:
         """Splits JSON into a list of JSON formatted strings."""
 
-        chunks = self.split_json(json_data=json_data,
-                                 convert_lists=convert_lists)
+        chunks = self.split_json(
+            json_data=json_data, convert_lists=convert_lists
+        )
 
         # Convert to string
         return [json.dumps(chunk) for chunk in chunks]
@@ -1922,10 +1989,12 @@ class RecursiveJsonSplitter:
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
-            for chunk in self.split_text(json_data=text,
-                                         convert_lists=convert_lists):
+            for chunk in self.split_text(
+                json_data=text, convert_lists=convert_lists
+            ):
                 metadata = copy.deepcopy(_metadatas[i])
-                new_doc = SplitterDocument(page_content=chunk,
-                                           metadata=metadata)
+                new_doc = SplitterDocument(
+                    page_content=chunk, metadata=metadata
+                )
                 documents.append(new_doc)
         return documents

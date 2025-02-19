@@ -196,13 +196,13 @@ def test_completion(client: R2RClient):
             "model": "openai/gpt-4o"
         },
     )
-    assert "results" in resp, "Completion response missing 'results'"
-    assert "choices" in resp["results"], "No choices in completion result"
+    assert resp.results is not None, "Completion response missing 'results'"
+    assert resp.results.choices is not None, "No choices in completion result"
 
 
 def test_embedding(client: R2RClient):
     text = "Who is Aristotle?"
-    resp = client.retrieval.embedding(text=text)["results"]
+    resp = client.retrieval.embedding(text=text).results
     assert len(resp) > 0, "No embedding vector returned"
 
 

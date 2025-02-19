@@ -27,8 +27,9 @@ class RSTParser(AsyncParser[str | bytes]):
         self.publish_string = publish_string
         self.html5_polyglot = html5_polyglot
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
 
@@ -54,4 +55,4 @@ class RSTParser(AsyncParser[str | bytes]):
                     yield paragraph.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing RST file: {str(e)}")
+            raise ValueError(f"Error processing RST file: {str(e)}") from e

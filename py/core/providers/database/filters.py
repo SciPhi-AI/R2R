@@ -36,7 +36,6 @@ class FilterOperator:
 
 
 class FilterCondition:
-
     def __init__(self, field: str, operator: str, value: Any):
         self.field = field
         self.operator = operator
@@ -44,14 +43,12 @@ class FilterCondition:
 
 
 class FilterExpression:
-
     def __init__(self, logical_op: Optional[str] = None):
         self.logical_op = logical_op
         self.conditions: list[FilterCondition | "FilterExpression"] = []
 
 
 class FilterParser:
-
     def __init__(
         self,
         top_level_columns: Optional[list[str]] = None,
@@ -72,8 +69,8 @@ class FilterParser:
         keys = list(dct.keys())
         expr = FilterExpression()
         if len(keys) == 1 and keys[0] in (
-                FilterOperator.AND,
-                FilterOperator.OR,
+            FilterOperator.AND,
+            FilterOperator.OR,
         ):
             expr.logical_op = keys[0]
             if not isinstance(dct[keys[0]], list):
@@ -84,7 +81,8 @@ class FilterParser:
                         expr.conditions.append(self._parse_logical(item))
                     else:
                         expr.conditions.append(
-                            self._parse_condition_dict(item))
+                            self._parse_condition_dict(item)
+                        )
                 else:
                     raise FilterError("Invalid filter format")
         else:
@@ -106,7 +104,8 @@ class FilterParser:
             if not isinstance(cond, dict):
                 # direct equality
                 expr.conditions.append(
-                    FilterCondition(field, FilterOperator.EQ, cond))
+                    FilterCondition(field, FilterOperator.EQ, cond)
+                )
             else:
                 if len(cond) != 1:
                     raise FilterError(
@@ -118,16 +117,17 @@ class FilterParser:
         return expr
 
     def _validate_operator(self, op: str):
-        allowed = (FilterOperator.SCALAR_OPS
-                   | FilterOperator.ARRAY_OPS
-                   | FilterOperator.JSON_OPS
-                   | FilterOperator.LOGICAL_OPS)
+        allowed = (
+            FilterOperator.SCALAR_OPS
+            | FilterOperator.ARRAY_OPS
+            | FilterOperator.JSON_OPS
+            | FilterOperator.LOGICAL_OPS
+        )
         if op not in allowed:
             raise FilterError(f"Unsupported operator: {op}")
 
 
 class SQLFilterBuilder:
-
     def __init__(
         self,
         params: list[Any],
@@ -205,14 +205,16 @@ class SQLFilterBuilder:
         if op == "$eq":
             if not isinstance(val, str):
                 raise FilterError(
-                    "$eq for parent_id expects a single UUID string")
+                    "$eq for parent_id expects a single UUID string"
+                )
             self.params.append(val)
             return f"parent_id = ${param_idx}::uuid"
 
         elif op == "$ne":
             if not isinstance(val, str):
                 raise FilterError(
-                    "$ne for parent_id expects a single UUID string")
+                    "$ne for parent_id expects a single UUID string"
+                )
             self.params.append(val)
             return f"parent_id != ${param_idx}::uuid"
 
@@ -220,7 +222,8 @@ class SQLFilterBuilder:
             # A list of UUIDs, any of which might match
             if not isinstance(val, list):
                 raise FilterError(
-                    "$in for parent_id expects a list of UUID strings")
+                    "$in for parent_id expects a list of UUID strings"
+                )
             self.params.append(val)
             return f"parent_id = ANY(${param_idx}::uuid[])"
 
@@ -228,7 +231,8 @@ class SQLFilterBuilder:
             # A list of UUIDs, none of which may match
             if not isinstance(val, list):
                 raise FilterError(
-                    "$nin for parent_id expects a list of UUID strings")
+                    "$nin for parent_id expects a list of UUID strings"
+                )
             self.params.append(val)
             return f"parent_id != ALL(${param_idx}::uuid[])"
 
@@ -246,28 +250,32 @@ class SQLFilterBuilder:
         if op == "$eq":
             if not isinstance(val, str):
                 raise FilterError(
-                    "$eq for collection_id expects a single UUID string")
+                    "$eq for collection_id expects a single UUID string"
+                )
             self.params.append(val)
             return f"${param_idx}::uuid = ANY(collection_ids)"
 
         elif op == "$ne":
             if not isinstance(val, str):
                 raise FilterError(
-                    "$ne for collection_id expects a single UUID string")
+                    "$ne for collection_id expects a single UUID string"
+                )
             self.params.append(val)
             return f"NOT (${param_idx}::uuid = ANY(collection_ids))"
 
         elif op == "$in":
             if not isinstance(val, list):
                 raise FilterError(
-                    "$in for collection_id expects a list of UUID strings")
+                    "$in for collection_id expects a list of UUID strings"
+                )
             self.params.append(val)
             return f"collection_ids && ${param_idx}::uuid[]"
 
         elif op == "$nin":
             if not isinstance(val, list):
                 raise FilterError(
-                    "$nin for collection_id expects a list of UUID strings")
+                    "$nin for collection_id expects a list of UUID strings"
+                )
             self.params.append(val)
             return f"NOT (collection_ids && ${param_idx}::uuid[])"
 
@@ -431,9 +439,9 @@ class SQLFilterBuilder:
         return mapping.get(op, op)
 
 
-def apply_filters(filters: dict,
-                  params: list[Any],
-                  mode: str = "where_clause") -> tuple[str, list[Any]]:
+def apply_filters(
+    filters: dict, params: list[Any], mode: str = "where_clause"
+) -> tuple[str, list[Any]]:
     """Apply filters with consistent WHERE clause handling."""
     if not filters:
         return "", params

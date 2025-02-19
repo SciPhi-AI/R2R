@@ -16,7 +16,6 @@ logger = logging.getLogger()
 
 
 class AuthService(Service):
-
     def __init__(
         self,
         config: R2RConfig,
@@ -45,29 +44,37 @@ class AuthService(Service):
         )
 
     @telemetry_event("SendVerificationEmail")
-    async def send_verification_email(self,
-                                      email: str) -> tuple[str, datetime]:
+    async def send_verification_email(
+        self, email: str
+    ) -> tuple[str, datetime]:
         return await self.providers.auth.send_verification_email(email=email)
 
     @telemetry_event("VerifyEmail")
-    async def verify_email(self, email: str,
-                           verification_code: str) -> dict[str, str]:
+    async def verify_email(
+        self, email: str, verification_code: str
+    ) -> dict[str, str]:
         if not self.config.auth.require_email_verification:
-            raise R2RException(status_code=400,
-                               message="Email verification is not required")
+            raise R2RException(
+                status_code=400, message="Email verification is not required"
+            )
 
         user_id = await self.providers.database.users_handler.get_user_id_by_verification_code(
-            verification_code)
+            verification_code
+        )
         user = await self.providers.database.users_handler.get_user_by_id(
-            user_id)
+            user_id
+        )
         if not user or user.email != email:
-            raise R2RException(status_code=400,
-                               message="Invalid or expired verification code")
+            raise R2RException(
+                status_code=400, message="Invalid or expired verification code"
+            )
 
         await self.providers.database.users_handler.mark_user_as_verified(
-            user_id)
+            user_id
+        )
         await self.providers.database.users_handler.remove_verification_code(
-            verification_code)
+            verification_code
+        )
         return {"message": f"User account {user_id} verified successfully."}
 
     @telemetry_event("Login")
@@ -78,37 +85,45 @@ class AuthService(Service):
     async def user(self, token: str) -> User:
         token_data = await self.providers.auth.decode_token(token)
         if not token_data.email:
-            raise R2RException(status_code=401,
-                               message="Invalid authentication credentials")
+            raise R2RException(
+                status_code=401, message="Invalid authentication credentials"
+            )
         user = await self.providers.database.users_handler.get_user_by_email(
-            token_data.email)
+            token_data.email
+        )
         if user is None:
-            raise R2RException(status_code=401,
-                               message="Invalid authentication credentials")
+            raise R2RException(
+                status_code=401, message="Invalid authentication credentials"
+            )
         return user
 
     @telemetry_event("RefreshToken")
-    async def refresh_access_token(self,
-                                   refresh_token: str) -> dict[str, Token]:
+    async def refresh_access_token(
+        self, refresh_token: str
+    ) -> dict[str, Token]:
         return await self.providers.auth.refresh_access_token(refresh_token)
 
     @telemetry_event("ChangePassword")
-    async def change_password(self, user: User, current_password: str,
-                              new_password: str) -> dict[str, str]:
+    async def change_password(
+        self, user: User, current_password: str, new_password: str
+    ) -> dict[str, str]:
         if not user:
             raise R2RException(status_code=404, message="User not found")
         return await self.providers.auth.change_password(
-            user, current_password, new_password)
+            user, current_password, new_password
+        )
 
     @telemetry_event("RequestPasswordReset")
     async def request_password_reset(self, email: str) -> dict[str, str]:
         return await self.providers.auth.request_password_reset(email)
 
     @telemetry_event("ConfirmPasswordReset")
-    async def confirm_password_reset(self, reset_token: str,
-                                     new_password: str) -> dict[str, str]:
+    async def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict[str, str]:
         return await self.providers.auth.confirm_password_reset(
-            reset_token, new_password)
+            reset_token, new_password
+        )
 
     @telemetry_event("Logout")
     async def logout(self, token: str) -> dict[str, str]:
@@ -128,8 +143,8 @@ class AuthService(Service):
         new_metadata: Optional[dict] = None,
     ) -> User:
         user: User = (
-            await
-            self.providers.database.users_handler.get_user_by_id(user_id))
+            await self.providers.database.users_handler.get_user_by_id(user_id)
+        )
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if email is not None:
@@ -145,7 +160,8 @@ class AuthService(Service):
         if limits_overrides is not None:
             user.limits_overrides = limits_overrides
         return await self.providers.database.users_handler.update_user(
-            user, merge_limits=merge_limits, new_metadata=new_metadata)
+            user, merge_limits=merge_limits, new_metadata=new_metadata
+        )
 
     @telemetry_event("DeleteUserAccount")
     async def delete_user(
@@ -156,40 +172,52 @@ class AuthService(Service):
         is_superuser: bool = False,
     ) -> dict[str, str]:
         user = await self.providers.database.users_handler.get_user_by_id(
-            user_id)
+            user_id
+        )
         if not user:
             raise R2RException(status_code=404, message="User not found")
         if not is_superuser and not password:
-            raise R2RException(status_code=422,
-                               message="Password is required for deletion")
-        if not (is_superuser or
-                (user.hashed_password is not None
-                 and self.providers.auth.crypto_provider.verify_password(
-                     password,
-                     user.hashed_password,  # type: ignore
-                 ))):
+            raise R2RException(
+                status_code=422, message="Password is required for deletion"
+            )
+        if not (
+            is_superuser
+            or (
+                user.hashed_password is not None
+                and self.providers.auth.crypto_provider.verify_password(
+                    password,
+                    user.hashed_password,  # type: ignore
+                )
+            )
+        ):
             raise R2RException(status_code=400, message="Incorrect password")
         await self.providers.database.users_handler.delete_user_relational(
-            user_id)
+            user_id
+        )
 
         # Delete user's default collection
         # TODO: We need to better define what happens to the user's data when they are deleted
         collection_id = generate_default_user_collection_id(user_id)
         await self.providers.database.collections_handler.delete_collection_relational(
-            collection_id)
+            collection_id
+        )
 
         try:
             await self.providers.database.graphs_handler.delete(
-                collection_id=collection_id, )
+                collection_id=collection_id,
+            )
         except Exception as e:
             logger.warning(
-                f"Error deleting graph for collection {collection_id}: {e}")
+                f"Error deleting graph for collection {collection_id}: {e}"
+            )
 
         if delete_vector_data:
             await self.providers.database.chunks_handler.delete_user_vector(
-                user_id)
+                user_id
+            )
             await self.providers.database.chunks_handler.delete_collection_vector(
-                collection_id)
+                collection_id
+            )
 
         return {"message": f"User account {user_id} deleted successfully."}
 
@@ -200,7 +228,8 @@ class AuthService(Service):
         current_time: Optional[datetime] = None,
     ):
         await self.providers.database.token_handler.clean_expired_blacklisted_tokens(
-            max_age_hours, current_time)
+            max_age_hours, current_time
+        )
 
     @telemetry_event("GetUserVerificationCode")
     async def get_user_verification_code(
@@ -213,12 +242,15 @@ class AuthService(Service):
         verified.
         """
         verification_data = await self.providers.database.users_handler.get_user_validation_data(
-            user_id=user_id)
+            user_id=user_id
+        )
         return {
-            "verification_code":
-            verification_data["verification_data"]["verification_code"],
-            "expiry":
-            verification_data["verification_data"]["verification_code_expiry"],
+            "verification_code": verification_data["verification_data"][
+                "verification_code"
+            ],
+            "expiry": verification_data["verification_data"][
+                "verification_code_expiry"
+            ],
         }
 
     @telemetry_event("GetUserVerificationCode")
@@ -232,12 +264,15 @@ class AuthService(Service):
         verified.
         """
         verification_data = await self.providers.database.users_handler.get_user_validation_data(
-            user_id=user_id)
+            user_id=user_id
+        )
         return {
-            "reset_token":
-            verification_data["verification_data"]["reset_token"],
-            "expiry":
-            verification_data["verification_data"]["reset_token_expiry"],
+            "reset_token": verification_data["verification_data"][
+                "reset_token"
+            ],
+            "expiry": verification_data["verification_data"][
+                "reset_token_expiry"
+            ],
         }
 
     @telemetry_event("SendResetEmail")
@@ -253,8 +288,9 @@ class AuthService(Service):
         """
         return await self.providers.auth.send_reset_email(email)
 
-    async def create_user_api_key(self, user_id: UUID, name: Optional[str],
-                                  description: Optional[str]) -> dict:
+    async def create_user_api_key(
+        self, user_id: UUID, name: Optional[str], description: Optional[str]
+    ) -> dict:
         """Generate a new API key for the user with optional name and
         description.
 
@@ -267,7 +303,8 @@ class AuthService(Service):
             dict: Contains the API key and message
         """
         return await self.providers.auth.create_user_api_key(
-            user_id=user_id, name=name, description=description)
+            user_id=user_id, name=name, description=description
+        )
 
     async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         """Delete the API key for the user.
@@ -279,8 +316,9 @@ class AuthService(Service):
         Returns:
             bool: True if the API key was deleted successfully
         """
-        return await self.providers.auth.delete_user_api_key(user_id=user_id,
-                                                             key_id=key_id)
+        return await self.providers.auth.delete_user_api_key(
+            user_id=user_id, key_id=key_id
+        )
 
     async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
         """List all API keys for the user.

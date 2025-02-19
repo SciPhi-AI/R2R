@@ -121,10 +121,9 @@ def upgrade() -> None:
             LIMIT :limit_val
             OFFSET :offset_val
             """)
-        batch_docs = connection.execute(batch_docs_query, {
-            "limit_val": BATCH_SIZE,
-            "offset_val": offset
-        }).fetchall()
+        batch_docs = connection.execute(
+            batch_docs_query, {"limit_val": BATCH_SIZE, "offset_val": offset}
+        ).fetchall()
 
         if not batch_docs:
             break
@@ -139,15 +138,16 @@ def upgrade() -> None:
                 FROM {project_name}.chunks
                 WHERE document_id = :doc_id
                 """)
-            chunk_rows = connection.execute(chunks_query, {
-                "doc_id": doc_id
-            }).fetchall()
+            chunk_rows = connection.execute(
+                chunks_query, {"doc_id": doc_id}
+            ).fetchall()
 
             total_tokens = 0
             for c_row in chunk_rows:
                 chunk_text = c_row["data"] or ""
-                total_tokens += count_tokens_for_text(chunk_text,
-                                                      model=default_model)
+                total_tokens += count_tokens_for_text(
+                    chunk_text, model=default_model
+                )
 
             # Update total_tokens for this document
             update_query = text(f"""
@@ -155,10 +155,9 @@ def upgrade() -> None:
                 SET total_tokens = :tokcount
                 WHERE id = :doc_id
                 """)
-            connection.execute(update_query, {
-                "tokcount": total_tokens,
-                "doc_id": doc_id
-            })
+            connection.execute(
+                update_query, {"tokcount": total_tokens, "doc_id": doc_id}
+            )
 
         logger.info(f"Finished batch {page_idx + 1}")
 
@@ -168,5 +167,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Remove the total_tokens column on downgrade."""
     logger.info(
-        "Dropping column 'total_tokens' from 'documents' table (downgrade).")
+        "Dropping column 'total_tokens' from 'documents' table (downgrade)."
+    )
     op.drop_column("documents", "total_tokens", schema=project_name)

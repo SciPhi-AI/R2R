@@ -24,8 +24,9 @@ class HTMLParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
 
-    async def ingest(self, data: str | bytes, *args,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest HTML data and yield text."""
         soup = BeautifulSoup(data, "html.parser")
         yield soup.get_text()

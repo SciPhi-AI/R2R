@@ -53,8 +53,9 @@ class EPUBParser(AsyncParser[str | bytes]):
             logger.warning(f"Error cleaning text: {e}")
             return ""
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest EPUB data and yield book content."""
         if isinstance(data, str):
             raise ValueError("EPUB data must be in bytes format.")
@@ -86,8 +87,10 @@ class EPUBParser(AsyncParser[str | bytes]):
                 manifest = getattr(book.opf, "manifest", {}) or {}
                 for item in manifest.values():
                     try:
-                        if (getattr(item, "mime_type",
-                                    "") == "application/xhtml+xml"):
+                        if (
+                            getattr(item, "mime_type", "")
+                            == "application/xhtml+xml"
+                        ):
                             if content := book.read_item(item):
                                 if cleaned_text := self._clean_text(content):
                                     yield cleaned_text
@@ -110,7 +113,7 @@ class EPUBParser(AsyncParser[str | bytes]):
 
         except Exception as e:
             logger.error(f"Error processing EPUB file: {str(e)}")
-            raise ValueError(f"Error processing EPUB file: {str(e)}")
+            raise ValueError(f"Error processing EPUB file: {str(e)}") from e
         finally:
             try:
                 file_obj.close()

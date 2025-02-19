@@ -25,14 +25,13 @@ logger = logging.getLogger()
 
 
 class ConversationsRouter(BaseRouterV3):
-
-    def __init__(self, providers: R2RProviders, services: R2RServices,
-                 config: R2RConfig):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         logging.info("Initializing ConversationsRouter")
         super().__init__(providers, services, config)
 
     def _setup_routes(self):
-
         @self.router.post(
             "/conversations",
             summary="Create a new conversation",
@@ -40,10 +39,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -53,10 +50,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -69,10 +64,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/conversations" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),
@@ -83,7 +76,8 @@ class ConversationsRouter(BaseRouterV3):
         @self.base_endpoint
         async def create_conversation(
             name: Optional[str] = Body(
-                None, description="The name of the conversation", embed=True),
+                None, description="The name of the conversation", embed=True
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationResponse:
             """Create a new conversation.
@@ -105,10 +99,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -121,10 +113,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -137,10 +127,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/conversations?offset=0&limit=10" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),
@@ -152,21 +140,18 @@ class ConversationsRouter(BaseRouterV3):
         async def list_conversations(
             ids: list[str] = Query(
                 [],
-                description=
-                "A list of conversation IDs to retrieve. If not provided, all conversations will be returned.",
+                description="A list of conversation IDs to retrieve. If not provided, all conversations will be returned.",
             ),
             offset: int = Query(
                 0,
                 ge=0,
-                description=
-                "Specifies the number of objects to skip. Defaults to 0.",
+                description="Specifies the number of objects to skip. Defaults to 0.",
             ),
             limit: int = Query(
                 100,
                 ge=1,
                 le=1000,
-                description=
-                "Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationsResponse:
@@ -175,8 +160,9 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint returns a paginated list of conversations for the
             authenticated user.
             """
-            requesting_user_id = (None if auth_user.is_superuser else
-                                  [auth_user.id])
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
 
             conversation_uuids = [
                 UUID(conversation_id) for conversation_id in ids
@@ -188,7 +174,8 @@ class ConversationsRouter(BaseRouterV3):
                     limit=limit,
                     conversation_ids=conversation_uuids,
                     user_ids=requesting_user_id,
-                ))
+                )
+            )
             return conversations_response["results"], {  # type: ignore
                 "total_entries": conversations_response["total_entries"]
             }
@@ -200,10 +187,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -217,10 +202,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -237,10 +220,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/conversations/export" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
@@ -256,11 +237,14 @@ class ConversationsRouter(BaseRouterV3):
         async def export_conversations(
             background_tasks: BackgroundTasks,
             columns: Optional[list[str]] = Body(
-                None, description="Specific columns to export"),
+                None, description="Specific columns to export"
+            ),
             filters: Optional[dict] = Body(
-                None, description="Filters to apply to the export"),
+                None, description="Filters to apply to the export"
+            ),
             include_header: Optional[bool] = Body(
-                True, description="Whether to include column headers"),
+                True, description="Whether to include column headers"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
             """Export conversations as a downloadable CSV file."""
@@ -295,10 +279,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -312,10 +294,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -332,10 +312,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/conversations/export_messages" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
@@ -351,11 +329,14 @@ class ConversationsRouter(BaseRouterV3):
         async def export_messages(
             background_tasks: BackgroundTasks,
             columns: Optional[list[str]] = Body(
-                None, description="Specific columns to export"),
+                None, description="Specific columns to export"
+            ),
             filters: Optional[dict] = Body(
-                None, description="Filters to apply to the export"),
+                None, description="Filters to apply to the export"
+            ),
             include_header: Optional[bool] = Body(
-                True, description="Whether to include column headers"),
+                True, description="Whether to include column headers"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
             """Export conversations as a downloadable CSV file."""
@@ -390,10 +371,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -405,10 +384,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -423,10 +400,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),
@@ -437,7 +412,8 @@ class ConversationsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_conversation(
             id: UUID = Path(
-                ..., description="The unique identifier of the conversation"),
+                ..., description="The unique identifier of the conversation"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedConversationMessagesResponse:
             """Get details of a specific conversation.
@@ -445,8 +421,9 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint retrieves detailed information about a single
             conversation identified by its UUID.
             """
-            requesting_user_id = (None if auth_user.is_superuser else
-                                  [auth_user.id])
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
 
             conversation = await self.services.management.get_conversation(
                 conversation_id=id,
@@ -461,10 +438,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -474,10 +449,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -493,10 +466,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \
                                 -H "Authorization: Bearer YOUR_API_KEY" \
                                 -H "Content-Type: application/json" \
@@ -510,8 +481,7 @@ class ConversationsRouter(BaseRouterV3):
         async def update_conversation(
             id: UUID = Path(
                 ...,
-                description=
-                "The unique identifier of the conversation to delete",
+                description="The unique identifier of the conversation to delete",
             ),
             name: str = Body(
                 ...,
@@ -537,10 +507,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -550,10 +518,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -568,10 +534,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),
@@ -583,8 +547,7 @@ class ConversationsRouter(BaseRouterV3):
         async def delete_conversation(
             id: UUID = Path(
                 ...,
-                description=
-                "The unique identifier of the conversation to delete",
+                description="The unique identifier of the conversation to delete",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
@@ -592,8 +555,9 @@ class ConversationsRouter(BaseRouterV3):
 
             This endpoint deletes a conversation identified by its UUID.
             """
-            requesting_user_id = (None if auth_user.is_superuser else
-                                  [auth_user.id])
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
 
             await self.services.management.delete_conversation(
                 conversation_id=id,
@@ -608,10 +572,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -627,10 +589,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -648,10 +608,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
@@ -664,15 +622,20 @@ class ConversationsRouter(BaseRouterV3):
         @self.base_endpoint
         async def add_message(
             id: UUID = Path(
-                ..., description="The unique identifier of the conversation"),
+                ..., description="The unique identifier of the conversation"
+            ),
             content: str = Body(
-                ..., description="The content of the message to add"),
-            role: str = Body(...,
-                             description="The role of the message to add"),
+                ..., description="The content of the message to add"
+            ),
+            role: str = Body(
+                ..., description="The role of the message to add"
+            ),
             parent_id: Optional[UUID] = Body(
-                None, description="The ID of the parent message, if any"),
+                None, description="The ID of the parent message, if any"
+            ),
             metadata: Optional[dict[str, str]] = Body(
-                None, description="Additional metadata for the message"),
+                None, description="Additional metadata for the message"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """Add a new message to a conversation.
@@ -698,10 +661,8 @@ class ConversationsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -715,10 +676,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -735,10 +694,8 @@ class ConversationsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/conversations/123e4567-e89b-12d3-a456-426614174000/messages/message_id_to_update" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
@@ -751,13 +708,17 @@ class ConversationsRouter(BaseRouterV3):
         @self.base_endpoint
         async def update_message(
             id: UUID = Path(
-                ..., description="The unique identifier of the conversation"),
+                ..., description="The unique identifier of the conversation"
+            ),
             message_id: UUID = Path(
-                ..., description="The ID of the message to update"),
+                ..., description="The ID of the message to update"
+            ),
             content: Optional[str] = Body(
-                None, description="The new content for the message"),
+                None, description="The new content for the message"
+            ),
             metadata: Optional[dict[str, str]] = Body(
-                None, description="Additional metadata for the message"),
+                None, description="Additional metadata for the message"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedMessageResponse:
             """Update an existing message in a conversation.

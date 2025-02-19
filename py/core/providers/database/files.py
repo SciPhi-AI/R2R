@@ -76,7 +76,8 @@ class PostgresFilesHandler(Handler):
             updated_at = NOW();
         """
         await self.connection_manager.execute_query(
-            query, [document_id, file_name, file_oid, file_size, file_type])
+            query, [document_id, file_name, file_oid, file_size, file_type]
+        )
 
     async def store_file(
         self,
@@ -89,15 +90,18 @@ class PostgresFilesHandler(Handler):
         size = file_content.getbuffer().nbytes
 
         async with (  # type: ignore
-                self.connection_manager.pool.get_connection() as conn):
+            self.connection_manager.pool.get_connection() as conn
+        ):
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
                 await self._write_lobject(conn, oid, file_content)
-                await self.upsert_file(document_id, file_name, oid, size,
-                                       file_type)
+                await self.upsert_file(
+                    document_id, file_name, oid, size, file_type
+                )
 
-    async def _write_lobject(self, conn, oid: int,
-                             file_content: io.BytesIO) -> None:
+    async def _write_lobject(
+        self, conn, oid: int, file_content: io.BytesIO
+    ) -> None:
         """Write content to a large object."""
         lobject = await conn.fetchval("SELECT lo_open($1, $2)", oid, 0x20000)
 
@@ -105,8 +109,9 @@ class PostgresFilesHandler(Handler):
             chunk_size = 8192  # 8 KB chunks
             while True:
                 if chunk := file_content.read(chunk_size):
-                    await conn.execute("SELECT lowrite($1, $2)", lobject,
-                                       chunk)
+                    await conn.execute(
+                        "SELECT lowrite($1, $2)", lobject, chunk
+                    )
                 else:
                     break
 
@@ -120,7 +125,8 @@ class PostgresFilesHandler(Handler):
             ) from e
 
     async def retrieve_file(
-            self, document_id: UUID) -> Optional[tuple[str, BinaryIO, int]]:
+        self, document_id: UUID
+    ) -> Optional[tuple[str, BinaryIO, int]]:
         """Retrieve a file from storage."""
         query = f"""
         SELECT name, oid, size
@@ -129,7 +135,8 @@ class PostgresFilesHandler(Handler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [document_id])
+            query, [document_id]
+        )
         if not result:
             raise R2RException(
                 status_code=404,
@@ -142,8 +149,7 @@ class PostgresFilesHandler(Handler):
             result["size"],
         )
 
-        async with self.connection_manager.pool.get_connection(
-        ) as conn:  # type: ignore
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             file_content = await self._read_lobject(conn, oid)
             return file_name, io.BytesIO(file_content), size
 
@@ -187,12 +193,12 @@ class PostgresFilesHandler(Handler):
         zip_buffer = BytesIO()
         total_size = 0
 
-        async with self.connection_manager.pool.get_connection(
-        ) as conn:  # type: ignore
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             with ZipFile(zip_buffer, "w") as zip_file:
                 for record in results:
                     file_content = await self._read_lobject(
-                        conn, record["oid"])
+                        conn, record["oid"]
+                    )
 
                     zip_file.writestr(record["name"], file_content)
                     total_size += record["size"]
@@ -220,8 +226,9 @@ class PostgresFilesHandler(Handler):
                         message=f"Large object {oid} not found.",
                     )
 
-                lobject = await conn.fetchval("SELECT lo_open($1, 262144)",
-                                              oid)
+                lobject = await conn.fetchval(
+                    "SELECT lo_open($1, 262144)", oid
+                )
 
                 if lobject is None:
                     raise R2RException(
@@ -230,16 +237,17 @@ class PostgresFilesHandler(Handler):
                     )
 
                 while True:
-                    chunk = await conn.fetchval("SELECT loread($1, $2)",
-                                                lobject, chunk_size)
+                    chunk = await conn.fetchval(
+                        "SELECT loread($1, $2)", lobject, chunk_size
+                    )
                     if not chunk:
                         break
                     file_data.write(chunk)
-            except asyncpg.exceptions.UndefinedObjectError as e:
+            except asyncpg.exceptions.UndefinedObjectError:
                 raise R2RException(
                     status_code=404,
-                    message=f"Failed to read large object {oid}: {e}",
-                )
+                    message=f"Failed to read large object {oid}",
+                ) from None
             finally:
                 await conn.execute("SELECT lo_close($1)", lobject)
 
@@ -252,8 +260,7 @@ class PostgresFilesHandler(Handler):
         WHERE document_id = $1
         """
 
-        async with self.connection_manager.pool.get_connection(
-        ) as conn:  # type: ignore
+        async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
             async with conn.transaction():
                 oid = await conn.fetchval(query, document_id)
                 if not oid:
@@ -313,12 +320,15 @@ class PostgresFilesHandler(Handler):
                 message="No files found with the given filters",
             )
 
-        return [{
-            "document_id": row["document_id"],
-            "file_name": row["name"],
-            "file_oid": row["oid"],
-            "file_size": row["size"],
-            "file_type": row["type"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        } for row in results]
+        return [
+            {
+                "document_id": row["document_id"],
+                "file_name": row["name"],
+                "file_oid": row["oid"],
+                "file_size": row["size"],
+                "file_type": row["type"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+            for row in results
+        ]

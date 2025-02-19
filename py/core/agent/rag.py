@@ -70,7 +70,8 @@ class SearchResultsCollector:
         if agg.context_document_results:
             for cd in agg.context_document_results:
                 self._results_in_order.append(
-                    ("contextDoc", cd, self._next_index))
+                    ("contextDoc", cd, self._next_index)
+                )
                 self._next_index += 1
 
     def get_all_results(self) -> list[Tuple[str, Any, int]]:
@@ -139,10 +140,10 @@ class RAGAgentMixin:
         using self.local_search_method."""
         return Tool(
             name="local_search",
-            description=
-            ("Search your local knowledge base using the R2R system. "
-             "Use this when you want relevant text chunks or knowledge graph data."
-             ),
+            description=(
+                "Search your local knowledge base using the R2R system. "
+                "Use this when you want relevant text chunks or knowledge graph data."
+            ),
             results_function=self._local_search_function,
             llm_format_function=self.format_search_results_for_llm,
             stream_function=self.format_search_results_for_stream,
@@ -171,19 +172,23 @@ class RAGAgentMixin:
         """
         if not self.local_search_method:
             raise ValueError(
-                "No local_search_method provided to RAGAgentMixin.")
+                "No local_search_method provided to RAGAgentMixin."
+            )
 
         raw_response = await self.local_search_method(
-            query=query, search_settings=self.search_settings)
+            query=query, search_settings=self.search_settings
+        )
 
         if isinstance(raw_response, AggregateSearchResult):
             agg = raw_response
         else:
             agg = AggregateSearchResult(
-                chunk_search_results=raw_response.get("chunk_search_results",
-                                                      []),
-                graph_search_results=raw_response.get("graph_search_results",
-                                                      []),
+                chunk_search_results=raw_response.get(
+                    "chunk_search_results", []
+                ),
+                graph_search_results=raw_response.get(
+                    "graph_search_results", []
+                ),
             )
 
         # 1) Store them so that we can do final citations later
@@ -200,11 +205,12 @@ class RAGAgentMixin:
         if "gemini" in self.rag_generation_config.model:
             tool = Tool(
                 name="content",
-                description=
-                ("Fetches the complete contents of all user documents from the local database. "
-                 "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
-                 "For instance, a single document can be returned with a filter like so:"
-                 "{'document_id': {'$eq': '...'}}."),
+                description=(
+                    "Fetches the complete contents of all user documents from the local database. "
+                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
+                    "For instance, a single document can be returned with a filter like so:"
+                    "{'document_id': {'$eq': '...'}}."
+                ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,
                 stream_function=self.format_search_results_for_stream,
@@ -212,12 +218,11 @@ class RAGAgentMixin:
                     "type": "object",
                     "properties": {
                         "filters": {
-                            "type":
-                            "string",
-                            "description":
-                            ("Dictionary with filter criteria, such as "
-                             '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
-                             ),
+                            "type": "string",
+                            "description": (
+                                "Dictionary with filter criteria, such as "
+                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
+                            ),
                         },
                     },
                     "required": ["filters"],
@@ -227,11 +232,12 @@ class RAGAgentMixin:
         else:
             tool = Tool(
                 name="content",
-                description=
-                ("Fetches the complete contents of all user documents from the local database. "
-                 "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
-                 "For instance, a single document can be returned with a filter like so:"
-                 "{'document_id': {'$eq': '...'}}."),
+                description=(
+                    "Fetches the complete contents of all user documents from the local database. "
+                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
+                    "For instance, a single document can be returned with a filter like so:"
+                    "{'document_id': {'$eq': '...'}}."
+                ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,
                 stream_function=self.format_search_results_for_stream,
@@ -239,12 +245,11 @@ class RAGAgentMixin:
                     "type": "object",
                     "properties": {
                         "filters": {
-                            "type":
-                            "object",
-                            "description":
-                            ("Dictionary with filter criteria, such as "
-                             '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
-                             ),
+                            "type": "object",
+                            "description": (
+                                "Dictionary with filter criteria, such as "
+                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
+                            ),
                         },
                     },
                     "required": ["filters"],
@@ -300,7 +305,8 @@ class RAGAgentMixin:
                         chunk.get("text", "")
                         for chunk in item.get("chunks", [])
                     ],
-                ))
+                )
+            )
 
         # Return them in the new aggregator field
         agg = AggregateSearchResult(
@@ -317,9 +323,10 @@ class RAGAgentMixin:
     def web_search(self) -> Tool:
         return Tool(
             name="web_search",
-            description=
-            ("Search for information on the web - use this tool when the user "
-             "query needs LIVE or recent data from the internet."),
+            description=(
+                "Search for information on the web - use this tool when the user "
+                "query needs LIVE or recent data from the internet."
+            ),
             results_function=self._web_search_function,
             llm_format_function=self.format_search_results_for_llm,
             stream_function=self.format_search_results_for_stream,
@@ -327,10 +334,8 @@ class RAGAgentMixin:
                 "type": "object",
                 "properties": {
                     "query": {
-                        "type":
-                        "string",
-                        "description":
-                        "The query to search with an external web API.",
+                        "type": "string",
+                        "description": "The query to search with an external web API.",
                     },
                 },
                 "required": ["query"],
@@ -364,21 +369,25 @@ class RAGAgentMixin:
 
     # 4) Utility format methods for search results
     def format_search_results_for_stream(
-            self, results: AggregateSearchResult) -> str:
+        self, results: AggregateSearchResult
+    ) -> str:
         return format_search_results_for_stream(results)
 
-    def format_search_results_for_llm(self,
-                                      results: AggregateSearchResult) -> str:
-        context = format_search_results_for_llm(results,
-                                                self.search_results_collector)
+    def format_search_results_for_llm(
+        self, results: AggregateSearchResult
+    ) -> str:
+        context = format_search_results_for_llm(
+            results, self.search_results_collector
+        )
         context_tokens = num_tokens(context) + 1
-        frac_to_return = self.max_tool_context_length / (num_tokens(context) +
-                                                         1)
+        frac_to_return = self.max_tool_context_length / (
+            num_tokens(context) + 1
+        )
 
         if frac_to_return > 1:
             return context
         else:
-            return context[:int(frac_to_return * context_tokens)]
+            return context[: int(frac_to_return * context_tokens)]
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
@@ -388,10 +397,12 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: (AnthropicCompletionProvider
-                       | LiteLLMCompletionProvider
-                       | OpenAICompletionProvider
-                       | R2RCompletionProvider),
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
@@ -428,10 +439,12 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: (AnthropicCompletionProvider
-                       | LiteLLMCompletionProvider
-                       | OpenAICompletionProvider
-                       | R2RCompletionProvider),
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
@@ -471,10 +484,12 @@ class R2RStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
     def __init__(
         self,
         database_provider: DatabaseProvider,
-        llm_provider: (AnthropicCompletionProvider
-                       | LiteLLMCompletionProvider
-                       | OpenAICompletionProvider
-                       | R2RCompletionProvider),
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
@@ -520,16 +535,16 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
     """
 
     def __init__(
-            self,
-            database_provider: DatabaseProvider,
-            llm_provider: Optional[Any],
-            config: AgentConfig,
-            search_settings: SearchSettings,
-            rag_generation_config: GenerationConfig,
-            local_search_method: Callable,
-            content_method: Optional[Callable] = None,
-            max_tool_context_length: int = 20_000,
-            max_steps: int = 10,  # limit on number of tool calls
+        self,
+        database_provider: DatabaseProvider,
+        llm_provider: Optional[Any],
+        config: AgentConfig,
+        search_settings: SearchSettings,
+        rag_generation_config: GenerationConfig,
+        local_search_method: Callable,
+        content_method: Optional[Callable] = None,
+        max_tool_context_length: int = 20_000,
+        max_steps: int = 10,  # limit on number of tool calls
     ):
         super().__init__(
             database_provider=database_provider,
@@ -575,8 +590,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             iteration_text = ""
 
             messages_list = await self.conversation.get_messages()
-            generation_config = self.get_generation_config(messages_list[-1],
-                                                           stream=True)
+            generation_config = self.get_generation_config(
+                messages_list[-1], stream=True
+            )
 
             stream = self.llm_provider.aget_completion_stream(
                 messages_list,
@@ -586,10 +602,12 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 
             closing_detected = False
             async for stream_delta in self.process_llm_response(
-                    stream, *args, **kwargs):
+                stream, *args, **kwargs
+            ):
                 # Map deepseek `think` tags to `Thought` tags
                 stream_delta = stream_delta.replace(
-                    "<think>", "<Thought>").replace("</think>", "</Thought>")
+                    "<think>", "<Thought>"
+                ).replace("</think>", "</Thought>")
                 if "</" not in stream_delta and not closing_detected:
                     thought_text += stream_delta
                     yield stream_delta
@@ -612,9 +630,11 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             except Exception as e:
                 logger.error(f"Failed to parse tool calls: {e}")
                 iteration_text += (
-                    f"<Thought>Failed to parse tool calls: {e}</Thought>")
+                    f"<Thought>Failed to parse tool calls: {e}</Thought>"
+                )
                 await self.conversation.add_message(
-                    Message(role="assistant", content=iteration_text))
+                    Message(role="assistant", content=iteration_text)
+                )
 
                 yield f"<Thought>Failed to parse tool calls: {e}</Thought>"
                 continue
@@ -623,9 +643,12 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             logger.debug(f"parsed_tool_calls:\n{parsed_tool_calls}")
             if "<Response>" in action_text:
                 yield (
-                    "<Response>" +
-                    action_text.split("<Response>")[-1].split("</Response>")[0]
-                    + "</Response>")
+                    "<Response>"
+                    + action_text.split("<Response>")[-1].split("</Response>")[
+                        0
+                    ]
+                    + "</Response>"
+                )
                 return
             # If there are tool calls, execute them concurrently and build the XML block with results
             if parsed_tool_calls:
@@ -636,26 +659,30 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                     yield f"\n\n<Thought>Calling function: {call['name']}, with payload {call['params']}</Thought>"
                     tasks.append(
                         asyncio.create_task(
-                            self.execute_tool(call["name"], **call["params"])))
+                            self.execute_tool(call["name"], **call["params"])
+                        )
+                    )
 
                 # Wait for all tool calls to complete
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 # Build the XML block containing the original tool calls and their results
                 xml_toolcalls = "<ToolCalls>"
-                for call, result in zip(parsed_tool_calls,
-                                        results,
-                                        strict=False):
+                for call, result in zip(
+                    parsed_tool_calls, results, strict=False
+                ):
                     if call["name"] == "result":
                         logger.info(
-                            f"Returning response = {call['params']['answer']}")
+                            f"Returning response = {call['params']['answer']}"
+                        )
                         yield f"<Response>{call['params']['answer']}</Response>"
                         return
 
                     # Handle exceptions if any
                     if isinstance(result, Exception):
                         result_str = (
-                            f"Error executing tool '{call['name']}': {result}")
+                            f"Error executing tool '{call['name']}': {result}"
+                        )
                     else:
                         result_str = str(result)
                     xml_toolcalls += (
@@ -663,7 +690,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                         f"<Name>{call['name']}</Name>"
                         f"<Parameters>{json.dumps(call['params'])}</Parameters>"
                         f"<Result>{result_str}</Result>"
-                        f"</ToolCall>")
+                        f"</ToolCall>"
+                    )
                 xml_toolcalls += "</ToolCalls>"
 
                 # Append the XML block to the conversation context in its original format
@@ -675,7 +703,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 yield "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
 
             await self.conversation.add_message(
-                Message(role="assistant", content=iteration_text))
+                Message(role="assistant", content=iteration_text)
+            )
 
             if step_i == self.max_steps - 1:
                 yield COMPUTE_FAILURE
@@ -742,10 +771,16 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 "Detected '<Name>result</Name>' in text; processing as a result tool call."
             )
             try:
-                raw_params = (text.split("<Parameters>")[-1].split(
-                    "</Parameters>")[0].strip())[12:-2]
-                answer = (json.loads(raw_params)
-                          if raw_params.startswith("{") else raw_params)
+                raw_params = (
+                    text.split("<Parameters>")[-1]
+                    .split("</Parameters>")[0]
+                    .strip()
+                )[12:-2]
+                answer = (
+                    json.loads(raw_params)
+                    if raw_params.startswith("{")
+                    else raw_params
+                )
             except Exception as e:
                 logger.warning("Failed to parse result answer: %s", e)
                 answer = raw_params
@@ -754,8 +789,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
             return tool_calls
 
         # --- Locate <Action> blocks ---
-        action_pattern = re.compile(r"<Action>(.*?)</Action>",
-                                    re.DOTALL | re.IGNORECASE)
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
         action_matches = action_pattern.findall(text)
         logger.debug("Found %d <Action> blocks.", len(action_matches))
 
@@ -773,8 +809,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                 idx,
                 action.strip()[:200],
             )
-            toolcall_pattern = re.compile(r"<ToolCall>(.*?)</ToolCall>",
-                                          re.DOTALL | re.IGNORECASE)
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+            )
             toolcall_matches = toolcall_pattern.findall(action)
             logger.debug(
                 "Found %d <ToolCall> blocks in Action block %d.",
@@ -790,8 +827,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
                     tc.strip()[:200],
                 )
                 # Extract the tool name
-                name_match = re.search(r"<Name>(.*?)</Name>", tc,
-                                       re.DOTALL | re.IGNORECASE)
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc, re.DOTALL | re.IGNORECASE
+                )
                 if not name_match:
                     logger.debug(
                         "ToolCall block %d in Action block %d missing <Name> tag. Skipping.",
@@ -838,7 +876,8 @@ class R2RXMLToolsStreamingReasoningRAGAgent(R2RStreamingReasoningRAGAgent):
 
 
 class GeminiXMLToolsStreamingReasoningRAGAgent(
-        R2RXMLToolsStreamingReasoningRAGAgent):
+    R2RXMLToolsStreamingReasoningRAGAgent
+):
     """A Gemini-based implementation that uses the
     `XMLToolsStreamingRAGAgentBase`."""
 
@@ -858,7 +897,8 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
         key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
         if not key:
             raise ValueError(
-                "Gemini API key not provided or set in environment.")
+                "Gemini API key not provided or set in environment."
+            )
         self.gemini_client = genai.Client(
             api_key=key,
             http_options={"api_version": "v1alpha"},
@@ -907,8 +947,9 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             async for (
                 is_thought,
                 token_text,
-            ) in self._generate_thinking_response(conversation_context,
-                                                  **kwargs):
+            ) in self._generate_thinking_response(
+                conversation_context, **kwargs
+            ):
                 if is_thought:
                     # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
                     if not inside_thought_block:
@@ -961,7 +1002,8 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
 
                         if name == "result":
                             logger.info(
-                                f"Returning response = {params['answer']}")
+                                f"Returning response = {params['answer']}"
+                            )
                             yield f"<Response>{params['answer']}</Response>"
                             return
 
@@ -970,32 +1012,37 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                             f"<ToolCall>"
                             f"<Name>{name}</Name>"
                             f"<Parameters>{json.dumps(params)}</Parameters>"
-                            f"</ToolCall>")
+                            f"</ToolCall>"
+                        )
                         toolcalls_minus_results += minimal_toolcall
 
                         # Build the <ToolCall> with results for context
                         toolcall_with_result = (
                             f"<ToolCall>"
                             f"<Name>{name}</Name>"
-                            f"<Parameters>{json.dumps(params)}</Parameters>")
+                            f"<Parameters>{json.dumps(params)}</Parameters>"
+                        )
                         try:
                             result = await self.execute_tool(name, **params)
 
                             context_tokens = num_tokens(str(result))
-                            max_to_result = (self.max_tool_context_length /
-                                             context_tokens)
+                            max_to_result = (
+                                self.max_tool_context_length / context_tokens
+                            )
 
                             if max_to_result < 1:
                                 result = (
-                                    str(result)[0:int(max_to_result *
-                                                      context_tokens)] +
-                                    "... RESULT TRUNCATED DUE TO MAX LENGTH ..."
+                                    str(result)[
+                                        0 : int(max_to_result * context_tokens)
+                                    ]
+                                    + "... RESULT TRUNCATED DUE TO MAX LENGTH ..."
                                 )
                         except Exception as e:
                             result = f"Error executing tool '{name}': {e}"
 
                         toolcall_with_result += (
-                            f"<Result>{result}</Result></ToolCall>")
+                            f"<Result>{result}</Result></ToolCall>"
+                        )
 
                         toolcalls_xml += toolcall_with_result
 
@@ -1018,8 +1065,8 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                     return
 
                 yield (
-                    failed_iteration_text +
-                    f"\n\n[System]\n{step_i + 1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
+                    failed_iteration_text
+                    + f"\n\n[System]\n{step_i + 1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
                 )
                 conversation_context += failed_iteration_text
                 continue
@@ -1055,9 +1102,7 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             Tuples of (is_thought: bool, text: str)
         """
         config = {
-            "thinking_config": {
-                "include_thoughts": True
-            },
+            "thinking_config": {"include_thoughts": True},
             # "max_output_tokens": 8192,
         }
 
@@ -1094,8 +1139,11 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
 
                 if attempt <= max_retries:
                     # Exponential backoff with jitter
-                    delay = (initial_delay * (2**(attempt - 1)) *
-                             (0.5 + random.random()))
+                    delay = (
+                        initial_delay
+                        * (2 ** (attempt - 1))
+                        * (0.5 + random.random())
+                    )
                     await asyncio.sleep(delay)
                 else:
                     # All retries exhausted
@@ -1119,24 +1167,28 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
 
         ### HARDCODE RESULT PARSING DUE TO TROUBLES
         if "<Name>result</Name>" in text:
-            return [{
-                "tool_calls": [{
-                    "name": "result",
-                    "params": {
-                        "answer":
-                        text.split("<Parameters>")[-1].split("</Parameters>")
-                        [0].strip()[12:-2]
-                    },
-                }],
-                "response":
-                None,
-            }]
+            return [
+                {
+                    "tool_calls": [
+                        {
+                            "name": "result",
+                            "params": {
+                                "answer": text.split("<Parameters>")[-1]
+                                .split("</Parameters>")[0]
+                                .strip()[12:-2]
+                            },
+                        }
+                    ],
+                    "response": None,
+                }
+            ]
 
         results = []
 
         # 1) Find all <Action>...</Action> blocks
-        action_pattern = re.compile(r"<Action>(.*?)</Action>",
-                                    re.DOTALL | re.IGNORECASE)
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
         action_matches = action_pattern.findall(text)
 
         for action_content in action_matches:
@@ -1146,14 +1198,16 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
             }
 
             # 2) Within each <Action> block, find all <ToolCall>...</ToolCall> blocks
-            toolcall_pattern = re.compile(r"<ToolCall>(.*?)</ToolCall>",
-                                          re.DOTALL | re.IGNORECASE)
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+            )
             toolcall_matches = toolcall_pattern.findall(action_content)
 
             for tc_text in toolcall_matches:
                 # Look for <Name>...</Name> and <Parameters>...</Parameters>
-                name_match = re.search(r"<Name>(.*?)</Name>", tc_text,
-                                       re.DOTALL | re.IGNORECASE)
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc_text, re.DOTALL | re.IGNORECASE
+                )
                 params_match = re.search(
                     r"<Parameters>(.*?)</Parameters>",
                     tc_text,
@@ -1178,14 +1232,14 @@ class GeminiXMLToolsStreamingReasoningRAGAgent(
                 else:
                     tool_params = {}
 
-                block_data["tool_calls"].append({
-                    "name": tool_name,
-                    "params": tool_params
-                })
+                block_data["tool_calls"].append(
+                    {"name": tool_name, "params": tool_params}
+                )
 
             # 3) Optionally, see if there's a <Response>...</Response> in the same <Action> block
-            response_pattern = re.compile(r"<Response>(.*?)</Response>",
-                                          re.DOTALL | re.IGNORECASE)
+            response_pattern = re.compile(
+                r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
+            )
             response_match = response_pattern.search(action_content)
             if response_match:
                 block_data["response"] = response_match.group(1).strip()

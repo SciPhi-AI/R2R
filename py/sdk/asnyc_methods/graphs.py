@@ -45,10 +45,9 @@ class GraphsSDK:
         if collection_ids:
             params["collection_ids"] = collection_ids
 
-        response_dict = await self.client._make_request("GET",
-                                                        "graphs",
-                                                        params=params,
-                                                        version="v3")
+        response_dict = await self.client._make_request(
+            "GET", "graphs", params=params, version="v3"
+        )
 
         return WrappedGraphsResponse(**response_dict)
 
@@ -65,7 +64,8 @@ class GraphsSDK:
             WrappedGraphResponse
         """
         response_dict = await self.client._make_request(
-            "GET", f"graphs/{str(collection_id)}", version="v3")
+            "GET", f"graphs/{str(collection_id)}", version="v3"
+        )
 
         return WrappedGraphResponse(**response_dict)
 
@@ -87,7 +87,8 @@ class GraphsSDK:
             WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
-            "POST", f"graphs/{str(collection_id)}/reset", version="v3")
+            "POST", f"graphs/{str(collection_id)}/reset", version="v3"
+        )
 
         return WrappedBooleanResponse(**response_dict)
 

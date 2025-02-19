@@ -24,19 +24,23 @@ class SendGridEmailProvider(EmailProvider):
             raise ValueError("A valid from email is required.")
 
         self.frontend_url = config.frontend_url or os.getenv(
-            "R2R_FRONTEND_URL")
+            "R2R_FRONTEND_URL"
+        )
         if not self.frontend_url or not isinstance(self.frontend_url, str):
             raise ValueError("A valid frontend URL is required.")
 
         self.verify_email_template_id = (
             config.verify_email_template_id
-            or os.getenv("SENDGRID_EMAIL_TEMPLATE_ID"))
+            or os.getenv("SENDGRID_EMAIL_TEMPLATE_ID")
+        )
         self.reset_password_template_id = (
             config.reset_password_template_id
-            or os.getenv("SENDGRID_RESET_TEMPLATE_ID"))
+            or os.getenv("SENDGRID_RESET_TEMPLATE_ID")
+        )
         self.password_changed_template_id = (
             config.password_changed_template_id
-            or os.getenv("SENDGRID_PASSWORD_CHANGED_TEMPLATE_ID"))
+            or os.getenv("SENDGRID_PASSWORD_CHANGED_TEMPLATE_ID")
+        )
         self.client = SendGridAPIClient(api_key=self.api_key)
         self.sender_name = config.sender_name
 
@@ -79,7 +83,8 @@ class SendGridEmailProvider(EmailProvider):
             else:
                 if not subject:
                     raise ValueError(
-                        "Subject is required when not using a template")
+                        "Subject is required when not using a template"
+                    )
                 message.subject = subject
                 message.add_content(Content("text/plain", body or ""))
                 if html_body:
@@ -91,7 +96,8 @@ class SendGridEmailProvider(EmailProvider):
 
             if response.status_code >= 400:
                 raise RuntimeError(
-                    f"Failed to send email: {response.status_code}")
+                    f"Failed to send email: {response.status_code}"
+                )
             elif response.status_code == 202:
                 logger.info("Message sent successfully!")
             else:
@@ -113,10 +119,8 @@ class SendGridEmailProvider(EmailProvider):
         try:
             if self.verify_email_template_id:
                 verification_data = {
-                    "verification_link":
-                    f"{self.frontend_url}/verify-email?verification_code={verification_code}&email={to_email}",
-                    "verification_code":
-                    verification_code,  # Include code separately for flexible template usage
+                    "verification_link": f"{self.frontend_url}/verify-email?verification_code={verification_code}&email={to_email}",
+                    "verification_code": verification_code,  # Include code separately for flexible template usage
                 }
 
                 # Merge with any additional template data
@@ -151,12 +155,12 @@ class SendGridEmailProvider(EmailProvider):
                     to_email=to_email,
                     subject=subject,
                     html_body=html_body,
-                    body=
-                    f"Welcome to R2R! Please verify your email using this code: {verification_code}",
+                    body=f"Welcome to R2R! Please verify your email using this code: {verification_code}",
                 )
         except Exception as e:
             error_msg = (
-                f"Failed to send verification email to {to_email}: {str(e)}")
+                f"Failed to send verification email to {to_email}: {str(e)}"
+            )
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
@@ -169,8 +173,7 @@ class SendGridEmailProvider(EmailProvider):
         try:
             if self.reset_password_template_id:
                 reset_data = {
-                    "reset_link":
-                    f"{self.frontend_url}/reset-password?token={reset_token}",
+                    "reset_link": f"{self.frontend_url}/reset-password?token={reset_token}",
                     "reset_token": reset_token,
                 }
 
@@ -201,12 +204,12 @@ class SendGridEmailProvider(EmailProvider):
                     to_email=to_email,
                     subject=subject,
                     html_body=html_body,
-                    body=
-                    f"Reset your R2R password using this token: {reset_token}",
+                    body=f"Reset your R2R password using this token: {reset_token}",
                 )
         except Exception as e:
             error_msg = (
-                f"Failed to send password reset email to {to_email}: {str(e)}")
+                f"Failed to send password reset email to {to_email}: {str(e)}"
+            )
             logger.error(error_msg)
             raise RuntimeError(error_msg) from e
 
@@ -218,8 +221,10 @@ class SendGridEmailProvider(EmailProvider):
         **kwargs,
     ) -> None:
         try:
-            if (hasattr(self, "password_changed_template_id")
-                    and self.password_changed_template_id):
+            if (
+                hasattr(self, "password_changed_template_id")
+                and self.password_changed_template_id
+            ):
                 await self.send_email(
                     to_email=to_email,
                     template_id=self.password_changed_template_id,

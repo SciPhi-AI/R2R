@@ -24,7 +24,6 @@ logger = logging.getLogger()
 
 
 class JwtAuthProvider(AuthProvider):
-
     def __init__(
         self,
         config: AuthConfig,
@@ -32,8 +31,9 @@ class JwtAuthProvider(AuthProvider):
         database_provider: PostgresDatabaseProvider,
         email_provider: EmailProvider,
     ):
-        super().__init__(config, crypto_provider, database_provider,
-                         email_provider)
+        super().__init__(
+            config, crypto_provider, database_provider, email_provider
+        )
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         raise NotImplementedError("Not implemented")
@@ -44,12 +44,14 @@ class JwtAuthProvider(AuthProvider):
     async def user(self, token: str) -> User:
         raise NotImplementedError("Not implemented")
 
-    async def change_password(self, user: User, current_password: str,
-                              new_password: str) -> dict[str, str]:
+    async def change_password(
+        self, user: User, current_password: str, new_password: str
+    ) -> dict[str, str]:
         raise NotImplementedError("Not implemented")
 
-    async def confirm_password_reset(self, reset_token: str,
-                                     new_password: str) -> dict[str, str]:
+    async def confirm_password_reset(
+        self, reset_token: str, new_password: str
+    ) -> dict[str, str]:
         raise NotImplementedError("Not implemented")
 
     def create_access_token(self, data: dict) -> str:
@@ -70,14 +72,15 @@ class JwtAuthProvider(AuthProvider):
             user = jwt.decode(token, jwtSecret, algorithms=["HS256"])
         except Exception as e:
             logger.info(f"JWT verification failed: {e}")
-            raise R2RException(status_code=401,
-                               message="Invalid JWT token",
-                               detail=e)
+            raise R2RException(
+                status_code=401, message="Invalid JWT token", detail=e
+            ) from e
         if user:
             # Create user in database if not exists
             try:
-                existingUser = await self.database_provider.users_handler.get_user_by_email(
-                    user.get("email"))
+                await self.database_provider.users_handler.get_user_by_email(
+                    user.get("email")
+                )
                 # TODO do we want to update user info here based on what's in the token?
             except Exception:
                 # user doesn't exist, create in db
@@ -90,8 +93,9 @@ class JwtAuthProvider(AuthProvider):
                     )
                 except Exception as e:
                     logger.error(f"Error creating user: {e}")
-                    raise R2RException(status_code=500,
-                                       message="Failed to create user")
+                    raise R2RException(
+                        status_code=500, message="Failed to create user"
+                    ) from e
             return TokenData(
                 email=user.get("email"),
                 token_type="bearer",
@@ -100,12 +104,14 @@ class JwtAuthProvider(AuthProvider):
         else:
             raise R2RException(status_code=401, message="Invalid JWT token")
 
-    async def refresh_access_token(self,
-                                   refresh_token: str) -> dict[str, Token]:
+    async def refresh_access_token(
+        self, refresh_token: str
+    ) -> dict[str, Token]:
         raise NotImplementedError("Not implemented")
 
     def get_current_active_user(
-        self, current_user: User = Depends(user)) -> User:
+        self, current_user: User = Depends(user)
+    ) -> User:
         # Check if user is active
         if not current_user.is_active:
             raise R2RException(status_code=400, message="Inactive user")
@@ -138,14 +144,14 @@ class JwtAuthProvider(AuthProvider):
     ) -> dict[str, str]:
         raise NotImplementedError("Not implemented")
 
-    async def verify_email(self, email: str,
-                           verification_code: str) -> dict[str, str]:
+    async def verify_email(
+        self, email: str, verification_code: str
+    ) -> dict[str, str]:
         raise NotImplementedError("Not implemented")
 
     async def send_verification_email(
-            self,
-            email: str,
-            user: Optional[User] = None) -> tuple[str, datetime]:
+        self, email: str, user: Optional[User] = None
+    ) -> tuple[str, datetime]:
         raise NotImplementedError("Not implemented")
 
     async def list_user_api_keys(self, user_id: UUID) -> list[dict]:
@@ -154,6 +160,7 @@ class JwtAuthProvider(AuthProvider):
     async def delete_user_api_key(self, user_id: UUID, key_id: UUID) -> bool:
         raise NotImplementedError("Not implemented")
 
-    async def oauth_callback_handler(self, provider: str, oauth_id: str,
-                                     email: str) -> dict[str, Token]:
+    async def oauth_callback_handler(
+        self, provider: str, oauth_id: str, email: str
+    ) -> dict[str, Token]:
         raise NotImplementedError("Not implemented")

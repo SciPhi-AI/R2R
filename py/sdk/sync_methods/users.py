@@ -16,7 +16,6 @@ from shared.api.models import (
 
 
 class UsersSDK:
-
     def __init__(self, client):
         self.client = client
 
@@ -59,8 +58,9 @@ class UsersSDK:
 
         return WrappedUserResponse(**response_dict)
 
-    def send_verification_email(self,
-                                email: str) -> WrappedGenericMessageResponse:
+    def send_verification_email(
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """Request that a verification email to a user."""
         response_dict = self.client._make_request(
             "POST",
@@ -94,8 +94,9 @@ class UsersSDK:
 
         return WrappedBooleanResponse(**response_dict)
 
-    def verify_email(self, email: str,
-                     verification_code: str) -> WrappedGenericMessageResponse:
+    def verify_email(
+        self, email: str, verification_code: str
+    ) -> WrappedGenericMessageResponse:
         """Verify a user's email address.
 
         Args:
@@ -183,14 +184,17 @@ class UsersSDK:
             )
 
         self.client.access_token = response_dict["results"]["access_token"][
-            "token"]
+            "token"
+        ]
         self.client._refresh_token = response_dict["results"]["refresh_token"][
-            "token"]
+            "token"
+        ]
 
         return WrappedTokenResponse(**response_dict)
 
-    def change_password(self, current_password: str,
-                        new_password: str) -> WrappedGenericMessageResponse:
+    def change_password(
+        self, current_password: str, new_password: str
+    ) -> WrappedGenericMessageResponse:
         """Change the user's password.
 
         Args:
@@ -213,8 +217,9 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    def request_password_reset(self,
-                               email: str) -> WrappedGenericMessageResponse:
+    def request_password_reset(
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """Request a password reset.
 
         Args:
@@ -232,8 +237,9 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    def reset_password(self, reset_token: str,
-                       new_password: str) -> WrappedGenericMessageResponse:
+    def reset_password(
+        self, reset_token: str, new_password: str
+    ) -> WrappedGenericMessageResponse:
         """Reset password using a reset token.
 
         Args:
@@ -307,7 +313,9 @@ class UsersSDK:
 
         return WrappedUserResponse(**response_dict)
 
-    def me(self, ) -> WrappedUserResponse:
+    def me(
+        self,
+    ) -> WrappedUserResponse:
         """Get detailed information about the currently authenticated user.
 
         Returns:
@@ -550,33 +558,29 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    def oauth_google_callback(self, code: str,
-                              state: str) -> WrappedLoginResponse:
+    def oauth_google_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """Exchange `code` and `state` with the Google OAuth 2.0 callback
         route."""
         response_dict = self.client._make_request(
             "GET",
             "users/oauth/google/callback",
-            params={
-                "code": code,
-                "state": state
-            },
+            params={"code": code, "state": state},
             version="v3",
         )
 
         return WrappedLoginResponse(**response_dict)
 
-    def oauth_github_callback(self, code: str,
-                              state: str) -> WrappedLoginResponse:
+    def oauth_github_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """Exchange `code` and `state` with the GitHub OAuth 2.0 callback
         route."""
         response_dict = self.client._make_request(
             "GET",
             "users/oauth/github/callback",
-            params={
-                "code": code,
-                "state": state
-            },
+            params={"code": code, "state": state},
             version="v3",
         )
 

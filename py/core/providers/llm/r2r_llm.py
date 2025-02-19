@@ -31,22 +31,25 @@ class R2RCompletionProvider(CompletionProvider):
 
         logger.info("Initializing R2RCompletionProvider...")
         self._openai_provider = OpenAICompletionProvider(
-            self.config, *args, **kwargs)
+            self.config, *args, **kwargs
+        )
         self._anthropic_provider = AnthropicCompletionProvider(
-            self.config, *args, **kwargs)
+            self.config, *args, **kwargs
+        )
         self._litellm_provider = LiteLLMCompletionProvider(
-            self.config, *args, **kwargs)
+            self.config, *args, **kwargs
+        )
         self._azure_foundry_provider = AzureFoundryCompletionProvider(
-            self.config, *args, **kwargs)  # New provider
+            self.config, *args, **kwargs
+        )  # New provider
 
         logger.debug(
             "R2RCompletionProvider initialized with OpenAI, Anthropic, LiteLLM, and Azure Foundry sub-providers."
         )
 
     def _choose_subprovider_by_model(
-            self,
-            model_name: str,
-            is_streaming: bool = False) -> CompletionProvider:
+        self, model_name: str, is_streaming: bool = False
+    ) -> CompletionProvider:
         """Decide which underlying sub-provider to call based on the model name
         (prefix)."""
         # Route to Anthropic if appropriate.
@@ -70,9 +73,13 @@ class R2RCompletionProvider(CompletionProvider):
             "ollama/",
             "lmstudio/",
         ]
-        if (any(
+        if (
+            any(
                 model_name.startswith(prefix)
-                for prefix in openai_like_prefixes) or "/" not in model_name):
+                for prefix in openai_like_prefixes
+            )
+            or "/" not in model_name
+        ):
             return self._openai_provider
 
         # Fallback to LiteLLM.

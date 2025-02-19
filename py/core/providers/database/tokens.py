@@ -9,8 +9,9 @@ from .base import PostgresConnectionManager
 class PostgresTokensHandler(Handler):
     TABLE_NAME = "blacklisted_tokens"
 
-    def __init__(self, project_name: str,
-                 connection_manager: PostgresConnectionManager):
+    def __init__(
+        self, project_name: str, connection_manager: PostgresConnectionManager
+    ):
         super().__init__(project_name, connection_manager)
 
     async def create_tables(self):
@@ -27,9 +28,9 @@ class PostgresTokensHandler(Handler):
         """
         await self.connection_manager.execute_query(query)
 
-    async def blacklist_token(self,
-                              token: str,
-                              current_time: Optional[datetime] = None):
+    async def blacklist_token(
+        self, token: str, current_time: Optional[datetime] = None
+    ):
         if current_time is None:
             current_time = datetime.utcnow()
 
@@ -37,8 +38,9 @@ class PostgresTokensHandler(Handler):
         INSERT INTO {self._get_table_name(PostgresTokensHandler.TABLE_NAME)} (token, blacklisted_at)
         VALUES ($1, $2)
         """
-        await self.connection_manager.execute_query(query,
-                                                    [token, current_time])
+        await self.connection_manager.execute_query(
+            query, [token, current_time]
+        )
 
     async def is_token_blacklisted(self, token: str) -> bool:
         query = f"""

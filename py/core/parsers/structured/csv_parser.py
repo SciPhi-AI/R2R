@@ -28,8 +28,9 @@ class CSVParser(AsyncParser[str | bytes]):
         self.csv = csv
         self.StringIO = StringIO
 
-    async def ingest(self, data: str | bytes, *args,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest CSV data and yield text from each row."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
@@ -41,8 +42,9 @@ class CSVParser(AsyncParser[str | bytes]):
 class CSVParserAdvanced(AsyncParser[str | bytes]):
     """A parser for CSV data."""
 
-    def __init__(self, config: IngestionConfig,
-                 llm_provider: CompletionProvider):
+    def __init__(
+        self, config: IngestionConfig, llm_provider: CompletionProvider
+    ):
         self.llm_provider = llm_provider
         self.config = config
 
@@ -52,9 +54,9 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
         self.csv = csv
         self.StringIO = StringIO
 
-    def get_delimiter(self,
-                      file_path: Optional[str] = None,
-                      file: Optional[IO[bytes]] = None):
+    def get_delimiter(
+        self, file_path: Optional[str] = None, file: Optional[IO[bytes]] = None
+    ):
         sniffer = self.csv.Sniffer()
         num_bytes = 65536
 
@@ -91,10 +93,16 @@ class CSVParserAdvanced(AsyncParser[str | bytes]):
         for row_num, row in enumerate(csv_reader):
             chunk_rows.append(row)
             if row_num % num_rows == 0:
-                yield (", ".join(header) + "\n" +
-                       "\n".join([", ".join(row) for row in chunk_rows]))
+                yield (
+                    ", ".join(header)
+                    + "\n"
+                    + "\n".join([", ".join(row) for row in chunk_rows])
+                )
                 chunk_rows = []
 
         if chunk_rows:
-            yield (", ".join(header) + "\n" +
-                   "\n".join([", ".join(row) for row in chunk_rows]))
+            yield (
+                ", ".join(header)
+                + "\n"
+                + "\n".join([", ".join(row) for row in chunk_rows])
+            )

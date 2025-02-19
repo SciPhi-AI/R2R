@@ -14,7 +14,9 @@ def init_sentry():
             dsn=dsn,
             environment=os.getenv("R2R_SENTRY_ENVIRONMENT", "not_set"),
             traces_sample_rate=float(
-                os.getenv("R2R_SENTRY_TRACES_SAMPLE_RATE", 1.0)),
+                os.getenv("R2R_SENTRY_TRACES_SAMPLE_RATE", 1.0)
+            ),
             profiles_sample_rate=float(
-                os.getenv("R2R_SENTRY_PROFILES_SAMPLE_RATE", 1.0)),
+                os.getenv("R2R_SENTRY_PROFILES_SAMPLE_RATE", 1.0)
+            ),
         )

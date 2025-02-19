@@ -14,7 +14,8 @@ def process_json(json_object, indent=0):
             padding = "  " * indent
             if isinstance(value, (dict, list)):
                 text_blob += (
-                    f"{padding}{key}:\n{process_json(value, indent + 1)}")
+                    f"{padding}{key}:\n{process_json(value, indent + 1)}"
+                )
             else:
                 text_blob += f"{padding}{key}: {value}\n"
     elif isinstance(json_object, list):
@@ -29,7 +30,6 @@ def process_json(json_object, indent=0):
 
 # TODO - Introduce abstract "Integration" ABC.
 class SerperClient:
-
     def __init__(self, api_base: str = "google.serper.dev") -> None:
         api_key = os.getenv("SERPER_API_KEY")
         if not api_key:
@@ -84,7 +84,8 @@ class SerperClient:
         organized_results = {}
         for result in results:
             result_type = result.metadata.pop(
-                "type", "Unknown")  # Pop the type and use as key
+                "type", "Unknown"
+            )  # Pop the type and use as key
             if result_type not in organized_results:
                 organized_results[result_type] = [result.metadata]
             else:

@@ -21,7 +21,6 @@ logger = logging.getLogger()
 
 
 class LiteLLMEmbeddingProvider(EmbeddingProvider):
-
     def __init__(
         self,
         config: EmbeddingConfig,
@@ -87,13 +86,14 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             return [data["embedding"] for data in response.data]
         except AuthenticationError:
             logger.error(
-                "Authentication error: Invalid API key or credentials.")
+                "Authentication error: Invalid API key or credentials."
+            )
             raise
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
 
-            raise R2RException(error_msg, 400)
+            raise R2RException(error_msg, 400) from e
 
     def _execute_task_sync(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
@@ -106,12 +106,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             return [data["embedding"] for data in response.data]
         except AuthenticationError:
             logger.error(
-                "Authentication error: Invalid API key or credentials.")
+                "Authentication error: Invalid API key or credentials."
+            )
             raise
         except Exception as e:
             error_msg = f"Error getting embeddings: {str(e)}"
             logger.error(error_msg)
-            raise R2RException(error_msg, 400)
+            raise R2RException(error_msg, 400) from e
 
     async def async_get_embedding(
         self,
@@ -122,7 +123,8 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "LiteLLMEmbeddingProvider only supports search stage.")
+                "LiteLLMEmbeddingProvider only supports search stage."
+            )
 
         task = {
             "texts": [text],
@@ -161,7 +163,8 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "LiteLLMEmbeddingProvider only supports search stage.")
+                "LiteLLMEmbeddingProvider only supports search stage."
+            )
 
         task = {
             "texts": texts,
@@ -180,7 +183,8 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
             raise ValueError(
-                "LiteLLMEmbeddingProvider only supports search stage.")
+                "LiteLLMEmbeddingProvider only supports search stage."
+            )
 
         task = {
             "texts": texts,
@@ -214,9 +218,9 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             headers = {"Content-Type": "application/json"}
 
             try:
-                response = requests.post(self.rerank_url,
-                                         json=payload,
-                                         headers=headers)
+                response = requests.post(
+                    self.rerank_url, json=payload, headers=headers
+                )
                 response.raise_for_status()
                 reranked_results = response.json()
 
@@ -275,9 +279,9 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
 
             try:
                 async with ClientSession() as session:
-                    async with session.post(self.rerank_url,
-                                            json=payload,
-                                            headers=headers) as response:
+                    async with session.post(
+                        self.rerank_url, json=payload, headers=headers
+                    ) as response:
                         response.raise_for_status()
                         reranked_results = await response.json()
 

@@ -23,8 +23,9 @@ class EMLParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest EML data and yield email content."""
         if isinstance(data, str):
             raise ValueError("EML data must be in bytes format.")

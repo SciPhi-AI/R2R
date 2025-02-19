@@ -18,11 +18,11 @@ class CryptoConfig(ProviderConfig):
 
 
 class CryptoProvider(Provider, ABC):
-
     def __init__(self, config: CryptoConfig):
         if not isinstance(config, CryptoConfig):
             raise ValueError(
-                "CryptoProvider must be initialized with a CryptoConfig")
+                "CryptoProvider must be initialized with a CryptoConfig"
+            )
         super().__init__(config)
 
     @abstractmethod
@@ -32,8 +32,9 @@ class CryptoProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def verify_password(self, plain_password: str,
-                        hashed_password: str) -> bool:
+    def verify_password(
+        self, plain_password: str, hashed_password: str
+    ) -> bool:
         """Verify that a plaintext password matches the given hashed
         password."""
         pass
@@ -62,8 +63,9 @@ class CryptoProvider(Provider, ABC):
         pass
 
     @abstractmethod
-    def verify_request_signature(self, public_key: str, signature: str,
-                                 data: str) -> bool:
+    def verify_request_signature(
+        self, public_key: str, signature: str, data: str
+    ) -> bool:
         """Verify a request signature using the corresponding Ed25519 public
         key."""
         pass

@@ -16,7 +16,6 @@ from shared.api.models import (
 
 
 class UsersSDK:
-
     def __init__(self, client):
         self.client = client
 
@@ -60,7 +59,8 @@ class UsersSDK:
         return WrappedUserResponse(**response_dict)
 
     async def send_verification_email(
-            self, email: str) -> WrappedGenericMessageResponse:
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """Request that a verification email to a user."""
         response_dict = await self.client._make_request(
             "POST",
@@ -71,8 +71,9 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    async def delete(self, id: str | UUID,
-                     password: str) -> WrappedBooleanResponse:
+    async def delete(
+        self, id: str | UUID, password: str
+    ) -> WrappedBooleanResponse:
         """Delete a specific user. Users can only delete their own account
         unless they are superusers.
 
@@ -96,8 +97,8 @@ class UsersSDK:
         return WrappedBooleanResponse(**response_dict)
 
     async def verify_email(
-            self, email: str,
-            verification_code: str) -> WrappedGenericMessageResponse:
+        self, email: str, verification_code: str
+    ) -> WrappedGenericMessageResponse:
         """Verify a user's email address.
 
         Args:
@@ -184,15 +185,17 @@ class UsersSDK:
                 version="v3",
             )
         self.client.access_token = response_dict["results"]["access_token"][
-            "token"]
+            "token"
+        ]
         self.client._refresh_token = response_dict["results"]["refresh_token"][
-            "token"]
+            "token"
+        ]
 
         return WrappedTokenResponse(**response_dict)
 
     async def change_password(
-            self, current_password: str,
-            new_password: str) -> WrappedGenericMessageResponse:
+        self, current_password: str, new_password: str
+    ) -> WrappedGenericMessageResponse:
         """Change the user's password.
 
         Args:
@@ -216,7 +219,8 @@ class UsersSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def request_password_reset(
-            self, email: str) -> WrappedGenericMessageResponse:
+        self, email: str
+    ) -> WrappedGenericMessageResponse:
         """Request a password reset.
 
         Args:
@@ -235,8 +239,8 @@ class UsersSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def reset_password(
-            self, reset_token: str,
-            new_password: str) -> WrappedGenericMessageResponse:
+        self, reset_token: str, new_password: str
+    ) -> WrappedGenericMessageResponse:
         """Reset password using a reset token.
 
         Args:
@@ -310,7 +314,9 @@ class UsersSDK:
 
         return WrappedUserResponse(**response_dict)
 
-    async def me(self, ) -> WrappedUserResponse:
+    async def me(
+        self,
+    ) -> WrappedUserResponse:
         """Get detailed information about the currently authenticated user.
 
         Returns:
@@ -554,33 +560,29 @@ class UsersSDK:
 
         return WrappedGenericMessageResponse(**response_dict)
 
-    async def oauth_google_callback(self, code: str,
-                                    state: str) -> WrappedLoginResponse:
+    async def oauth_google_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """Exchange `code` and `state` with the Google OAuth 2.0 callback
         route."""
         response_dict = await self.client._make_request(
             "GET",
             "users/oauth/google/callback",
-            params={
-                "code": code,
-                "state": state
-            },
+            params={"code": code, "state": state},
             version="v3",
         )
 
         return WrappedLoginResponse(**response_dict)
 
-    async def oauth_github_callback(self, code: str,
-                                    state: str) -> WrappedLoginResponse:
+    async def oauth_github_callback(
+        self, code: str, state: str
+    ) -> WrappedLoginResponse:
         """Exchange `code` and `state` with the GitHub OAuth 2.0 callback
         route."""
         response_dict = await self.client._make_request(
             "GET",
             "users/oauth/github/callback",
-            params={
-                "code": code,
-                "state": state
-            },
+            params={"code": code, "state": state},
             version="v3",
         )
 

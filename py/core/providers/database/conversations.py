@@ -38,9 +38,9 @@ def safe_dumps(obj: Any) -> str:
 
 
 class PostgresConversationsHandler(Handler):
-
-    def __init__(self, project_name: str,
-                 connection_manager: PostgresConnectionManager):
+    def __init__(
+        self, project_name: str, connection_manager: PostgresConnectionManager
+    ):
         self.project_name = project_name
         self.connection_manager = connection_manager
 
@@ -81,7 +81,8 @@ class PostgresConversationsHandler(Handler):
         """
         try:
             result = await self.connection_manager.fetchrow_query(
-                query, [user_id, name])
+                query, [user_id, name]
+            )
 
             return ConversationResponse(
                 id=result["id"],
@@ -122,8 +123,9 @@ class PostgresConversationsHandler(Handler):
             params.append(conversation_ids)
             param_index += 1
 
-        where_clause = ("WHERE " +
-                        " AND ".join(conditions) if conditions else "")
+        where_clause = (
+            "WHERE " + " AND ".join(conditions) if conditions else ""
+        )
 
         query = f"""
             WITH conversation_overview AS (
@@ -156,12 +158,15 @@ class PostgresConversationsHandler(Handler):
             return {"results": [], "total_entries": 0}
 
         total_entries = results[0]["total_entries"]
-        conversations = [{
-            "id": str(row["id"]),
-            "created_at": row["created_at_epoch"],
-            "user_id": str(row["user_id"]) if row["user_id"] else None,
-            "name": row["name"] or None,
-        } for row in results]
+        conversations = [
+            {
+                "id": str(row["id"]),
+                "created_at": row["created_at_epoch"],
+                "user_id": str(row["user_id"]) if row["user_id"] else None,
+                "name": row["name"] or None,
+            }
+            for row in results
+        ]
 
         return {"results": conversations, "total_entries": total_entries}
 
@@ -178,7 +183,8 @@ class PostgresConversationsHandler(Handler):
             WHERE id = $1
         """
         conv_row = await self.connection_manager.fetchrow_query(
-            conv_check_query, [conversation_id])
+            conv_check_query, [conversation_id]
+        )
         if not conv_row:
             raise R2RException(
                 status_code=404,
@@ -191,12 +197,12 @@ class PostgresConversationsHandler(Handler):
                 WHERE id = $1 AND conversation_id = $2
             """
             parent_row = await self.connection_manager.fetchrow_query(
-                parent_check_query, [parent_id, conversation_id])
+                parent_check_query, [parent_id, conversation_id]
+            )
             if not parent_row:
                 raise R2RException(
                     status_code=404,
-                    message=
-                    f"Parent message {parent_id} not found in conversation {conversation_id}.",
+                    message=f"Parent message {parent_id} not found in conversation {conversation_id}.",
                 )
 
         # 2) Convert the content & metadata to JSON strings in a safe manner
@@ -221,8 +227,9 @@ class PostgresConversationsHandler(Handler):
             ],
         )
         if not inserted:
-            raise R2RException(status_code=500,
-                               message="Failed to insert message.")
+            raise R2RException(
+                status_code=500, message="Failed to insert message."
+            )
 
         return MessageResponse(id=message_id, message=content)
 
@@ -266,8 +273,11 @@ class PostgresConversationsHandler(Handler):
         new_metadata = {
             **old_metadata,
             **additional_metadata,
-            "edited": (True if new_content is not None else old_metadata.get(
-                "edited", False)),
+            "edited": (
+                True
+                if new_content is not None
+                else old_metadata.get("edited", False)
+            ),
         }
 
         # Update message without changing the timestamp
@@ -289,20 +299,23 @@ class PostgresConversationsHandler(Handler):
             ],
         )
         if not updated:
-            raise R2RException(status_code=500,
-                               message="Failed to update message.")
+            raise R2RException(
+                status_code=500, message="Failed to update message."
+            )
 
         return {
-            "id":
-            str(message_id),
-            "message": (Message(**content_to_save) if isinstance(
-                content_to_save, dict) else content_to_save),
-            "metadata":
-            new_metadata,
+            "id": str(message_id),
+            "message": (
+                Message(**content_to_save)
+                if isinstance(content_to_save, dict)
+                else content_to_save
+            ),
+            "metadata": new_metadata,
         }
 
-    async def update_message_metadata(self, message_id: UUID,
-                                      metadata: dict) -> None:
+    async def update_message_metadata(
+        self, message_id: UUID, metadata: dict
+    ) -> None:
         # Fetch current metadata
         query = f"""
             SELECT metadata FROM {self._get_table_name("messages")}
@@ -310,8 +323,9 @@ class PostgresConversationsHandler(Handler):
         """
         row = await self.connection_manager.fetchrow_query(query, [message_id])
         if not row:
-            raise R2RException(status_code=404,
-                               message=f"Message {message_id} not found.")
+            raise R2RException(
+                status_code=404, message=f"Message {message_id} not found."
+            )
 
         current_metadata = json.loads(row["metadata"]) or {}
         updated_metadata = {**current_metadata, **metadata}
@@ -322,7 +336,8 @@ class PostgresConversationsHandler(Handler):
             WHERE id = $2
         """
         await self.connection_manager.execute_query(
-            update_query, [json.dumps(updated_metadata), message_id])
+            update_query, [json.dumps(updated_metadata), message_id]
+        )
 
     async def get_conversation(
         self,
@@ -364,23 +379,27 @@ class PostgresConversationsHandler(Handler):
             ORDER BY created_at ASC
         """
         results = await self.connection_manager.fetch_query(
-            msg_query, [conversation_id])
+            msg_query, [conversation_id]
+        )
 
         return [
             MessageResponse(
                 id=row["id"],
                 message=Message(**json.loads(row["content"])),
                 metadata=json.loads(row["metadata"]),
-            ) for row in results
+            )
+            for row in results
         ]
 
-    async def update_conversation(self, conversation_id: UUID,
-                                  name: str) -> ConversationResponse:
+    async def update_conversation(
+        self, conversation_id: UUID, name: str
+    ) -> ConversationResponse:
         try:
             # Check if conversation exists
             conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
             conv_row = await self.connection_manager.fetchrow_query(
-                conv_query, [conversation_id])
+                conv_query, [conversation_id]
+            )
             if not conv_row:
                 raise R2RException(
                     status_code=404,
@@ -393,7 +412,8 @@ class PostgresConversationsHandler(Handler):
             RETURNING user_id, extract(epoch from created_at) as created_at_epoch
             """
             updated_row = await self.connection_manager.fetchrow_query(
-                update_query, [name, conversation_id])
+                update_query, [name, conversation_id]
+            )
             return ConversationResponse(
                 id=conversation_id,
                 created_at=updated_row["created_at_epoch"],
@@ -431,7 +451,8 @@ class PostgresConversationsHandler(Handler):
             WHERE {" AND ".join(conditions)}
         """
         conv_row = await self.connection_manager.fetchrow_query(
-            conv_query, params)
+            conv_query, params
+        )
         if not conv_row:
             raise R2RException(
                 status_code=404,
@@ -440,13 +461,15 @@ class PostgresConversationsHandler(Handler):
 
         # Delete all messages
         del_messages_query = f"DELETE FROM {self._get_table_name('messages')} WHERE conversation_id = $1"
-        await self.connection_manager.execute_query(del_messages_query,
-                                                    [conversation_id])
+        await self.connection_manager.execute_query(
+            del_messages_query, [conversation_id]
+        )
 
         # Delete conversation
         del_conv_query = f"DELETE FROM {self._get_table_name('conversations')} WHERE id = $1"
-        await self.connection_manager.execute_query(del_conv_query,
-                                                    [conversation_id])
+        await self.connection_manager.execute_query(
+            del_conv_query, [conversation_id]
+        )
 
     async def export_conversations_to_csv(
         self,
@@ -513,13 +536,12 @@ class PostgresConversationsHandler(Handler):
 
         temp_file = None
         try:
-            temp_file = tempfile.NamedTemporaryFile(mode="w",
-                                                    delete=True,
-                                                    suffix=".csv")
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection(
-            ) as conn:  # type: ignore
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 
@@ -620,13 +642,12 @@ class PostgresConversationsHandler(Handler):
 
         temp_file = None
         try:
-            temp_file = tempfile.NamedTemporaryFile(mode="w",
-                                                    delete=True,
-                                                    suffix=".csv")
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", delete=True, suffix=".csv"
+            )
             writer = csv.writer(temp_file, quoting=csv.QUOTE_ALL)
 
-            async with self.connection_manager.pool.get_connection(
-            ) as conn:  # type: ignore
+            async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
                 async with conn.transaction():
                     cursor = await conn.cursor(select_stmt, *params)
 

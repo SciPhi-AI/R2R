@@ -11,7 +11,6 @@ T = TypeVar("T", bound="R2RSerializable")
 
 
 class R2RSerializable(BaseModel):
-
     @classmethod
     def from_dict(cls: Type[T], data: dict[str, Any] | str) -> T:
         if isinstance(data, str):
@@ -75,13 +74,14 @@ class AsyncSyncMeta(type):
         new_cls = super().__new__(cls, name, bases, dct)
         for attr_name, attr_value in dct.items():
             if asyncio.iscoroutinefunction(attr_value) and getattr(
-                    attr_value, "_syncable", False):
+                attr_value, "_syncable", False
+            ):
                 sync_method_name = attr_name[
-                    1:]  # Remove leading 'a' for sync method
+                    1:
+                ]  # Remove leading 'a' for sync method
                 async_method = attr_value
 
                 def make_sync_method(async_method):
-
                     def sync_wrapper(self, *args, **kwargs):
                         loop = cls.get_event_loop()
                         if not loop.is_running():
@@ -97,16 +97,21 @@ class AsyncSyncMeta(type):
                                 try:
                                     asyncio.set_event_loop(loop)
                                     result = loop.run_until_complete(
-                                        async_method(self, *args, **kwargs))
+                                        async_method(self, *args, **kwargs)
+                                    )
                                 except Exception as e:
                                     exception = e
                                 finally:
                                     generation_config = kwargs.get(
-                                        "rag_generation_config", None)
-                                    if (not generation_config
-                                            or not generation_config.stream):
+                                        "rag_generation_config", None
+                                    )
+                                    if (
+                                        not generation_config
+                                        or not generation_config.stream
+                                    ):
                                         loop.run_until_complete(
-                                            loop.shutdown_asyncgens())
+                                            loop.shutdown_asyncgens()
+                                        )
                                         loop.close()
 
                             thread = Thread(target=run)
@@ -118,13 +123,15 @@ class AsyncSyncMeta(type):
                         else:
                             # If there's already a running loop, schedule and execute the coroutine
                             future = asyncio.run_coroutine_threadsafe(
-                                async_method(self, *args, **kwargs), loop)
+                                async_method(self, *args, **kwargs), loop
+                            )
                             return future.result()
 
                     return sync_wrapper
 
-                setattr(new_cls, sync_method_name,
-                        make_sync_method(async_method))
+                setattr(
+                    new_cls, sync_method_name, make_sync_method(async_method)
+                )
         return new_cls
 
 

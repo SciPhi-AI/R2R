@@ -27,7 +27,6 @@ old_vector_table_name = project_name
 
 
 class Vector(UserDefinedType):
-
     def get_col_spec(self, **kw):
         return "vector"
 
@@ -38,8 +37,9 @@ def check_if_upgrade_needed():
     inspector = inspect(connection)
 
     # First check if the old table exists - if it doesn't, we don't need this migration
-    has_old_table = inspector.has_table(old_vector_table_name,
-                                        schema=project_name)
+    has_old_table = inspector.has_table(
+        old_vector_table_name, schema=project_name
+    )
     if not has_old_table:
         print(
             f"Migration not needed: Original '{old_vector_table_name}' table doesn't exist"
@@ -48,8 +48,9 @@ def check_if_upgrade_needed():
         return False
 
     # Only if the old table exists, check if we need to migrate it
-    has_new_table = inspector.has_table(new_vector_table_name,
-                                        schema=project_name)
+    has_new_table = inspector.has_table(
+        new_vector_table_name, schema=project_name
+    )
     if has_new_table:
         print(
             f"Migration not needed: '{new_vector_table_name}' table already exists"
@@ -101,7 +102,8 @@ def upgrade() -> None:
                 postgresql.TSVECTOR,
                 nullable=False,
                 server_default=sa.text(
-                    "to_tsvector('english'::regconfig, '')"),
+                    "to_tsvector('english'::regconfig, '')"
+                ),
             ),
             sa.Column(
                 "metadata",

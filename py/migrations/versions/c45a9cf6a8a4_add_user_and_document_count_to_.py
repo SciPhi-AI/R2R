@@ -52,18 +52,16 @@ def upgrade():
     # Add the new columns with default value of 0
     op.add_column(
         "collections",
-        sa.Column("user_count",
-                  sa.Integer(),
-                  nullable=False,
-                  server_default="0"),
+        sa.Column(
+            "user_count", sa.Integer(), nullable=False, server_default="0"
+        ),
         schema=project_name,
     )
     op.add_column(
         "collections",
-        sa.Column("document_count",
-                  sa.Integer(),
-                  nullable=False,
-                  server_default="0"),
+        sa.Column(
+            "document_count", sa.Integer(), nullable=False, server_default="0"
+        ),
         schema=project_name,
     )
 

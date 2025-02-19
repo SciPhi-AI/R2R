@@ -151,7 +151,8 @@ class VectorQuantizationType(str, Enum):
 
 class VectorQuantizationSettings(R2RSerializable):
     quantization_type: VectorQuantizationType = Field(
-        default=VectorQuantizationType.FP32)
+        default=VectorQuantizationType.FP32
+    )
 
 
 class Vector(R2RSerializable):
@@ -163,10 +164,14 @@ class Vector(R2RSerializable):
 
     def __init__(self, **data):
         super().__init__(**data)
-        if (self.type == VectorType.FIXED and self.length > 0
-                and len(self.data) != self.length):
+        if (
+            self.type == VectorType.FIXED
+            and self.length > 0
+            and len(self.data) != self.length
+        ):
             raise ValueError(
-                f"Vector must be exactly {self.length} elements long.")
+                f"Vector must be exactly {self.length} elements long."
+            )
 
     def __repr__(self) -> str:
         return (
@@ -188,14 +193,16 @@ class VectorEntry(R2RSerializable):
 
     def __str__(self) -> str:
         """Return a string representation of the VectorEntry."""
-        return (f"VectorEntry("
-                f"chunk_id={self.id}, "
-                f"document_id={self.document_id}, "
-                f"owner_id={self.owner_id}, "
-                f"collection_ids={self.collection_ids}, "
-                f"vector={self.vector}, "
-                f"text={self.text}, "
-                f"metadata={self.metadata})")
+        return (
+            f"VectorEntry("
+            f"chunk_id={self.id}, "
+            f"document_id={self.document_id}, "
+            f"owner_id={self.owner_id}, "
+            f"collection_ids={self.collection_ids}, "
+            f"vector={self.vector}, "
+            f"text={self.text}, "
+            f"metadata={self.metadata})"
+        )
 
     def __repr__(self) -> str:
         """Return an unambiguous string representation of the VectorEntry."""
@@ -224,8 +231,9 @@ class IndexConfig(BaseModel):
     table_name: Optional[str] = Field(default=VectorTableName.CHUNKS)
     index_method: Optional[str] = Field(default=IndexMethod.hnsw)
     index_measure: Optional[str] = Field(default=IndexMeasure.cosine_distance)
-    index_arguments: Optional[IndexArgsIVFFlat
-                              | IndexArgsHNSW] = Field(default=None)
+    index_arguments: Optional[IndexArgsIVFFlat | IndexArgsHNSW] = Field(
+        default=None
+    )
     index_name: Optional[str] = Field(default=None)
     index_column: Optional[str] = Field(default=None)
     concurrently: Optional[bool] = Field(default=True)

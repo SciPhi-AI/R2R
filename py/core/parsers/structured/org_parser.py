@@ -39,8 +39,9 @@ class ORGParser(AsyncParser[str | bytes]):
 
         return contents
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest ORG data and yield document content."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
@@ -66,6 +67,6 @@ class ORGParser(AsyncParser[str | bytes]):
                         yield content.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing ORG file: {str(e)}")
+            raise ValueError(f"Error processing ORG file: {str(e)}") from e
         finally:
             file_obj.close()

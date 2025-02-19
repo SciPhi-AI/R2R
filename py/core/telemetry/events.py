@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 
 class BaseTelemetryEvent:
-
     def __init__(self, event_type: str, properties: dict[str, Any]):
         self.event_type = event_type
         self.properties = properties
@@ -11,7 +10,6 @@ class BaseTelemetryEvent:
 
 
 class FeatureUsageEvent(BaseTelemetryEvent):
-
     def __init__(
         self,
         user_id: str,
@@ -29,7 +27,6 @@ class FeatureUsageEvent(BaseTelemetryEvent):
 
 
 class ErrorEvent(BaseTelemetryEvent):
-
     def __init__(
         self,
         user_id: str,

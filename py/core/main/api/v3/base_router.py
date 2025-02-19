@@ -15,9 +15,9 @@ logger = logging.getLogger()
 
 
 class BaseRouterV3:
-
-    def __init__(self, providers: R2RProviders, services: R2RServices,
-                 config: R2RConfig):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         """
         :param providers: Typically includes auth, database, etc.
         :param services: Additional service references (ingestion, etc).
@@ -68,8 +68,7 @@ class BaseRouterV3:
                 raise HTTPException(
                     status_code=500,
                     detail={
-                        "message":
-                        f"An error '{e}' occurred during {func.__name__}",
+                        "message": f"An error '{e}' occurred during {func.__name__}",
                         "error": str(e),
                         "error_type": type(e).__name__,
                     },
@@ -102,8 +101,8 @@ class BaseRouterV3:
         """
 
         async def rate_limit_dependency(
-                request: Request,
-                auth_user=Depends(self.providers.auth.auth_wrapper()),
+            request: Request,
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ):
             """1) Fetch the user from the DB (including .limits_overrides).
 
@@ -120,7 +119,8 @@ class BaseRouterV3:
 
             # 1) Fetch the user from DB
             user = await self.providers.database.users_handler.get_user_by_id(
-                user_id)
+                user_id
+            )
             if not user:
                 raise HTTPException(status_code=404, detail="User not found.")
 
@@ -132,7 +132,7 @@ class BaseRouterV3:
                 )
             except ValueError as e:
                 # If check_limits raises ValueError -> 429 Too Many Requests
-                raise HTTPException(status_code=429, detail=str(e))
+                raise HTTPException(status_code=429, detail=str(e)) from e
 
             request.state.user_id = user_id
             request.state.route = route
@@ -144,7 +144,8 @@ class BaseRouterV3:
                 # 4) Log only POST and DELETE requests
                 if request.method in ["POST", "DELETE"]:
                     await self.providers.database.limits_handler.log_request(
-                        user_id, route)
+                        user_id, route
+                    )
 
         async def websocket_rate_limit_dependency(websocket: WebSocket):
             # Example: if you want to rate-limit websockets similarly

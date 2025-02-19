@@ -40,7 +40,8 @@ def check_if_upgrade_needed():
     # If we find an old column name, we do need to migrate
     if "id" in collections_columns:
         print(
-            "Migration not needed: collections table already has 'id' column")
+            "Migration not needed: collections table already has 'id' column"
+        )
         return False
     elif "collection_id" in collections_columns:
         print("Migration needed: collections table has old column names")
@@ -82,9 +83,9 @@ def upgrade() -> None:
 
     op.add_column(
         "collections",
-        sa.Column("graph_sync_status",
-                  sa.Text,
-                  server_default=sa.text("'pending'")),
+        sa.Column(
+            "graph_sync_status", sa.Text, server_default=sa.text("'pending'")
+        ),
         schema=project_name,
     )
 

@@ -35,8 +35,9 @@ class R2RBuilder:
         provider_factory = R2RProviderFactory
 
         try:
-            providers = await self._create_providers(provider_factory, *args,
-                                                     **kwargs)
+            providers = await self._create_providers(
+                provider_factory, *args, **kwargs
+            )
         except Exception as e:
             logger.error(f"Error {e} while creating R2RProviders.")
             raise
@@ -49,68 +50,57 @@ class R2RBuilder:
         services = self._create_services(service_params)
 
         routers = {
-            "chunks_router":
-            ChunksRouter(
+            "chunks_router": ChunksRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "collections_router":
-            CollectionsRouter(
+            "collections_router": CollectionsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "conversations_router":
-            ConversationsRouter(
+            "conversations_router": ConversationsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "documents_router":
-            DocumentsRouter(
+            "documents_router": DocumentsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "graph_router":
-            GraphRouter(
+            "graph_router": GraphRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "indices_router":
-            IndicesRouter(
+            "indices_router": IndicesRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "logs_router":
-            LogsRouter(
+            "logs_router": LogsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "prompts_router":
-            PromptsRouter(
+            "prompts_router": PromptsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "retrieval_router":
-            RetrievalRouter(
+            "retrieval_router": RetrievalRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "system_router":
-            SystemRouter(
+            "system_router": SystemRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
             ).get_router(),
-            "users_router":
-            UsersRouter(
+            "users_router": UsersRouter(
                 providers=providers,
                 services=services,
                 config=self.config,
@@ -124,9 +114,9 @@ class R2RBuilder:
             **routers,
         )
 
-    async def _create_providers(self,
-                                provider_factory: Type[R2RProviderFactory],
-                                *args, **kwargs) -> R2RProviders:
+    async def _create_providers(
+        self, provider_factory: Type[R2RProviderFactory], *args, **kwargs
+    ) -> R2RProviders:
         factory = provider_factory(self.config)
         return await factory.create_providers(*args, **kwargs)
 

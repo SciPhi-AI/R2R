@@ -20,14 +20,13 @@ from .base_router import BaseRouterV3
 
 
 class PromptsRouter(BaseRouterV3):
-
-    def __init__(self, providers: R2RProviders, services: R2RServices,
-                 config: R2RConfig):
+    def __init__(
+        self, providers: R2RProviders, services: R2RServices, config: R2RConfig
+    ):
         logging.info("Initializing PromptsRouter")
         super().__init__(providers, services, config)
 
     def _setup_routes(self):
-
         @self.router.post(
             "/prompts",
             dependencies=[Depends(self.rate_limit_dependency)],
@@ -35,10 +34,8 @@ class PromptsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -52,10 +49,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -72,10 +67,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/prompts" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
@@ -89,7 +82,8 @@ class PromptsRouter(BaseRouterV3):
         async def create_prompt(
             name: str = Body(..., description="The name of the prompt"),
             template: str = Body(
-                ..., description="The template string for the prompt"),
+                ..., description="The template string for the prompt"
+            ),
             input_types: dict[str, str] = Body(
                 default={},
                 description="A dictionary mapping input names to their types",
@@ -107,7 +101,8 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             result = await self.services.management.add_prompt(
-                name, template, input_types)
+                name, template, input_types
+            )
             return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.get(
@@ -117,10 +112,8 @@ class PromptsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -130,10 +123,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -146,10 +137,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                                 curl -X GET "https://api.example.com/v3/prompts" \\
                                     -H "Authorization: Bearer YOUR_API_KEY"
                                 """),
@@ -171,8 +160,9 @@ class PromptsRouter(BaseRouterV3):
                     "Only a superuser can list prompts.",
                     403,
                 )
-            get_prompts_response = (await
-                                    self.services.management.get_all_prompts())
+            get_prompts_response = (
+                await self.services.management.get_all_prompts()
+            )
 
             return (  # type: ignore
                 get_prompts_response["results"],
@@ -188,10 +178,8 @@ class PromptsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -205,10 +193,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -225,10 +211,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/prompts/greeting_prompt?inputs=%7B%22name%22%3A%22John%22%7D&prompt_override=Hi%2C%20%7Bname%7D!" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),
@@ -239,11 +223,12 @@ class PromptsRouter(BaseRouterV3):
         @self.base_endpoint
         async def get_prompt(
             name: str = Path(..., description="Prompt name"),
-            inputs: Optional[dict[str,
-                                  str]] = Body(None,
-                                               description="Prompt inputs"),
+            inputs: Optional[dict[str, str]] = Body(
+                None, description="Prompt inputs"
+            ),
             prompt_override: Optional[str] = Query(
-                None, description="Prompt override"),
+                None, description="Prompt override"
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedPromptResponse:
             """Get a specific prompt by name, optionally with inputs and
@@ -259,7 +244,8 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             result = await self.services.management.get_prompt(
-                name, inputs, prompt_override)
+                name, inputs, prompt_override
+            )
             return result  # type: ignore
 
         @self.router.put(
@@ -269,10 +255,8 @@ class PromptsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -286,10 +270,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -306,10 +288,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X PUT "https://api.example.com/v3/prompts/greeting_prompt" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
@@ -323,7 +303,8 @@ class PromptsRouter(BaseRouterV3):
         async def update_prompt(
             name: str = Path(..., description="Prompt name"),
             template: Optional[str] = Body(
-                None, description="Updated prompt template"),
+                None, description="Updated prompt template"
+            ),
             input_types: dict[str, str] = Body(
                 default={},
                 description="A dictionary mapping input names to their types",
@@ -341,7 +322,8 @@ class PromptsRouter(BaseRouterV3):
                     403,
                 )
             result = await self.services.management.update_prompt(
-                name, template, input_types)
+                name, template, input_types
+            )
             return GenericMessageResponse(message=result)  # type: ignore
 
         @self.router.delete(
@@ -351,10 +333,8 @@ class PromptsRouter(BaseRouterV3):
             openapi_extra={
                 "x-codeSamples": [
                     {
-                        "lang":
-                        "Python",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -364,10 +344,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "JavaScript",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -382,10 +360,8 @@ class PromptsRouter(BaseRouterV3):
                             """),
                     },
                     {
-                        "lang":
-                        "cURL",
-                        "source":
-                        textwrap.dedent("""
+                        "lang": "cURL",
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/v3/prompts/greeting_prompt" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
                             """),

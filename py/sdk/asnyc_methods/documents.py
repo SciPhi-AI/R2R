@@ -57,9 +57,13 @@ class DocumentsSDK:
         """
         if not file_path and not raw_text and not chunks:
             raise ValueError(
-                "Either `file_path`, `raw_text` or `chunks` must be provided")
-        if ((file_path and raw_text) or (file_path and chunks)
-                or (raw_text and chunks)):
+                "Either `file_path`, `raw_text` or `chunks` must be provided"
+            )
+        if (
+            (file_path and raw_text)
+            or (file_path and chunks)
+            or (raw_text and chunks)
+        ):
             raise ValueError(
                 "Only one of `file_path`, `raw_text` or `chunks` may be provided"
             )
@@ -74,8 +78,11 @@ class DocumentsSDK:
         if ingestion_config:
             if isinstance(ingestion_config, IngestionMode):
                 ingestion_config = {"mode": ingestion_config.value}
-            app_config: dict[str, Any] = ({} if isinstance(
-                ingestion_config, dict) else ingestion_config["app"])
+            app_config: dict[str, Any] = (
+                {}
+                if isinstance(ingestion_config, dict)
+                else ingestion_config["app"]
+            )
             ingestion_config = dict(ingestion_config)
             ingestion_config["app"] = app_config
             data["ingestion_config"] = json.dumps(ingestion_config)
@@ -91,10 +98,12 @@ class DocumentsSDK:
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
-            files = [(
-                "file",
-                (file_path, file_instance, "application/octet-stream"),
-            )]
+            files = [
+                (
+                    "file",
+                    (file_path, file_instance, "application/octet-stream"),
+                )
+            ]
             try:
                 response_dict = await self.client._make_request(
                     "POST",
@@ -185,8 +194,11 @@ class DocumentsSDK:
             raise ValueError("Expected BytesIO response")
 
         if output_path:
-            output_path = (Path(output_path)
-                           if isinstance(output_path, str) else output_path)
+            output_path = (
+                Path(output_path)
+                if isinstance(output_path, str)
+                else output_path
+            )
             async with aiofiles.open(output_path, "wb") as f:
                 await f.write(response.getvalue())
             return None
@@ -213,8 +225,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         data: dict[str, Any] = {"include_header": include_header}
         if columns:
@@ -225,12 +238,12 @@ class DocumentsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                    f"{self.client.base_url}/v3/documents/export",
-                    json=data,
-                    headers={
-                        "Accept": "text/csv",
-                        **self.client._get_auth_header(),
-                    },
+                f"{self.client.base_url}/v3/documents/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_header(),
+                },
             ) as response:
                 if response.status != 200:
                     raise ValueError(
@@ -263,8 +276,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -276,12 +290,12 @@ class DocumentsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                    f"{self.client.base_url}/v3/documents/{str(id)}/entities/export",
-                    json=data,
-                    headers={
-                        "Accept": "text/csv",
-                        **self.client._get_auth_header(),
-                    },
+                f"{self.client.base_url}/v3/documents/{str(id)}/entities/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_header(),
+                },
             ) as response:
                 if response.status != 200:
                     raise ValueError(
@@ -314,8 +328,9 @@ class DocumentsSDK:
             None
         """
         # Convert path to string if it's a Path object
-        output_path = (str(output_path)
-                       if isinstance(output_path, Path) else output_path)
+        output_path = (
+            str(output_path) if isinstance(output_path, Path) else output_path
+        )
 
         # Prepare request data
         data: dict[str, Any] = {"include_header": include_header}
@@ -327,12 +342,12 @@ class DocumentsSDK:
         # Stream response directly to file
         async with aiofiles.open(output_path, "wb") as f:
             async with self.client.session.post(
-                    f"{self.client.base_url}/v3/documents/{str(id)}/relationships/export",
-                    json=data,
-                    headers={
-                        "Accept": "text/csv",
-                        **self.client._get_auth_header(),
-                    },
+                f"{self.client.base_url}/v3/documents/{str(id)}/relationships/export",
+                json=data,
+                headers={
+                    "Accept": "text/csv",
+                    **self.client._get_auth_header(),
+                },
             ) as response:
                 if response.status != 200:
                     raise ValueError(

@@ -64,14 +64,15 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
                 fn_args = {"_raw": raw_args}
 
             return {
-                "role":
-                "assistant",
-                "content": [{
-                    "type": "tool_use",
-                    "id": tool_call_id,  # If you track a unique call ID
-                    "name": fn_name,
-                    "input": fn_args,
-                }],
+                "role": "assistant",
+                "content": [
+                    {
+                        "type": "tool_use",
+                        "id": tool_call_id,  # If you track a unique call ID
+                        "name": fn_name,
+                        "input": fn_args,
+                    }
+                ],
             }
         else:
             # It's a normal user or assistant message
@@ -81,13 +82,14 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
     if role in ["function", "tool"]:
         # Return as "tool_result" from the user's perspective
         return {
-            "role":
-            "user",
-            "content": [{
-                "type": "tool_result",
-                "tool_use_id": tool_call_id,
-                "content": content,
-            }],
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": tool_call_id,
+                    "content": content,
+                }
+            ],
         }
 
     # Default fallback (unrecognized role): pass it through
@@ -95,7 +97,6 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
 
 
 class AnthropicCompletionProvider(CompletionProvider):
-
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
         # if config.provider != "anthropic":
@@ -166,7 +167,8 @@ class AnthropicCompletionProvider(CompletionProvider):
             if hasattr(generation_config, "disable_parallel_tool_use"):
                 args["tool_choice"] = args.get("tool_choice", {})
                 args["tool_choice"]["disable_parallel_tool_use"] = (
-                    generation_config.disable_parallel_tool_use)
+                    generation_config.disable_parallel_tool_use
+                )
 
         return args
 
@@ -183,40 +185,56 @@ class AnthropicCompletionProvider(CompletionProvider):
                     text_pieces.append(block.text)
             content_text = "".join(text_pieces)
 
-        finish_reason = ("stop" if anthropic_msg.stop_reason == "end_turn" else
-                         anthropic_msg.stop_reason)
+        finish_reason = (
+            "stop"
+            if anthropic_msg.stop_reason == "end_turn"
+            else anthropic_msg.stop_reason
+        )
 
         return {
-            "id":
-            anthropic_msg.id,
-            "object":
-            "chat.completion",
-            "created":
-            int(time.time()),
-            "model":
-            anthropic_msg.model.split("anthropic/")[-1],
+            "id": anthropic_msg.id,
+            "object": "chat.completion",
+            "created": int(time.time()),
+            "model": anthropic_msg.model.split("anthropic/")[-1],
             "usage": {
-                "prompt_tokens": (anthropic_msg.usage.input_tokens
-                                  if anthropic_msg.usage else 0),
-                "completion_tokens": (anthropic_msg.usage.output_tokens
-                                      if anthropic_msg.usage else 0),
-                "total_tokens":
-                ((anthropic_msg.usage.input_tokens if anthropic_msg.usage else
-                  0) + (anthropic_msg.usage.output_tokens
-                        if anthropic_msg.usage else 0)),
+                "prompt_tokens": (
+                    anthropic_msg.usage.input_tokens
+                    if anthropic_msg.usage
+                    else 0
+                ),
+                "completion_tokens": (
+                    anthropic_msg.usage.output_tokens
+                    if anthropic_msg.usage
+                    else 0
+                ),
+                "total_tokens": (
+                    (
+                        anthropic_msg.usage.input_tokens
+                        if anthropic_msg.usage
+                        else 0
+                    )
+                    + (
+                        anthropic_msg.usage.output_tokens
+                        if anthropic_msg.usage
+                        else 0
+                    )
+                ),
             },
-            "choices": [{
-                "index": 0,
-                "message": {
-                    "role": anthropic_msg.role,  # "assistant" typically
-                    "content": content_text,
-                },
-                "finish_reason": finish_reason,
-            }],
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": anthropic_msg.role,  # "assistant" typically
+                        "content": content_text,
+                    },
+                    "finish_reason": finish_reason,
+                }
+            ],
         }
 
     def _split_system_messages(
-            self, messages: list[dict]) -> (list[dict], Optional[str]):
+        self, messages: list[dict]
+    ) -> (list[dict], Optional[str]):
         """Extract the system message and properly group tool results with
         their calls."""
         system_msg = None
@@ -231,44 +249,43 @@ class AnthropicCompletionProvider(CompletionProvider):
             if m.get("tool_calls"):
                 # First add any content as a regular message
                 if m.get("content"):
-                    filtered.append({
-                        "role": "assistant",
-                        "content": m["content"]
-                    })
+                    filtered.append(
+                        {"role": "assistant", "content": m["content"]}
+                    )
 
                 # Add the tool calls message
-                filtered.append({
-                    "role":
-                    "assistant",
-                    "content": [{
-                        "type":
-                        "tool_use",
-                        "id":
-                        call["id"],
-                        "name":
-                        call["function"]["name"],
-                        "input":
-                        json.loads(call["function"]["arguments"]),
-                    } for call in m["tool_calls"]],
-                })
+                filtered.append(
+                    {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": call["id"],
+                                "name": call["function"]["name"],
+                                "input": json.loads(
+                                    call["function"]["arguments"]
+                                ),
+                            }
+                            for call in m["tool_calls"]
+                        ],
+                    }
+                )
 
             elif m["role"] in ["function", "tool"]:
                 # Collect tool results to combine them
-                pending_tool_results.append({
-                    "type":
-                    "tool_result",
-                    "tool_use_id":
-                    m.get("tool_call_id"),
-                    "content":
-                    m["content"],
-                })
+                pending_tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": m.get("tool_call_id"),
+                        "content": m["content"],
+                    }
+                )
 
                 # If we have all expected results, add them as one message
                 if len(pending_tool_results) == len(filtered[-1]["content"]):
-                    filtered.append({
-                        "role": "user",
-                        "content": pending_tool_results
-                    })
+                    filtered.append(
+                        {"role": "user", "content": pending_tool_results}
+                    )
                     pending_tool_results = []
             else:
                 # Regular message
@@ -285,7 +302,8 @@ class AnthropicCompletionProvider(CompletionProvider):
         if not api_key:
             logger.error("Missing ANTHROPIC_API_KEY in environment.")
             raise ValueError(
-                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
 
         messages = task["messages"]
         generation_config = task["generation_config"]
@@ -310,7 +328,8 @@ class AnthropicCompletionProvider(CompletionProvider):
             return await self._execute_task_async_nonstreaming(args)
 
     async def _execute_task_async_nonstreaming(
-            self, args: dict) -> LLMChatCompletion:
+        self, args: dict
+    ) -> LLMChatCompletion:
         """
         Non-streaming call: returns the final LLMChatCompletion.
         """
@@ -318,19 +337,22 @@ class AnthropicCompletionProvider(CompletionProvider):
         if not api_key:
             logger.error("Missing ANTHROPIC_API_KEY in environment.")
             raise ValueError(
-                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
 
         try:
             response = await self.async_client.messages.create(**args)
             logger.debug("Anthropic async non-stream call succeeded.")
             return LLMChatCompletion(
-                **self._convert_to_chat_completion(response))
+                **self._convert_to_chat_completion(response)
+            )
         except Exception as e:
             logger.error(f"Anthropic async non-stream call failed: {e}")
             raise
 
     async def _execute_task_async_streaming(
-            self, args: dict) -> AsyncGenerator[dict, None]:
+        self, args: dict
+    ) -> AsyncGenerator[dict, None]:
         """Streaming call (async): yields partial tokens in OpenAI-like SSE
         format."""
         # The `stream=True` is typically handled by Anthropics from the original args,
@@ -388,13 +410,15 @@ class AnthropicCompletionProvider(CompletionProvider):
             response = self.client.messages.create(**args)
             logger.debug("Anthropic sync non-stream call succeeded.")
             return LLMChatCompletion(
-                **self._convert_to_chat_completion(response))
+                **self._convert_to_chat_completion(response)
+            )
         except Exception as e:
             logger.error(f"Anthropic sync call failed: {e}")
             raise
 
     def _execute_task_sync_streaming(
-            self, args: dict) -> Generator[dict, None, None]:
+        self, args: dict
+    ) -> Generator[dict, None, None]:
         """
         Synchronous streaming call: yields partial tokens in a generator.
         """
@@ -422,8 +446,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             logger.error(f"Anthropic sync streaming call failed: {e}")
             raise
 
-    def _process_stream_event(self, event: Any, buffer_data: dict,
-                              model_name: str) -> list[dict]:
+    def _process_stream_event(
+        self, event: Any, buffer_data: dict, model_name: str
+    ) -> list[dict]:
         chunks: list[dict] = []
 
         def make_base_chunk() -> dict:
@@ -432,18 +457,21 @@ class AnthropicCompletionProvider(CompletionProvider):
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": model_name,
-                "choices": [{
-                    "index": 0,
-                    "delta": {},
-                    "finish_reason": None,
-                }],
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {},
+                        "finish_reason": None,
+                    }
+                ],
             }
 
         if isinstance(event, RawMessageStartEvent):
             buffer_data["message_id"] = event.message.id
             chunk = make_base_chunk()
-            input_tokens = (event.message.usage.input_tokens
-                            if event.message.usage else 0)
+            input_tokens = (
+                event.message.usage.input_tokens if event.message.usage else 0
+            )
             chunk["usage"] = {
                 "prompt_tokens": input_tokens,
                 "completion_tokens": 0,
@@ -483,15 +511,19 @@ class AnthropicCompletionProvider(CompletionProvider):
 
                     chunk = make_base_chunk()
                     chunk["choices"][0]["delta"] = {
-                        "tool_calls": [{
-                            "index": 0,
-                            "type": "function",
-                            "id": f"call_{generate_tool_id()}",
-                            "function": {
-                                "name": buffer_data["tool_name"],
-                                "arguments": buffer_data["tool_json_buffer"],
-                            },
-                        }]
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "type": "function",
+                                "id": f"call_{generate_tool_id()}",
+                                "function": {
+                                    "name": buffer_data["tool_name"],
+                                    "arguments": buffer_data[
+                                        "tool_json_buffer"
+                                    ],
+                                },
+                            }
+                        ]
                     }
                     chunks.append(chunk)
 
@@ -502,7 +534,8 @@ class AnthropicCompletionProvider(CompletionProvider):
                 except json.JSONDecodeError:
                     # JSON is incomplete - don't yield anything
                     logger.warning(
-                        "Incomplete JSON in tool call, skipping chunk")
+                        "Incomplete JSON in tool call, skipping chunk"
+                    )
 
         elif isinstance(event, MessageStopEvent):
             stop_reason = event.message.stop_reason

@@ -4,7 +4,6 @@ from core.base import OrchestrationConfig, OrchestrationProvider, Workflow
 
 
 class SimpleOrchestrationProvider(OrchestrationProvider):
-
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.config = config
@@ -25,8 +24,9 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
     def failure(self, *args, **kwargs) -> Any:
         pass
 
-    def register_workflows(self, workflow: Workflow, service: Any,
-                           messages: dict) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
         for key, msg in messages.items():
             self.messages[key] = msg
 
@@ -37,20 +37,25 @@ class SimpleOrchestrationProvider(OrchestrationProvider):
 
         elif workflow == Workflow.GRAPH:
             from core.main.orchestration.simple.graph_workflow import (
-                simple_graph_search_results_factory, )
+                simple_graph_search_results_factory,
+            )
 
             self.graph_search_results_workflows = (
-                simple_graph_search_results_factory(service))
+                simple_graph_search_results_factory(service)
+            )
 
-    async def run_workflow(self, workflow_name: str, parameters: dict,
-                           options: dict) -> dict[str, str]:
+    async def run_workflow(
+        self, workflow_name: str, parameters: dict, options: dict
+    ) -> dict[str, str]:
         if workflow_name in self.ingestion_workflows:
             await self.ingestion_workflows[workflow_name](
-                parameters.get("request"))
+                parameters.get("request")
+            )
             return {"message": self.messages[workflow_name]}
         elif workflow_name in self.graph_search_results_workflows:
             await self.graph_search_results_workflows[workflow_name](
-                parameters.get("request"))
+                parameters.get("request")
+            )
             return {"message": self.messages[workflow_name]}
         else:
             raise ValueError(f"Workflow '{workflow_name}' not found.")

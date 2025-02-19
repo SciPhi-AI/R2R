@@ -88,14 +88,12 @@ def configure_logging():
         },
         "formatters": {
             "default": {
-                "format":
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "colored": {
                 "()": "colorlog.ColoredFormatter",
-                "format":
-                "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
+                "format": "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
                 "datefmt": "%Y-%m-%d %H:%M:%S",
                 "log_colors": {
                     "DEBUG": "white",
@@ -114,23 +112,20 @@ def configure_logging():
                 "maxBytes": 10485760,  # 10MB
                 "backupCount": 5,
                 "filters": ["http_status_filter"],
-                "level":
-                log_level,  # Set handler level based on the environment variable
+                "level": log_level,  # Set handler level based on the environment variable
             },
             "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "colored",
                 "stream": sys.stdout,
                 "filters": ["http_status_filter"],
-                "level":
-                log_level,  # Set handler level based on the environment variable
+                "level": log_level,  # Set handler level based on the environment variable
             },
         },
         "loggers": {
             "": {  # Root logger
                 "handlers": ["console", "file"],
-                "level":
-                log_level,  # Set logger level based on the environment variable
+                "level": log_level,  # Set logger level based on the environment variable
             },
             "uvicorn": {
                 "handlers": ["console", "file"],

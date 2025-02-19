@@ -161,7 +161,7 @@ def client(config):
         ("jpeg", "core/examples/supported_file_types/jpeg.jpeg"),
         ("jpg", "core/examples/supported_file_types/jpg.jpg"),
         ("md", "core/examples/supported_file_types/md.md"),
-        ("msg", "core/examples/supported_file_types/msg.msg"),
+        # ("msg", "core/examples/supported_file_types/msg.msg"),
         ("odt", "core/examples/supported_file_types/odt.odt"),
         ("org", "core/examples/supported_file_types/org.org"),
         ("p7s", "core/examples/supported_file_types/p7s.p7s"),

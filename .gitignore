@@ -38,3 +38,4 @@ go.work.sum
 
 .vscode/
 .python-version
+.ruff_cache/

@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import Field
 
 from .base import R2RSerializable
+from .llm import GenerationConfig
 
 logger = logging.getLogger()
 
@@ -229,9 +230,7 @@ class DocumentResponse(R2RSerializable):
                 "collection_ids": ["123e4567-e89b-12d3-a456-426614174000"],
                 "owner_id": "123e4567-e89b-12d3-a456-426614174000",
                 "document_type": "pdf",
-                "metadata": {
-                    "title": "Sample Document"
-                },
+                "metadata": {"title": "Sample Document"},
                 "title": "Sample Document",
                 "version": "1.0",
                 "size_in_bytes": 123456,
@@ -286,9 +285,6 @@ class IngestionMode(str, Enum):
     custom = "custom"
 
 
-from .llm import GenerationConfig
-
-
 class ChunkEnrichmentSettings(R2RSerializable):
     """Settings for chunk enrichment."""
 
@@ -298,8 +294,7 @@ class ChunkEnrichmentSettings(R2RSerializable):
     )
     n_chunks: int = Field(
         default=2,
-        description=
-        "The number of preceding and succeeding chunks to include. Defaults to 2.",
+        description="The number of preceding and succeeding chunks to include. Defaults to 2.",
     )
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
@@ -316,7 +311,8 @@ class IngestionConfig(R2RSerializable):
     excluded_parsers: list[str] = ["mp4"]
     chunking_strategy: str = "recursive"
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
-        ChunkEnrichmentSettings())
+        ChunkEnrichmentSettings()
+    )
     extra_parsers: dict[str, Any] = {}
 
     audio_transcription_model: str = ""

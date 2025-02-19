@@ -35,12 +35,13 @@ class BcryptCryptoConfig(CryptoConfig):
         if self.bcrypt_rounds < 4 or self.bcrypt_rounds > 31:
             raise ValueError("bcrypt_rounds must be between 4 and 31")
 
-    def verify_password(self, plain_password: str,
-                        hashed_password: str) -> bool:
+    def verify_password(
+        self, plain_password: str, hashed_password: str
+    ) -> bool:
         try:
             # First try to decode as base64 (new format)
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
-        except:
+        except Exception:
             # If that fails, treat as raw bcrypt hash (old format)
             stored_hash = hashed_password.encode("utf-8")
 
@@ -48,7 +49,6 @@ class BcryptCryptoConfig(CryptoConfig):
 
 
 class BCryptCryptoProvider(CryptoProvider, ABC):
-
     def __init__(self, config: BcryptCryptoConfig):
         if not isinstance(config, BcryptCryptoConfig):
             raise ValueError(
@@ -60,27 +60,33 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
 
         # Load the secret key for JWT
         # No fallback defaults: fail if not provided
-        self.secret_key = (config.secret_key or os.getenv("R2R_SECRET_KEY")
-                           or DEFAULT_BCRYPT_SECRET_KEY)
+        self.secret_key = (
+            config.secret_key
+            or os.getenv("R2R_SECRET_KEY")
+            or DEFAULT_BCRYPT_SECRET_KEY
+        )
         if not self.secret_key:
             raise ValueError(
-                "No secret key provided for BcryptCryptoProvider.")
+                "No secret key provided for BcryptCryptoProvider."
+            )
 
     def get_password_hash(self, password: str) -> str:
         # Bcrypt expects bytes
         password_bytes = password.encode("utf-8")
         hashed = bcrypt.hashpw(
-            password_bytes, bcrypt.gensalt(rounds=self.config.bcrypt_rounds))
+            password_bytes, bcrypt.gensalt(rounds=self.config.bcrypt_rounds)
+        )
         return base64.b64encode(hashed).decode("utf-8")
 
-    def verify_password(self, plain_password: str,
-                        hashed_password: str) -> bool:
+    def verify_password(
+        self, plain_password: str, hashed_password: str
+    ) -> bool:
         try:
             # First try to decode as base64 (new format)
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
             if not stored_hash.startswith(b"$2b$"):  # Valid bcrypt hash prefix
                 stored_hash = hashed_password.encode("utf-8")
-        except:
+        except Exception:
             # Otherwise raw bcrypt hash (old format)
             stored_hash = hashed_password.encode("utf-8")
 
@@ -90,11 +96,14 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             if "Invalid salt" in str(e):
                 # If it's an invalid salt, the hash format is wrong - try the other format
                 try:
-                    stored_hash = (hashed_password if isinstance(
-                        hashed_password, bytes) else
-                                   hashed_password.encode("utf-8"))
-                    return bcrypt.checkpw(plain_password.encode("utf-8"),
-                                          stored_hash)
+                    stored_hash = (
+                        hashed_password
+                        if isinstance(hashed_password, bytes)
+                        else hashed_password.encode("utf-8")
+                    )
+                    return bcrypt.checkpw(
+                        plain_password.encode("utf-8"), stored_hash
+                    )
                 except ValueError:
                     return False
             raise
@@ -122,10 +131,13 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             signature = signing_key.sign(data.encode())
             return base64.b64encode(signature.signature).decode()
         except Exception as e:
-            raise ValueError(f"Invalid private key or signing error: {str(e)}")
+            raise ValueError(
+                f"Invalid private key or signing error: {str(e)}"
+            ) from e
 
-    def verify_request_signature(self, public_key: str, signature: str,
-                                 data: str) -> bool:
+    def verify_request_signature(
+        self, public_key: str, signature: str, data: str
+    ) -> bool:
         try:
             key_bytes = base64.b64decode(public_key)
             verify_key = nacl.signing.VerifyKey(key_bytes)
@@ -142,7 +154,8 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
 
         # Generate raw API key
         raw_api_key = base64.urlsafe_b64encode(
-            nacl.utils.random(self.config.api_key_bytes)).decode()
+            nacl.utils.random(self.config.api_key_bytes)
+        ).decode()
         return key_id, raw_api_key
 
     def hash_api_key(self, raw_api_key: str) -> str:
@@ -174,7 +187,8 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             exp = payload.get("exp")
             if exp is None or datetime.fromtimestamp(
-                    exp, tz=timezone.utc) < datetime.now(timezone.utc):
+                exp, tz=timezone.utc
+            ) < datetime.now(timezone.utc):
                 return None
             return payload
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):

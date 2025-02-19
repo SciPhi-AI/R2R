@@ -78,8 +78,12 @@ class Community(R2RSerializable):
     rating_explanation: Optional[str] = None
     description_embedding: Optional[list[float]] = None
     attributes: dict[str, Any] | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow, )
-    updated_at: datetime = Field(default_factory=datetime.utcnow, )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
 
     def __init__(self, **kwargs):
         if isinstance(kwargs.get("attributes", None), str):
@@ -92,8 +96,9 @@ class Community(R2RSerializable):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | str) -> "Community":
-        parsed_data: dict[str, Any] = (json.loads(data) if isinstance(
-            data, str) else data)
+        parsed_data: dict[str, Any] = (
+            json.loads(data) if isinstance(data, str) else data
+        )
         if isinstance(parsed_data.get("embedding", None), str):
             parsed_data["embedding"] = json.loads(parsed_data["embedding"])
         return cls(**parsed_data)
@@ -110,8 +115,12 @@ class Graph(R2RSerializable):
     id: UUID | None = Field()
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow, )
-    updated_at: datetime = Field(default_factory=datetime.utcnow, )
+    created_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
+    updated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
     status: str = "pending"
 
     class Config:
@@ -122,8 +131,9 @@ class Graph(R2RSerializable):
     def from_dict(cls, data: dict[str, Any] | str) -> "Graph":
         """Create a Graph instance from a dictionary."""
         # Convert string to dict if needed
-        parsed_data: dict[str, Any] = (json.loads(data) if isinstance(
-            data, str) else data)
+        parsed_data: dict[str, Any] = (
+            json.loads(data) if isinstance(data, str) else data
+        )
         return cls(**parsed_data)
 
     def __init__(self, **kwargs):
@@ -183,8 +193,7 @@ class GraphCreationSettings(R2RSerializable):
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description=
-        "Configuration for text generation during graph enrichment.",
+        description="Configuration for text generation during graph enrichment.",
     )
 
     automatic_deduplication: bool = Field(
@@ -214,8 +223,7 @@ class GraphEnrichmentSettings(R2RSerializable):
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description=
-        "Configuration for text generation during graph enrichment.",
+        description="Configuration for text generation during graph enrichment.",
     )
 
     leiden_params: dict = Field(
@@ -245,8 +253,7 @@ class GraphCommunitySettings(R2RSerializable):
 
     generation_config: Optional[GenerationConfig] = Field(
         default=None,
-        description=
-        "Configuration for text generation during graph enrichment.",
+        description="Configuration for text generation during graph enrichment.",
     )
 
     leiden_params: dict = Field(

@@ -28,9 +28,9 @@ class ConsoleMockEmailProvider(EmailProvider):
         -----------------------------
         """)
 
-    async def send_verification_email(self, to_email: str,
-                                      verification_code: str, *args,
-                                      **kwargs) -> None:
+    async def send_verification_email(
+        self, to_email: str, verification_code: str, *args, **kwargs
+    ) -> None:
         logger.info(f"""
         -------- Email Message --------
         To: {to_email}
@@ -40,8 +40,9 @@ class ConsoleMockEmailProvider(EmailProvider):
         -----------------------------
         """)
 
-    async def send_password_reset_email(self, to_email: str, reset_token: str,
-                                        *args, **kwargs) -> None:
+    async def send_password_reset_email(
+        self, to_email: str, reset_token: str, *args, **kwargs
+    ) -> None:
         logger.info(f"""
         -------- Email Message --------
         To: {to_email}
@@ -51,8 +52,9 @@ class ConsoleMockEmailProvider(EmailProvider):
         -----------------------------
         """)
 
-    async def send_password_changed_email(self, to_email: str, *args,
-                                          **kwargs) -> None:
+    async def send_password_changed_email(
+        self, to_email: str, *args, **kwargs
+    ) -> None:
         logger.info(f"""
             -------- Email Message --------
             To: {to_email}

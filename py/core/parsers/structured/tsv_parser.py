@@ -28,8 +28,9 @@ class TSVParser(AsyncParser[str | bytes]):
         self.csv = csv
         self.StringIO = StringIO
 
-    async def ingest(self, data: str | bytes, *args,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, *args, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest TSV data and yield text from each row."""
         if isinstance(data, bytes):
             data = data.decode("utf-8")
@@ -41,8 +42,9 @@ class TSVParser(AsyncParser[str | bytes]):
 class TSVParserAdvanced(AsyncParser[str | bytes]):
     """An advanced parser for TSV data with chunking support."""
 
-    def __init__(self, config: IngestionConfig,
-                 llm_provider: CompletionProvider):
+    def __init__(
+        self, config: IngestionConfig, llm_provider: CompletionProvider
+    ):
         self.llm_provider = llm_provider
         self.config = config
 
@@ -91,11 +93,17 @@ class TSVParserAdvanced(AsyncParser[str | bytes]):
         for row_num, row in enumerate(tsv_reader):
             chunk_rows.append(row)
             if row_num % num_rows == 0:
-                yield (", ".join(header) + "\n" +
-                       "\n".join([", ".join(row) for row in chunk_rows]))
+                yield (
+                    ", ".join(header)
+                    + "\n"
+                    + "\n".join([", ".join(row) for row in chunk_rows])
+                )
                 chunk_rows = []
 
         # Yield remaining rows
         if chunk_rows:
-            yield (", ".join(header) + "\n" +
-                   "\n".join([", ".join(row) for row in chunk_rows]))
+            yield (
+                ", ".join(header)
+                + "\n"
+                + "\n".join([", ".join(row) for row in chunk_rows])
+            )

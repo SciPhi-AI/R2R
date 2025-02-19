@@ -8,7 +8,6 @@ from shared.abstractions import (
     LLMChatCompletion,
     Message,
 )
-from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
 from shared.api.models.management.responses import DocumentResponse
 
@@ -23,19 +22,19 @@ class Citation(R2RSerializable):
     """
 
     # Bracket references
-    index: int = Field(...,
-                       description="Citation bracket index after re-labeling")
+    index: int = Field(
+        ..., description="Citation bracket index after re-labeling"
+    )
     rawIndex: Optional[int] = Field(
-        None, description="Original citation bracket index before re-labeling")
+        None, description="Original citation bracket index before re-labeling"
+    )
     startIndex: Optional[int] = Field(
         None,
-        description=
-        "Character offset (start) for the bracket [n] in the final text",
+        description="Character offset (start) for the bracket [n] in the final text",
     )
     endIndex: Optional[int] = Field(
         None,
-        description=
-        "Character offset (end) for the bracket [n] in the final text",
+        description="Character offset (end) for the bracket [n] in the final text",
     )
 
     # Expanded snippet offsets around the bracket
@@ -58,23 +57,27 @@ class Citation(R2RSerializable):
         description="Type of the cited source (chunk, graph, web, contextDoc)",
     )
     id: Optional[str] = Field(
-        None, description="Search result ID (if chunk, e.g. chunk.id)")
+        None, description="Search result ID (if chunk, e.g. chunk.id)"
+    )
     document_id: Optional[str] = Field(
-        None, description="Document ID if chunk references a particular doc")
+        None, description="Document ID if chunk references a particular doc"
+    )
     owner_id: Optional[str] = Field(
         None,
         description="Owner ID if chunk or doc references a particular user",
     )
     collection_ids: Optional[list[str]] = Field(
-        None, description="Collections this chunk or doc belongs to")
+        None, description="Collections this chunk or doc belongs to"
+    )
     score: Optional[float] = Field(
-        None, description="Search score or similarity value")
+        None, description="Search score or similarity value"
+    )
     text: Optional[str] = Field(
-        None, description="Full chunk text or short snippet from the source")
+        None, description="Full chunk text or short snippet from the source"
+    )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
-        description=
-        "Additional key-value fields from the source (title, license, etc.)",
+        description="Additional key-value fields from the source (title, license, etc.)",
     )
 
     class Config:
@@ -92,8 +95,7 @@ class Citation(R2RSerializable):
                 "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
                 "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
                 "score": 0.64,
-                "text":
-                "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
+                "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
                 "metadata": {
                     "title": "DeepSeek_R1.pdf",
                     "license": "CC-BY-4.0",
@@ -106,13 +108,14 @@ class Citation(R2RSerializable):
 
 class RAGResponse(R2RSerializable):
     generated_answer: str = Field(
-        ..., description="The generated completion from the RAG process")
+        ..., description="The generated completion from the RAG process"
+    )
     search_results: AggregateSearchResult = Field(
-        ..., description="The search results used for the RAG process")
+        ..., description="The search results used for the RAG process"
+    )
     citations: Optional[list[Citation]] = Field(
         None,
-        description=
-        "Structured citation metadata, if you do citation extraction.",
+        description="Structured citation metadata, if you do citation extraction.",
     )
     metadata: dict = Field(
         default_factory=dict,
@@ -127,108 +130,101 @@ class RAGResponse(R2RSerializable):
     class Config:
         json_schema_extra = {
             "example": {
-                "generated_answer":
-                "The capital of France is Paris.",
+                "generated_answer": "The capital of France is Paris.",
                 "search_results": {
-                    "chunk_search_results": [{
-                        "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                    "chunk_search_results": [
+                        {
+                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                            "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                            "collection_ids": [],
+                            "score": 0.23943702876567796,
+                            "text": "Example text from the document",
+                            "metadata": {
+                                "title": "example_document.pdf",
+                                "associated_query": "What is the capital of France?",
+                            },
+                        }
+                    ],
+                    "graph_search_results": [
+                        {
+                            "content": {
+                                "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                                "name": "Entity Name",
+                                "description": "Entity Description",
+                                "metadata": {},
+                            },
+                            "result_type": "entity",
+                            "chunk_ids": [
+                                "c68dc72e-fc23-5452-8f49-d7bd46088a96"
+                            ],
+                            "metadata": {
+                                "associated_query": "What is the capital of France?"
+                            },
+                        }
+                    ],
+                    "web_search_results": [
+                        {
+                            "title": "Page Title",
+                            "link": "https://example.com/page",
+                            "snippet": "Page snippet",
+                            "position": 1,
+                            "date": "2021-01-01",
+                            "sitelinks": [
+                                {
+                                    "title": "Sitelink Title",
+                                    "link": "https://example.com/sitelink",
+                                }
+                            ],
+                        }
+                    ],
+                    "context_document_results": [
+                        {
+                            "document": {
+                                "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                                "title": "Document Title",
+                                "chunks": ["Chunk 1", "Chunk 2"],
+                                "metadata": {},
+                            },
+                        }
+                    ],
+                },
+                "citations": [
+                    {
+                        "index": 1,
+                        "rawIndex": 9,
+                        "startIndex": 393,
+                        "endIndex": 396,
+                        "snippetStartIndex": 320,
+                        "snippetEndIndex": 418,
+                        "sourceType": "chunk",
+                        "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
+                        "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
                         "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                        "collection_ids": [],
-                        "score": 0.23943702876567796,
-                        "text": "Example text from the document",
+                        "collection_ids": [
+                            "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+                        ],
+                        "score": 0.64,
+                        "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
                         "metadata": {
-                            "title": "example_document.pdf",
-                            "associated_query":
-                            "What is the capital of France?",
+                            "title": "DeepSeek_R1.pdf",
+                            "license": "CC-BY-4.0",
+                            "chunk_order": 68,
+                            "document_type": "pdf",
                         },
-                    }],
-                    "graph_search_results": [{
-                        "content": {
-                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "name": "Entity Name",
-                            "description": "Entity Description",
-                            "metadata": {},
-                        },
-                        "result_type":
-                        "entity",
-                        "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-                        "metadata": {
-                            "associated_query":
-                            "What is the capital of France?"
-                        },
-                    }],
-                    "web_search_results": [{
-                        "title":
-                        "Page Title",
-                        "link":
-                        "https://example.com/page",
-                        "snippet":
-                        "Page snippet",
-                        "position":
-                        1,
-                        "date":
-                        "2021-01-01",
-                        "sitelinks": [{
-                            "title": "Sitelink Title",
-                            "link": "https://example.com/sitelink",
-                        }],
-                    }],
-                    "context_document_results": [{
-                        "document": {
-                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "title": "Document Title",
-                            "chunks": ["Chunk 1", "Chunk 2"],
-                            "metadata": {},
-                        },
-                    }],
-                },
-                "citations": [{
-                    "index":
-                    1,
-                    "rawIndex":
-                    9,
-                    "startIndex":
-                    393,
-                    "endIndex":
-                    396,
-                    "snippetStartIndex":
-                    320,
-                    "snippetEndIndex":
-                    418,
-                    "sourceType":
-                    "chunk",
-                    "id":
-                    "e760bb76-1c6e-52eb-910d-0ce5b567011b",
-                    "document_id":
-                    "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
-                    "owner_id":
-                    "2acb499e-8428-543b-bd85-0d9098718220",
-                    "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-                    "score":
-                    0.64,
-                    "text":
-                    "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
-                    "metadata": {
-                        "title": "DeepSeek_R1.pdf",
-                        "license": "CC-BY-4.0",
-                        "chunk_order": 68,
-                        "document_type": "pdf",
-                    },
-                }],
+                    }
+                ],
                 "metadata": {
-                    "id":
-                    "chatcmpl-example123",
-                    "choices": [{
-                        "finish_reason": "stop",
-                        "index": 0,
-                        "message": {
-                            "role": "assistant"
-                        },
-                    }],
+                    "id": "chatcmpl-example123",
+                    "choices": [
+                        {
+                            "finish_reason": "stop",
+                            "index": 0,
+                            "message": {"role": "assistant"},
+                        }
+                    ],
                 },
-                "completion":
-                "TO BE DEPRECATED",
+                "completion": "TO BE DEPRECATED",
             }
         }
 
@@ -236,7 +232,8 @@ class RAGResponse(R2RSerializable):
 class AgentResponse(R2RSerializable):
     messages: list[Message] = Field(..., description="Agent response messages")
     conversation_id: str = Field(
-        ..., description="The conversation ID for the RAG agent response")
+        ..., description="The conversation ID for the RAG agent response"
+    )
 
     class Config:
         json_schema_extra = {
@@ -282,115 +279,100 @@ class AgentResponse(R2RSerializable):
                         "function_call": None,
                         "tool_calls": None,
                         "metadata": {
-                            "citations": [{
-                                "index":
-                                1,
-                                "rawIndex":
-                                9,
-                                "startIndex":
-                                393,
-                                "endIndex":
-                                396,
-                                "snippetStartIndex":
-                                320,
-                                "snippetEndIndex":
-                                418,
-                                "sourceType":
-                                "chunk",
-                                "id":
-                                "e760bb76-1c6e-52eb-910d-0ce5b567011b",
-                                "document_id":
-                                """
+                            "citations": [
+                                {
+                                    "index": 1,
+                                    "rawIndex": 9,
+                                    "startIndex": 393,
+                                    "endIndex": 396,
+                                    "snippetStartIndex": 320,
+                                    "snippetEndIndex": 418,
+                                    "sourceType": "chunk",
+                                    "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
+                                    "document_id": """
                                     e43864f5-a36f-548e-aacd-6f8d48b30c7f
                                     """,
-                                "owner_id":
-                                """
+                                    "owner_id": """
                                     2acb499e-8428-543b-bd85-0d9098718220
                                     """,
-                                "collection_ids":
-                                ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-                                "score":
-                                0.64,
-                                "text":
-                                """
+                                    "collection_ids": [
+                                        "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"
+                                    ],
+                                    "score": 0.64,
+                                    "text": """
                                     Document Title: DeepSeek_R1.pdf
                                     \n\nText: could achieve an accuracy of ...
                                     """,
-                                "metadata": {
-                                    "title": "DeepSeek_R1.pdf",
-                                    "license": "CC-BY-4.0",
-                                    "chunk_order": 68,
-                                    "document_type": "pdf",
-                                },
-                            }],
+                                    "metadata": {
+                                        "title": "DeepSeek_R1.pdf",
+                                        "license": "CC-BY-4.0",
+                                        "chunk_order": 68,
+                                        "document_type": "pdf",
+                                    },
+                                }
+                            ],
                             "aggregated_search_results": {
-                                "chunk_search_results": [{
-                                    "id":
-                                    "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                                    "document_id":
-                                    "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                                    "owner_id":
-                                    "2acb499e-8428-543b-bd85-0d9098718220",
-                                    "collection_ids": [],
-                                    "score": 0.23943702876567796,
-                                    "text": "Example text from the document",
-                                    "metadata": {
-                                        "title":
-                                        "example_document.pdf",
-                                        "associated_query":
-                                        "What is the capital of France?",
-                                    },
-                                }],
-                                "graph_search_results": [{
-                                    "content": {
-                                        "id":
-                                        "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                                        "name": "Entity Name",
-                                        "description": "Entity Description",
-                                        "metadata": {},
-                                    },
-                                    "result_type":
-                                    "entity",
-                                    "chunk_ids":
-                                    ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-                                    "metadata": {
-                                        "associated_query":
-                                        "What is the capital of France?"
-                                    },
-                                }],
-                                "web_search_results": [{
-                                    "title":
-                                    "Page Title",
-                                    "link":
-                                    "https://example.com/page",
-                                    "snippet":
-                                    "Page snippet",
-                                    "position":
-                                    1,
-                                    "date":
-                                    "2021-01-01",
-                                    "sitelinks": [{
-                                        "title":
-                                        "Sitelink Title",
-                                        "link":
-                                        "https://example.com/sitelink",
-                                    }],
-                                }],
-                                "context_document_results": [{
-                                    "document": {
-                                        "id":
-                                        "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                                        "title": "Document Title",
-                                        "chunks": ["Chunk 1", "Chunk 2"],
-                                        "metadata": {},
-                                    },
-                                }],
+                                "chunk_search_results": [
+                                    {
+                                        "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                                        "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                                        "collection_ids": [],
+                                        "score": 0.23943702876567796,
+                                        "text": "Example text from the document",
+                                        "metadata": {
+                                            "title": "example_document.pdf",
+                                            "associated_query": "What is the capital of France?",
+                                        },
+                                    }
+                                ],
+                                "graph_search_results": [
+                                    {
+                                        "content": {
+                                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                                            "name": "Entity Name",
+                                            "description": "Entity Description",
+                                            "metadata": {},
+                                        },
+                                        "result_type": "entity",
+                                        "chunk_ids": [
+                                            "c68dc72e-fc23-5452-8f49-d7bd46088a96"
+                                        ],
+                                        "metadata": {
+                                            "associated_query": "What is the capital of France?"
+                                        },
+                                    }
+                                ],
+                                "web_search_results": [
+                                    {
+                                        "title": "Page Title",
+                                        "link": "https://example.com/page",
+                                        "snippet": "Page snippet",
+                                        "position": 1,
+                                        "date": "2021-01-01",
+                                        "sitelinks": [
+                                            {
+                                                "title": "Sitelink Title",
+                                                "link": "https://example.com/sitelink",
+                                            }
+                                        ],
+                                    }
+                                ],
+                                "context_document_results": [
+                                    {
+                                        "document": {
+                                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                                            "title": "Document Title",
+                                            "chunks": ["Chunk 1", "Chunk 2"],
+                                            "metadata": {},
+                                        },
+                                    }
+                                ],
                             },
                         },
                     },
                 ],
-                "conversation_id":
-                "a32b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+                "conversation_id": "a32b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
             }
         }
 

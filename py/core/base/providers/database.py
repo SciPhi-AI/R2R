@@ -19,7 +19,6 @@ logger = logging.getLogger()
 
 
 class DatabaseConnectionManager(ABC):
-
     @abstractmethod
     def execute_query(
         self,
@@ -55,7 +54,6 @@ class DatabaseConnectionManager(ABC):
 
 
 class Handler(ABC):
-
     def __init__(
         self,
         project_name: str,
@@ -106,8 +104,9 @@ class LimitSettings(BaseModel):
     route_per_min: Optional[int] = None
     monthly_limit: Optional[int] = None
 
-    def merge_with_defaults(self,
-                            defaults: "LimitSettings") -> "LimitSettings":
+    def merge_with_defaults(
+        self, defaults: "LimitSettings"
+    ) -> "LimitSettings":
         return LimitSettings(
             global_per_min=self.global_per_min or defaults.global_per_min,
             route_per_min=self.route_per_min or defaults.route_per_min,
@@ -126,7 +125,8 @@ class DatabaseConfig(ProviderConfig):
     db_name: Optional[str] = None
     project_name: Optional[str] = None
     postgres_configuration_settings: Optional[
-        PostgresConfigurationSettings] = None
+        PostgresConfigurationSettings
+    ] = None
     default_collection_name: str = "Default"
     default_collection_description: str = "Your default collection."
     collection_summary_system_prompt: str = "system"
@@ -137,14 +137,15 @@ class DatabaseConfig(ProviderConfig):
     batch_size: Optional[int] = 1
     graph_search_results_store_path: Optional[str] = None
     graph_enrichment_settings: GraphEnrichmentSettings = (
-        GraphEnrichmentSettings())
+        GraphEnrichmentSettings()
+    )
     graph_creation_settings: GraphCreationSettings = GraphCreationSettings()
     graph_search_settings: GraphSearchSettings = GraphSearchSettings()
 
     # Rate limits
-    limits: LimitSettings = LimitSettings(global_per_min=60,
-                                          route_per_min=20,
-                                          monthly_limit=10000)
+    limits: LimitSettings = LimitSettings(
+        global_per_min=60, route_per_min=20, monthly_limit=10000
+    )
     route_limits: dict[str, LimitSettings] = {}
     user_limits: dict[UUID, LimitSettings] = {}
 
@@ -165,7 +166,8 @@ class DatabaseConfig(ProviderConfig):
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DatabaseConfig":
         instance = super().from_dict(
-            data)  # or some logic to create the base instance
+            data
+        )  # or some logic to create the base instance
 
         limits_data = data.get("limits", {})
         default_limits = LimitSettings(

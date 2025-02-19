@@ -8,7 +8,6 @@ logger = logging.getLogger()
 
 
 class HatchetOrchestrationProvider(OrchestrationProvider):
-
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         try:
@@ -16,11 +15,14 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         except ImportError:
             raise ImportError(
                 "Hatchet SDK not installed. Please install it using `pip install hatchet-sdk`."
-            )
+            ) from None
         root_logger = logging.getLogger()
 
-        self.orchestrator = Hatchet(config=ClientConfig(
-            logger=root_logger, ), )
+        self.orchestrator = Hatchet(
+            config=ClientConfig(
+                logger=root_logger,
+            ),
+        )
         self.root_logger = root_logger
         self.config: OrchestrationConfig = config
         self.messages: dict[str, str] = {}
@@ -46,7 +48,8 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     async def start_worker(self):
         if not self.worker:
             raise ValueError(
-                "Worker not initialized. Call get_worker() first.")
+                "Worker not initialized. Call get_worker() first."
+            )
 
         asyncio.create_task(self.worker.async_start())
 
@@ -66,22 +69,24 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             **kwargs,
         )
         return {
-            "task_id":
-            str(task_id),
-            "message":
-            self.messages.get(workflow_name, "Workflow queued successfully."
-                              ),  # Return message based on workflow name
+            "task_id": str(task_id),
+            "message": self.messages.get(
+                workflow_name, "Workflow queued successfully."
+            ),  # Return message based on workflow name
         }
 
-    def register_workflows(self, workflow: Workflow, service: Any,
-                           messages: dict) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
         self.messages.update(messages)
 
         logger.info(
-            f"Registering workflows for {workflow} with messages {messages}.")
+            f"Registering workflows for {workflow} with messages {messages}."
+        )
         if workflow == Workflow.INGESTION:
             from core.main.orchestration.hatchet.ingestion_workflow import (
-                hatchet_ingestion_factory, )
+                hatchet_ingestion_factory,
+            )
 
             workflows = hatchet_ingestion_factory(self, service)
             if self.worker:
@@ -90,7 +95,8 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
 
         elif workflow == Workflow.GRAPH:
             from core.main.orchestration.hatchet.graph_workflow import (
-                hatchet_graph_search_results_factory, )
+                hatchet_graph_search_results_factory,
+            )
 
             workflows = hatchet_graph_search_results_factory(self, service)
             if self.worker:

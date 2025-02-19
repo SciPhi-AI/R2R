@@ -27,7 +27,6 @@ class OrchestrationConfig(ProviderConfig):
 
 
 class OrchestrationProvider(Provider):
-
     def __init__(self, config: OrchestrationConfig):
         super().__init__(config)
         self.config = config
@@ -54,8 +53,9 @@ class OrchestrationProvider(Provider):
         pass
 
     @abstractmethod
-    def register_workflows(self, workflow: Workflow, service: Any,
-                           messages: dict) -> None:
+    def register_workflows(
+        self, workflow: Workflow, service: Any, messages: dict
+    ) -> None:
         pass
 
     @abstractmethod

@@ -22,12 +22,12 @@ from core.base import (
     VectorQuantizationType,
     VectorTableName,
 )
+from core.base.utils import _decorate_vector_type
 
 from .base import PostgresConnectionManager
 from .filters import apply_filters
 
 logger = logging.getLogger()
-from core.base.utils import _decorate_vector_type
 
 
 def psql_quote_literal(value: str) -> str:
@@ -104,18 +104,22 @@ class PostgresChunksHandler(Handler):
         );
         """
         old_table_exists = await self.connection_manager.fetch_query(
-            check_query, (self.project_name, self.project_name))
+            check_query, (self.project_name, self.project_name)
+        )
 
         if len(old_table_exists) > 0 and old_table_exists[0]["exists"]:
             raise ValueError(
                 f"Found old vector table '{self.project_name}.{self.project_name}'. "
                 "Please run `r2r db upgrade` with the CLI, or to run manually, "
                 "run in R2R/py/migrations with 'alembic upgrade head' to update "
-                "your database schema to the new version.")
+                "your database schema to the new version."
+            )
 
-        binary_col = (""
-                      if self.quantization_type != VectorQuantizationType.INT1
-                      else f"vec_binary bit({self.dimension}),")
+        binary_col = (
+            ""
+            if self.quantization_type != VectorQuantizationType.INT1
+            else f"vec_binary bit({self.dimension}),"
+        )
 
         if self.dimension > 0:
             vector_col = f"vec vector({self.dimension})"
@@ -151,8 +155,9 @@ class PostgresChunksHandler(Handler):
         """
         # Check the quantization type to determine which columns to use
         if self.quantization_type == VectorQuantizationType.INT1:
-            bit_dim = ("" if math.isnan(self.dimension) else
-                       f"({self.dimension})")
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
 
             # For quantized vectors, use vec_binary column
             query = f"""
@@ -177,7 +182,8 @@ class PostgresChunksHandler(Handler):
                     entry.collection_ids,
                     str(entry.vector.data),
                     quantize_vector_to_binary(
-                        entry.vector.data),  # Convert to binary
+                        entry.vector.data
+                    ),  # Convert to binary
                     entry.text,
                     json.dumps(entry.metadata),
                 ),
@@ -218,8 +224,9 @@ class PostgresChunksHandler(Handler):
         quantization.
         """
         if self.quantization_type == VectorQuantizationType.INT1:
-            bit_dim = ("" if math.isnan(self.dimension) else
-                       f"({self.dimension})")
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
 
             # For quantized vectors, use vec_binary column
             query = f"""
@@ -243,10 +250,12 @@ class PostgresChunksHandler(Handler):
                     entry.collection_ids,
                     str(entry.vector.data),
                     quantize_vector_to_binary(
-                        entry.vector.data),  # Convert to binary
+                        entry.vector.data
+                    ),  # Convert to binary
                     entry.text,
                     json.dumps(entry.metadata),
-                ) for entry in entries
+                )
+                for entry in entries
             ]
             await self.connection_manager.execute_many(query, bin_params)
 
@@ -264,26 +273,30 @@ class PostgresChunksHandler(Handler):
             text = EXCLUDED.text,
             metadata = EXCLUDED.metadata;
             """
-            params = [(
-                entry.id,
-                entry.document_id,
-                entry.owner_id,
-                entry.collection_ids,
-                str(entry.vector.data),
-                entry.text,
-                json.dumps(entry.metadata),
-            ) for entry in entries]
+            params = [
+                (
+                    entry.id,
+                    entry.document_id,
+                    entry.owner_id,
+                    entry.collection_ids,
+                    str(entry.vector.data),
+                    entry.text,
+                    json.dumps(entry.metadata),
+                )
+                for entry in entries
+            ]
 
             await self.connection_manager.execute_many(query, params)
 
     async def semantic_search(
-            self, query_vector: list[float],
-            search_settings: SearchSettings) -> list[ChunkSearchResult]:
+        self, query_vector: list[float], search_settings: SearchSettings
+    ) -> list[ChunkSearchResult]:
         try:
             imeasure_obj = IndexMeasure(
-                search_settings.chunk_settings.index_measure)
+                search_settings.chunk_settings.index_measure
+            )
         except ValueError:
-            raise ValueError("Invalid index measure")
+            raise ValueError("Invalid index measure") from None
 
         table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         cols = [
@@ -301,24 +314,30 @@ class PostgresChunksHandler(Handler):
             # Convert query vector to binary format
             binary_query = quantize_vector_to_binary(query_vector)
             # TODO - Put depth multiplier in config / settings
-            extended_limit = (search_settings.limit * 20
-                              )  # Get 20x candidates for re-ranking
+            extended_limit = (
+                search_settings.limit * 20
+            )  # Get 20x candidates for re-ranking
 
-            if (imeasure_obj == IndexMeasure.hamming_distance
-                    or imeasure_obj == IndexMeasure.jaccard_distance):
+            if (
+                imeasure_obj == IndexMeasure.hamming_distance
+                or imeasure_obj == IndexMeasure.jaccard_distance
+            ):
                 binary_search_measure_repr = imeasure_obj.pgvector_repr
             else:
                 binary_search_measure_repr = (
-                    IndexMeasure.hamming_distance.pgvector_repr)
+                    IndexMeasure.hamming_distance.pgvector_repr
+                )
 
             # Use binary column and binary-specific distance measures for first stage
-            bit_dim = ("" if math.isnan(self.dimension) else
-                       f"({self.dimension})")
+            bit_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
             stage1_distance = f"{table_name}.vec_binary {binary_search_measure_repr} $1::bit{bit_dim}"
             stage1_param = binary_query
 
             cols.append(
-                f"{table_name}.vec")  # Need original vector for re-ranking
+                f"{table_name}.vec"
+            )  # Need original vector for re-ranking
             if search_settings.include_metadatas:
                 cols.append(f"{table_name}.metadata")
 
@@ -327,12 +346,13 @@ class PostgresChunksHandler(Handler):
             params.append(stage1_param)
 
             if search_settings.filters:
-                where_clause, params = apply_filters(search_settings.filters,
-                                                     params,
-                                                     mode="where_clause")
+                where_clause, params = apply_filters(
+                    search_settings.filters, params, mode="where_clause"
+                )
 
-            vector_dim = ("" if math.isnan(self.dimension) else
-                          f"({self.dimension})")
+            vector_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
 
             # First stage: Get candidates using binary search
             query = f"""
@@ -359,17 +379,20 @@ class PostgresChunksHandler(Handler):
             LIMIT ${len(params) + 3}
             """
 
-            params.extend([
-                extended_limit,  # First stage limit
-                search_settings.offset,
-                search_settings.limit,  # Final limit
-                str(query_vector),  # For re-ranking
-            ])
+            params.extend(
+                [
+                    extended_limit,  # First stage limit
+                    search_settings.offset,
+                    search_settings.limit,  # Final limit
+                    str(query_vector),  # For re-ranking
+                ]
+            )
 
         else:
             # Standard float vector handling
-            vector_dim = ("" if math.isnan(self.dimension) else
-                          f"({self.dimension})")
+            vector_dim = (
+                "" if math.isnan(self.dimension) else f"({self.dimension})"
+            )
             distance_calc = f"{table_name}.vec {search_settings.chunk_settings.index_measure.pgvector_repr} $1::vector{vector_dim}"
             query_param = str(query_vector)
 
@@ -409,25 +432,32 @@ class PostgresChunksHandler(Handler):
                 owner_id=UUID(str(result["owner_id"])),
                 collection_ids=result["collection_ids"],
                 text=result["text"],
-                score=((1 - float(result["distance"]))
-                       if "distance" in result else -1),
-                metadata=(json.loads(result["metadata"])
-                          if search_settings.include_metadatas else {}),
-            ) for result in results
+                score=(
+                    (1 - float(result["distance"]))
+                    if "distance" in result
+                    else -1
+                ),
+                metadata=(
+                    json.loads(result["metadata"])
+                    if search_settings.include_metadatas
+                    else {}
+                ),
+            )
+            for result in results
         ]
 
     async def full_text_search(
-            self, query_text: str,
-            search_settings: SearchSettings) -> list[ChunkSearchResult]:
+        self, query_text: str, search_settings: SearchSettings
+    ) -> list[ChunkSearchResult]:
         conditions = []
         params: list[str | int | bytes] = [query_text]
 
         conditions.append("fts @@ websearch_to_tsquery('english', $1)")
 
         if search_settings.filters:
-            filter_condition, params = apply_filters(search_settings.filters,
-                                                     params,
-                                                     mode="condition_only")
+            filter_condition, params = apply_filters(
+                search_settings.filters, params, mode="condition_only"
+            )
             if filter_condition:
                 conditions.append(filter_condition)
 
@@ -449,10 +479,12 @@ class PostgresChunksHandler(Handler):
             LIMIT ${len(params) + 2}
         """
 
-        params.extend([
-            search_settings.offset,
-            search_settings.hybrid_settings.full_text_limit,
-        ])
+        params.extend(
+            [
+                search_settings.offset,
+                search_settings.hybrid_settings.full_text_limit,
+            ]
+        )
 
         results = await self.connection_manager.fetch_query(query, params)
         return [
@@ -464,7 +496,8 @@ class PostgresChunksHandler(Handler):
                 text=r["text"],
                 score=float(r["rank"]),
                 metadata=json.loads(r["metadata"]),
-            ) for r in results
+            )
+            for r in results
         ]
 
     async def hybrid_search(
@@ -479,8 +512,10 @@ class PostgresChunksHandler(Handler):
             raise ValueError(
                 "Please provide a valid `hybrid_settings` in the `search_settings`."
             )
-        if (search_settings.hybrid_settings.full_text_limit
-                < search_settings.limit):
+        if (
+            search_settings.hybrid_settings.full_text_limit
+            < search_settings.limit
+        ):
             raise ValueError(
                 "The `full_text_limit` must be greater than or equal to the `limit`."
             )
@@ -490,13 +525,15 @@ class PostgresChunksHandler(Handler):
 
         full_text_settings = copy.deepcopy(search_settings)
         full_text_settings.hybrid_settings.full_text_limit += (
-            search_settings.offset)
+            search_settings.offset
+        )
 
         semantic_results: list[ChunkSearchResult] = await self.semantic_search(
-            query_vector, semantic_settings)
+            query_vector, semantic_settings
+        )
         full_text_results: list[
-            ChunkSearchResult] = await self.full_text_search(
-                query_text, full_text_settings)
+            ChunkSearchResult
+        ] = await self.full_text_search(query_text, full_text_settings)
 
         semantic_limit = search_settings.limit
         full_text_limit = search_settings.hybrid_settings.full_text_limit
@@ -511,8 +548,7 @@ class PostgresChunksHandler(Handler):
                 "semantic_rank": rank,
                 "full_text_rank": full_text_limit,
                 "data": result,
-                "rrf_score":
-                0.0,  # Initialize with 0, will be calculated later
+                "rrf_score": 0.0,  # Initialize with 0, will be calculated later
             }
 
         for rank, result in enumerate(full_text_results, 1):
@@ -523,32 +559,33 @@ class PostgresChunksHandler(Handler):
                     "semantic_rank": semantic_limit,
                     "full_text_rank": rank,
                     "data": result,
-                    "rrf_score":
-                    0.0,  # Initialize with 0, will be calculated later
+                    "rrf_score": 0.0,  # Initialize with 0, will be calculated later
                 }
 
         combined_results = {
             k: v
             for k, v in combined_results.items()
-            if v["semantic_rank"] <= semantic_limit *
-            2 and v["full_text_rank"] <= full_text_limit * 2
+            if v["semantic_rank"] <= semantic_limit * 2
+            and v["full_text_rank"] <= full_text_limit * 2
         }
 
         for hyb_result in combined_results.values():
             semantic_score = 1 / (rrf_k + hyb_result["semantic_rank"])
             full_text_score = 1 / (rrf_k + hyb_result["full_text_rank"])
-            hyb_result["rrf_score"] = (semantic_score * semantic_weight +
-                                       full_text_score * full_text_weight) / (
-                                           semantic_weight + full_text_weight)
+            hyb_result["rrf_score"] = (
+                semantic_score * semantic_weight
+                + full_text_score * full_text_weight
+            ) / (semantic_weight + full_text_weight)
 
         sorted_results = sorted(
             combined_results.values(),
             key=lambda x: x["rrf_score"],
             reverse=True,
         )
-        offset_results = sorted_results[search_settings.
-                                        offset:search_settings.offset +
-                                        search_settings.limit]
+        offset_results = sorted_results[
+            search_settings.offset : search_settings.offset
+            + search_settings.limit
+        ]
 
         return [
             ChunkSearchResult(
@@ -560,20 +597,20 @@ class PostgresChunksHandler(Handler):
                 score=result["rrf_score"],
                 metadata={
                     **result["data"].metadata,
-                    "semantic_rank":
-                    result["semantic_rank"],
-                    "full_text_rank":
-                    result["full_text_rank"],
+                    "semantic_rank": result["semantic_rank"],
+                    "full_text_rank": result["full_text_rank"],
                 },
-            ) for result in offset_results
+            )
+            for result in offset_results
         ]
 
-    async def delete(self, filters: dict[str,
-                                         Any]) -> dict[str, dict[str, str]]:
+    async def delete(
+        self, filters: dict[str, Any]
+    ) -> dict[str, dict[str, str]]:
         params: list[str | int | bytes] = []
-        where_clause, params = apply_filters(filters,
-                                             params,
-                                             mode="condition_only")
+        where_clause, params = apply_filters(
+            filters, params, mode="condition_only"
+        )
 
         query = f"""
         DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
@@ -594,31 +631,35 @@ class PostgresChunksHandler(Handler):
         }
 
     async def assign_document_chunks_to_collection(
-            self, document_id: UUID, collection_id: UUID) -> None:
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
         query = f"""
         UPDATE {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         SET collection_ids = array_append(collection_ids, $1)
         WHERE document_id = $2 AND NOT ($1 = ANY(collection_ids));
         """
         return await self.connection_manager.execute_query(
-            query, (str(collection_id), str(document_id)))
+            query, (str(collection_id), str(document_id))
+        )
 
     async def remove_document_from_collection_vector(
-            self, document_id: UUID, collection_id: UUID) -> None:
+        self, document_id: UUID, collection_id: UUID
+    ) -> None:
         query = f"""
         UPDATE {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         SET collection_ids = array_remove(collection_ids, $1)
         WHERE document_id = $2;
         """
         await self.connection_manager.execute_query(
-            query, (collection_id, document_id))
+            query, (collection_id, document_id)
+        )
 
     async def delete_user_vector(self, owner_id: UUID) -> None:
         query = f"""
         DELETE FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
         WHERE owner_id = $1;
         """
-        await self.connection_manager.execute_query(query, (owner_id, ))
+        await self.connection_manager.execute_query(query, (owner_id,))
 
     async def delete_collection_vector(self, collection_id: UUID) -> None:
         query = f"""
@@ -626,8 +667,7 @@ class PostgresChunksHandler(Handler):
          WHERE $1 = ANY(collection_ids)
          RETURNING collection_ids
          """
-        results = await self.connection_manager.fetchrow_query(
-            query, (collection_id, ))
+        await self.connection_manager.fetchrow_query(query, (collection_id,))
         return None
 
     async def list_document_chunks(
@@ -657,22 +697,20 @@ class PostgresChunksHandler(Handler):
         total = 0
         if results:
             total = results[0].get("total", 0)
-            chunks = [{
-                "id":
-                result["id"],
-                "document_id":
-                result["document_id"],
-                "owner_id":
-                result["owner_id"],
-                "collection_ids":
-                result["collection_ids"],
-                "text":
-                result["text"],
-                "metadata":
-                json.loads(result["metadata"]),
-                "vector":
-                (json.loads(result["vec"]) if include_vectors else None),
-            } for result in results]
+            chunks = [
+                {
+                    "id": result["id"],
+                    "document_id": result["document_id"],
+                    "owner_id": result["owner_id"],
+                    "collection_ids": result["collection_ids"],
+                    "text": result["text"],
+                    "metadata": json.loads(result["metadata"]),
+                    "vector": (
+                        json.loads(result["vec"]) if include_vectors else None
+                    ),
+                }
+                for result in results
+            ]
 
         return {"results": chunks, "total_entries": total}
 
@@ -683,7 +721,7 @@ class PostgresChunksHandler(Handler):
         WHERE id = $1;
         """
 
-        result = await self.connection_manager.fetchrow_query(query, (id, ))
+        result = await self.connection_manager.fetchrow_query(query, (id,))
 
         if result:
             return {
@@ -694,8 +732,9 @@ class PostgresChunksHandler(Handler):
                 "text": result["text"],
                 "metadata": json.loads(result["metadata"]),
             }
-        raise R2RException(message=f"Chunk with ID {id} not found",
-                           status_code=404)
+        raise R2RException(
+            message=f"Chunk with ID {id} not found", status_code=404
+        )
 
     async def create_index(
         self,
@@ -743,29 +782,36 @@ class PostgresChunksHandler(Handler):
             if index_column:
                 col_name = index_column
             else:
-                col_name = ("vec" if
-                            (index_measure != IndexMeasure.hamming_distance and
-                             index_measure != IndexMeasure.jaccard_distance)
-                            else "vec_binary")
+                col_name = (
+                    "vec"
+                    if (
+                        index_measure != IndexMeasure.hamming_distance
+                        and index_measure != IndexMeasure.jaccard_distance
+                    )
+                    else "vec_binary"
+                )
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}")
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}")
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}")
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
             col_name = "embedding"
         else:
             raise ValueError("invalid table name")
 
         if index_method not in (
-                IndexMethod.ivfflat,
-                IndexMethod.hnsw,
-                IndexMethod.auto,
+            IndexMethod.ivfflat,
+            IndexMethod.hnsw,
+            IndexMethod.auto,
         ):
             raise ValueError("invalid index method")
 
@@ -779,10 +825,13 @@ class PostgresChunksHandler(Handler):
                 )
             # Disallow case where user specifies one index type but submits
             # index build arguments for the other index type
-            if (isinstance(index_arguments, IndexArgsHNSW)
-                    and index_method != IndexMethod.hnsw) or (
-                        isinstance(index_arguments, IndexArgsIVFFlat)
-                        and index_method != IndexMethod.ivfflat):
+            if (
+                isinstance(index_arguments, IndexArgsHNSW)
+                and index_method != IndexMethod.hnsw
+            ) or (
+                isinstance(index_arguments, IndexArgsIVFFlat)
+                and index_method != IndexMethod.ivfflat
+            ):
                 raise ValueError(
                     f"{index_arguments.__class__.__name__} build parameters were supplied but {index_method} index was specified."
                 )
@@ -800,8 +849,8 @@ class PostgresChunksHandler(Handler):
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
         index_name = (
-            index_name or
-            f"ix_{ops}_{index_method}__{col_name}_{time.strftime('%Y%m%d%H%M%S')}"
+            index_name
+            or f"ix_{ops}_{index_method}__{col_name}_{time.strftime('%Y%m%d%H%M%S')}"
         )
 
         create_index_sql = f"""
@@ -812,9 +861,9 @@ class PostgresChunksHandler(Handler):
 
         try:
             if concurrently:
-                async with (self.connection_manager.pool.get_connection() as
-                            conn  # type: ignore
-                            ):
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
                     # Disable automatic transaction management
                     await conn.execute(
                         "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
@@ -824,7 +873,7 @@ class PostgresChunksHandler(Handler):
                 # Non-concurrent index creation can use normal query execution
                 await self.connection_manager.execute_query(create_index_sql)
         except Exception as e:
-            raise Exception(f"Failed to create index: {e}")
+            raise Exception(f"Failed to create index: {e}") from e
         return None
 
     async def list_indices(
@@ -849,7 +898,8 @@ class PostgresChunksHandler(Handler):
                 param_count += 1
             if "index_name" in filters:
                 where_clauses.append(
-                    f"LOWER(i.indexname) LIKE LOWER(${param_count + 1})")
+                    f"LOWER(i.indexname) LIKE LOWER(${param_count + 1})"
+                )
                 params.append(f"%{filters['index_name']}%")
                 param_count += 1
 
@@ -934,15 +984,18 @@ class PostgresChunksHandler(Handler):
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}")
+                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.GRAPHS_ENTITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}")
+                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
+            )
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
             table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}")
+                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
+            )
             col_name = "description_embedding"
         else:
             raise ValueError("invalid table name")
@@ -961,8 +1014,8 @@ class PostgresChunksHandler(Handler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query,
-            (index_name, schema_name, base_table_name, f"%({col_name}%"))
+            query, (index_name, schema_name, base_table_name, f"%({col_name}%")
+        )
 
         if not result:
             raise ValueError(
@@ -972,13 +1025,14 @@ class PostgresChunksHandler(Handler):
         # Drop the index
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
         drop_query = (
-            f"DROP INDEX {concurrently_sql} {schema_name}.{index_name}")
+            f"DROP INDEX {concurrently_sql} {schema_name}.{index_name}"
+        )
 
         try:
             if concurrently:
-                async with (self.connection_manager.pool.get_connection() as
-                            conn  # type: ignore
-                            ):
+                async with (
+                    self.connection_manager.pool.get_connection() as conn  # type: ignore
+                ):
                     # Disable automatic transaction management
                     await conn.execute(
                         "SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL READ COMMITTED"
@@ -987,7 +1041,7 @@ class PostgresChunksHandler(Handler):
             else:
                 await self.connection_manager.execute_query(drop_query)
         except Exception as e:
-            raise Exception(f"Failed to delete index: {e}")
+            raise Exception(f"Failed to delete index: {e}") from e
 
     async def list_chunks(
         self,
@@ -1018,9 +1072,9 @@ class PostgresChunksHandler(Handler):
         params: list[str | int | bytes] = []
         where_clause = ""
         if filters:
-            where_clause, params = apply_filters(filters,
-                                                 params,
-                                                 mode="where_clause")
+            where_clause, params = apply_filters(
+                filters, params, mode="where_clause"
+            )
 
         query = f"""
         SELECT {select_clause}
@@ -1040,22 +1094,20 @@ class PostgresChunksHandler(Handler):
         total_entries = 0
         if results:
             total_entries = results[0].get("total_entries", 0)
-            chunks = [{
-                "id":
-                str(result["id"]),
-                "document_id":
-                str(result["document_id"]),
-                "owner_id":
-                str(result["owner_id"]),
-                "collection_ids":
-                result["collection_ids"],
-                "text":
-                result["text"],
-                "metadata":
-                json.loads(result["metadata"]),
-                "vector":
-                (json.loads(result["vec"]) if include_vectors else None),
-            } for result in results]
+            chunks = [
+                {
+                    "id": str(result["id"]),
+                    "document_id": str(result["document_id"]),
+                    "owner_id": str(result["owner_id"]),
+                    "collection_ids": result["collection_ids"],
+                    "text": result["text"],
+                    "metadata": json.loads(result["metadata"]),
+                    "vector": (
+                        json.loads(result["vec"]) if include_vectors else None
+                    ),
+                }
+                for result in results
+            ]
 
         return {"results": chunks, "total_entries": total_entries}
 
@@ -1078,10 +1130,12 @@ class PostgresChunksHandler(Handler):
         params: list[str | int | bytes] = [query_text]
 
         # Build the dynamic metadata field search expression
-        metadata_fields_expr = " || ' ' || ".join([
-            f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-            for key in settings.metadata_keys  # type: ignore
-        ])
+        metadata_fields_expr = " || ' ' || ".join(
+            [
+                f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
+                for key in settings.metadata_keys  # type: ignore
+            ]
+        )
 
         query = f"""
             WITH
@@ -1175,18 +1229,20 @@ class PostgresChunksHandler(Handler):
         results = await self.connection_manager.fetch_query(query, params)
 
         # Format results with complete document metadata
-        return [{
-            "document_id":
-            str(r["document_id"]),
-            "metadata": (json.loads(r["metadata"]) if isinstance(
-                r["metadata"], str) else r["metadata"]),
-            "score":
-            float(r["score"]),
-            "debug_metadata_rank":
-            float(r["debug_metadata_rank"]),
-            "debug_body_rank":
-            float(r["debug_body_rank"]),
-        } for r in results]
+        return [
+            {
+                "document_id": str(r["document_id"]),
+                "metadata": (
+                    json.loads(r["metadata"])
+                    if isinstance(r["metadata"], str)
+                    else r["metadata"]
+                ),
+                "score": float(r["score"]),
+                "debug_metadata_rank": float(r["debug_metadata_rank"]),
+                "debug_body_rank": float(r["debug_body_rank"]),
+            }
+            for r in results
+        ]
 
     def _get_index_options(
         self,

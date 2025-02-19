@@ -12,7 +12,6 @@ from shared.api.models import (
 
 
 class CollectionsSDK:
-
     def __init__(self, client):
         self.client = client
 
@@ -63,10 +62,9 @@ class CollectionsSDK:
         if ids:
             params["ids"] = ids
 
-        response_dict = await self.client._make_request("GET",
-                                                        "collections",
-                                                        params=params,
-                                                        version="v3")
+        response_dict = await self.client._make_request(
+            "GET", "collections", params=params, version="v3"
+        )
 
         return WrappedCollectionsResponse(**response_dict)
 
@@ -83,7 +81,8 @@ class CollectionsSDK:
             WrappedCollectionResponse
         """
         response_dict = await self.client._make_request(
-            "GET", f"collections/{str(id)}", version="v3")
+            "GET", f"collections/{str(id)}", version="v3"
+        )
 
         return WrappedCollectionResponse(**response_dict)
 
@@ -135,7 +134,8 @@ class CollectionsSDK:
             WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
-            "DELETE", f"collections/{str(id)}", version="v3")
+            "DELETE", f"collections/{str(id)}", version="v3"
+        )
 
         return WrappedBooleanResponse(**response_dict)
 
@@ -235,7 +235,8 @@ class CollectionsSDK:
         }
 
         response_dict = await self.client._make_request(
-            "GET", f"collections/{str(id)}/users", params=params, version="v3")
+            "GET", f"collections/{str(id)}/users", params=params, version="v3"
+        )
 
         return WrappedUsersResponse(**response_dict)
 
@@ -254,9 +255,8 @@ class CollectionsSDK:
             WrappedBooleanResponse
         """
         response_dict = await self.client._make_request(
-            "POST",
-            f"collections/{str(id)}/users/{str(user_id)}",
-            version="v3")
+            "POST", f"collections/{str(id)}/users/{str(user_id)}", version="v3"
+        )
 
         return WrappedBooleanResponse(**response_dict)
 
@@ -316,9 +316,8 @@ class CollectionsSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def retrieve_by_name(
-            self,
-            name: str,
-            owner_id: Optional[str] = None) -> WrappedCollectionResponse:
+        self, name: str, owner_id: Optional[str] = None
+    ) -> WrappedCollectionResponse:
         """Retrieve a collection by its name.
 
         For non-superusers, the backend will use the authenticated user's ID.

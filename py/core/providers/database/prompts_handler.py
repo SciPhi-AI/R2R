@@ -32,10 +32,10 @@ class Cache(Generic[T]):
     """A generic cache implementation with TTL and LRU-like features."""
 
     def __init__(
-            self,
-            ttl: Optional[timedelta] = None,
-            max_size: Optional[int] = 1000,
-            cleanup_interval: timedelta = timedelta(hours=1),
+        self,
+        ttl: Optional[timedelta] = None,
+        max_size: Optional[int] = 1000,
+        cleanup_interval: timedelta = timedelta(hours=1),
     ):
         self._cache: dict[str, CacheEntry[T]] = {}
         self._ttl = ttl
@@ -65,9 +65,9 @@ class Cache(Generic[T]):
         self._maybe_cleanup()
 
         now = datetime.now()
-        self._cache[key] = CacheEntry(value=value,
-                                      created_at=now,
-                                      last_accessed=now)
+        self._cache[key] = CacheEntry(
+            value=value, created_at=now, last_accessed=now
+        )
 
         if self._max_size and len(self._cache) > self._max_size:
             self._evict_lru()
@@ -104,8 +104,9 @@ class Cache(Generic[T]):
         if not self._cache:
             return
 
-        lru_key = min(self._cache.keys(),
-                      key=lambda k: self._cache[k].last_accessed)
+        lru_key = min(
+            self._cache.keys(), key=lambda k: self._cache[k].last_accessed
+        )
         del self._cache[lru_key]
 
 
@@ -119,12 +120,13 @@ class CacheablePromptHandler(Handler):
         max_cache_size: Optional[int] = 1000,
     ):
         self._prompt_cache = Cache[str](ttl=cache_ttl, max_size=max_cache_size)
-        self._template_cache = Cache[dict](ttl=cache_ttl,
-                                           max_size=max_cache_size)
+        self._template_cache = Cache[dict](
+            ttl=cache_ttl, max_size=max_cache_size
+        )
 
-    def _cache_key(self,
-                   prompt_name: str,
-                   inputs: Optional[dict] = None) -> str:
+    def _cache_key(
+        self, prompt_name: str, inputs: Optional[dict] = None
+    ) -> str:
         """Generate a cache key for a prompt request."""
         if inputs:
             # Sort dict items for consistent keys
@@ -162,7 +164,8 @@ class CacheablePromptHandler(Handler):
         )
         # Notice the new parameter `bypass_template_cache` below
         result = await self._get_prompt_impl(
-            prompt_name, inputs, bypass_template_cache=bypass_cache)
+            prompt_name, inputs, bypass_template_cache=bypass_cache
+        )
         self._prompt_cache.set(cache_key, result)
         return result
 
@@ -203,7 +206,7 @@ class CacheablePromptHandler(Handler):
     ) -> str:
         if inputs:
             # optional input validation if needed
-            for k, v in inputs.items():
+            for k, _v in inputs.items():
                 if k not in input_types:
                     raise ValueError(
                         f"Unexpected input '{k}' for prompt with input types {input_types}"
@@ -221,7 +224,8 @@ class CacheablePromptHandler(Handler):
         # First invalidate all caches for this prompt
         self._template_cache.invalidate(name)
         cache_keys_to_invalidate = [
-            key for key in self._prompt_cache._cache.keys()
+            key
+            for key in self._prompt_cache._cache.keys()
             if key.startswith(f"{name}:") or key == name
         ]
         for key in cache_keys_to_invalidate:
@@ -262,8 +266,9 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         **cache_options,
     ):
         super().__init__(**cache_options)
-        self.prompt_directory = (prompt_directory or
-                                 Path(os.path.dirname(__file__)) / "prompts")
+        self.prompt_directory = (
+            prompt_directory or Path(os.path.dirname(__file__)) / "prompts"
+        )
         self.connection_manager = connection_manager
         self.project_name = project_name
         self.prompts: dict[str, dict[str, str | dict[str, str]]] = {}
@@ -314,7 +319,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             raise
 
     async def _load_prompts_from_yaml_directory(
-            self, default_overwrite_on_diff: bool = False) -> None:
+        self, default_overwrite_on_diff: bool = False
+    ) -> None:
         """Load prompts from YAML files in the specified directory.
 
         :param default_overwrite_on_diff: If a YAML prompt does not specify
@@ -322,7 +328,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         """
         if not self.prompt_directory.is_dir():
             logger.warning(
-                f"Prompt directory not found: {self.prompt_directory}")
+                f"Prompt directory not found: {self.prompt_directory}"
+            )
             return
 
         logger.info(f"Loading prompts from {self.prompt_directory}")
@@ -333,7 +340,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                     data = yaml.safe_load(file)
                     if not isinstance(data, dict):
                         raise ValueError(
-                            f"Invalid format in YAML file {yaml_file}")
+                            f"Invalid format in YAML file {yaml_file}"
+                        )
 
                     for name, prompt_data in data.items():
                         # Attempt to parse the relevant prompt fields
@@ -342,15 +350,18 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
                         # Decide on per-prompt overwrite behavior (or fallback)
                         overwrite_on_diff = prompt_data.get(
-                            "overwrite_on_diff", default_overwrite_on_diff)
+                            "overwrite_on_diff", default_overwrite_on_diff
+                        )
                         # Some logic to determine if we *should* modify
                         # For instance, preserve only if it has never been updated
                         # (i.e., created_at == updated_at).
                         should_modify = True
                         if name in self.prompts:
                             existing = self.prompts[name]
-                            should_modify = (existing["created_at"] ==
-                                             existing["updated_at"])
+                            should_modify = (
+                                existing["created_at"]
+                                == existing["updated_at"]
+                            )
 
                         # If should_modify is True, the default logic is
                         #   preserve_existing = False,
@@ -402,7 +413,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         WHERE name = $1;
         """
         result = await self.connection_manager.fetchrow_query(
-            query, [prompt_name])
+            query, [prompt_name]
+        )
 
         if not result:
             raise ValueError(f"Prompt template '{prompt_name}' not found")
@@ -414,15 +426,13 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
         # Update template cache if not bypassing it
         if not bypass_template_cache:
-            self._template_cache.set(prompt_name, {
-                "template": template,
-                "input_types": input_types
-            })
+            self._template_cache.set(
+                prompt_name, {"template": template, "input_types": input_types}
+            )
 
         return self._format_prompt(template, inputs, input_types)
 
-    async def _get_template_info(
-            self, prompt_name: str) -> Optional[dict]:  # type: ignore
+    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:  # type: ignore
         """Get template info with caching."""
         cached = self._template_cache.get(prompt_name)
         if cached is not None:
@@ -435,7 +445,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [prompt_name])
+            query, [prompt_name]
+        )
 
         if result:
             # Ensure input_types is a dictionary
@@ -496,7 +507,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         try:
             # Execute update and get returned values
             result = await self.connection_manager.fetchrow_query(
-                query, params)
+                query, params
+            )
 
             if not result:
                 raise ValueError(f"Prompt template '{name}' not found")
@@ -545,12 +557,12 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         await self._load_prompts()
 
     async def add_prompt(
-            self,
-            name: str,
-            template: str,
-            input_types: dict[str, str],
-            preserve_existing: bool = False,
-            overwrite_on_diff: bool = False,  # <-- new param
+        self,
+        name: str,
+        template: str,
+        input_types: dict[str, str],
+        preserve_existing: bool = False,
+        overwrite_on_diff: bool = False,  # <-- new param
     ) -> None:
         """Add or update a prompt.
 
@@ -565,7 +577,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         # If preserving existing and it already exists, skip entirely
         if preserve_existing and existing_prompt:
             logger.debug(
-                f"Preserving existing prompt: {name}, skipping update.")
+                f"Preserving existing prompt: {name}, skipping update."
+            )
             return
 
         # If an existing prompt is found, check for diffs
@@ -574,8 +587,10 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             existing_input_types = existing_prompt["input_types"]
 
             # If there's a difference in template or input_types, decide to overwrite or skip
-            if (existing_template != template
-                    or existing_input_types != input_types):
+            if (
+                existing_template != template
+                or existing_input_types != input_types
+            ):
                 if overwrite_on_diff:
                     logger.warning(
                         f"Overwriting existing prompt '{name}' due to detected diff."
@@ -589,8 +604,11 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         prompt_id = generate_default_prompt_id(name)
 
         # Ensure input_types is properly serialized
-        input_types_json = (json.dumps(input_types) if isinstance(
-            input_types, dict) else input_types)
+        input_types_json = (
+            json.dumps(input_types)
+            if isinstance(input_types, dict)
+            else input_types
+        )
 
         # Upsert logic
         query = f"""
@@ -604,7 +622,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, [prompt_id, name, template, input_types_json])
+            query, [prompt_id, name, template, input_types_json]
+        )
 
         self.prompts[name] = {
             "id": result["id"],
@@ -642,20 +661,21 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
         total_entries = results[0]["total_entries"] if results else 0
 
-        prompts = [{
-            "name":
-            row["name"],
-            "id":
-            row["id"],
-            "template":
-            row["template"],
-            "input_types": (json.loads(row["input_types"]) if isinstance(
-                row["input_types"], str) else row["input_types"]),
-            "created_at":
-            row["created_at"],
-            "updated_at":
-            row["updated_at"],
-        } for row in results]
+        prompts = [
+            {
+                "name": row["name"],
+                "id": row["id"],
+                "template": row["template"],
+                "input_types": (
+                    json.loads(row["input_types"])
+                    if isinstance(row["input_types"], str)
+                    else row["input_types"]
+                ),
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+            for row in results
+        ]
 
         return {"results": prompts, "total_entries": total_entries}
 
@@ -679,14 +699,18 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         self,
         system_prompt_name: Optional[str] = None,
         system_role: str = "system",
-        system_inputs: dict = {},
+        system_inputs: dict | None = None,
         system_prompt_override: Optional[str] = None,
         task_prompt_name: Optional[str] = None,
         task_role: str = "user",
-        task_inputs: dict = {},
+        task_inputs: dict | None = None,
         task_prompt_override: Optional[str] = None,
     ) -> list[dict]:
         """Create a message payload from system and task prompts."""
+        if system_inputs is None:
+            system_inputs = {}
+        if task_inputs is None:
+            task_inputs = {}
         if system_prompt_override:
             system_prompt = system_prompt_override
         else:

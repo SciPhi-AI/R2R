@@ -10,12 +10,12 @@ from shared.api.models import (
 
 
 class PromptsSDK:
-
     def __init__(self, client):
         self.client = client
 
-    async def create(self, name: str, template: str,
-                     input_types: dict) -> WrappedGenericMessageResponse:
+    async def create(
+        self, name: str, template: str, input_types: dict
+    ) -> WrappedGenericMessageResponse:
         """Create a new prompt.
 
         Args:

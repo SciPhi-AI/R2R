@@ -27,8 +27,9 @@ class DOCParser(AsyncParser[str | bytes]):
         self.config = config
         self.olefile = olefile
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest DOC data and yield text from the document."""
         if isinstance(data, str):
             raise ValueError("DOC data must be in bytes format.")
@@ -67,7 +68,7 @@ class DOCParser(AsyncParser[str | bytes]):
                     yield paragraph.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing DOC file: {str(e)}")
+            raise ValueError(f"Error processing DOC file: {str(e)}") from e
         finally:
             ole.close()
             file_obj.close()
@@ -75,19 +76,20 @@ class DOCParser(AsyncParser[str | bytes]):
     def _extract_text(self, word_stream: bytes, table_stream: bytes) -> str:
         """Extract text from Word document streams."""
         try:
-            text = word_stream.replace(b"\x00", b"").decode("utf-8",
-                                                            errors="ignore")
+            text = word_stream.replace(b"\x00", b"").decode(
+                "utf-8", errors="ignore"
+            )
 
             # If table_stream exists, try to extract additional text
             if table_stream:
-                table_text = table_stream.replace(b"\x00",
-                                                  b"").decode("utf-8",
-                                                              errors="ignore")
+                table_text = table_stream.replace(b"\x00", b"").decode(
+                    "utf-8", errors="ignore"
+                )
                 text += table_text
 
             return text
         except Exception as e:
-            raise ValueError(f"Error extracting text: {str(e)}")
+            raise ValueError(f"Error extracting text: {str(e)}") from e
 
     def _clean_text(self, text: str) -> list[str]:
         """Clean and split the extracted text into paragraphs."""

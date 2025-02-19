@@ -22,8 +22,9 @@ class TextParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
 
-    async def ingest(self, data: str | bytes, *args,
-                     **kwargs) -> AsyncGenerator[str | bytes, None]:
+    async def ingest(
+        self, data: str | bytes, *args, **kwargs
+    ) -> AsyncGenerator[str | bytes, None]:
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         yield data

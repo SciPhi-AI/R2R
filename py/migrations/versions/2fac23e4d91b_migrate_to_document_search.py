@@ -38,7 +38,6 @@ if not dimension:
 
 
 class Vector(UserDefinedType):
-
     def get_col_spec(self, **kw):
         return f"vector({dimension})"
 
@@ -72,12 +71,14 @@ async def async_generate_all_summaries():
 
     offset = 0
     limit = 1_000
-    documents = (await client.documents_overview(offset=offset,
-                                                 limit=limit))["results"]
+    documents = (await client.documents_overview(offset=offset, limit=limit))[
+        "results"
+    ]
     while len(documents) == limit:
         limit += offset
-        documents += (await client.documents_overview(offset=offset,
-                                                      limit=limit))["results"]
+        documents += (
+            await client.documents_overview(offset=offset, limit=limit)
+        )["results"]
 
     # Load existing summaries if they exist
     document_summaries = {}
@@ -90,13 +91,15 @@ async def async_generate_all_summaries():
             )
         except json.JSONDecodeError:
             print(
-                "Existing document_summaries.json was invalid, starting fresh")
+                "Existing document_summaries.json was invalid, starting fresh"
+            )
             document_summaries = {}
 
     for document in documents:
         title = document["title"]
         doc_id = str(
-            document["id"])  # Convert UUID to string for JSON compatibility
+            document["id"]
+        )  # Convert UUID to string for JSON compatibility
 
         # Skip if document already has a summary
         if doc_id in document_summaries:
@@ -113,8 +116,9 @@ async def async_generate_all_summaries():
                 metadata = json.dumps(document["metadata"])
                 document_text += f"Document Metadata:\n{metadata}\n"
 
-            full_chunks = (await client.document_chunks(document["id"],
-                                                        limit=10))["results"]
+            full_chunks = (
+                await client.document_chunks(document["id"], limit=10)
+            )["results"]
 
             document_text += "Document Content:\n"
 
@@ -136,16 +140,20 @@ async def async_generate_all_summaries():
 
     ## Response:"""
 
-            messages = [{
-                "role":
-                "user",
-                "content":
-                summary_prompt.format(**{"document": document_text}),
-            }]
+            messages = [
+                {
+                    "role": "user",
+                    "content": summary_prompt.format(
+                        **{"document": document_text}
+                    ),
+                }
+            ]
             summary = await client.completion(
-                messages=messages, generation_config={"model": base_model})
+                messages=messages, generation_config={"model": base_model}
+            )
             summary_text = summary["results"]["choices"][0]["message"][
-                "content"]
+                "content"
+            ]
             embedding_vector = await client.embedding(summary_text)
             # embedding_response = await openai_client.embeddings.create(
             #     model=embedding_model, input=summary_text, dimensions=dimension
@@ -225,7 +233,7 @@ def upgrade() -> None:
             )
             pass
         except json.JSONDecodeError:
-            raise ValueError("Invalid document_summaries.json file")
+            raise ValueError("Invalid document_summaries.json file") from None
 
         # Create the vector extension if it doesn't exist
         op.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -266,7 +274,8 @@ def upgrade() -> None:
             for doc_id, doc_data in document_summaries.items():
                 # Convert the embedding array to the PostgreSQL vector format
                 embedding_str = (
-                    f"[{','.join(str(x) for x in doc_data['embedding'])}]")
+                    f"[{','.join(str(x) for x in doc_data['embedding'])}]"
+                )
 
                 # Use plain SQL with proper escaping for PostgreSQL
                 op.execute(f"""

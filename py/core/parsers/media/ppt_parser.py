@@ -37,8 +37,9 @@ class PPTParser(AsyncParser[str | bytes]):
         except Exception:
             return ""
 
-    async def ingest(self, data: str | bytes,
-                     **kwargs) -> AsyncGenerator[str, None]:
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
         """Ingest PPT data and yield text from each slide."""
         if isinstance(data, str):
             raise ValueError("PPT data must be in bytes format.")
@@ -64,12 +65,13 @@ class PPTParser(AsyncParser[str | bytes]):
                     marker_pos = content.find(marker, current_position)
                     if marker_pos != -1:
                         # Get record size from header (4 bytes after marker)
-                        size_bytes = content[marker_pos + 2:marker_pos + 6]
+                        size_bytes = content[marker_pos + 2 : marker_pos + 6]
                         record_size = struct.unpack("<I", size_bytes)[0]
 
                         # Extract record data
-                        record_data = content[marker_pos:marker_pos +
-                                              record_size + 8]
+                        record_data = content[
+                            marker_pos : marker_pos + record_size + 8
+                        ]
                         text = self._extract_text_from_record(record_data)
 
                         if text.strip():
@@ -81,6 +83,6 @@ class PPTParser(AsyncParser[str | bytes]):
                     current_position += 1
 
         except Exception as e:
-            raise ValueError(f"Error processing PPT file: {str(e)}")
+            raise ValueError(f"Error processing PPT file: {str(e)}") from e
         finally:
             ole.close()
