@@ -133,7 +133,7 @@ __all__ = [
     "EMLParser",
     "EPUBParser",
     "JSONParser",
-    "MSGParser",
+    # "MSGParser",
     "ORGParser",
     "P7SParser",
     "RSTParser",

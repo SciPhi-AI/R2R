@@ -49,7 +49,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.HTM: parsers.HTMLParser,
         DocumentType.ODT: parsers.ODTParser,
         DocumentType.JSON: parsers.JSONParser,
-        DocumentType.MSG: parsers.MSGParser,
+        # DocumentType.MSG: parsers.MSGParser,
         DocumentType.ORG: parsers.ORGParser,
         DocumentType.MD: parsers.MDParser,
         DocumentType.PDF: parsers.BasicPDFParser,
