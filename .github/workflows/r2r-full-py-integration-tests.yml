@@ -29,7 +29,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          poetry-version: '1.7.1'
           r2r-version: 'latest'
 
       - name: Setup and start Docker
@@ -60,7 +59,7 @@ jobs:
 
       - name: Run R2R Full Python Integration Test
         run: |
-          cd py && poetry run pytest tests/unit \
+          cd py && uv run pytest tests/unit \
             --verbose \
             --capture=no \
             --log-cli-level=INFO \
@@ -68,7 +67,7 @@ jobs:
             --html=test-results/report.html
       - name: Run R2R Full Python Integration Test
         run: |
-          cd py && poetry run pytest tests/integration \
+          cd py && uv run pytest tests/integration \
             --verbose \
             --capture=no \
             --log-cli-level=INFO \

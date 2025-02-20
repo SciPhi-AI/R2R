@@ -38,7 +38,7 @@ jobs:
       - name: Determine version and registry
         id: version
         run: |
-          VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['tool']['poetry']['version'])")
+          VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['project']['version'])")
           RELEASE_VERSION=$VERSION
 
           # Set registry based on trigger type

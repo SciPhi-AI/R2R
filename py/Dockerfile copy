@@ -10,12 +10,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Add Rust to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Install uv
+RUN pip install --no-cache-dir uv
+
 # Create the /app/py directory
 RUN mkdir -p /app/py
 WORKDIR /app/py
 COPY pyproject.toml ./
-RUN pip install -e ".[core]" && \
-    pip install gunicorn uvicorn pydantic
+COPY uv.lock ./
+
+# Sync dependencies
+RUN uv sync --extra core --all-groups
 
 # Optionally, if you want gunicorn and uvicorn explicitly installed, you can
 # either list them under [project] in `pyproject.toml` or install them here:
