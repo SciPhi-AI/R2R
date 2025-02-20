@@ -1,5 +1,5 @@
 name: 'Setup Python for R2R Light'
-description: 'Sets up Python environment and installs dependencies using Poetry'
+description: 'Sets up Python environment and installs dependencies using uv'
 
 inputs:
   os:
@@ -9,10 +9,6 @@ inputs:
     description: 'Python version to use'
     required: false
     default: '3.12'
-  poetry-version:
-    description: 'Poetry version to install'
-    required: false
-    default: '1.7.1'
 
 runs:
   using: "composite"
@@ -23,34 +19,23 @@ runs:
         python-version: ${{ inputs.python-version }}
         cache: 'pip'
 
-    - name: Install Poetry
+    - name: Install uv
       shell: bash
       run: |
-        curl -sSL https://install.python-poetry.org | python3 - --version ${{ inputs.poetry-version }}
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        pip install uv
 
-    - name: Set Poetry config
-      shell: bash
-      run: |
-        poetry config virtualenvs.create true
-        poetry config virtualenvs.in-project true
-
-    - name: Cache Poetry dependencies
+    - name: Cache uv dependencies
       uses: actions/cache@v4
       with:
         path: |
-          ~/.cache/pypoetry
           py/.venv
-        key: ${{ runner.os }}-poetry-${{ hashFiles('py/poetry.lock') }}
+          py/uv.lock
+        key: ${{ runner.os }}-uv-${{ hashFiles('py/pyproject.toml', 'py/uv.lock') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-
+          ${{ runner.os }}-uv-
 
-    - name: Install dependencies
+    - name: Install dependencies with uv
       shell: bash
       working-directory: py
       run: |
-        if [ ! -f "poetry.lock" ]; then
-          echo "No poetry.lock found, creating one..."
-          poetry lock
-        fi
-        poetry install -E core --no-interaction
+        uv sync --extra core

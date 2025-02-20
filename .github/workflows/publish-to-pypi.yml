@@ -19,35 +19,33 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install poetry
-        working-directory: ./py
-        run: pip install poetry
+      - name: Install tools
+        run: pip install uv twine tomlkit
 
       - name: Bump version for dev branches (TestPyPI)
         if: github.event_name == 'push'
-        working-directory: ./py
         run: |
-          version=$(poetry version -s)
-          new_version="${version}a$(date +'%Y%m%d%H%M')"
-          poetry version $new_version
+          old_version=$(python -c "import tomlkit; d=tomlkit.parse(open('pyproject.toml').read()); print(d['project']['version'])")
+          new_version="${old_version}a$(date +'%Y%m%d%H%M')"
+          python -c "import tomlkit; d=tomlkit.parse(open('pyproject.toml').read()); d['project']['version']='$new_version'; open('pyproject.toml','w').write(tomlkit.dumps(d))"
 
-      - name: Build and publish to TestPyPI
+      - name: Build distributions
+        run: |
+          uv sync
+          uv build
+
+      - name: Publish to TestPyPI
         if: github.event_name == 'push'
-        working-directory: ./py
-        run: |
-          poetry config repositories.testpypi https://test.pypi.org/legacy/
-          poetry build
-          poetry config pypi-token.testpypi ${{ secrets.TEST_PYPI_API_TOKEN }}
-          poetry publish -r testpypi -vvv
         env:
           PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+          TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ -u __token__ -p "$TEST_PYPI_API_TOKEN" dist/*
 
-      - name: Build and publish to PyPI
+      - name: Publish to PyPI
         if: github.event_name == 'workflow_dispatch'
-        working-directory: ./py
-        run: |
-          poetry build
-          poetry config pypi-token.pypi ${{ secrets.PYPI_API_TOKEN }}
-          poetry publish -vvv
         env:
           PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
+          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload -u __token__ -p "$PYPI_API_TOKEN" dist/*
