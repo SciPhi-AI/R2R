@@ -31,6 +31,8 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
 __all__ = [
+    "CitationEvent",
+    "Citation",
     "R2RAgent",
     "R2RStreamingAgent",
     "SearchResultsCollector",

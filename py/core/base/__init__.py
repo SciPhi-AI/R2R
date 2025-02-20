@@ -6,6 +6,8 @@ from .providers import *
 from .utils import *
 
 __all__ = [
+    "CitationEvent",
+    "Citation",
     ## ABSTRACTIONS
     # Base abstractions
     "AsyncSyncMeta",

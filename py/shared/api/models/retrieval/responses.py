@@ -233,9 +233,7 @@ class SSEEventBase(BaseModel):
 class SearchResultsData(BaseModel):
     id: str
     object: str
-    data: dict[
-        str, Any
-    ]  # You can replace Dict[str, Any] with a more specific type if available
+    data: AggregateSearchResult
 
 
 class SearchResultsEvent(SSEEventBase):
@@ -243,10 +241,15 @@ class SearchResultsEvent(SSEEventBase):
     data: SearchResultsData
 
 
+class DeltaPayload(BaseModel):
+    value: str
+    annotations: list[Any]
+
+
 # Model for message events (partial tokens)
 class MessageDelta(BaseModel):
     type: str
-    text: dict[str, Any]  # Adjust if you have a more specific structure
+    payload: DeltaPayload
 
 
 class MessageData(BaseModel):
@@ -262,7 +265,14 @@ class MessageEvent(SSEEventBase):
 
 # Model for citation events
 class CitationData(BaseModel):
+    id: str
+    object: str
     raw_index: int
+    # If you also send "newIndex" in the JSON:
+    new_index: Optional[int] = Field(None, alias="newIndex")
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class CitationEvent(SSEEventBase):
@@ -322,7 +332,6 @@ RAGEvent = Union[
     ToolResultData,
     ToolResultEvent,
 ]
-
 
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses

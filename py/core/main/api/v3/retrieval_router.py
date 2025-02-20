@@ -271,7 +271,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
-                            response =client.retrieval.rag(
+                            response = client.retrieval.rag(
                                 query="Who is Aristotle?",
                                 search_settings={
                                     "use_semantic_search": True,
@@ -290,6 +290,32 @@ class RetrievalRouterV3(BaseRouterV3):
                                     max_tokens: 150
                                 }
                             )
+
+                            ### For streaming responses
+                            from r2r import (
+                                CitationEvent,
+                                FinalAnswerEvent,
+                                MessageEvent,
+                                SearchResultsEvent,
+                                R2RClient,
+                            )
+
+                            result_stream = client.retrieval.rag(
+                                query="What is DeepSeek R1?",
+                                search_settings={"limit": 25},
+                                rag_generation_config={"stream": True},
+                            )
+
+                            for event in result_stream:
+                                if isinstance(event, SearchResultsEvent):
+                                    print("Search results:", event.data)
+                                elif isinstance(event, MessageEvent):
+                                    print("Partial message:", event.data.delta)
+                                elif isinstance(event, CitationEvent):
+                                    print("New citation detected:", event.data.raw_index)
+                                elif isinstance(event, FinalAnswerEvent):
+                                    print("Final answer:", event.data.generated_answer)
+
                             """
                         ),
                     },
@@ -885,7 +911,7 @@ class RetrievalRouterV3(BaseRouterV3):
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
-                            response =client.completion(
+                            response = client.completion(
                                 messages=[
                                     {"role": "system", "content": "You are a helpful assistant."},
                                     {"role": "user", "content": "What is the capital of France?"},
@@ -893,7 +919,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     {"role": "user", "content": "What about Italy?"}
                                 ],
                                 generation_config={
-                                    "model": "gpt-4o-mini",
+                                    "model": "openai/gpt-4o-mini",
                                     "temperature": 0.7,
                                     "max_tokens": 150,
                                     "stream": False

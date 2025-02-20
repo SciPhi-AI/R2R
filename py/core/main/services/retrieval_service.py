@@ -963,7 +963,7 @@ class RetrievalService(Service):
                                 "content": [
                                     {
                                         "type": "text",
-                                        "text": {
+                                        "payload": {
                                             "value": new_text_to_emit,
                                             "annotations": [],
                                         },

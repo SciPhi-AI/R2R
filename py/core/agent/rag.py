@@ -579,7 +579,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                                 "content": [
                                     {
                                         "type": "text",
-                                        "text": {
+                                        "payload": {
                                             "value": new_text_to_emit,
                                             "annotations": [],
                                         },

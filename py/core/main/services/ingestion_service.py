@@ -313,6 +313,7 @@ class IngestionService:
                     ]
                 },
             )
+
             response = await self.providers.llm.aget_completion(
                 messages=messages,
                 generation_config=GenerationConfig(

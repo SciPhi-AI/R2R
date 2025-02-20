@@ -8,6 +8,22 @@ import {
 } from "../../types";
 import { ensureSnakeCase } from "../../utils";
 
+function parseSseEvent(raw: { event: string; data: string }) {
+  // Some SSE servers send a "done" event at the end:
+  if (raw.event === "done") return null;
+
+  try {
+    const parsedJson = JSON.parse(raw.data);
+    return {
+      event: raw.event,
+      data: parsedJson,
+    };
+  } catch (err) {
+    console.error("Failed to parse SSE line:", raw.data, err);
+    return null;
+  }
+}
+
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
 
@@ -96,21 +112,82 @@ export class RetrievalClient {
     }
   }
 
-  private async streamRag(
+    // In retrieval.ts:
+  private async *streamRag(
     ragData: Record<string, any>,
-  ): Promise<ReadableStream<Uint8Array>> {
-    return this.client.makeRequest<ReadableStream<Uint8Array>>(
-      "POST",
-      "retrieval/rag",
-      {
-        data: ragData,
-        headers: {
-          "Content-Type": "application/json",
+  ): AsyncGenerator<any, void, unknown> {
+    // 1) Make the streaming request -> returns a browser ReadableStream<Uint8Array>
+    const responseStream =
+      await this.client.makeRequest<ReadableStream<Uint8Array>>(
+        "POST",
+        "retrieval/rag",
+        {
+          data: ragData,
+          headers: { "Content-Type": "application/json" },
+          responseType: "stream",
         },
-        responseType: "stream",
-      },
-    );
+      );
+
+    if (!responseStream) {
+      throw new Error("No response stream received");
+    }
+
+    // 2) Get a reader from the stream
+    const reader = responseStream.getReader();
+    const textDecoder = new TextDecoder("utf-8");
+
+    let buffer = "";
+    let currentEventType = "unknown";
+
+    // 3) Read chunks until done
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+      // Decode the chunk into a string
+      const chunkStr = textDecoder.decode(value, { stream: true });
+      buffer += chunkStr;
+
+      // 4) Split on newlines
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // keep the partial line in the buffer
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(":")) {
+          // SSE heartbeats or blank lines
+          continue;
+        }
+        if (trimmed.startsWith("event:")) {
+          currentEventType = trimmed.slice("event:".length).trim();
+        } else if (trimmed.startsWith("data:")) {
+          const dataStr = trimmed.slice("data:".length).trim();
+          // Attempt to parse the SSE event
+          const eventObj = parseSseEvent({ event: currentEventType, data: dataStr });
+          if (eventObj != null) {
+            yield eventObj;
+          }
+        }
+      }
+    }
   }
+
+  // private async streamRag(
+  //   ragData: Record<string, any>,
+  // ): Promise<ReadableStream<Uint8Array>> {
+  //   return this.client.makeRequest<ReadableStream<Uint8Array>>(
+  //     "POST",
+  //     "retrieval/rag",
+  //     {
+  //       data: ragData,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       responseType: "stream",
+  //     },
+  //   );
+  // }
 
   /**
    * Engage with an intelligent RAG-powered conversational agent for complex
