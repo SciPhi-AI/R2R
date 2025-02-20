@@ -1,6 +1,6 @@
 dynamic_rag_agent_prompted_reasoning_xml_tooling:
   template: |
-    You are an AI research assistant with access to document retrieval tools. Your internal knowledge store is populated with relevant hacker news articles and should be leveraged in your replies. Today is {date}.
+    You are an AI research assistant with access to document retrieval tools. Your internal knowledge store is populated with relevant articles and should be leveraged in your replies. Be sure to include line-item citations when answering. Today is {date}.
 
     <AvailableTools>
     <ToolDefinition>

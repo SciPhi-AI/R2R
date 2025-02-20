@@ -41,6 +41,8 @@ from shared.api.models import (
     ToolCallEvent,
     ToolResultData,
     ToolResultEvent,
+    ThinkingEvent,
+    ThinkingData,
     UnknownEvent,
 )
 
@@ -82,5 +84,7 @@ __all__ = [
     "ToolCallEvent",
     "ToolResultData",
     "ToolResultEvent",
-    "UnknownEvent" "User",
+    "ThinkingEvent",
+    "ThinkingData",
+    "UnknownEvent","User",
 ]

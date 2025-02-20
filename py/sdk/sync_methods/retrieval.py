@@ -19,6 +19,8 @@ from core.base.api.models import (
     UnknownEvent,
     WrappedAgentResponse,
     WrappedRAGResponse,
+    ThinkingEvent,
+    ThinkingData,
     WrappedSearchResponse,
 )
 
@@ -74,6 +76,11 @@ def parse_agent_event(raw: dict) -> Optional[AgentEvent]:
         return ToolResultEvent(
             event=event_type, data=ToolResultData(**data_obj)
         )
+    elif event_type == "thinking":  # <--- NEW
+        return ThinkingEvent(
+            event=event_type,
+            data=ThinkingData(**data_obj),
+        )
     elif event_type == "final_answer":
         return FinalAnswerEvent(
             event=event_type, data=FinalAnswerData(**data_obj)
@@ -124,6 +131,11 @@ def parse_rag_event(raw: dict):
     elif event_type == "tool_result":
         return ToolResultEvent(
             event=event_type, data=ToolResultData(**data_obj)
+        )
+    elif event_type == "thinking":
+        return ThinkingEvent(
+            event=event_type,
+            data=ThinkingData(**data_obj),
         )
     elif event_type == "final_answer":
         return FinalAnswerEvent(
@@ -484,12 +496,14 @@ class RetrievalSDK:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return self.client._make_streaming_request(
+            raw_stream = self.client._make_streaming_request(
                 "POST",
                 "retrieval/reasoning_agent",
                 json=data,
                 version="v3",
             )
+            return (parse_agent_event(event) for event in raw_stream)
+        
         else:
             return self.client._make_request(
                 "POST",

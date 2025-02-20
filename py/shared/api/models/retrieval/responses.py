@@ -322,6 +322,18 @@ class UnknownEvent(SSEEventBase):
     pass
 
 
+# 1) Define a new ThinkingEvent type
+class ThinkingData(BaseModel):
+    id: str
+    object: str
+    delta: dict[str, list[MessageDelta]]
+
+
+class ThinkingEvent(SSEEventBase):
+    event: str = "thinking"
+    data: ThinkingData
+
+
 # Create a union type for all RAG events
 RAGEvent = Union[
     SearchResultsEvent,
@@ -336,6 +348,7 @@ RAGEvent = Union[
 ]
 
 AgentEvent = Union[
+    ThinkingEvent,
     SearchResultsEvent,
     MessageEvent,
     CitationEvent,

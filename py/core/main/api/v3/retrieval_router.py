@@ -945,7 +945,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                         { role: "user", content: "What about Italy?" }
                                     ],
                                     generationConfig: {
-                                        model: "gpt-4o-mini",
+                                        model: "openai/gpt-4o-mini",
                                         temperature: 0.7,
                                         maxTokens: 150,
                                         stream: false
@@ -972,7 +972,7 @@ class RetrievalRouterV3(BaseRouterV3):
                                     {"role": "user", "content": "What about Italy?"}
                                 ],
                                 "generation_config": {
-                                    "model": "gpt-4o-mini",
+                                    "model": "openai/gpt-4o-mini",
                                     "temperature": 0.7,
                                     "max_tokens": 150,
                                     "stream": false
@@ -1009,7 +1009,7 @@ class RetrievalRouterV3(BaseRouterV3):
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={
-                    "model": "gpt-4o-mini",
+                    "model": "openai/gpt-4o-mini",
                     "temperature": 0.7,
                     "max_tokens": 150,
                     "stream": False,
