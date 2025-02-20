@@ -3,6 +3,7 @@ from importlib import metadata
 from sdk.async_client import R2RAsyncClient
 from sdk.models import R2RException
 from sdk.sync_client import R2RClient
+from shared import *
 
 __version__ = metadata.version("r2r")
 
