@@ -62,6 +62,7 @@ from shared.api.models.management.responses import (
     WrappedUsersResponse,
 )
 from shared.api.models.retrieval.responses import (
+    AgentEvent,
     AgentResponse,
     AggregateSearchResult,
     Citation,
@@ -72,6 +73,7 @@ from shared.api.models.retrieval.responses import (
     MessageData,
     MessageDelta,
     MessageEvent,
+    RAGEvent,
     RAGResponse,
     SearchResultsData,
     SearchResultsEvent,
@@ -104,6 +106,8 @@ __all__ = [
     "ToolCallEvent",
     "ToolResultData",
     "ToolResultEvent",
+    "AgentEvent",
+    "RAGEvent",
     "UnknownEvent",
     # Auth Responses
     "GenericMessageResponse",

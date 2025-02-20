@@ -71,6 +71,7 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     WrappedVerificationResult,
 )
 from shared.api.models.retrieval.responses import (
+    AgentEvent,
     AgentResponse,
     Citation,
     CitationData,
@@ -80,6 +81,7 @@ from shared.api.models.retrieval.responses import (
     MessageData,
     MessageDelta,
     MessageEvent,
+    RAGEvent,
     RAGResponse,
     SearchResultsData,
     SearchResultsEvent,
@@ -187,6 +189,8 @@ __all__ = [
     "ToolCallEvent",
     "ToolResultData",
     "ToolResultEvent",
+    "RAGEvent",
+    "AgentEvent",
     "UnknownEvent",
     "RAGResponse",
     "Citation",

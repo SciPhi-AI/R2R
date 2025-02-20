@@ -112,11 +112,10 @@ export class RetrievalClient {
     }
   }
 
-    // In retrieval.ts:
   private async *streamRag(
     ragData: Record<string, any>,
   ): AsyncGenerator<any, void, unknown> {
-    // 1) Make the streaming request -> returns a browser ReadableStream<Uint8Array>
+    // 1) Make the streaming request with responseType: "stream"
     const responseStream =
       await this.client.makeRequest<ReadableStream<Uint8Array>>(
         "POST",
@@ -124,7 +123,7 @@ export class RetrievalClient {
         {
           data: ragData,
           headers: { "Content-Type": "application/json" },
-          responseType: "stream",
+          responseType: "stream", // triggers streaming code in BaseClient
         },
       );
 
@@ -132,46 +131,113 @@ export class RetrievalClient {
       throw new Error("No response stream received");
     }
 
-    // 2) Get a reader from the stream
     const reader = responseStream.getReader();
     const textDecoder = new TextDecoder("utf-8");
 
     let buffer = "";
     let currentEventType = "unknown";
 
-    // 3) Read chunks until done
     while (true) {
+      // 2) Read the next chunk
       const { value, done } = await reader.read();
       if (done) {
-        break;
+        break; // end of the stream
       }
-      // Decode the chunk into a string
+      // 3) Decode from bytes to text
       const chunkStr = textDecoder.decode(value, { stream: true });
+      // 4) Append to our buffer (which might already have a partial line)
       buffer += chunkStr;
 
-      // 4) Split on newlines
+      // 5) Split by newline
       const lines = buffer.split("\n");
-      buffer = lines.pop() || ""; // keep the partial line in the buffer
 
+      // Keep the last partial line in `buffer`
+      buffer = lines.pop() || "";
+
+      // 6) Process each complete line
       for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || trimmed.startsWith(":")) {
-          // SSE heartbeats or blank lines
+          // SSE "heartbeat" or empty line
           continue;
         }
         if (trimmed.startsWith("event:")) {
+          // e.g. event: final_answer
           currentEventType = trimmed.slice("event:".length).trim();
         } else if (trimmed.startsWith("data:")) {
+          // e.g. data: {"generated_answer":"DeepSeek R1 ..."}
           const dataStr = trimmed.slice("data:".length).trim();
-          // Attempt to parse the SSE event
-          const eventObj = parseSseEvent({ event: currentEventType, data: dataStr });
-          if (eventObj != null) {
-            yield eventObj;
+          const parsedEvent = parseSseEvent({ event: currentEventType, data: dataStr });
+          if (parsedEvent !== null) {
+            yield parsedEvent;
           }
         }
       }
     }
+
+    // End of stream, if there's leftover in buffer, handle if needed
   }
+
+  //   // In retrieval.ts:
+  // private async *streamRag(
+  //   ragData: Record<string, any>,
+  // ): AsyncGenerator<any, void, unknown> {
+  //   // 1) Make the streaming request -> returns a browser ReadableStream<Uint8Array>
+  //   const responseStream =
+  //     await this.client.makeRequest<ReadableStream<Uint8Array>>(
+  //       "POST",
+  //       "retrieval/rag",
+  //       {
+  //         data: ragData,
+  //         headers: { "Content-Type": "application/json" },
+  //         responseType: "stream",
+  //       },
+  //     );
+
+  //   if (!responseStream) {
+  //     throw new Error("No response stream received");
+  //   }
+
+  //   // 2) Get a reader from the stream
+  //   const reader = responseStream.getReader();
+  //   const textDecoder = new TextDecoder("utf-8");
+
+  //   let buffer = "";
+  //   let currentEventType = "unknown";
+
+  //   // 3) Read chunks until done
+  //   while (true) {
+  //     const { value, done } = await reader.read();
+  //     if (done) {
+  //       break;
+  //     }
+  //     // Decode the chunk into a string
+  //     const chunkStr = textDecoder.decode(value, { stream: true });
+  //     buffer += chunkStr;
+
+  //     // 4) Split on newlines
+  //     const lines = buffer.split("\n");
+  //     buffer = lines.pop() || ""; // keep the partial line in the buffer
+
+  //     for (const line of lines) {
+  //       const trimmed = line.trim();
+  //       if (!trimmed || trimmed.startsWith(":")) {
+  //         // SSE heartbeats or blank lines
+  //         continue;
+  //       }
+  //       if (trimmed.startsWith("event:")) {
+  //         currentEventType = trimmed.slice("event:".length).trim();
+  //       } else if (trimmed.startsWith("data:")) {
+  //         const dataStr = trimmed.slice("data:".length).trim();
+  //         // Attempt to parse the SSE event
+  //         const eventObj = parseSseEvent({ event: currentEventType, data: dataStr });
+  //         if (eventObj != null) {
+  //           yield eventObj;
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 
   // private async streamRag(
   //   ragData: Record<string, any>,
@@ -291,21 +357,71 @@ export class RetrievalClient {
     }
   }
 
-  private async streamAgent(
+  private async *streamAgent(
     agentData: Record<string, any>,
-  ): Promise<ReadableStream<Uint8Array>> {
-    return this.client.makeRequest<ReadableStream<Uint8Array>>(
+  ): AsyncGenerator<any, void, unknown> {
+    // 1) Make a streaming request to your "retrieval/agent" endpoint
+    //    We'll get back a browser `ReadableStream<Uint8Array>` or a Node stream (depending on environment).
+    const responseStream = await this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
       "retrieval/agent",
       {
         data: agentData,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         responseType: "stream",
       },
     );
+
+    if (!responseStream) {
+      throw new Error("No response stream received from agent endpoint");
+    }
+
+    // 2) Prepare to read the SSE stream line-by-line
+    const reader = responseStream.getReader();
+    const textDecoder = new TextDecoder("utf-8");
+
+    let buffer = "";
+    let currentEventType = "unknown";
+
+    // 3) Read chunks until the stream closes
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break; // end of stream
+      }
+      // Convert bytes to text
+      const chunkStr = textDecoder.decode(value, { stream: true });
+      buffer += chunkStr;
+
+      // SSE messages are separated by newlines
+      const lines = buffer.split("\n");
+      // The last element might be a partial line, so re-buffer it
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        // Ignore empty lines or lines starting with ":"
+        if (!trimmed || trimmed.startsWith(":")) {
+          continue;
+        }
+        if (trimmed.startsWith("event:")) {
+          // e.g. "event: message"
+          currentEventType = trimmed.slice("event:".length).trim();
+        } else if (trimmed.startsWith("data:")) {
+          // e.g. "data: {...}"
+          const dataStr = trimmed.slice("data:".length).trim();
+          const parsed = parseSseEvent({ event: currentEventType, data: dataStr });
+          if (parsed !== null) {
+            yield parsed;
+          }
+        }
+      }
+    }
+
+    // If anything remains in `buffer`, handle it if needed.
+    // In most SSE flows, we expect the final chunk to end with a newline.
   }
+
 
   /**
    * Generate completions for a list of messages.

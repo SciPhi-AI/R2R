@@ -333,6 +333,16 @@ RAGEvent = Union[
     ToolResultEvent,
 ]
 
+AgentEvent = Union[
+    SearchResultsEvent,
+    MessageEvent,
+    CitationEvent,
+    FinalAnswerEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    UnknownEvent,
+]
+
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses
 WrappedVectorSearchResponse = R2RResults[list[ChunkSearchResult]]

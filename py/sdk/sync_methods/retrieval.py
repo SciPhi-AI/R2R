@@ -3,6 +3,7 @@ import uuid
 from typing import Any, AsyncGenerator, Optional, Union
 
 from core.base.api.models import (
+    AgentEvent,
     CitationData,
     CitationEvent,
     FinalAnswerData,
@@ -28,6 +29,61 @@ from ..models import (
     SearchMode,
     SearchSettings,
 )
+
+
+def parse_agent_event(raw: dict) -> Optional[AgentEvent]:
+    """
+    Convert a raw SSE event dict into a typed Pydantic model.
+
+    Example raw dict:
+        {
+          "event": "message",
+          "data": "{\"id\": \"msg_partial\", \"object\": \"agent.message.delta\", \"delta\": {...}}"
+        }
+    """
+    event_type = raw.get("event", "unknown")
+
+    # If event_type == "done", we usually return None to signal the SSE stream is finished.
+    if event_type == "done":
+        return None
+
+    # The SSE "data" is JSON-encoded, so parse it
+    data_str = raw.get("data", "")
+    try:
+        data_obj = json.loads(data_str)
+    except json.JSONDecodeError as e:
+        # You can decide whether to raise or return UnknownEvent
+        raise ValueError(f"Could not parse JSON in SSE event data: {e}")
+
+    # Now branch on event_type to build the right Pydantic model
+    if event_type == "search_results":
+        return SearchResultsEvent(
+            event=event_type,
+            data=SearchResultsData(**data_obj),
+        )
+    elif event_type == "message":
+        return MessageEvent(
+            event=event_type,
+            data=MessageData(**data_obj),
+        )
+    elif event_type == "citation":
+        return CitationEvent(event=event_type, data=CitationData(**data_obj))
+    elif event_type == "tool_call":
+        return ToolCallEvent(event=event_type, data=ToolCallData(**data_obj))
+    elif event_type == "tool_result":
+        return ToolResultEvent(
+            event=event_type, data=ToolResultData(**data_obj)
+        )
+    elif event_type == "final_answer":
+        return FinalAnswerEvent(
+            event=event_type, data=FinalAnswerData(**data_obj)
+        )
+    else:
+        # Fallback if it doesn't match any known event
+        return UnknownEvent(
+            event=event_type,
+            data=data_obj,
+        )
 
 
 def parse_rag_event(raw: dict):
@@ -381,12 +437,13 @@ class RetrievalSDK:
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            return self.client._make_streaming_request(
+            raw_stream = self.client._make_streaming_request(
                 "POST",
                 "retrieval/agent",
                 json=data,
                 version="v3",
             )
+            return (parse_agent_event(event) for event in raw_stream)
 
         response_dict = self.client._make_request(
             "POST",
