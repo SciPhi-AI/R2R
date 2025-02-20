@@ -928,7 +928,10 @@ class RetrievalService(Service):
                                     "id": f"cit_{old_ref}",
                                     "object": "rag.citation",
                                     "raw_index": old_ref,
-                                    "newIndex": new_ref,
+                                    "new_index": new_ref,
+                                    "agg_index": 0,
+                                    # "source_type": src_type, # not available
+                                    # "source_title": ..., # not available
                                 }
                                 async for line in yield_sse_event(
                                     "citation", citation_evt

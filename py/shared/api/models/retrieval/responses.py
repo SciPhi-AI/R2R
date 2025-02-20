@@ -267,9 +267,11 @@ class MessageEvent(SSEEventBase):
 class CitationData(BaseModel):
     id: str
     object: str
-    raw_index: int
-    # If you also send "newIndex" in the JSON:
-    new_index: Optional[int] = Field(None, alias="newIndex")
+    raw_index: Optional[int] = None
+    new_index: Optional[int] = None
+    agg_index: Optional[int] = None
+    source_type: Optional[str] = None
+    source_title: Optional[str] = None
 
     class Config:
         allow_population_by_field_name = True

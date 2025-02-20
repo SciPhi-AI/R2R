@@ -15,7 +15,9 @@ from core.base import (
     ToolCallEvent,
     ToolResultData,
     ToolResultEvent,
+    extract_citations,
     format_search_results_for_llm,
+    map_citations_to_collector,
     yield_sse_event,
 )
 from core.base.abstractions import (
@@ -140,8 +142,6 @@ class RAGAgentMixin:
                 self._tools.append(self.local_search())
             elif tool_name == "web_search":
                 self._tools.append(self.web_search())
-            elif tool_name == "multi_search":
-                self._tools.append(self.multi_search())
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
 
@@ -541,12 +541,14 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                                     )
                                     # Build SSE "citation" payload
                                     citation_evt_payload = {
-                                        "oldRef": old_ref,  # LLM's bracket number
-                                        "newRef": new_ref,  # The re-labeled bracket
-                                        "aggIndex": agg_index,
+                                        "id": f"cit_{old_ref}",
+                                        "object": "agent.citation",
+                                        "raw_index": old_ref,
+                                        "new_index": new_ref,
+                                        "agg_index": agg_index,
                                         "source_type": src_type,
                                         # You can attach metadata from result_obj if desired
-                                        "sourceTitle": getattr(
+                                        "source_title": getattr(
                                             result_obj, "title", None
                                         ),
                                     }
@@ -705,11 +707,24 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                         final_text = relabeler.finalize_all_citations(
                             partial_text_buffer
                         )
+
+                        # 2) Extract the bracket references (e.g. [1], [2]) from the final_text
+                        raw_citations = extract_citations(final_text)
+
+                        # 3) Map them to your aggregator's search results
+                        #    You need to pass in the aggregator that you’ve stored
+                        #    all retrieved results into.
+                        mapped_citations = map_citations_to_collector(
+                            raw_citations, self.search_results_collector
+                        )
+
                         final_evt_payload = {
                             "id": "msg_final",
                             "object": "agent.final_answer",
                             "generated_answer": final_text,
-                            "citations": relabeler.get_mapping(),
+                            "citations": [
+                                c.model_dump() for c in mapped_citations
+                            ],
                         }
                         async for line in yield_sse_event(
                             "final_answer", final_evt_payload
