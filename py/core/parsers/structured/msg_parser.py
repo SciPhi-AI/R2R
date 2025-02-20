@@ -14,7 +14,7 @@ from core.base.providers import (
 class MSGParser(AsyncParser[str | bytes]):
     """Parser for MSG (Outlook Message) files."""
 
-    def init(
+    def __init__(
         self,
         config: IngestionConfig,
         database_provider: DatabaseProvider,
