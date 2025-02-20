@@ -1656,6 +1656,18 @@ wheels = [
 ]
 
 [[package]]
+name = "msg-parser"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "olefile" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/41/29/07909e648a72a6cd054a1ad5acf55caac0e9d4c9c3a06498af18f30a1602/msg_parser-1.2.0.tar.gz", hash = "sha256:0de858d4fcebb6c8f6f028da83a17a20fe01cdce67c490779cf43b3b0162aa66", size = 9457398 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/15/8b/5738b32acc6acdf92d04d5e691bf70a379e78264e55843542e1888d4a10e/msg_parser-1.2.0-py2.py3-none-any.whl", hash = "sha256:d47a2f0b2a359cb189fad83cc991b63ea781ecc70d91410324273fbf93e95375", size = 101829 },
+]
+
+[[package]]
 name = "msrest"
 version = "0.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2923,6 +2935,7 @@ core = [
     { name = "hatchet-sdk" },
     { name = "litellm" },
     { name = "markdown" },
+    { name = "msg-parser" },
     { name = "networkx" },
     { name = "numpy" },
     { name = "olefile" },
@@ -3000,6 +3013,7 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.27.0,<0.28.0" },
     { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<2.0.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
+    { name = "msg-parser", marker = "extra == 'core'", specifier = ">=1.2.0" },
     { name = "networkx", marker = "extra == 'core'", specifier = ">=3.3,<4.0" },
     { name = "numpy", marker = "extra == 'core'", specifier = ">=1.22.4,<1.29.0" },
     { name = "olefile", marker = "extra == 'core'", specifier = ">=0.47,<0.48" },
