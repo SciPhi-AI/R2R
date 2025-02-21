@@ -20,11 +20,12 @@ jobs:
           python-version: '3.12'
 
       - name: Install tools
-        run: pip install twine tomlkit
+        run: pip install twine tomlkit build
 
       - name: Bump version for dev branches (TestPyPI)
         if: github.event_name == 'push'
         run: |
+          cd py
           old_version=$(python -c "import tomlkit; d=tomlkit.parse(open('pyproject.toml').read()); print(d['project']['version'])")
           new_version="${old_version}a$(date +'%Y%m%d%H%M')"
           python -c "import tomlkit; d=tomlkit.parse(open('pyproject.toml').read()); d['project']['version']='$new_version'; open('pyproject.toml','w').write(tomlkit.dumps(d))"
@@ -32,7 +33,6 @@ jobs:
       - name: Build distributions
         run: |
           cd py
-          pip install build
           python -m build
 
       - name: Publish to TestPyPI
@@ -41,6 +41,7 @@ jobs:
           PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
           TEST_PYPI_API_TOKEN: ${{ secrets.TEST_PYPI_API_TOKEN }}
         run: |
+          cd py
           twine upload --repository-url https://test.pypi.org/legacy/ -u __token__ -p "$TEST_PYPI_API_TOKEN" dist/*
 
       - name: Publish to PyPI
@@ -49,4 +50,5 @@ jobs:
           PYTHON_KEYRING_BACKEND: keyring.backends.null.Keyring
           PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
+          cd py
           twine upload -u __token__ -p "$PYPI_API_TOKEN" dist/*
