@@ -203,35 +203,47 @@ class UnstructuredIngestionProvider(IngestionProvider):
         ingestion_config: dict,
         parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
-        context = ""
-        async for text in self.parsers[parser_name].ingest(
+        contents = []
+        async for chunk in self.parsers[parser_name].ingest(
             file_content, **ingestion_config
         ):  # type: ignore
-            if text is not None:
-                context += text + "\n\n"
-        logging.info(f"Fallback ingestion with config = {ingestion_config}")
+            if isinstance(chunk, dict) and chunk.get("content"):
+                contents.append(chunk)
+            elif chunk:  # Handle string output for backward compatibility
+                contents.append({"content": chunk})
 
-        if not context.strip():
+        if not contents:
             logging.warning(
                 "No valid text content was extracted during parsing"
             )
             return
 
-        loop = asyncio.get_event_loop()
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=ingestion_config["new_after_n_chars"],
-            chunk_overlap=ingestion_config["overlap"],
-        )
-        chunks = await loop.run_in_executor(
-            None, splitter.create_documents, [context]
-        )
+        logging.info(f"Fallback ingestion with config = {ingestion_config}")
 
-        for chunk_id, text_chunk in enumerate(chunks):
-            yield FallbackElement(
-                text=text_chunk.page_content,
-                metadata={"chunk_id": chunk_id},
+        iteration = 0
+        for content_item in contents:
+            text = content_item["content"]
+
+            loop = asyncio.get_event_loop()
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=ingestion_config["new_after_n_chars"],
+                chunk_overlap=ingestion_config["overlap"],
             )
-            await asyncio.sleep(0)
+            chunks = await loop.run_in_executor(
+                None, splitter.create_documents, [text]
+            )
+
+            for text_chunk in chunks:
+                metadata = {"chunk_id": iteration}
+                if "page_number" in content_item:
+                    metadata["page_number"] = content_item["page_number"]
+
+                yield FallbackElement(
+                    text=text_chunk.page_content,
+                    metadata=metadata,
+                )
+                iteration += 1
+                await asyncio.sleep(0)
 
     async def parse(
         self,
