@@ -31,6 +31,7 @@ jobs:
 
       - name: Build distributions
         run: |
+          cd py
           pip install build
           python -m build
 
