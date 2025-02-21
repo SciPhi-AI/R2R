@@ -96,7 +96,7 @@ automatic_extraction = true # enable automatic extraction of entities and relati
   [ingestion.chunk_enrichment_settings]
     chunk_enrichment_prompt = "chunk_enrichment"
     enable_chunk_enrichment = false # disabled by default
-    n_chunks = 2 # the number of chunks (both preceeding and succeeding) to use in enrichment
+    n_chunks = 2 # the number of chunks (both preceding and succeeding) to use in enrichment
 
   [ingestion.extra_parsers]
     pdf = "zerox"
