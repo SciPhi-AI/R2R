@@ -328,11 +328,16 @@ export class CollectionsClient {
    * @param name The name of the collection to retrieve.
    * @returns A promise that resolves with the collection details.
    */
-  async retrieveByName(options: { name: string; ownerId?: string }): Promise<WrappedCollectionResponse> {
+  async retrieveByName(options: {
+    name: string;
+    ownerId?: string;
+  }): Promise<WrappedCollectionResponse> {
     const queryParams: Record<string, any> = {};
     if (options.ownerId) {
       queryParams.owner_id = options.ownerId;
     }
-    return this.client.makeRequest("GET", `collections/name/${options.name}`, { params: queryParams });
+    return this.client.makeRequest("GET", `collections/name/${options.name}`, {
+      params: queryParams,
+    });
   }
 }
