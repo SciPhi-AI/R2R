@@ -278,9 +278,16 @@ export interface SettingsResponse {
 
 // User types
 
+export type TokenType = "access" | "refresh";
+
 export interface Token {
-  accessToken: string;
-  refreshToken: string;
+  token: string;
+  tokenType: TokenType;
+}
+
+export interface TokenResponse {
+  accessToken: Token;
+  refreshToken: Token;
 }
 
 export interface User {
@@ -424,7 +431,7 @@ export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;
 export type WrappedServerStatsResponse = ResultsWrapper<ServerStats>;
 
 // User Responses
-export type WrappedTokenResponse = ResultsWrapper<Token>;
+export type WrappedTokenResponse = ResultsWrapper<TokenResponse>;
 export type WrappedUserResponse = ResultsWrapper<User>;
 export type WrappedUsersResponse = PaginatedResultsWrapper<User[]>;
 export type WrappedLimitsResponse = ResultsWrapper<LimitsResponse>;
