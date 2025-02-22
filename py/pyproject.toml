@@ -27,6 +27,7 @@ dependencies = [
     "types-aiofiles >=24.1.0.20240626,<25.0.0",
     "typing-extensions >=4.12.2,<5.0.0",
     "pydantic>=2.10.6",
+    "python-json-logger>=3.2.1",
 ]
 
 [project.optional-dependencies]

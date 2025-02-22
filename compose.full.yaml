@@ -262,6 +262,7 @@ services:
 
       # R2R
       - R2R_LOG_LEVEL=${R2R_LOG_LEVEL:-INFO}
+      - R2R_LOG_CONSOLE_FORMATTER=${R2R_LOG_CONSOLE_FORMATTER:-json}
       - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
       - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
@@ -384,6 +385,12 @@ services:
         condition: service_healthy
       graph_clustering:
         condition: service_healthy
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: host.docker.internal:24224
+        fluentd-sub-second-precision: "true"
+        tag: backend
 
   r2r-dashboard:
     image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
@@ -392,3 +399,29 @@ services:
       - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${R2R_HATCHET_DASHBOARD_PORT:-7274}}
     ports:
       - "${R2R_DASHBOARD_PORT:-7273}:3000"
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    volumes:
+    - ./docker/fluent-bit:/fluent-bit/etc:ro
+    ports:
+    - "24224:24224"
+    depends_on:
+    - victoria-logs
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - "3001:3000"
+    env_file:
+    - .env
+    volumes:
+    - ./.data/grafana:/var/lib/grafana
+
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.10.1-victorialogs
+    ports:
+    - "9428:9428"
+    volumes:
+    - ./.data/victoria-logs:/data
+    command: -storageDataPath=/data -retentionPeriod=60d

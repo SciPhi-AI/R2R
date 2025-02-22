@@ -2831,6 +2831,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-json-logger"
+version = "3.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/c4/358cd13daa1d912ef795010897a483ab2f0b41c9ea1b35235a8b2f7d15a7/python_json_logger-3.2.1.tar.gz", hash = "sha256:8eb0554ea17cb75b05d2848bc14fb02fbdbd9d6972120781b974380bfa162008", size = 16287 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/72/2f30cf26664fcfa0bd8ec5ee62ec90c03bd485e4a294d92aabc76c5203a5/python_json_logger-3.2.1-py3-none-any.whl", hash = "sha256:cdc17047eb5374bd311e748b42f99d71223f3b0e186f4206cc5d52aefe85b090", size = 14924 },
+]
+
+[[package]]
 name = "python-multipart"
 version = "0.0.18"
 source = { registry = "https://pypi.org/simple" }
@@ -2891,7 +2900,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.4.1"
+version = "3.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -2903,6 +2912,7 @@ dependencies = [
     { name = "psycopg-binary" },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "python-json-logger" },
     { name = "requests" },
     { name = "toml" },
     { name = "types-aiofiles" },
@@ -3035,6 +3045,7 @@ requires-dist = [
     { name = "pypdf2", marker = "extra == 'core'", specifier = ">=3.0.1,<4.0.0" },
     { name = "python-docx", marker = "extra == 'core'", specifier = ">=1.1.0,<2.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
+    { name = "python-json-logger", specifier = ">=3.2.1" },
     { name = "python-multipart", marker = "extra == 'core'", specifier = ">=0.0.9,<0.0.19" },
     { name = "python-pptx", marker = "extra == 'core'", specifier = ">=1.0.1,<2.0.0" },
     { name = "pyyaml", marker = "extra == 'core'", specifier = ">=6.0.1,<7.0.0" },

@@ -70,82 +70,88 @@ class HTTPStatusFilter(logging.Filter):
         return True
 
 
-def configure_logging():
-    # Read the desired log level from the environment (default to DEBUG)
-    log_level = os.environ.get("R2R_LOG_LEVEL", "INFO").upper()
+log_level = os.environ.get("R2R_LOG_LEVEL", "INFO").upper()
+log_console_formatter = os.environ.get("R2R_LOG_CONSOLE_FORMATTER", "colored").lower() # colored or json
 
-    # Create a logs directory if it does not already exist
-    log_dir = Path.cwd() / "logs"
-    log_dir.mkdir(exist_ok=True)
+log_dir = Path.cwd() / "logs"
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / "app.log"
 
-    log_config = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "filters": {
-            "http_status_filter": {
-                "()": HTTPStatusFilter,
-            }
+log_config = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "http_status_filter": {
+            "()": HTTPStatusFilter,
+        }
+    },
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
         },
-        "formatters": {
-            "default": {
-                "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-            "colored": {
-                "()": "colorlog.ColoredFormatter",
-                "format": "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-                "log_colors": {
-                    "DEBUG": "white",
-                    "INFO": "green",
-                    "WARNING": "yellow",
-                    "ERROR": "red",
-                    "CRITICAL": "bold_red",
-                },
-            },
-        },
-        "handlers": {
-            "file": {
-                "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "colored",
-                "filename": str(log_dir / "app.log"),
-                "maxBytes": 10485760,  # 10MB
-                "backupCount": 5,
-                "filters": ["http_status_filter"],
-                "level": log_level,  # Set handler level based on the environment variable
-            },
-            "console": {
-                "class": "logging.StreamHandler",
-                "formatter": "colored",
-                "stream": sys.stdout,
-                "filters": ["http_status_filter"],
-                "level": log_level,  # Set handler level based on the environment variable
+        "colored": {
+            "()": "colorlog.ColoredFormatter",
+            "format": "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+            "log_colors": {
+                "DEBUG": "white",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "bold_red",
             },
         },
-        "loggers": {
-            "": {  # Root logger
-                "handlers": ["console", "file"],
-                "level": log_level,  # Set logger level based on the environment variable
-            },
-            "uvicorn": {
-                "handlers": ["console", "file"],
-                "level": log_level,
-                "propagate": False,
-            },
-            "uvicorn.error": {
-                "handlers": ["console", "file"],
-                "level": log_level,
-                "propagate": False,
-            },
-            "uvicorn.access": {
-                "handlers": ["console", "file"],
-                "level": log_level,
-                "propagate": False,
-            },
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "format": "%(name)s %(levelname)s %(message)s", # these become keys in the JSON log
+            "rename_fields": {"asctime": "time", "levelname": "level", "name": "logger"},
         },
-    }
+    },
+    "handlers": {
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "formatter": "colored",
+            "filename": log_file,
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
+            "filters": ["http_status_filter"],
+            "level": log_level,  # Set handler level based on the environment variable
+        },
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": log_console_formatter,
+            "stream": sys.stdout,
+            "filters": ["http_status_filter"],
+            "level": log_level,  # Set handler level based on the environment variable
+        },
+    },
+    "loggers": {
+        "": {  # Root logger
+            "handlers": ["console", "file"],
+            "level": log_level,  # Set logger level based on the environment variable
+        },
+        "uvicorn": {
+            "handlers": ["console", "file"],
+            "level": log_level,
+            "propagate": False,
+        },
+        "uvicorn.error": {
+            "handlers": ["console", "file"],
+            "level": log_level,
+            "propagate": False,
+        },
+        "uvicorn.access": {
+            "handlers": ["console", "file"],
+            "level": log_level,
+            "propagate": False,
+        },
+    },
+}
 
+def configure_logging() -> Path:
     logging.config.dictConfig(log_config)
-    logger = logging.getLogger()
-    logger.info(f"Logging is configured at {log_level} level.")
-    return logger, Path(log_config["handlers"]["file"]["filename"])
+
+    logging.info(f"Logging is configured at {log_level} level.")
+
+    return log_file

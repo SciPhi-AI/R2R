@@ -246,6 +246,7 @@ services:
 
       # R2R
       - R2R_LOG_LEVEL=${R2R_LOG_LEVEL:-INFO}
+      - R2R_LOG_CONSOLE_FORMATTER=${R2R_LOG_CONSOLE_FORMATTER:-json}
       - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
       - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
@@ -376,6 +377,12 @@ services:
       rollback_config:
         parallelism: 1
         delay: 30s
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: host.docker.internal:24224
+        fluentd-sub-second-precision: "true"
+        tag: backend
 
   r2r-dashboard:
     image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
@@ -388,3 +395,29 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    volumes:
+    - ./docker/fluent-bit:/fluent-bit/etc:ro
+    ports:
+    - "24224:24224"
+    depends_on:
+    - victoria-logs
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - "3001:3000"
+    env_file:
+    - .env
+    volumes:
+    - ./.data/grafana:/var/lib/grafana
+
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.10.1-victorialogs
+    ports:
+    - "9428:9428"
+    volumes:
+    - ./.data/victoria-logs:/data
+    command: -storageDataPath=/data -retentionPeriod=60d
