@@ -1,10 +1,3 @@
-networks:
-  r2r-network:
-    driver: bridge
-    attachable: true
-    labels:
-      - "com.docker.compose.recreate=always"
-
 volumes:
   postgres_data:
     name: ${VOLUME_POSTGRES_DATA:-postgres_data}
@@ -22,8 +15,6 @@ services:
       - PGPORT=${R2R_POSTGRES_PORT:-5432}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - r2r-network
     ports:
       - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
     healthcheck:
@@ -139,9 +130,6 @@ services:
       - R2R_SENTRY_ENVIRONMENT=${R2R_SENTRY_ENVIRONMENT}
       - R2R_SENTRY_TRACES_SAMPLE_RATE=${R2R_SENTRY_TRACES_SAMPLE_RATE}
       - R2R_SENTRY_PROFILES_SAMPLE_RATE=${R2R_SENTRY_PROFILES_SAMPLE_RATE}
-
-    networks:
-      - r2r-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
       interval: 6s
@@ -157,7 +145,5 @@ services:
     image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
     environment:
       - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
-    networks:
-      - r2r-network
     ports:
       - "${R2R_DASHBOARD_PORT:-7273}:3000"
