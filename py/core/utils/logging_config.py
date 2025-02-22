@@ -71,7 +71,9 @@ class HTTPStatusFilter(logging.Filter):
 
 
 log_level = os.environ.get("R2R_LOG_LEVEL", "INFO").upper()
-log_console_formatter = os.environ.get("R2R_LOG_CONSOLE_FORMATTER", "colored").lower() # colored or json
+log_console_formatter = os.environ.get(
+    "R2R_LOG_CONSOLE_FORMATTER", "colored"
+).lower()  # colored or json
 
 log_dir = Path.cwd() / "logs"
 log_dir.mkdir(exist_ok=True)
@@ -104,8 +106,12 @@ log_config = {
         },
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "format": "%(name)s %(levelname)s %(message)s", # these become keys in the JSON log
-            "rename_fields": {"asctime": "time", "levelname": "level", "name": "logger"},
+            "format": "%(name)s %(levelname)s %(message)s",  # these become keys in the JSON log
+            "rename_fields": {
+                "asctime": "time",
+                "levelname": "level",
+                "name": "logger",
+            },
         },
     },
     "handlers": {
@@ -148,6 +154,7 @@ log_config = {
         },
     },
 }
+
 
 def configure_logging() -> Path:
     logging.config.dictConfig(log_config)
