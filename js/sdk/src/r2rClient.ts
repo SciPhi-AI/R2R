@@ -154,12 +154,9 @@ export class r2rClient extends BaseClient {
 
           // Attempt refresh
           try {
-            //@ts-ignore
             const refreshResponse = await this.users.refreshAccessToken();
-            //@ts-ignore
-            const newAccessToken = refreshResponse.results.accessToken?.token;
-            //@ts-ignore
-            const newRefreshToken = refreshResponse.results.refreshToken?.token;
+            const newAccessToken = refreshResponse.results.accessToken.token;
+            const newRefreshToken = refreshResponse.results.refreshToken.token;
 
             // set new tokens
             this.setTokens(newAccessToken, newRefreshToken);
