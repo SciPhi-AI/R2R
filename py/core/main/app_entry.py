@@ -1,4 +1,5 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -12,7 +13,7 @@ from core.utils.logging_config import configure_logging
 
 from .assembly import R2RBuilder, R2RConfig
 
-logger, log_file = configure_logging()
+log_file = configure_logging()
 
 # Global scheduler
 scheduler = AsyncIOScheduler()
@@ -72,23 +73,23 @@ if not config_path and not config_name:
 host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
 port = int(os.getenv("R2R_PORT", "7272"))
 
-logger.info(
+logging.info(
     f"Environment R2R_CONFIG_NAME: {'None' if config_name is None else config_name}"
 )
-logger.info(
+logging.info(
     f"Environment R2R_CONFIG_PATH: {'None' if config_path is None else config_path}"
 )
-logger.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
+logging.info(f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PROJECT_NAME')}")
 
-logger.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
-logger.info(
+logging.info(f"Environment R2R_POSTGRES_HOST: {os.getenv('R2R_POSTGRES_HOST')}")
+logging.info(
     f"Environment R2R_POSTGRES_DBNAME: {os.getenv('R2R_POSTGRES_DBNAME')}"
 )
-logger.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
-logger.info(
+logging.info(f"Environment R2R_POSTGRES_PORT: {os.getenv('R2R_POSTGRES_PORT')}")
+logging.info(
     f"Environment R2R_POSTGRES_PASSWORD: {os.getenv('R2R_POSTGRES_PASSWORD')}"
 )
-logger.info(
+logging.info(
     f"Environment R2R_PROJECT_NAME: {os.getenv('R2R_PR2R_PROJECT_NAME')}"
 )
 
