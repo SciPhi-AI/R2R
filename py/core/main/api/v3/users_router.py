@@ -53,6 +53,28 @@ class UsersRouter(BaseRouterV3):
 
     def _setup_routes(self):
         @self.router.post(
+            "/users/generate-tokens",
+            response_model=WrappedTokenResponse,
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "cURL",
+                        "source": "curl -X POST https://api.example.com/v3/users/generate-tokens -H 'x-api-key: YOUR_API_KEY'"
+                    }
+                ]
+            }
+        )
+        @self.base_endpoint
+        async def generate_tokens_via_api_key(
+            auth_user=Depends(self.providers.auth.auth_wrapper(public=True))
+        ) -> WrappedTokenResponse:
+            """Generate new access and refresh tokens using API key authentication."""
+            result = await self.services.auth.generate_tokens_via_api_key(
+                user_id=auth_user.id
+            )
+            return result
+        
+        @self.router.post(
             "/users",
             # dependencies=[Depends(self.rate_limit_dependency)],
             response_model=WrappedUserResponse,

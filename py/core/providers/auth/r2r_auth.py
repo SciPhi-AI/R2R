@@ -699,3 +699,19 @@ class R2RAuthProvider(AuthProvider):
             "access_token": Token(token=access_token, token_type="access"),
             "refresh_token": Token(token=refresh_token, token_type="refresh"),
         }
+
+    async def generate_tokens_via_api_key(self, user_id: UUID) -> dict[str, Token]:
+        """Generate new tokens for API key authenticated users."""
+        user = await self.database_provider.users_handler.get_user_by_id(user_id)
+        
+        access_token = self.create_access_token(
+            data={"sub": normalize_email(user.email)}
+        )
+        refresh_token = self.create_refresh_token(
+            data={"sub": normalize_email(user.email)}
+        )
+
+        return {
+            "access_token": Token(token=access_token, token_type="access"),
+            "refresh_token": Token(token=refresh_token, token_type="refresh"),
+        }
