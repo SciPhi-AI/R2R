@@ -66,7 +66,7 @@ class UsersRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def generate_tokens_via_api_key(
-            auth_user=Depends(self.providers.auth.auth_wrapper(public=True))
+            auth_user=Depends(self.providers.auth.auth_wrapper())
         ) -> WrappedTokenResponse:
             """Generate new access and refresh tokens using API key authentication."""
             result = await self.services.auth.generate_tokens_via_api_key(
