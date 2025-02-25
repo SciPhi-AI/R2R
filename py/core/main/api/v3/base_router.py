@@ -74,7 +74,7 @@ class BaseRouterV3:
                     },
                 ) from e
 
-        wrapper._is_base_endpoint = True
+        wrapper._is_base_endpoint = True  # type: ignore
         return wrapper
 
     @classmethod

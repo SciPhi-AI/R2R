@@ -454,6 +454,13 @@ class DocumentsRouter(BaseRouterV3):
                 if file:
                     file_data = await self._process_file(file)
                     content_length = len(file_data["content"])
+
+                    if not file.filename:
+                        raise R2RException(
+                            status_code=422,
+                            message="Uploaded file must have a filename.",
+                        )
+
                     file_ext = file.filename.split(".")[
                         -1
                     ]  # e.g. "pdf", "txt"
@@ -532,7 +539,7 @@ class DocumentsRouter(BaseRouterV3):
                 try:
                     # TODO - Modify create_chunks so that we can add chunks to existing document
 
-                    raw_message: dict[
+                    workflow_result: dict[
                         str, str | None
                     ] = await self.providers.orchestration.run_workflow(  # type: ignore
                         "ingest-files",
@@ -543,8 +550,8 @@ class DocumentsRouter(BaseRouterV3):
                             }
                         },
                     )
-                    raw_message["document_id"] = str(document_id)
-                    return raw_message  # type: ignore
+                    workflow_result["document_id"] = str(document_id)
+                    return workflow_result  # type: ignore
                 except Exception as e:  # TODO: Need to find specific error (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated ingestion: {e} \n\nAttempting to run without orchestration."
@@ -1314,10 +1321,13 @@ class DocumentsRouter(BaseRouterV3):
             NOTE - Deletions do not yet impact the knowledge graph or other derived data. This feature is planned for a future release.
             """
 
-            filters = {"document_id": {"$eq": str(id)}}
+            filters: dict[str, Any] = {"document_id": {"$eq": str(id)}}
             if not auth_user.is_superuser:
                 filters = {
-                    "$and": [{"owner_id": {"$eq": str(auth_user.id)}}, filters]
+                    "$and": [
+                        {"owner_id": {"$eq": str(auth_user.id)}},
+                        {"document_id": {"$eq": str(id)}},
+                    ]
                 }
 
             await (
@@ -1656,24 +1666,24 @@ class DocumentsRouter(BaseRouterV3):
                     logger.error(
                         f"Error running orchestrated deduplication: {e} \n\nAttempting to run without orchestration."
                     )
-            else:
-                from core.main.orchestration import (
-                    simple_graph_search_results_factory,
-                )
 
-                logger.info(
-                    "Running deduplicate-document-entities without orchestration."
-                )
-                simple_graph_search_results = (
-                    simple_graph_search_results_factory(self.services.graph)
-                )
-                await simple_graph_search_results["graph-deduplication"](
-                    workflow_input
-                )
-                return {  # type: ignore
-                    "message": "Graph created successfully.",
-                    "task_id": None,
-                }
+            from core.main.orchestration import (
+                simple_graph_search_results_factory,
+            )
+
+            logger.info(
+                "Running deduplicate-document-entities without orchestration."
+            )
+            simple_graph_search_results = simple_graph_search_results_factory(
+                self.services.graph
+            )
+            await simple_graph_search_results["graph-deduplication"](
+                workflow_input
+            )
+            return {  # type: ignore
+                "message": "Graph created successfully.",
+                "task_id": None,
+            }
 
         @self.router.get(
             "/documents/{id}/entities",
@@ -1769,7 +1779,7 @@ class DocumentsRouter(BaseRouterV3):
                 store_type=StoreType.DOCUMENTS,
                 offset=offset,
                 limit=limit,
-                include_embeddings=include_embeddings,
+                include_embeddings=include_embeddings or False,
             )
 
             return entities, {"total_entries": count}  # type: ignore

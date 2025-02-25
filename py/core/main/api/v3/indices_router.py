@@ -416,7 +416,7 @@ class IndicesRouter(BaseRouterV3):
                 raise R2RException(
                     f"Index '{index_name}' not found", status_code=404
                 )
-            return {"index": indices["indices"][0]}
+            return {"index": indices["indices"][0]}  # type: ignore
 
         # TODO - Implement update index
         #         @self.router.post(

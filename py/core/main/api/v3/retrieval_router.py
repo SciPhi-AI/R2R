@@ -774,7 +774,7 @@ class RetrievalRouter(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
             effective_settings = self._prepare_search_settings(
-                auth_user, SearchMode.basic, {}
+                auth_user, SearchMode.basic, None
             )
 
             if "model" not in rag_generation_config.__fields_set__:
