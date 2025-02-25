@@ -330,3 +330,7 @@ class AuthService(Service):
             dict: Contains the list of API keys
         """
         return await self.providers.auth.list_user_api_keys(user_id)
+
+    async def generate_tokens_via_api_key(self, user_id: UUID) -> dict[str, Token]:
+        """Expose the provider method through the service layer."""
+        return await self.providers.auth.generate_tokens_via_api_key(user_id)
