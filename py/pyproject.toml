@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.4.2"
+version = "3.4.3"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}
@@ -141,3 +141,7 @@ filterwarnings = [
 [tool.setuptools]
 packages = { find = { where = [ "." ], include = [ "r2r*", "sdk*", "shared*", "core*" ] } }
 include-package-data = true
+
+[tool.setuptools.package-data]
+core = ["configs/*.toml"]
+r2r = ["r2r.toml"]
