@@ -1,6 +1,6 @@
 import logging
 import textwrap
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -8,7 +8,7 @@ from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
 from core.base import GraphConstructionStatus, R2RException, Workflow
-from core.base.abstractions import StoreType
+from core.base.abstractions import DocumentResponse, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -334,7 +334,7 @@ class GraphRouter(BaseRouterV3):
             await simple_graph_search_results["graph-clustering"](
                 workflow_input
             )
-            return {
+            return {  # type: ignore
                 "message": "Graph communities created successfully.",
                 "task_id": None,
             }
@@ -1978,20 +1978,19 @@ class GraphRouter(BaseRouterV3):
             if len(list_graphs_response["results"]) == 0:
                 raise R2RException("Graph not found", 404)
             collection_id = list_graphs_response["results"][0].collection_id
-            documents = []
-            document_req = (
-                await self.providers.database.collections_handler.documents_in_collection(
-                    collection_id, offset=0, limit=100
+            documents: list[DocumentResponse] = []
+            document_req = await self.providers.database.collections_handler.documents_in_collection(
+                collection_id, offset=0, limit=100
+            )
+            results = cast(list[DocumentResponse], document_req["results"])
+            documents.extend(results)
+
+            while len(results) == 100:
+                document_req = await self.providers.database.collections_handler.documents_in_collection(
+                    collection_id, offset=len(documents), limit=100
                 )
-            )["results"]
-            documents.extend(document_req)
-            while len(document_req) == 100:
-                document_req = (
-                    await self.providers.database.collections_handler.documents_in_collection(
-                        collection_id, offset=len(documents), limit=100
-                    )
-                )["results"]
-                documents.extend(document_req)
+                results = cast(list[DocumentResponse], document_req["results"])
+                documents.extend(results)
 
             success = False
 

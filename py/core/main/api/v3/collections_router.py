@@ -1202,4 +1202,4 @@ class CollectionsRouter(BaseRouterV3):
             # Now, authorize the 'view' action just in case:
             # e.g. await authorize_collection_action(auth_user, collection.id, CollectionAction.VIEW, self.services)
 
-            return collection
+            return collection  # type: ignore
