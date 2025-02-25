@@ -70,10 +70,10 @@ def map_citations_to_collector(
     """
     from ..api.models.retrieval.responses import Citation
 
-    # We'll build a dictionary aggregator_index -> (source_type, result_obj)
-    aggregator_map = {}
-    for stype, obj, agg_idx in collector.get_all_results():
-        aggregator_map[agg_idx] = (stype, obj)
+    aggregator_map = {
+        agg_idx: (stype, obj)
+        for stype, obj, agg_idx in collector.get_all_results()
+    }
 
     mapped_citations: list[Citation] = []
     for cit in citations:
@@ -200,6 +200,15 @@ def extract_citations(text: str) -> list["Citation"]:
             endIndex=end_i,
             snippetStartIndex=snippet_start,
             snippetEndIndex=snippet_end,
+            rawIndex=None,
+            sourceType=None,
+            id=None,
+            document_id=None,
+            owner_id=None,
+            collection_ids=None,
+            score=None,
+            text=None,
+            metadata={},
         )
         citations.append(c)
 
@@ -222,7 +231,7 @@ def reassign_citations_in_order(
         return text, []
 
     # 1) Sort citations in order of their appearance
-    sorted_cits = sorted(citations, key=lambda c: c.startIndex)
+    sorted_cits = sorted(citations, key=lambda c: c.startIndex or 0)
 
     # 2) Build a map from oldRef -> newRef
     old_to_new = {}
@@ -249,10 +258,17 @@ def reassign_citations_in_order(
     # 3) Replace the bracket references in the text from right-to-left
     #    so we don't mess up subsequent indices.
     result_chars = list(text)
-    for item in sorted(labeled, key=lambda x: x["startIndex"], reverse=True):
+    for item in sorted(
+        labeled, key=lambda x: x["startIndex"] or 0, reverse=True
+    ):
         s_i = item["startIndex"]
         e_i = item["endIndex"]
-        new_ref = item["newIndex"]
+
+        new_ref_value = item["newIndex"]
+        if new_ref_value is None:
+            new_ref_value = 0
+        new_ref: int = new_ref_value
+
         replacement = f"[{new_ref}]"
         result_chars[s_i:e_i] = list(replacement)
 
@@ -264,19 +280,32 @@ def reassign_citations_in_order(
     updated_extracted = extract_citations(new_text)
 
     # We'll match them up in sorted order. Because they appear in the same order with the same count
-    updated_extracted.sort(key=lambda c: c.startIndex)
-    labeled.sort(key=lambda x: x["startIndex"])
+    updated_extracted.sort(key=lambda c: c.startIndex or 0)
+    labeled.sort(key=lambda x: x["startIndex"] or 0)
 
     for labeled_item, updated_cit in zip(
         labeled, updated_extracted, strict=False
     ):
+        new_index_value = labeled_item["newIndex"]
+        if new_index_value is None:
+            new_index_value = 0
+        index_for_citation: int = new_index_value
+
         c = Citation(
             rawIndex=labeled_item["rawIndex"],
-            index=labeled_item["newIndex"],
+            index=index_for_citation,
             startIndex=updated_cit.startIndex,
             endIndex=updated_cit.endIndex,
             snippetStartIndex=updated_cit.snippetStartIndex,
             snippetEndIndex=updated_cit.snippetEndIndex,
+            sourceType=None,
+            id=None,
+            document_id=None,
+            owner_id=None,
+            collection_ids=None,
+            score=None,
+            text=None,
+            metadata={},
         )
         updated_citations.append(c)
 
