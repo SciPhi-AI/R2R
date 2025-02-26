@@ -6,7 +6,7 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 
 import httpx
 from unstructured_client import UnstructuredClient
@@ -46,30 +46,30 @@ class UnstructuredIngestionConfig(IngestionConfig):
     new_after_n_chars: int = 1500
     overlap: int = 64
 
-    coordinates: Optional[bool] = None
-    encoding: Optional[str] = None  # utf-8
-    extract_image_block_types: Optional[list[str]] = None
-    gz_uncompressed_content_type: Optional[str] = None
-    hi_res_model_name: Optional[str] = None
-    include_orig_elements: Optional[bool] = None
-    include_page_breaks: Optional[bool] = None
+    coordinates: bool | None
+    encoding: str | None  # utf-8
+    extract_image_block_types: list[str] | None
+    gz_uncompressed_content_type: str | None
+    hi_res_model_name: str | None
+    include_orig_elements: bool | None
+    include_page_breaks: bool | None
 
-    languages: Optional[list[str]] = None
-    multipage_sections: Optional[bool] = None
-    ocr_languages: Optional[list[str]] = None
+    languages: list[str] | None
+    multipage_sections: bool | None
+    ocr_languages: list[str] | None
     # output_format: Optional[str] = "application/json"
-    overlap_all: Optional[bool] = None
-    pdf_infer_table_structure: Optional[bool] = None
+    overlap_all: bool | None
+    pdf_infer_table_structure: bool | None
 
-    similarity_threshold: Optional[float] = None
-    skip_infer_table_types: Optional[list[str]] = None
-    split_pdf_concurrency_level: Optional[int] = None
-    split_pdf_page: Optional[bool] = None
-    starting_page_number: Optional[int] = None
-    strategy: Optional[str] = None
-    chunking_strategy: Optional[str | ChunkingStrategy] = None
-    unique_element_ids: Optional[bool] = None
-    xml_keep_tags: Optional[bool] = None
+    similarity_threshold: float | None
+    skip_infer_table_types: list[str] | None
+    split_pdf_concurrency_level: int | None
+    split_pdf_page: bool | None
+    starting_page_number: int | None
+    strategy: str | None
+    chunking_strategy: str | ChunkingStrategy | None  # type: ignore
+    unique_element_ids: bool | None
+    xml_keep_tags: bool | None
 
     def to_ingestion_request(self):
         import json
@@ -204,7 +204,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
         contents = []
-        async for chunk in self.parsers[parser_name].ingest(
+        async for chunk in self.parsers[parser_name].ingest(  # type: ignore
             file_content, **ingestion_config
         ):  # type: ignore
             if isinstance(chunk, dict) and chunk.get("content"):

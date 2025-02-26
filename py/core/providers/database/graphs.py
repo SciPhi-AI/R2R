@@ -542,7 +542,7 @@ class PostgresEntitiesHandler(Handler):
         )
 
         # Merge metadata dictionaries
-        merged_metadata = {}
+        merged_metadata: dict[str, Any] = {}
         for entity in entities:
             if entity.metadata:
                 merged_metadata |= entity.metadata

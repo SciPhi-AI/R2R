@@ -1,5 +1,10 @@
-from .base import R2RAgent, R2RStreamingAgent, R2RStreamingReasoningAgent
-from .rag import (
+# FIXME: Once the agent is properly type annotated, remove the type: ignore comments
+from .base import (  # type: ignore
+    R2RAgent,
+    R2RStreamingAgent,
+    R2RStreamingReasoningAgent,
+)
+from .rag import (  # type: ignore
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RStreamingReasoningRAGAgent,

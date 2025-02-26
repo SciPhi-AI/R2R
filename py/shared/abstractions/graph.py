@@ -17,7 +17,7 @@ class Entity(R2RSerializable):
     name: str
     description: Optional[str] = None
     category: Optional[str] = None
-    metadata: Optional[dict[str, Any] | str] = None
+    metadata: Optional[dict[str, Any]] = None
 
     id: Optional[UUID] = None
     parent_id: Optional[UUID] = None  # graph_id | document_id

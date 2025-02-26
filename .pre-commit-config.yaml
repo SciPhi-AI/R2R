@@ -42,7 +42,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'cd py && python -m mypy .'
+        entry: bash -c 'cd py && python -m mypy --exclude "migrations" .'
         language: system
         types: [python]
         pass_filenames: false

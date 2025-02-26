@@ -7,13 +7,15 @@ from pydantic import BaseModel
 class InnerConfig(BaseModel, ABC):
     """A base provider configuration class."""
 
+    extra_fields: dict[str, Any] = {}
+
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
         ignore_extra = True
 
     @classmethod
-    def create(cls: Type["ProviderConfig"], **kwargs: Any) -> "ProviderConfig":
+    def create(cls: Type["InnerConfig"], **kwargs: Any) -> "InnerConfig":
         base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None

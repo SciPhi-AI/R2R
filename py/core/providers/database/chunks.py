@@ -1129,11 +1129,19 @@ class PostgresChunksHandler(Handler):
         where_clauses = []
         params: list[str | int | bytes] = [query_text]
 
+        search_over_body = getattr(settings, "search_over_body", True)
+        search_over_metadata = getattr(settings, "search_over_metadata", True)
+        metadata_weight = getattr(settings, "metadata_weight", 3.0)
+        title_weight = getattr(settings, "title_weight", 1.0)
+        metadata_keys = getattr(
+            settings, "metadata_keys", ["title", "description"]
+        )
+
         # Build the dynamic metadata field search expression
         metadata_fields_expr = " || ' ' || ".join(
             [
                 f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-                for key in settings.metadata_keys  # type: ignore
+                for key in metadata_keys  # type: ignore
             ]
         )
 
@@ -1169,7 +1177,7 @@ class PostgresChunksHandler(Handler):
                     ) as body_rank
                 FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
                 WHERE $1 != ''
-                {"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
+                {"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if search_over_body else ""}
                 GROUP BY document_id
             ),
             -- Combined scores with document metadata
@@ -1180,11 +1188,11 @@ class PostgresChunksHandler(Handler):
                     COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
                     COALESCE(b.body_rank, 0) as debug_body_rank,
                     CASE
-                        WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
-                            COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
-                        WHEN {str(settings.search_over_metadata).lower()} THEN
+                        WHEN {str(search_over_metadata).lower()} AND {str(search_over_body).lower()} THEN
+                            COALESCE(m.metadata_rank, 0) * {metadata_weight} + COALESCE(b.body_rank, 0) * {title_weight}
+                        WHEN {str(search_over_metadata).lower()} THEN
                             COALESCE(m.metadata_rank, 0)
-                        WHEN {str(settings.search_over_body).lower()} THEN
+                        WHEN {str(search_over_body).lower()} THEN
                             COALESCE(b.body_rank, 0)
                         ELSE 0
                     END as rank
@@ -1192,8 +1200,8 @@ class PostgresChunksHandler(Handler):
                 FULL OUTER JOIN body_scores b ON m.document_id = b.document_id
                 WHERE (
                     ($1 = '') OR
-                    ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
-                    ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
+                    ({str(search_over_metadata).lower()} AND m.metadata_rank > 0) OR
+                    ({str(search_over_body).lower()} AND b.body_rank > 0)
                 )
         """
 
