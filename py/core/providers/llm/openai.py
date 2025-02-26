@@ -34,78 +34,76 @@ class OpenAICompletionProvider(CompletionProvider):
             logger.debug("OpenAI clients initialized successfully")
 
         # Initialize Azure OpenAI clients if credentials exist
-        if os.getenv("AZURE_API_KEY") and os.getenv("AZURE_API_BASE"):
+        azure_api_key = os.getenv("AZURE_API_KEY")
+        azure_api_base = os.getenv("AZURE_API_BASE")
+        if azure_api_key and azure_api_base:
             self.azure_client = AsyncAzureOpenAI(
-                api_key=os.getenv("AZURE_API_KEY"),
+                api_key=azure_api_key,
                 api_version=os.getenv(
                     "AZURE_API_VERSION", "2024-02-15-preview"
                 ),
-                azure_endpoint=os.getenv("AZURE_API_BASE"),
+                azure_endpoint=azure_api_base,
             )
             self.async_azure_client = AsyncAzureOpenAI(
-                api_key=os.getenv("AZURE_API_KEY"),
+                api_key=azure_api_key,
                 api_version=os.getenv(
                     "AZURE_API_VERSION", "2024-02-15-preview"
                 ),
-                azure_endpoint=os.getenv("AZURE_API_BASE"),
+                azure_endpoint=azure_api_base,
             )
             logger.debug("Azure OpenAI clients initialized successfully")
 
         # Initialize Deepseek clients if credentials exist
-        if os.getenv("DEEPSEEK_API_KEY") and os.getenv(
+        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+        deepseek_api_base = os.getenv(
             "DEEPSEEK_API_BASE", "https://api.deepseek.com"
-        ):
+        )
+        if deepseek_api_key and deepseek_api_base:
             self.deepseek_client = OpenAI(
-                api_key=os.getenv("DEEPSEEK_API_KEY"),
-                base_url=os.getenv(
-                    "DEEPSEEK_API_BASE", "https://api.deepseek.com"
-                ),
+                api_key=deepseek_api_key,
+                base_url=deepseek_api_base,
             )
             self.async_deepseek_client = AsyncOpenAI(
-                api_key=os.getenv("DEEPSEEK_API_KEY"),
-                base_url=os.getenv(
-                    "DEEPSEEK_API_BASE", "https://api.deepseek.com"
-                ),
+                api_key=deepseek_api_key,
+                base_url=deepseek_api_base,
             )
             logger.debug("Deepseek OpenAI clients initialized successfully")
 
         # Initialize Ollama clients with default API key
-        if os.getenv("OLLAMA_API_BASE", "http://localhost:11434/v1"):
+        ollama_api_base = os.getenv(
+            "OLLAMA_API_BASE", "http://localhost:11434/v1"
+        )
+        if ollama_api_base:
             self.ollama_client = OpenAI(
                 api_key=os.getenv("OLLAMA_API_KEY", "dummy"),
-                base_url=os.getenv(
-                    "OLLAMA_API_BASE", "http://localhost:11434/v1"
-                ),
+                base_url=ollama_api_base,
             )
             self.async_ollama_client = AsyncOpenAI(
                 api_key=os.getenv("OLLAMA_API_KEY", "dummy"),
-                base_url=os.getenv(
-                    "OLLAMA_API_BASE", "http://localhost:11434/v1"
-                ),
+                base_url=ollama_api_base,
             )
             logger.debug("Ollama OpenAI clients initialized successfully")
 
         # Initialize LMStudio clients
-        if os.getenv("LMSTUDIO_API_BASE", "http://localhost:1234/v1"):
+        lmstudio_api_base = os.getenv(
+            "LMSTUDIO_API_BASE", "http://localhost:1234/v1"
+        )
+        if lmstudio_api_base:
             self.lmstudio_client = OpenAI(
                 api_key=os.getenv("LMSTUDIO_API_KEY", "lm-studio"),
-                base_url=os.getenv(
-                    "LMSTUDIO_API_BASE", "http://localhost:1234/v1"
-                ),
+                base_url=lmstudio_api_base,
             )
             self.async_lmstudio_client = AsyncOpenAI(
                 api_key=os.getenv("LMSTUDIO_API_KEY", "lm-studio"),
-                base_url=os.getenv(
-                    "LMSTUDIO_API_BASE", "http://localhost:1234/v1"
-                ),
+                base_url=lmstudio_api_base,
             )
             logger.debug("LMStudio OpenAI clients initialized successfully")
 
         # Initialize Azure Foundry clients if credentials exist.
         # These use the Azure Inference API (currently pasted into this handler).
-        if os.getenv("AZURE_FOUNDRY_API_KEY") and os.getenv(
-            "AZURE_FOUNDRY_API_ENDPOINT"
-        ):
+        azure_foundry_api_key = os.getenv("AZURE_FOUNDRY_API_KEY")
+        azure_foundry_api_endpoint = os.getenv("AZURE_FOUNDRY_API_ENDPOINT")
+        if azure_foundry_api_key and azure_foundry_api_endpoint:
             from azure.ai.inference import (
                 ChatCompletionsClient as AzureChatCompletionsClient,
             )
@@ -115,19 +113,15 @@ class OpenAICompletionProvider(CompletionProvider):
             from azure.core.credentials import AzureKeyCredential
 
             self.azure_foundry_client = AzureChatCompletionsClient(
-                endpoint=os.getenv("AZURE_FOUNDRY_API_ENDPOINT"),
-                credential=AzureKeyCredential(
-                    os.getenv("AZURE_FOUNDRY_API_KEY")
-                ),
+                endpoint=azure_foundry_api_endpoint,
+                credential=AzureKeyCredential(azure_foundry_api_key),
                 api_version=os.getenv(
                     "AZURE_FOUNDRY_API_VERSION", "2024-05-01-preview"
                 ),
             )
             self.async_azure_foundry_client = AsyncAzureChatCompletionsClient(
-                endpoint=os.getenv("AZURE_FOUNDRY_API_ENDPOINT"),
-                credential=AzureKeyCredential(
-                    os.getenv("AZURE_FOUNDRY_API_KEY")
-                ),
+                endpoint=azure_foundry_api_endpoint,
+                credential=AzureKeyCredential(azure_foundry_api_key),
                 api_version=os.getenv(
                     "AZURE_FOUNDRY_API_VERSION", "2024-05-01-preview"
                 ),
@@ -260,16 +254,18 @@ class OpenAICompletionProvider(CompletionProvider):
                     "No valid async client available for model prefix"
                 )
 
-    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
-        args = {
+    def _get_base_args(
+        self, generation_config: GenerationConfig
+    ) -> dict[str, Any]:
+        args: dict[str, Any] = {
             "model": generation_config.model,
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
         }
-        if (
-            "o1" not in generation_config.model
-            and "o3" not in generation_config.model
-        ):
+
+        model_str = generation_config.model or ""
+
+        if "o1" not in model_str and "o3" not in model_str:
             args["max_tokens"] = generation_config.max_tokens_to_sample
             args["temperature"] = generation_config.temperature
         else:
@@ -299,7 +295,9 @@ class OpenAICompletionProvider(CompletionProvider):
         try:
             # For Azure Foundry, use the `complete` method; otherwise, use the OpenAI-style method.
             if client == self.async_azure_foundry_client:
-                args.pop("model")
+                model_value = args.pop(
+                    "model"
+                )  # Remove model before passing args
                 response = await client.complete(**args)
             else:
                 response = await client.chat.completions.create(**args)
@@ -324,6 +322,7 @@ class OpenAICompletionProvider(CompletionProvider):
         try:
             # For Azure Foundry, use `complete`; otherwise, use the standard method.
             if client == self.azure_foundry_client:
+                args.pop("model")
                 response = client.complete(**args)
             else:
                 response = client.chat.completions.create(**args)

@@ -4,7 +4,13 @@ import logging
 import os
 import time
 import uuid
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import (
+    Any,
+    AsyncGenerator,
+    Generator,
+    Optional,
+    Tuple,
+)
 
 from anthropic import Anthropic, AsyncAnthropic
 from anthropic.types import (
@@ -29,7 +35,7 @@ def generate_tool_id() -> str:
     return f"tool_{uuid.uuid4().hex[:12]}"
 
 
-def openai_message_to_anthropic_block(msg: dict) -> dict:
+def openai_message_to_anthropic_block(msg: dict[str, Any]) -> dict[str, Any]:
     """Converts a single OpenAI-style message (including function/tool calls)
     into one Anthropic-style message.
 
@@ -110,7 +116,9 @@ class AnthropicCompletionProvider(CompletionProvider):
         self.async_client = AsyncAnthropic()  # for async calls
         logger.debug("AnthropicCompletionProvider initialized successfully")
 
-    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
+    def _get_base_args(
+        self, generation_config: GenerationConfig
+    ) -> dict[str, Any]:
         """Build the arguments dictionary for Anthropic's messages.create().
 
         Handles tool configuration according to Anthropic's schema:
@@ -125,8 +133,15 @@ class AnthropicCompletionProvider(CompletionProvider):
             }
         }
         """
-        args = {
-            "model": generation_config.model.split("anthropic/")[-1],
+        model_str = generation_config.model or ""
+        model_name = (
+            model_str.split("anthropic/")[-1]
+            if model_str
+            else "claude-3-opus-20240229"
+        )
+
+        args: dict[str, Any] = {
+            "model": model_name,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
             "max_tokens": generation_config.max_tokens_to_sample,
@@ -135,7 +150,7 @@ class AnthropicCompletionProvider(CompletionProvider):
 
         if generation_config.tools is not None:
             # Convert tools to Anthropic's format
-            anthropic_tools = []
+            anthropic_tools: list[dict[str, Any]] = []
             for tool in generation_config.tools:
                 # required = parameters.pop("required", [])
                 tool_def = {
@@ -165,14 +180,18 @@ class AnthropicCompletionProvider(CompletionProvider):
 
             # Handle parallel tool use setting
             if hasattr(generation_config, "disable_parallel_tool_use"):
-                args["tool_choice"] = args.get("tool_choice", {})
-                args["tool_choice"]["disable_parallel_tool_use"] = (
-                    generation_config.disable_parallel_tool_use
-                )
+                if "tool_choice" not in args:
+                    args["tool_choice"] = {}
+                if isinstance(args["tool_choice"], dict):
+                    args["tool_choice"]["disable_parallel_tool_use"] = (
+                        generation_config.disable_parallel_tool_use
+                    )
 
         return args
 
-    def _convert_to_chat_completion(self, anthropic_msg: Message) -> dict:
+    def _convert_to_chat_completion(
+        self, anthropic_msg: Message
+    ) -> dict[str, Any]:
         """Convert a **non-streaming** Anthropic `Message` response into an
         OpenAI-style dict."""
         # anthropic_msg.content is a list of blocks; gather text from "text" blocks
@@ -191,11 +210,14 @@ class AnthropicCompletionProvider(CompletionProvider):
             else anthropic_msg.stop_reason
         )
 
+        model_str = anthropic_msg.model or ""
+        model_name = model_str.split("anthropic/")[-1] if model_str else ""
+
         return {
             "id": anthropic_msg.id,
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": anthropic_msg.model.split("anthropic/")[-1],
+            "model": model_name,
             "usage": {
                 "prompt_tokens": (
                     anthropic_msg.usage.input_tokens
@@ -233,13 +255,13 @@ class AnthropicCompletionProvider(CompletionProvider):
         }
 
     def _split_system_messages(
-        self, messages: list[dict]
-    ) -> (list[dict], Optional[str]):
+        self, messages: list[dict[str, Any]]
+    ) -> Tuple[list[dict[str, Any]], Optional[str]]:
         """Extract the system message and properly group tool results with
         their calls."""
         system_msg = None
-        filtered = []
-        pending_tool_results = []
+        filtered: list[dict[str, Any]] = []
+        pending_tool_results: list[dict[str, Any]] = []
 
         for m in copy.deepcopy(messages):
             if m["role"] == "system" and system_msg is None:
@@ -282,7 +304,9 @@ class AnthropicCompletionProvider(CompletionProvider):
                 )
 
                 # If we have all expected results, add them as one message
-                if len(pending_tool_results) == len(filtered[-1]["content"]):
+                if len(filtered) > 0 and len(
+                    filtered[-1].get("content", [])
+                ) == len(pending_tool_results):
                     filtered.append(
                         {"role": "user", "content": pending_tool_results}
                     )
@@ -328,7 +352,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             return await self._execute_task_async_nonstreaming(args)
 
     async def _execute_task_async_nonstreaming(
-        self, args: dict
+        self, args: dict[str, Any]
     ) -> LLMChatCompletion:
         """
         Non-streaming call: returns the final LLMChatCompletion.
@@ -351,8 +375,8 @@ class AnthropicCompletionProvider(CompletionProvider):
             raise
 
     async def _execute_task_async_streaming(
-        self, args: dict
-    ) -> AsyncGenerator[dict, None]:
+        self, args: dict[str, Any]
+    ) -> AsyncGenerator[dict[str, Any], None]:
         """Streaming call (async): yields partial tokens in OpenAI-like SSE
         format."""
         # The `stream=True` is typically handled by Anthropics from the original args,
@@ -362,19 +386,22 @@ class AnthropicCompletionProvider(CompletionProvider):
         try:
             async with self.async_client.messages.stream(**args) as stream:
                 # We'll track partial JSON for function calls in buffer_data
-                buffer_data = {
+                buffer_data: dict[str, Any] = {
                     "tool_json_buffer": "",
                     "tool_name": None,
                     "message_id": f"chatcmpl-{int(time.time())}",
+                    "is_collecting_tool": False,
                 }
-                model_name = args.get("model", "anthropic/claude-2")
+                model_name = args.get("model", "claude-2")
+                if isinstance(model_name, str):
+                    model_name = model_name.split("anthropic/")[-1]
 
                 async for event in stream:
                     # Process the event(s) in a shared function
                     chunks = self._process_stream_event(
                         event=event,
                         buffer_data=buffer_data,
-                        model_name=model_name.split("anthropic/")[-1],
+                        model_name=model_name,
                     )
                     # The helper returns a list of chunk dicts
                     for chunk in chunks:
@@ -404,7 +431,9 @@ class AnthropicCompletionProvider(CompletionProvider):
         else:
             return self._execute_task_sync_nonstreaming(args)
 
-    def _execute_task_sync_nonstreaming(self, args: dict) -> LLMChatCompletion:
+    def _execute_task_sync_nonstreaming(
+        self, args: dict[str, Any]
+    ) -> LLMChatCompletion:
         """Non-streaming synchronous call."""
         try:
             response = self.client.messages.create(**args)
@@ -417,20 +446,23 @@ class AnthropicCompletionProvider(CompletionProvider):
             raise
 
     def _execute_task_sync_streaming(
-        self, args: dict
-    ) -> Generator[dict, None, None]:
+        self, args: dict[str, Any]
+    ) -> Generator[dict[str, Any], None, None]:
         """
         Synchronous streaming call: yields partial tokens in a generator.
         """
         args.pop("stream", None)
         try:
             with self.client.messages.stream(**args) as stream:
-                buffer_data = {
+                buffer_data: dict[str, Any] = {
                     "tool_json_buffer": "",
                     "tool_name": None,
                     "message_id": f"chatcmpl-{int(time.time())}",
+                    "is_collecting_tool": False,
                 }
                 model_name = args.get("model", "claude-2")
+                if isinstance(model_name, str):
+                    model_name = model_name.split("anthropic/")[-1]
 
                 for event in stream:
                     # Same event-processing as async
@@ -447,11 +479,11 @@ class AnthropicCompletionProvider(CompletionProvider):
             raise
 
     def _process_stream_event(
-        self, event: Any, buffer_data: dict, model_name: str
-    ) -> list[dict]:
-        chunks: list[dict] = []
+        self, event: Any, buffer_data: dict[str, Any], model_name: str
+    ) -> list[dict[str, Any]]:
+        chunks: list[dict[str, Any]] = []
 
-        def make_base_chunk() -> dict:
+        def make_base_chunk() -> dict[str, Any]:
             return {
                 "id": buffer_data["message_id"],
                 "object": "chat.completion.chunk",
@@ -538,14 +570,23 @@ class AnthropicCompletionProvider(CompletionProvider):
                     )
 
         elif isinstance(event, MessageStopEvent):
-            stop_reason = event.message.stop_reason
-            chunk = make_base_chunk()
-            if stop_reason == "tool_use":
-                chunk["choices"][0]["delta"] = {}
-                chunk["choices"][0]["finish_reason"] = "tool_calls"
+            # Check if the event has a message attribute before accessing it
+            stop_reason = getattr(event, "message", None)
+            if stop_reason and hasattr(stop_reason, "stop_reason"):
+                stop_reason = stop_reason.stop_reason
+                chunk = make_base_chunk()
+                if stop_reason == "tool_use":
+                    chunk["choices"][0]["delta"] = {}
+                    chunk["choices"][0]["finish_reason"] = "tool_calls"
+                else:
+                    chunk["choices"][0]["delta"] = {}
+                    chunk["choices"][0]["finish_reason"] = "stop"
+                chunks.append(chunk)
             else:
+                # Handle the case where message is not available
+                chunk = make_base_chunk()
                 chunk["choices"][0]["delta"] = {}
                 chunk["choices"][0]["finish_reason"] = "stop"
-            chunks.append(chunk)
+                chunks.append(chunk)
 
         return chunks

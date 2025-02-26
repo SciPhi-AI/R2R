@@ -1,4 +1,3 @@
-# r2r.py
 import logging
 from typing import Any
 
@@ -6,7 +5,7 @@ from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
 from .anthropic import AnthropicCompletionProvider
-from .azure_foundry import AzureFoundryCompletionProvider  # New import
+from .azure_foundry import AzureFoundryCompletionProvider
 from .litellm import LiteLLMCompletionProvider
 from .openai import OpenAICompletionProvider
 
