@@ -6,13 +6,8 @@ services:
   postgres:
     image: pgvector/pgvector:pg16
     profiles: [postgres]
-    environment:
-      - POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
-      - POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
-      - POSTGRES_PORT=${R2R_POSTGRES_PORT:-5432}
-      - POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
-      - PGPORT=${R2R_POSTGRES_PORT:-5432}
+    env_file:
+      - ./env/postgres.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -46,7 +41,7 @@ services:
 
   r2r-dashboard:
     image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
-    environment:
-      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
+    env_file:
+      - ./env/r2r-dashboard.env
     ports:
       - "${R2R_DASHBOARD_PORT:-7273}:3000"
