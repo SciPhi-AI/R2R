@@ -54,7 +54,7 @@ class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: list = []  # Changed from dict to list for PostgreSQL $1, $2 style
+        self.params: list = []
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None
@@ -63,7 +63,7 @@ class QueryBuilder:
         self.returning_fields: Optional[list[str]] = None
         self.insert_data: Optional[dict] = None
         self.update_data: Optional[dict] = None
-        self.param_counter = 1  # For generating $1, $2, etc.
+        self.param_counter = 1
 
     def select(self, fields: list[str]):
         self.select_fields = ", ".join(fields)
@@ -87,11 +87,11 @@ class QueryBuilder:
         self.conditions.append(condition)
         return self
 
-    def limit(self, value: Optional[str]):
+    def limit(self, value: Optional[int]):
         self.limit_value = value
         return self
 
-    def offset(self, value: str):
+    def offset(self, value: int):
         self.offset_value = value
         return self
 

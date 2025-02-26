@@ -254,6 +254,16 @@ class CacheablePromptHandler(Handler):
         """Get template info with caching."""
         pass
 
+    @abstractmethod
+    async def _get_prompt_impl(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        bypass_template_cache: bool = False,
+    ) -> str:
+        """Implementation of prompt retrieval logic."""
+        pass
+
 
 class PostgresPromptsHandler(CacheablePromptHandler):
     """PostgreSQL implementation of the CacheablePromptHandler."""

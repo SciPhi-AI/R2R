@@ -2,7 +2,7 @@
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, cast
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -149,12 +149,6 @@ class DatabaseConfig(ProviderConfig):
     route_limits: dict[str, LimitSettings] = {}
     user_limits: dict[UUID, LimitSettings] = {}
 
-    def __post_init__(self):
-        self.validate_config()
-        # Capture additional fields
-        for key, value in self.extra_fields.items():
-            setattr(self, key, value)
-
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Provider '{self.provider}' is not supported.")
@@ -165,9 +159,9 @@ class DatabaseConfig(ProviderConfig):
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DatabaseConfig":
-        instance = super().from_dict(
-            data
-        )  # or some logic to create the base instance
+        instance = cls.create(**data)
+
+        instance = cast(DatabaseConfig, instance)
 
         limits_data = data.get("limits", {})
         default_limits = LimitSettings(

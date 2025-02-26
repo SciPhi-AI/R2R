@@ -89,8 +89,8 @@ class PostgresFilesHandler(Handler):
         """Store a new file in the database."""
         size = file_content.getbuffer().nbytes
 
-        async with (  # type: ignore
-            self.connection_manager.pool.get_connection() as conn
+        async with (
+            self.connection_manager.pool.get_connection() as conn  # type: ignore
         ):
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
