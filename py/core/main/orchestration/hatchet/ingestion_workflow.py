@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import logging
 import uuid

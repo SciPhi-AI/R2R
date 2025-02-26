@@ -22,7 +22,5 @@ jobs:
           pip install pre-commit
 
       - name: Run pre-commit hooks (excluding mypy)
-        env:
-          SKIP: mypy
         run: |
           pre-commit run --all-files

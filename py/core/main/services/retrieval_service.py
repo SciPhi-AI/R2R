@@ -1,3 +1,4 @@
+# FIXME: Once the agent is properly type annotated, remove the type: ignore comments
 import asyncio
 import json
 import logging
@@ -5,7 +6,7 @@ import time
 import uuid
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Optional, cast
+from typing import Any, Optional
 from uuid import UUID
 
 import tiktoken
@@ -17,7 +18,7 @@ from core import (
     R2RStreamingReasoningRAGAgent,
     SearchResultsCollector,
 )
-from core.agent.rag import (
+from core.agent.rag import (  # type: ignore
     GeminiXMLToolsStreamingReasoningRAGAgent,
     R2RXMLToolsStreamingReasoningRAGAgent,
 )
@@ -812,9 +813,7 @@ class RetrievalService(Service):
                 )
 
             agent_config = deepcopy(self.config.agent)
-            agent_config.tools = cast(
-                type(agent_config.tools), override_tools or agent_config.tools
-            )
+            agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
 

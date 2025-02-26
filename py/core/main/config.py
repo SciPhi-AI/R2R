@@ -1,3 +1,4 @@
+# FIXME: Once the agent is properly type annotated, remove the type: ignore comments
 import logging
 import os
 from enum import Enum
@@ -7,7 +8,7 @@ import toml
 from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
-from ..base.agent.agent import AgentConfig
+from ..base.agent.agent import AgentConfig  # type: ignore
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
@@ -123,9 +124,10 @@ class R2RConfig:
         IngestionConfig.set_default(**self.ingestion.dict())
 
         # override GenerationConfig defaults
-        GenerationConfig.set_default(
-            **self.completion.generation_config.dict()
-        )
+        if self.completion.generation_config:
+            GenerationConfig.set_default(
+                **self.completion.generation_config.dict()
+            )
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -166,7 +168,7 @@ class R2RConfig:
             return toml.load(f)
 
     @staticmethod
-    def _serialize_config(config_section: Any) -> dict:
+    def _serialize_config(config_section: Any):
         """Serialize config section while excluding internal state."""
         if isinstance(config_section, dict):
             return {
