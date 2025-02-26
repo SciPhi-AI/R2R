@@ -1,0 +1,52 @@
+volumes:
+  postgres_data:
+    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [postgres]
+    environment:
+      - POSTGRES_USER=${R2R_POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${R2R_POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_HOST=${R2R_POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=${R2R_POSTGRES_PORT:-5432}
+      - POSTGRES_MAX_CONNECTIONS=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      - PGPORT=${R2R_POSTGRES_PORT:-5432}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${R2R_POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+
+  r2r:
+    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    ports:
+      - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
+    env_file:
+      - ./env/r2r.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    volumes:
+      - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  r2r-dashboard:
+    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
+    environment:
+      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
+    ports:
+      - "${R2R_DASHBOARD_PORT:-7273}:3000"
