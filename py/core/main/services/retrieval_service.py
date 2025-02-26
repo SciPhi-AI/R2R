@@ -913,7 +913,7 @@ class RetrievalService(Service):
                         # TODO  - no copy pasta!
                         if needs_conversation_name:
                             try:
-                                prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                                prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input message here = {str(message.to_dict())}"
                                 conversation_name = (
                                     (
                                         await self.providers.llm.aget_completion(
@@ -1014,7 +1014,7 @@ class RetrievalService(Service):
                 conversation_name = None
                 try:
                     if message:
-                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input message here = {str(message.to_dict())}"
                     else:
                         prompt = "Generate a succinct name (3-6 words) for this conversation"
                     conversation_name = (

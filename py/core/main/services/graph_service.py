@@ -473,10 +473,14 @@ class GraphService(Service):
         tasks.extend(
             self._process_entity_for_description(
                 entities=[
-                    Entity(**entity) for entity in entity_info["entities"]
+                    entity if isinstance(entity, Entity) else Entity(**entity)
+                    for entity in entity_info["entities"]
                 ],
                 relationships=[
-                    Relationship(**rel) for rel in entity_info["relationships"]
+                    rel
+                    if isinstance(rel, Relationship)
+                    else Relationship(**rel)
+                    for rel in entity_info["relationships"]
                 ],
                 document_id=document_id,
                 max_description_input_length=max_description_input_length,
