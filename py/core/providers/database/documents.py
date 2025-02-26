@@ -51,7 +51,7 @@ def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
                     transform_filter_fields(item) for item in value
                 ]
             else:
-                transformed[key] = transform_filter_fields(value)
+                transformed[key] = transform_filter_fields(value)  # type: ignore
             continue
 
         # Replace 'document_id' with 'id'
@@ -59,7 +59,7 @@ def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
 
         # Handle nested dictionary cases (e.g., for operators like $eq, $gt, etc.)
         if isinstance(value, dict):
-            transformed[new_key] = transform_filter_fields(value)
+            transformed[new_key] = transform_filter_fields(value)  # type: ignore
         else:
             transformed[new_key] = value
 
@@ -208,8 +208,8 @@ class PostgresDocumentsHandler(Handler):
             while retries < max_retries:
                 try:
                     async with (
-                        self.connection_manager.pool.get_connection() as conn
-                    ):  # type: ignore
+                        self.connection_manager.pool.get_connection() as conn  # type: ignore
+                    ):
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
@@ -525,7 +525,7 @@ class PostgresDocumentsHandler(Handler):
         """
 
         filters = copy.deepcopy(filters)
-        filters = transform_filter_fields(filters)
+        filters = transform_filter_fields(filters)  # type: ignore
 
         # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
         # This keeps the query logic unambiguous.
@@ -1023,7 +1023,7 @@ class PostgresDocumentsHandler(Handler):
             "total_tokens",
         }
         filters = copy.deepcopy(filters)
-        filters = transform_filter_fields(filters)
+        filters = transform_filter_fields(filters)  # type: ignore
 
         if not columns:
             columns = list(valid_columns)
