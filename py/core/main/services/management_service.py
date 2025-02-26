@@ -14,6 +14,7 @@ from core.base import (
     GenerationConfig,
     GraphConstructionStatus,
     Message,
+    MessageResponse,
     Prompt,
     R2RException,
     StoreType,
@@ -776,7 +777,7 @@ class ManagementService(Service):
         self,
         conversation_id: UUID,
         user_ids: Optional[list[UUID]] = None,
-    ) -> Tuple[str, list[Message], list[dict]]:
+    ) -> list[MessageResponse]:
         return await self.providers.database.conversations_handler.get_conversation(
             conversation_id=conversation_id,
             filter_user_ids=user_ids,
@@ -815,7 +816,7 @@ class ManagementService(Service):
         content: Message,
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
-    ) -> str:
+    ) -> MessageResponse:
         return await self.providers.database.conversations_handler.add_message(
             conversation_id=conversation_id,
             content=content,
@@ -1063,7 +1064,7 @@ class ManagementService(Service):
         )["total_entries"]
 
         max_collections = await self.get_user_max_collections(user_id)
-        used_collections = (
+        used_collections: int = (  # type: ignore
             await self.providers.database.collections_handler.get_collections_overview(
                 limit=1, offset=0, filter_user_ids=[user_id]
             )
@@ -1073,21 +1074,33 @@ class ManagementService(Service):
             "chunks": {
                 "limit": max_chunks,
                 "used": used_chunks,
-                "remaining": max_chunks - used_chunks,
+                "remaining": (
+                    max_chunks - used_chunks
+                    if max_chunks is not None
+                    else None
+                ),
             },
             "documents": {
                 "limit": max_documents,
                 "used": used_documents,
-                "remaining": max_documents - used_documents,
+                "remaining": (
+                    max_documents - used_documents
+                    if max_documents is not None
+                    else None
+                ),
             },
             "collections": {
                 "limit": max_collections,
                 "used": used_collections,
-                "remaining": max_collections - used_collections,
+                "remaining": (
+                    max_collections - used_collections
+                    if max_collections is not None
+                    else None
+                ),
             },
         }
         # 5) Return a structured response
-        result = {
+        return {
             "storage_limits": storage_limits,
             "system_defaults": system_defaults,
             "user_overrides": user_overrides,
@@ -1098,4 +1111,3 @@ class ManagementService(Service):
             },
             "usage": usage,
         }
-        return result

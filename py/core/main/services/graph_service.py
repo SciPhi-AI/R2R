@@ -472,8 +472,16 @@ class GraphService(Service):
         tasks: list[Coroutine[Any, Any, str]] = []
         tasks.extend(
             self._process_entity_for_description(
-                entities=entity_info["entities"],
-                relationships=entity_info["relationships"],
+                entities=[
+                    entity if isinstance(entity, Entity) else Entity(**entity)
+                    for entity in entity_info["entities"]
+                ],
+                relationships=[
+                    rel
+                    if isinstance(rel, Relationship)
+                    else Relationship(**rel)
+                    for rel in entity_info["relationships"]
+                ],
                 document_id=document_id,
                 max_description_input_length=max_description_input_length,
             )
@@ -643,7 +651,7 @@ class GraphService(Service):
         limit: int,
         max_summary_input_length: int,
         generation_config: GenerationConfig,
-        collection_id: UUID | None,
+        collection_id: UUID,
         leiden_params: Optional[dict] = None,
         **kwargs,
     ):
@@ -792,7 +800,7 @@ class GraphService(Service):
             filter_collection_ids=[collection_id],
         )
         collection_description = (
-            response["results"][0].description if response["results"] else None
+            response["results"][0].description if response["results"] else None  # type: ignore
         )
 
         # filter out relevant entities / relationships
@@ -872,9 +880,11 @@ class GraphService(Service):
                 # build embedding
                 embed_text = (
                     "Summary:\n"
-                    + summary
+                    + (summary or "")
                     + "\n\nFindings:\n"
-                    + "\n".join(findings)
+                    + "\n".join(
+                        finding for finding in findings if finding is not None
+                    )
                 )
                 embedding = await self.providers.embedding.async_get_embedding(
                     embed_text
@@ -1041,7 +1051,7 @@ class GraphService(Service):
             logger.info(
                 f"Filtered out {len(existing_chunk_ids)} existing chunk-IDs. {before_count}->{len(chunks)} remain."
             )
-            if len(chunks) == 0:
+            if not chunks:
                 return  # nothing left to yield
 
         # sort by chunk_order if present
@@ -1066,11 +1076,9 @@ class GraphService(Service):
                     generation_config,
                     entity_types,
                     relation_types,
-                    task_id=i,
-                    total_tasks=len(grouped_chunks),
                 )
             )
-            for i, chunk_group in enumerate(grouped_chunks)
+            for chunk_group in grouped_chunks
         ]
 
         completed_tasks = 0
@@ -1101,12 +1109,16 @@ class GraphService(Service):
         relation_types: list[str],
         retries: int = 5,
         delay: int = 2,
-        task_id: Optional[int] = None,
-        total_tasks: Optional[int] = None,
     ) -> GraphExtraction:
         """(Equivalent to _extract_graph_search_results in old code.) Merges
         chunk data, calls LLM, parses XML, returns GraphExtraction object."""
-        combined_extraction: str = " ".join([c.data for c in chunks if c.data])
+        combined_extraction: str = " ".join(
+            [
+                c.data.decode("utf-8") if isinstance(c.data, bytes) else c.data
+                for c in chunks
+                if c.data
+            ]
+        )
 
         # Possibly get doc-level summary
         doc_id = chunks[0].document_id
@@ -1278,17 +1290,20 @@ class GraphService(Service):
             # Map name->id after creation
             entities_id_map = {}
             for e in extraction.entities:
-                result = await self.providers.database.graphs_handler.entities.create(
-                    name=e.name,
-                    parent_id=e.parent_id,
-                    store_type=StoreType.DOCUMENTS,
-                    category=e.category,
-                    description=e.description,
-                    description_embedding=e.description_embedding,
-                    chunk_ids=e.chunk_ids,
-                    metadata=e.metadata,
-                )
-                entities_id_map[e.name] = result.id
+                if e.parent_id is not None:
+                    result = await self.providers.database.graphs_handler.entities.create(
+                        name=e.name,
+                        parent_id=e.parent_id,
+                        store_type=StoreType.DOCUMENTS,
+                        category=e.category,
+                        description=e.description,
+                        description_embedding=e.description_embedding,
+                        chunk_ids=e.chunk_ids,
+                        metadata=e.metadata,
+                    )
+                    entities_id_map[e.name] = result.id
+                else:
+                    logger.warning(f"Skipping entity with None parent_id: {e}")
 
             # Insert relationships
             for rel in extraction.relationships:
@@ -1370,9 +1385,12 @@ class GraphService(Service):
                 new_description or ""
             )
 
-            await self.providers.database.graphs_handler.entities.update(
-                entity_id=merged_entity.id,
-                store_type=StoreType.DOCUMENTS,
-                description=new_description,
-                description_embedding=str(new_embedding),
-            )
+            if merged_entity.id is not None:
+                await self.providers.database.graphs_handler.entities.update(
+                    entity_id=merged_entity.id,
+                    store_type=StoreType.DOCUMENTS,
+                    description=new_description,
+                    description_embedding=str(new_embedding),
+                )
+            else:
+                logger.warning("Skipping update for entity with None id")

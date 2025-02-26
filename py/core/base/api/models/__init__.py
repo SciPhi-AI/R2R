@@ -41,6 +41,7 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     CollectionResponse,
     ConversationResponse,
     LogResponse,
+    MessageResponse,
     PromptResponse,
     ServerStats,
     SettingsResponse,
@@ -139,6 +140,7 @@ __all__ = [
     "WrappedPromptResponse",
     "WrappedPromptsResponse",
     # Conversation Responses
+    "MessageResponse",
     "WrappedMessageResponse",
     "WrappedMessagesResponse",
     # Chunk Responses

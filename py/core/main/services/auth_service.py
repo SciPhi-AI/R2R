@@ -184,9 +184,10 @@ class AuthService(Service):
             is_superuser
             or (
                 user.hashed_password is not None
+                and password is not None
                 and self.providers.auth.crypto_provider.verify_password(
-                    password,
-                    user.hashed_password,  # type: ignore
+                    plain_password=password,
+                    hashed_password=user.hashed_password,
                 )
             )
         ):
