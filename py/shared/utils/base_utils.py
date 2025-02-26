@@ -267,9 +267,9 @@ def reassign_citations_in_order(
         new_ref_value = item["newIndex"]
         if new_ref_value is None:
             new_ref_value = 0
-        new_ref: int = new_ref_value
+        replacement_ref: int = new_ref_value
 
-        replacement = f"[{new_ref}]"
+        replacement = f"[{replacement_ref}]"
         result_chars[s_i:e_i] = list(replacement)
 
     new_text = "".join(result_chars)

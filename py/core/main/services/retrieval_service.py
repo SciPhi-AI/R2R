@@ -5,7 +5,7 @@ import time
 import uuid
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from uuid import UUID
 
 import tiktoken
@@ -156,7 +156,7 @@ class RetrievalService(Service):
         search_settings: SearchSettings = SearchSettings(),
         *args,
         **kwargs,
-    ) -> AggregateSearchResult:
+    ) -> dict[str, Any]:
         """Replaces your pipeline-based `SearchPipeline.run(...)` with a single
         method.
 
@@ -308,7 +308,7 @@ class RetrievalService(Service):
           • search entities, relationships, communities
           • yield GraphSearchResult
         """
-        results = []
+        results: list[GraphSearchResult] = []
         # bail early if disabled
         if not search_settings.graph_settings.enabled:
             return results
@@ -360,7 +360,7 @@ class RetrievalService(Service):
                             "associated_query": query,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -412,7 +412,7 @@ class RetrievalService(Service):
                             "associated_query": query,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -455,7 +455,7 @@ class RetrievalService(Service):
                             "associated_query": query,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -480,7 +480,7 @@ class RetrievalService(Service):
     @telemetry_event("Completion")
     async def completion(
         self,
-        messages: list[dict],
+        messages: list[Message],
         generation_config: GenerationConfig,
         *args,
         **kwargs,
@@ -573,11 +573,11 @@ class RetrievalService(Service):
             llm_text_response = response.choices[0].message.content
 
             # 2) detect citations as the LLM wrote them
-            raw_citations = extract_citations(llm_text_response)
+            raw_citations = extract_citations(llm_text_response or "")
 
             # 3) re-map them in ascending order => new_text has sequential references [1], [2], ...
             re_labeled_text, new_citations = reassign_citations_in_order(
-                llm_text_response, raw_citations
+                text=llm_text_response or "", citations=raw_citations
             )
 
             collector = SearchResultsCollector()
@@ -595,14 +595,13 @@ class RetrievalService(Service):
 
             # 5) Build final RAG response
             #    If you want to return the newly-labeled text to the user, do so:
-            rag_response = RAGResponse(
+            return RAGResponse(
                 generated_answer=re_labeled_text,  # or "generated_answer" if you prefer
                 search_results=aggregated_results,
                 citations=mapped_citations,
                 metadata=metadata,
                 completion=re_labeled_text,
             )
-            return rag_response
 
         except Exception as e:
             logger.error(f"Error in RAG: {e}")
@@ -813,7 +812,9 @@ class RetrievalService(Service):
                 )
 
             agent_config = deepcopy(self.config.agent)
-            agent_config.tools = override_tools or agent_config.tools
+            agent_config.tools = cast(
+                type(agent_config.tools), override_tools or agent_config.tools
+            )
 
             if rag_generation_config.stream:
 
@@ -997,7 +998,7 @@ class RetrievalService(Service):
 
             # 4) Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(
-                conversation_id=str(conversation_id),
+                conversation_id=conversation_id,
                 content=assistant_message,
                 parent_id=message_id,
                 metadata={
@@ -1012,7 +1013,10 @@ class RetrievalService(Service):
             if needs_conversation_name:
                 conversation_name = None
                 try:
-                    prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                    if message:
+                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                    else:
+                        prompt = "Generate a succinct name (3-6 words) for this conversation"
                     conversation_name = (
                         (
                             await self.providers.llm.aget_completion(
@@ -1199,7 +1203,7 @@ class RetrievalService(Service):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
-                f"[{i}] Title: {title}, Summary: {(doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
+                f"[{i}] Title: {title}, Summary: {(doc.summary[:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
         return "\n".join(lines)
 
@@ -1215,8 +1219,8 @@ class RetrievalService(Service):
             limit=limit,
             filter_collection_ids=filter_collection_ids,
         )
-        colls = coll_data["results"]
-        if not colls:
+        colls = coll_data["results"] if isinstance(coll_data, dict) else []
+        if not colls or not isinstance(colls, list):
             return "No collections found."
 
         lines = []

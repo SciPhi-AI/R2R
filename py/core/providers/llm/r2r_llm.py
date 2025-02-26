@@ -89,7 +89,7 @@ class R2RCompletionProvider(CompletionProvider):
         call."""
         generation_config: GenerationConfig = task["generation_config"]
         model_name = generation_config.model
-        sub_provider = self._choose_subprovider_by_model(model_name)
+        sub_provider = self._choose_subprovider_by_model(model_name or "")
         return await sub_provider._execute_task(task)
 
     def _execute_task_sync(self, task: dict[str, Any]):
@@ -97,5 +97,5 @@ class R2RCompletionProvider(CompletionProvider):
         call."""
         generation_config: GenerationConfig = task["generation_config"]
         model_name = generation_config.model
-        sub_provider = self._choose_subprovider_by_model(model_name)
+        sub_provider = self._choose_subprovider_by_model(model_name or "")
         return sub_provider._execute_task_sync(task)
