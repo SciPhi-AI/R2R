@@ -2,7 +2,7 @@
 
 import json
 from enum import Enum
-from typing import TYPE_CHECKING, Any, ClassVar, Optional
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TypeAlias
 
 from openai.types.chat import ChatCompletion, ChatCompletionChunk
 from pydantic import BaseModel, Field
@@ -12,8 +12,8 @@ from .base import R2RSerializable
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
-LLMChatCompletion = ChatCompletion
-LLMChatCompletionChunk = ChatCompletionChunk
+LLMChatCompletion: TypeAlias = ChatCompletion
+LLMChatCompletionChunk: TypeAlias = ChatCompletionChunk
 
 
 class RAGCompletion:
