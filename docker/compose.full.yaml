@@ -69,21 +69,9 @@ services:
 
   hatchet-create-db:
     image: postgres:latest
-    command: >
-      sh -c "
-        set -e
-        echo 'Waiting for PostgreSQL to be ready...'
-        while ! pg_isready -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user}; do
-          sleep 1
-        done
-        echo 'PostgreSQL is ready, checking if database exists...'
-        if ! PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} psql -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user} -lqt | grep -qw ${HATCHET_POSTGRES_DBNAME:-hatchet}; then
-          echo 'Database does not exist, creating it...'
-          PGPASSWORD=${HATCHET_POSTGRES_PASSWORD:-hatchet_password} createdb -h hatchet-postgres -p 5432 -U ${HATCHET_POSTGRES_USER:-hatchet_user} -w ${HATCHET_POSTGRES_DBNAME:-hatchet}
-        else
-          echo 'Database already exists, skipping creation.'
-        fi
-      "
+    command: sh /scripts/create-hatchet-db.sh
+    volumes:
+      - ./scripts:/scripts
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
 
@@ -169,58 +157,9 @@ services:
 
   setup-token:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
-    command: >
-      sh -c "
-        set -e
-        echo 'Starting token creation process...'
-
-        # Attempt to create token and capture both stdout and stderr
-        TOKEN_OUTPUT=$$(/hatchet/hatchet-admin token create --config /hatchet/config --tenant-id 707d0855-80ab-4e1f-a156-f1c4546cbf52 2>&1)
-
-        # Extract the token (assuming it's the only part that looks like a JWT)
-        TOKEN=$$(echo \"$$TOKEN_OUTPUT\" | grep -Eo 'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*')
-
-        if [ -z \"$$TOKEN\" ]; then
-          echo 'Error: Failed to extract token. Full command output:' >&2
-          echo \"$$TOKEN_OUTPUT\" >&2
-          exit 1
-        fi
-
-        echo \"$$TOKEN\" > /tmp/hatchet_api_key
-        echo 'Token created and saved to /tmp/hatchet_api_key'
-
-        # Copy token to final destination
-        echo -n \"$$TOKEN\" > /hatchet_api_key/api_key.txt
-        echo 'Token copied to /hatchet_api_key/api_key.txt'
-
-        # Verify token was copied correctly
-        if [ \"$$(cat /tmp/hatchet_api_key)\" != \"$(cat /hatchet_api_key/api_key.txt)\" ]; then
-          echo 'Error: Token copy failed, files do not match' >&2
-          echo 'Content of /tmp/hatchet_api_key:'
-          cat /tmp/hatchet_api_key
-          echo 'Content of /hatchet_api_key/api_key.txt:'
-          cat /hatchet_api_key/api_key.txt
-          exit 1
-        fi
-
-        echo 'Hatchet API key has been saved successfully'
-        echo 'Token length:' $${#TOKEN}
-        echo 'Token (first 20 chars):' $${TOKEN:0:20}
-        echo 'Token structure:' $$(echo $$TOKEN | awk -F. '{print NF-1}') 'parts'
-        # Check each part of the token
-        for i in 1 2 3; do
-          PART=$$(echo $$TOKEN | cut -d. -f$$i)
-          echo 'Part' $$i 'length:' $${#PART}
-          echo 'Part' $$i 'base64 check:' $$(echo $$PART | base64 -d >/dev/null 2>&1 && echo 'Valid' || echo 'Invalid')
-        done
-        # Final validation attempt
-        if ! echo $$TOKEN | awk -F. '{print $$2}' | base64 -d 2>/dev/null | jq . >/dev/null 2>&1; then
-          echo 'Warning: Token payload is not valid JSON when base64 decoded' >&2
-        else
-          echo 'Token payload appears to be valid JSON'
-        fi
-      "
+    command: sh /scripts/setup-token.sh
     volumes:
+      - ./scripts:/scripts
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
       - hatchet_api_key:/hatchet_api_key
@@ -252,13 +191,7 @@ services:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     env_file:
       - ./env/r2r.env
-    command: >
-      sh -c '
-        if [ -z "$${HATCHET_CLIENT_TOKEN}" ]; then
-          export HATCHET_CLIENT_TOKEN=$$(cat /hatchet_api_key/api_key.txt)
-        fi
-        exec uvicorn core.main.app_entry:app --host $${R2R_HOST} --port $${R2R_PORT}
-      '
+    command: sh /scripts/start-r2r.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
       interval: 6s
@@ -268,6 +201,7 @@ services:
     volumes:
       - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
+      - ./scripts:/scripts
     extra_hosts:
       - host.docker.internal:host-gateway
     depends_on:
