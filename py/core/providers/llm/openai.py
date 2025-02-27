@@ -128,6 +128,22 @@ class OpenAICompletionProvider(CompletionProvider):
             )
             logger.debug("Azure Foundry clients initialized successfully")
 
+        # Initialize Dashscope clients if credentials exist.
+        dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
+        dashscope_api_base = os.getenv(
+            "DASHSCOPE_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+        )
+        if dashscope_api_key and dashscope_api_base:
+            self.dashscope_client = OpenAI(
+                api_key=dashscope_api_key,
+                base_url=dashscope_api_base,
+            )
+            self.async_dashscope_client = AsyncOpenAI(
+                api_key=dashscope_api_key,
+                base_url=dashscope_api_base,
+            )
+            logger.debug("Dashscope OpenAI clients initialized successfully")
+
         if not any(
             [
                 self.openai_client,
@@ -135,6 +151,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 self.ollama_client,
                 self.lmstudio_client,
                 self.azure_foundry_client,
+                self.dashscope_client,
+
             ]
         ):
             raise ValueError(
@@ -185,6 +203,12 @@ class OpenAICompletionProvider(CompletionProvider):
                 self.azure_foundry_client,
                 model[14:],
             )  # Strip 'azure-foundry/' prefix
+        elif model.startswith("dashscope/"):
+            if not self.dashscope_client:
+                raise ValueError(
+                    "Dashscope OpenAI credentials not configured but dashscope/ model prefix used"
+                )
+            return self.dashscope_client, model[len("dashscope/"):]  # Strip prefix
         else:
             # Default to OpenAI if no prefix is provided.
             if self.openai_client:
@@ -238,6 +262,12 @@ class OpenAICompletionProvider(CompletionProvider):
                     "Azure Foundry credentials not configured but azure-foundry/ model prefix used"
                 )
             return self.async_azure_foundry_client, model[14:]
+        elif model.startswith("dashscope/"):
+            if not self.async_dashscope_client:
+                raise ValueError(
+                    "Dashscope OpenAI credentials not configured but dashscope/ model prefix used"
+                )
+            return self.async_dashscope_client, model[len("dashscope/"):]
         else:
             if self.async_openai_client:
                 return self.async_openai_client, model
