@@ -1,18 +1,18 @@
 volumes:
   hatchet_certs:
-    name: ${VOLUME_HATCHET_CERTS:-hatchet_certs}
+    name: hatchet_certs
   hatchet_config:
-    name: ${VOLUME_HATCHET_CONFIG:-hatchet_config}
+    name: hatchet_config
   hatchet_api_key:
-    name: ${VOLUME_HATCHET_API_KEY:-hatchet_api_key}
+    name: hatchet_api_key
   postgres_data:
-    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+    name: postgres_data
   hatchet_rabbitmq_data:
-    name: ${VOLUME_HATCHET_RABBITMQ_DATA:-hatchet_rabbitmq_data}
+    name: hatchet_rabbitmq_data
   hatchet_rabbitmq_conf:
-    name: ${VOLUME_HATCHET_RABBITMQ_CONF:-hatchet_rabbitmq_conf}
+    name: hatchet_rabbitmq_conf
   hatchet_postgres_data:
-    name: ${VOLUME_HATCHET_POSTGRES_DATA:-hatchet_postgres_data}
+    name: hatchet_postgres_data
 
 services:
   postgres:
@@ -23,27 +23,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${R2R_POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: on-failure
     command: >
       postgres
-      -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      -c max_connections=1024
 
   hatchet-postgres:
     image: postgres:latest
-    environment:
-      POSTGRES_DB: ${HATCHET_POSTGRES_DBNAME:-hatchet}
-      POSTGRES_USER: ${HATCHET_POSTGRES_USER:-hatchet_user}
-      POSTGRES_PASSWORD: ${HATCHET_POSTGRES_PASSWORD:-hatchet_password}
+    env_file:
+      - ./env/hatchet.env
     volumes:
       - hatchet_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${HATCHET_POSTGRES_USER:-hatchet_user} -d ${HATCHET_POSTGRES_DBNAME:-hatchet}"]
+      test: ["CMD-SHELL", "pg_isready -U hatchet_user -d hatchet"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -53,11 +51,10 @@ services:
     image: "rabbitmq:3-management"
     hostname: "hatchet-rabbitmq"
     ports:
-      - "${R2R_RABBITMQ_PORT:-5673}:5672"
-      - "${R2R_RABBITMQ_MGMT_PORT:-15673}:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: "user"
-      RABBITMQ_DEFAULT_PASS: "password"
+      - "5673:5672"
+      - "15673:15672"
+    env_file:
+      - ./env/hatchet.env
     volumes:
       - hatchet_rabbitmq_data:/var/lib/rabbitmq
       - hatchet_rabbitmq_conf:/etc/rabbitmq/rabbitmq.conf
@@ -72,13 +69,13 @@ services:
     command: sh /scripts/create-hatchet-db.sh
     volumes:
       - ./scripts:/scripts
-    environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+    env_file:
+      - ./env/hatchet.env
 
   hatchet-migration:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.53.15
-    environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+    env_file:
+      - ./env/hatchet.env
     depends_on:
       hatchet-create-db:
         condition: service_completed_successfully
@@ -86,26 +83,8 @@ services:
   hatchet-setup-config:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
     command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
-    environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
-
-      HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH:-134217728}"
-      HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "${HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH:-134217728}"
-
-      DATABASE_POSTGRES_PORT: "5432"
-      DATABASE_POSTGRES_HOST: hatchet-postgres
-      DATABASE_POSTGRES_USERNAME: "${HATCHET_POSTGRES_USER:-hatchet_user}"
-      DATABASE_POSTGRES_PASSWORD: "${HATCHET_POSTGRES_PASSWORD:-hatchet_password}"
-      HATCHET_DATABASE_POSTGRES_DB_NAME: "${HATCHET_POSTGRES_DBNAME:-hatchet}"
-
-      SERVER_TASKQUEUE_RABBITMQ_URL: amqp://user:password@hatchet-rabbitmq:5672/
-      SERVER_AUTH_COOKIE_DOMAIN: "http://host.docker.internal:${R2R_HATCHET_DASHBOARD_PORT:-7274}"
-      SERVER_URL: "http://host.docker.internal:${R2R_HATCHET_DASHBOARD_PORT:-7274}"
-      SERVER_AUTH_COOKIE_INSECURE: "t"
-      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
-      SERVER_GRPC_INSECURE: "t"
-      SERVER_GRPC_BROADCAST_ADDRESS: "hatchet-engine:7077"
-      SERVER_GRPC_MAX_MSG_SIZE: 134217728
+    env_file:
+      - ./env/hatchet.env
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
@@ -123,14 +102,9 @@ services:
       hatchet-setup-config:
         condition: service_completed_successfully
     ports:
-      - "${R2R_HATCHET_ENGINE_PORT:-7077}:7077"
-    environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
-      SERVER_GRPC_BROADCAST_ADDRESS: "hatchet-engine:7077"
-      SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
-      SERVER_GRPC_PORT: "7077"
-      SERVER_GRPC_INSECURE: "t"
-      SERVER_GRPC_MAX_MSG_SIZE: 134217728
+      - "7077:7077"
+    env_file:
+      - ./env/hatchet.env
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
@@ -147,13 +121,13 @@ services:
     depends_on:
       hatchet-setup-config:
         condition: service_completed_successfully
-    environment:
-      DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
+    env_file:
+      - ./env/hatchet.env
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
     ports:
-      - "${R2R_HATCHET_DASHBOARD_PORT:-7274}:80"
+      - "7274:80"
 
   setup-token:
     image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
@@ -168,7 +142,7 @@ services:
         condition: service_completed_successfully
 
   unstructured:
-    image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
+    image: ragtoriches/unst-prod
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
       interval: 10s
@@ -176,9 +150,9 @@ services:
       retries: 5
 
   graph_clustering:
-    image: ${GRAPH_CLUSTERING_IMAGE:-ragtoriches/cluster-prod}
+    image: ragtoriches/cluster-prod
     ports:
-      - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
+      - "7276:7276"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
       interval: 10s
@@ -186,20 +160,20 @@ services:
       retries: 5
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: ragtoriches/prod:latest
     ports:
-      - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
+      - "7272:7272"
     env_file:
       - ./env/r2r.env
     command: sh /scripts/start-r2r.sh
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5
     restart: on-failure
     volumes:
-      - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
+      - ${R2R_CONFIG_PATH:-./config}:/app/config
       - hatchet_api_key:/hatchet_api_key:ro
       - ./scripts:/scripts
     extra_hosts:
@@ -219,11 +193,11 @@ services:
         tag: backend
 
   r2r-dashboard:
-    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
+    image: emrgntcmplxty/r2r-dashboard:latest
     env_file:
       - ./env/r2r-dashboard.env
     ports:
-      - "${R2R_DASHBOARD_PORT:-7273}:3000"
+      - "7273:3000"
 
   fluent-bit:
     image: fluent/fluent-bit:latest
