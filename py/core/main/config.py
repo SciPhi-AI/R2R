@@ -147,7 +147,7 @@ class R2RConfig:
             config_path = R2RConfig.default_config_path
 
         # Load configuration from TOML file
-        with open(config_path, encoding='utf-8') as f:
+        with open(config_path, encoding="utf-8") as f:
             config_data = toml.load(f)
 
         return cls(config_data)
@@ -164,7 +164,7 @@ class R2RConfig:
 
     @classmethod
     def load_default_config(cls) -> dict:
-        with open(R2RConfig.default_config_path, encoding='utf-8') as f:
+        with open(R2RConfig.default_config_path, encoding="utf-8") as f:
             return toml.load(f)
 
     @staticmethod
