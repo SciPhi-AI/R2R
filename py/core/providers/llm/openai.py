@@ -131,7 +131,8 @@ class OpenAICompletionProvider(CompletionProvider):
         # Initialize Dashscope clients if credentials exist.
         dashscope_api_key = os.getenv("DASHSCOPE_API_KEY")
         dashscope_api_base = os.getenv(
-            "DASHSCOPE_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1"
+            "DASHSCOPE_API_BASE",
+            "https://dashscope.aliyuncs.com/compatible-mode/v1",
         )
         if dashscope_api_key and dashscope_api_base:
             self.dashscope_client = OpenAI(
@@ -152,7 +153,6 @@ class OpenAICompletionProvider(CompletionProvider):
                 self.lmstudio_client,
                 self.azure_foundry_client,
                 self.dashscope_client,
-
             ]
         ):
             raise ValueError(
@@ -208,7 +208,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 raise ValueError(
                     "Dashscope OpenAI credentials not configured but dashscope/ model prefix used"
                 )
-            return self.dashscope_client, model[len("dashscope/"):]  # Strip prefix
+            prefix_len = len("dashscope/")
+            return self.dashscope_client, model[prefix_len:]  # Strip prefix
         else:
             # Default to OpenAI if no prefix is provided.
             if self.openai_client:
@@ -267,7 +268,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 raise ValueError(
                     "Dashscope OpenAI credentials not configured but dashscope/ model prefix used"
                 )
-            return self.async_dashscope_client, model[len("dashscope/"):]
+            prefix_len = len("dashscope/")
+            return self.async_dashscope_client, model[prefix_len:]
         else:
             if self.async_openai_client:
                 return self.async_openai_client, model
