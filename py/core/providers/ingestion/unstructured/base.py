@@ -46,30 +46,30 @@ class UnstructuredIngestionConfig(IngestionConfig):
     new_after_n_chars: int = 1500
     overlap: int = 64
 
-    coordinates: bool | None
-    encoding: str | None  # utf-8
-    extract_image_block_types: list[str] | None
-    gz_uncompressed_content_type: str | None
-    hi_res_model_name: str | None
-    include_orig_elements: bool | None
-    include_page_breaks: bool | None
+    coordinates: bool | None = None
+    encoding: str | None = None  # utf-8
+    extract_image_block_types: list[str] | None = None
+    gz_uncompressed_content_type: str | None = None
+    hi_res_model_name: str | None = None
+    include_orig_elements: bool | None = None
+    include_page_breaks: bool | None = None
 
-    languages: list[str] | None
-    multipage_sections: bool | None
-    ocr_languages: list[str] | None
+    languages: list[str] | None = None
+    multipage_sections: bool | None = None
+    ocr_languages: list[str] | None = None
     # output_format: Optional[str] = "application/json"
-    overlap_all: bool | None
-    pdf_infer_table_structure: bool | None
+    overlap_all: bool | None = None
+    pdf_infer_table_structure: bool | None = None
 
-    similarity_threshold: float | None
-    skip_infer_table_types: list[str] | None
-    split_pdf_concurrency_level: int | None
-    split_pdf_page: bool | None
-    starting_page_number: int | None
-    strategy: str | None
-    chunking_strategy: str | ChunkingStrategy | None  # type: ignore
-    unique_element_ids: bool | None
-    xml_keep_tags: bool | None
+    similarity_threshold: float | None = None
+    skip_infer_table_types: list[str] | None = None
+    split_pdf_concurrency_level: int | None = None
+    split_pdf_page: bool | None = None
+    starting_page_number: int | None = None
+    strategy: str | None = None
+    chunking_strategy: str | ChunkingStrategy | None = None  # type: ignore
+    unique_element_ids: bool | None = None
+    xml_keep_tags: bool | None = None
 
     def to_ingestion_request(self):
         import json
