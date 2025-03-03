@@ -164,7 +164,7 @@ services:
     ports:
       - "7272:7272"
     env_file:
-      - ./env/r2r.env
+      - ./env/r2r-full.env
     command: sh /scripts/start-r2r.sh
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
