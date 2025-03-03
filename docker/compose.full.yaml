@@ -202,7 +202,7 @@ services:
   fluent-bit:
     image: fluent/fluent-bit:latest
     volumes:
-    - ./docker/fluent-bit:/fluent-bit/etc:ro
+    - ./fluent-bit:/fluent-bit/etc:ro
     ports:
     - "24224:24224"
     depends_on:
@@ -212,8 +212,6 @@ services:
     image: grafana/grafana:latest
     ports:
     - "3001:3000"
-    env_file:
-    - .env
     volumes:
     - ./.data/grafana:/var/lib/grafana
 
