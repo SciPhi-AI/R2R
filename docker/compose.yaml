@@ -24,6 +24,7 @@ services:
 
   r2r:
     image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    # image: sciphiai/r2r Replace on the next release
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     env_file:
@@ -40,7 +41,7 @@ services:
       - host.docker.internal:host-gateway
 
   r2r-dashboard:
-    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
+    image: sciphiai/r2r-dashboard:1.0.2
     env_file:
       - ./env/r2r-dashboard.env
     ports:

@@ -161,6 +161,7 @@ services:
 
   r2r:
     image: ragtoriches/prod:latest
+    # image: sciphiai/r2r Replace on the next release
     ports:
       - "7272:7272"
     env_file:
@@ -193,7 +194,7 @@ services:
         tag: backend
 
   r2r-dashboard:
-    image: emrgntcmplxty/r2r-dashboard:latest
+    image: sciphiai/r2r-dashboard:1.0.2
     env_file:
       - ./env/r2r-dashboard.env
     ports:
