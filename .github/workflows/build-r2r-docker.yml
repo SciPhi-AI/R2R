@@ -2,9 +2,6 @@ name: Build and Publish R2R Docker Image
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 env:
   REGISTRY_IMAGE: sciphiai/r2r
