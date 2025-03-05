@@ -2,26 +2,18 @@ name: Build and Publish R2R Docker Image
 
 on:
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Environment to deploy to (prod/staging)'
-        required: true
-        type: choice
-        options:
-          - prod
-          - staging
   push:
     branches:
       - main
 
 env:
-  REGISTRY_BASE: sciphiai
+  REGISTRY_IMAGE: sciphiai/r2r
+
 jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
-      registry_image: ${{ steps.version.outputs.REGISTRY_IMAGE }}
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Repository
@@ -35,26 +27,11 @@ jobs:
       - name: Install toml package
         run: pip install toml
 
-      - name: Determine version and registry
+      - name: Determine version
         id: version
         run: |
           VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['project']['version'])")
-          RELEASE_VERSION=$VERSION
-
-          # Set registry based on trigger type
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
-              REGISTRY_IMAGE="${{ env.REGISTRY_BASE }}/prod"
-            else
-              REGISTRY_IMAGE="${{ env.REGISTRY_BASE }}/staging"
-            fi
-          else
-            # Push to main always goes to staging
-            REGISTRY_IMAGE="${{ env.REGISTRY_BASE }}/staging"
-          fi
-
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_OUTPUT
-          echo "REGISTRY_IMAGE=$REGISTRY_IMAGE" >> $GITHUB_OUTPUT
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Set matrix
         id: set-matrix
@@ -94,8 +71,8 @@ jobs:
           no-cache: true
           push: true
           tags: |
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest-${{ matrix.platform }}
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-${{ matrix.platform }}
+            ${{ env.REGISTRY_IMAGE }}:latest-${{ matrix.platform }}
           provenance: false
           sbom: false
 
@@ -111,18 +88,18 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          docker buildx imagetools create -t ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
 
-          docker buildx imagetools create -t ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest \
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
-            ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
 
       - name: Verify manifests
         run: |
-          docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
-          docker buildx imagetools inspect ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:latest
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest
 
   success-check:
     needs: [create-manifest, prepare]
@@ -130,15 +107,3 @@ jobs:
     steps:
       - name: Always succeed
         run: exit 0
-
-      - name: Try Deploy to Staging
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
-        continue-on-error: true
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USERNAME }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          script: |
-            docker pull ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }}
-            docker service update --image ${{ needs.prepare.outputs.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.RELEASE_VERSION }} r2r-blue_r2r
