@@ -160,8 +160,7 @@ services:
       retries: 5
 
   r2r:
-    image: ragtoriches/prod:latest
-    # image: sciphiai/r2r Replace on the next release
+    image: sciphiai/r2r:latest
     ports:
       - "7272:7272"
     env_file:

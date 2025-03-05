@@ -236,8 +236,7 @@ services:
         condition: on-failure
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
-    # image: sciphiai/r2r Replace on the next release
+    image: sciphiai/r2r:latest
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:

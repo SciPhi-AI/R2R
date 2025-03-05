@@ -42,6 +42,7 @@ from core.base import (
     format_search_results_for_stream,
     map_citations_to_collector,
     reassign_citations_in_order,
+    select_search_filters,
 )
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
@@ -660,6 +661,7 @@ class RetrievalService(Service):
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
         reasoning_agent: bool = False,
+        auth_user: Optional[Any] = None,
     ):
         if reasoning_agent and not rag_generation_config.stream:
             raise R2RException(
@@ -775,13 +777,45 @@ class RetrievalService(Service):
                 message_response.id if message_response is not None else None
             )
 
-            # -- Step 1: parse the filter dict from search_settings
-            #    (assuming search_settings.filters is the dict you want to parse)
-            filter_user_id, filter_collection_ids = (
-                self._parse_user_and_collection_filters(
-                    search_settings.filters
+            if auth_user is not None:
+                search_settings.filters = select_search_filters(
+                    auth_user, search_settings
                 )
+
+            filter_user_id = (
+                auth_user.id
+                if auth_user and not auth_user.is_superuser
+                else None
             )
+            filter_collection_ids = []
+
+            if "collection_ids" in search_settings.filters:
+                overlap_obj = search_settings.filters["collection_ids"]
+                if "$overlap" in overlap_obj:
+                    filter_collection_ids = list(overlap_obj["$overlap"])
+            if "$or" in search_settings.filters:
+                for item in search_settings.filters["$or"]:
+                    if (
+                        "collection_ids" in item
+                        and "$overlap" in item["collection_ids"]
+                    ):
+                        filter_collection_ids = list(
+                            item["collection_ids"]["$overlap"]
+                        )
+            elif "$and" in search_settings.filters:
+                for item in search_settings.filters["$and"]:
+                    if "$or" in item:
+                        for or_item in item["$or"]:
+                            if (
+                                "collection_ids" in or_item
+                                and "$overlap" in or_item["collection_ids"]
+                            ):
+                                filter_collection_ids = [
+                                    str(cid)
+                                    for cid in or_item["collection_ids"][
+                                        "$overlap"
+                                    ]
+                                ]
 
             system_instruction = None
 
@@ -1128,59 +1162,27 @@ class RetrievalService(Service):
 
         return results
 
-    def _parse_user_and_collection_filters(
-        self,
-        filters: dict[str, Any],
-    ):
-        ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and")
-        filter_starts_with_or = filters.get("$or")
-        if filter_starts_with_and:
-            try:
-                filter_starts_with_and_then_or = filter_starts_with_and[0][
-                    "$or"
-                ]
-
-                user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_and_then_or[1][
-                    "collection_ids"
-                ]["$overlap"]
-                return user_id, [str(ele) for ele in collection_ids]
-            except Exception as e:
-                logger.error(
-                    f"Error: {e}.\n\n While"
-                    + """ parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
-                )
-                return None, []
-        elif filter_starts_with_or:
-            try:
-                user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_or[1]["collection_ids"][
-                    "$overlap"
-                ]
-                return user_id, [str(ele) for ele in collection_ids]
-            except Exception:
-                logger.error(
-                    """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
-                )
-                return None, []
-        else:
-            # Admin user
-            return None, []
-
     async def _build_documents_context(
         self,
         filter_user_id: Optional[UUID] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
         max_summary_length: int = 128,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> str:
         """Fetches documents matching the given filters and returns a formatted
         string enumerating them."""
+        filters = {}
+
+        if filter_collection_ids and len(filter_collection_ids) > 0:
+            # Use the collection filter with $overlap operator
+            filters["collection_ids"] = {"$overlap": filter_collection_ids}
+
         # We only want up to `limit` documents for brevity
         docs_data = await self.providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=limit,
             filter_user_ids=[filter_user_id] if filter_user_id else None,
+            filter_collection_ids=filter_collection_ids,
             include_summary_embedding=False,
         )
 
@@ -1247,8 +1249,6 @@ class RetrievalService(Service):
         """
         date_str = str(datetime.now().isoformat()).split("T")[0]
 
-        # "dynamic_rag_agent" // "static_rag_agent"
-
         prompt_name = (
             self.config.agent.agent_dynamic_prompt
             if use_system_context or reasoning_agent
@@ -1268,6 +1268,7 @@ class RetrievalService(Service):
         if use_system_context or reasoning_agent:
             doc_context_str = await self._build_documents_context(
                 filter_user_id=filter_user_id,
+                filter_collection_ids=filter_collection_ids,
             )
 
             coll_context_str = await self._build_collections_context(
