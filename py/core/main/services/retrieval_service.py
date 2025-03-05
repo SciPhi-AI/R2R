@@ -1167,7 +1167,7 @@ class RetrievalService(Service):
         filter_user_id: Optional[UUID] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
         max_summary_length: int = 128,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> str:
         """Fetches documents matching the given filters and returns a formatted
         string enumerating them."""
