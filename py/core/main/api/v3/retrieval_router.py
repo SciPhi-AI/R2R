@@ -623,6 +623,7 @@ class RetrievalRouter(BaseRouterV3):
                     ),
                     use_system_context=use_system_context,
                     override_tools=tools,
+                    auth_user=auth_user,
                 )
 
                 if rag_generation_config.stream:
