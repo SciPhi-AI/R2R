@@ -1162,46 +1162,6 @@ class RetrievalService(Service):
 
         return results
 
-    def _parse_user_and_collection_filters(
-        self,
-        filters: dict[str, Any],
-    ):
-        ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and")
-        filter_starts_with_or = filters.get("$or")
-        if filter_starts_with_and:
-            try:
-                filter_starts_with_and_then_or = filter_starts_with_and[0][
-                    "$or"
-                ]
-
-                user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_and_then_or[1][
-                    "collection_ids"
-                ]["$overlap"]
-                return user_id, [str(ele) for ele in collection_ids]
-            except Exception as e:
-                logger.error(
-                    f"Error: {e}.\n\n While"
-                    + """ parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
-                )
-                return None, []
-        elif filter_starts_with_or:
-            try:
-                user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_or[1]["collection_ids"][
-                    "$overlap"
-                ]
-                return user_id, [str(ele) for ele in collection_ids]
-            except Exception:
-                logger.error(
-                    """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
-                )
-                return None, []
-        else:
-            # Admin user
-            return None, []
-
     async def _build_documents_context(
         self,
         filter_user_id: Optional[UUID] = None,
