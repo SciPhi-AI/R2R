@@ -121,7 +121,7 @@ line-ending = "auto"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"
@@ -143,5 +143,5 @@ packages = { find = { where = [ "." ], include = [ "r2r*", "sdk*", "shared*", "c
 include-package-data = true
 
 [tool.setuptools.package-data]
-core = ["configs/*.toml"]
+core = ["configs/*.toml", "providers/database/prompts/*.yaml"]
 r2r = ["r2r.toml"]

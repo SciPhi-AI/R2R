@@ -173,7 +173,7 @@ class RetrievalSDK:
         conversation_id: Optional[str | uuid.UUID] = None,
         tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
-        use_extended_prompt: Optional[bool] = True,
+        use_system_context: Optional[bool] = True,
     ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
         """Performs a single turn in a conversation with a RAG agent.
 
@@ -203,7 +203,7 @@ class RetrievalSDK:
             ),
             "tools": tools,
             "max_tool_context_length": max_tool_context_length,
-            "use_extended_prompt": use_extended_prompt,
+            "use_system_context": use_system_context,
         }
         if search_mode:
             data["search_mode"] = search_mode
