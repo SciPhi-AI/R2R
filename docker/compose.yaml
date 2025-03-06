@@ -1,6 +1,6 @@
 volumes:
   postgres_data:
-    name: ${VOLUME_POSTGRES_DATA:-postgres_data}
+    name: postgres_data
 
 services:
   postgres:
@@ -11,31 +11,31 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${R2R_POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
     restart: on-failure
     command: >
       postgres
-      -c max_connections=${R2R_POSTGRES_MAX_CONNECTIONS:-1024}
+      -c max_connections=1024
 
   r2r:
     image: sciphiai/r2r:latest
     ports:
-      - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
+      - "7272:7272"
     env_file:
       - ./env/r2r.env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${R2R_PORT:-7272}/v3/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5
     restart: on-failure
     volumes:
-      - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
+      - ./user_configs:/app/user_configs
     extra_hosts:
       - host.docker.internal:host-gateway
 
@@ -44,4 +44,4 @@ services:
     env_file:
       - ./env/r2r-dashboard.env
     ports:
-      - "${R2R_DASHBOARD_PORT:-7273}:3000"
+      - "7273:3000"
