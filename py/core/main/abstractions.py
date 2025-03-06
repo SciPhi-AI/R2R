@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from core.base.providers.embedding import EmbeddingProvider
+from core.base.providers.llm import CompletionProvider
 from core.providers import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
@@ -16,8 +18,6 @@ from core.providers import (
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
 )
-from core.base.providers.embedding import EmbeddingProvider
-from core.base.providers.llm import CompletionProvider
 
 if TYPE_CHECKING:
     from core.main.services.auth_service import AuthService

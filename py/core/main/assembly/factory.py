@@ -105,12 +105,7 @@ class R2RProviderFactory:
     def create_ingestion_provider(
         ingestion_config: IngestionConfig,
         database_provider: PostgresDatabaseProvider,
-        llm_provider: (
-            AnthropicCompletionProvider
-            | LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ),
+        llm_provider: CompletionProvider,
         *args,
         **kwargs,
     ) -> R2RIngestionProvider | UnstructuredIngestionProvider:
