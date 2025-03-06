@@ -1,20 +1,20 @@
-import uuid
 import asyncio
 import json
 import logging
 import random
 import re
-from typing import Any, AsyncGenerator, Callable, Optional, Tuple, Set
+import uuid
+from typing import Any, AsyncGenerator, Callable, Optional, Set, Tuple
 
 import tiktoken
 from google.genai.errors import ServerError
 
 from core.agent import R2RAgent, R2RStreamingAgent, R2RStreamingReasoningAgent
 from core.base import (
+    CitationData,
     CitationRelabeler,
     FinalAnswerData,
     ToolCallData,
-    CitationData,
     ToolCallEvent,
     ToolResultData,
     ToolResultEvent,
@@ -80,16 +80,19 @@ class SearchResultsCollector:
 
         if agg.context_document_results:
             for cd in agg.context_document_results:
-                self._results_in_order.append(
-                    ("contextDoc", cd, self._next_index)
-                )
-                self._next_index += 1
+                for chunk in cd.chunks:
+                    self._results_in_order.append(
+                        ("contextDoc", cd, self._next_index)
+                    )
+                    self._next_index += 1
 
     def get_all_results(self) -> list[Tuple[str, Any, int]]:
         """
         Return list of (source_type, result_obj, aggregator_index),
         in the order appended.
         """
+        # logger.debug(f"Returning all search results in order:\n\n{self._results_in_order}")
+        # import pdb; pdb.set_trace()
         return self._results_in_order
 
 
@@ -383,14 +386,19 @@ class RAGAgentMixin:
             results, self.search_results_collector
         )
         context_tokens = num_tokens(context) + 1
-        frac_to_return = self.max_tool_context_length / (
-            num_tokens(context) + 1
+        frac_to_return = self.max_tool_context_length / (context_tokens)
+
+        print("len(context) = ", len(context))
+        print(
+            "int(frac_to_return * len(context)) = ",
+            int(frac_to_return * len(context)),
         )
 
         if frac_to_return > 1:
             return context
         else:
-            return context[: int(frac_to_return * context_tokens)]
+            return context[: int(frac_to_return * len(context))]
+        # return context
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
@@ -412,7 +420,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         rag_generation_config: GenerationConfig,
         local_search_method: Callable,
         content_method: Optional[Callable] = None,
-        max_tool_context_length: int = 10_000,
+        max_tool_context_length: int = 20_000,
     ):
         # Initialize base R2RAgent
         R2RAgent.__init__(
@@ -507,10 +515,99 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
 
             while not self._completed:
                 msg_list = await self.conversation.get_messages()
+                print("msg_list = ", msg_list)
+
                 gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+
                 llm_stream = self.llm_provider.aget_completion_stream(
                     msg_list, gen_cfg
                 )
+
+                # from typing import Any
+
+                # class Delta:
+                #     def __init__(self, content, tool_calls = None):
+                #         self.content = content
+                #         self.tool_calls = tool_calls
+
+                # class Choice:
+                #     def __init__(self, delta, finish_reason = None):
+                #         self.delta = delta
+                #         self.finish_reason = finish_reason
+
+                # class Chunk:
+                #     def __init__(self, choices):
+                #         self.choices = choices
+
+                # class Function:
+                #     def __init__(self, name, arguments):
+                #         self.name = name
+                #         self.arguments = arguments
+
+                # class ToolCall:
+                #     def __init__(self, id, index, name, arguments):
+                #         self.id = id
+                #         self.index = index
+                #         self.function = Function(name, arguments)
+
+                # async def llm_stream() -> AsyncGenerator[Any, None]:
+                #     # event='message', data=...
+                #     for chunk in ["I", "'ll fetch the content of the DeepSeek R1", "z paper and provide you with the major highlights", "."]:
+                #         yield Chunk(
+                #             choices=[
+                #                 Choice(
+                #                     delta=Delta(content=chunk),
+                #                     finish_reason=None
+                #                 )
+                #             ]
+                #         )
+
+                #     # event='tool_call', data=ToolCallData(tool_call_id='toolu_01EieCrjEzXvisgyWzM3mTp6', name='content', arguments='{"filters": {"document_id":{"$eq":"e43864f5-a36f-548e-aacd-6f8d48b30c7f"}}}')
+                #     yield Chunk(
+                #         choices=[
+                #             Choice(
+                #                 delta=Delta(
+                #                     content=None,
+                #                     tool_calls=[ToolCall("id_123", 0, "content", json.dumps({"filters": {"document_id":{"$eq":"e43864f5-a36f-548e-aacd-6f8d48b30c7f"}}}))]
+                #                 ),
+                #             )
+                #         ]
+                #     )
+
+                #     # yield tool call
+                #     yield Chunk(
+                #         choices=[
+                #             Choice(
+                #                 delta=Delta(
+                #                     content=None,
+                #                 ),
+                #                 finish_reason="tool_calls"
+                #             )
+                #         ]
+                #     )
+
+                #     # event='message', data=...
+                #     for chunk in ["Base", " overview of DeepSeek R1", " language models through reinforcement", " [", "4]."]:
+                #         yield Chunk(
+                #             choices=[
+                #                 Choice(
+                #                     delta=Delta(content=chunk),
+                #                     finish_reason=None
+                #                 )
+                #             ]
+                #         )
+
+                #     # event='stop'
+                #     yield Chunk(
+                #         choices=[
+                #             Choice(
+                #                 delta=Delta(
+                #                     content=None,
+                #                 ),
+                #                 finish_reason="stop"
+                #             )
+                #         ]
+                #     )
 
                 async for chunk in llm_stream:
                     delta = chunk.choices[0].delta
@@ -563,9 +660,19 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                                     ):
                                         yield line
                                 else:
-                                    # The LLM might have cited "[99]" but we have only 5 aggregator results, etc.
-                                    # Up to you how to handle that.
-                                    pass
+                                    # If it's out of range, still emit a placeholder citation event
+                                    unknown_evt_payload = {
+                                        "id": f"cit_{old_ref}",
+                                        "object": "agent.citation.unknown",
+                                        "raw_index": old_ref,
+                                        "new_index": new_ref,
+                                        "agg_index": None,
+                                        "source_type": None,
+                                    }
+                                    async for line in yield_sse_event(
+                                        "citation", unknown_evt_payload
+                                    ):
+                                        yield line
 
                         # B) Rewrite the references in partial_text_buffer to use the newRef
                         rewritten_text = relabeler.rewrite_with_newrefs(
@@ -798,14 +905,17 @@ class R2RStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
             content_method=content_method,
         )
 
-class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoningAgent):
+
+class R2RXMLToolsStreamingReasoningRAGAgent(
+    RAGAgentMixin, R2RStreamingReasoningAgent
+):
     """
     A streaming, iterative RAG Agent that looks for <Thought>, <Action>, <Response> blocks.
 
     At a high level:
       - We run up to `max_steps` iterations.
       - Each iteration calls the LLM in streaming mode.
-      - For each partial chunk, we split out <Thought> vs. normal text => 
+      - For each partial chunk, we split out <Thought> vs. normal text =>
         SSE "thinking" or "message".
       - After streaming stops (finish_reason or tool_calls), we parse <Action> blocks:
         - If there's a <Response>, we finalize and emit final_answer + done.
@@ -852,11 +962,11 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
         The main iterative loop. Each iteration:
-          1) Stream partial LLM output => parse <Thought> => SSE "thinking", 
+          1) Stream partial LLM output => parse <Thought> => SSE "thinking",
              normal text => SSE "message".
           2) Collect all text in iteration_text + user_facing_buffer.
           3) Parse <Action> blocks for <ToolCall> or <Response>.
@@ -883,8 +993,11 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
 
             # 1) Single LLM streaming pass
             msgs = await self.conversation.get_messages()
+            print("msgs = ", msgs)
             gen_cfg = self.get_generation_config(msgs[-1], stream=True)
-            llm_stream = self.llm_provider.aget_completion_stream(msgs, gen_cfg)
+            llm_stream = self.llm_provider.aget_completion_stream(
+                msgs, gen_cfg
+            )
 
             async for chunk in llm_stream:
                 finish_reason = chunk.choices[0].finish_reason
@@ -912,7 +1025,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                                     ]
                                 },
                             }
-                            async for line in yield_sse_event("thinking", thinking_data):
+                            async for line in yield_sse_event(
+                                "thinking", thinking_data
+                            ):
                                 yield line
 
                             # Add to iteration_text with explicit <Thought> tags
@@ -934,7 +1049,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                                     ]
                                 },
                             }
-                            async for line in yield_sse_event("message", msg_data):
+                            async for line in yield_sse_event(
+                                "message", msg_data
+                            ):
                                 yield line
 
                             user_facing_buffer.append(text_seg)
@@ -950,9 +1067,14 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                 for action_block in actions:
                     # If there's <Response>
                     if action_block["response"] is not None:
-                        final_answer = "".join(user_facing_buffer) + action_block["response"]
+                        final_answer = (
+                            "".join(user_facing_buffer)
+                            + action_block["response"]
+                        )
                         # Finalize => SSE "final_answer" + "done"
-                        async for line in self._finalize_response(final_answer, relabeler, announced_refs):
+                        async for line in self._finalize_response(
+                            final_answer, relabeler, announced_refs
+                        ):
                             yield line
                         return
 
@@ -966,26 +1088,38 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                                 name=tc["name"],
                                 arguments=tc["params"],
                             )
-                            evt = ToolCallEvent(event="tool_call", data=tc_data)
-                            async for line in yield_sse_event("tool_call", evt.data.dict()):
+                            evt = ToolCallEvent(
+                                event="tool_call", data=tc_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_call", evt.data.dict()
+                            ):
                                 yield line
 
                             # Actually execute the tool
-                            result_obj = await self.execute_tool(tc["name"], **tc["params"])
+                            result_obj = await self.execute_tool(
+                                tc["name"], **tc["params"]
+                            )
 
                             # SSE "tool_result"
                             tool_result_data = ToolResultData(
                                 tool_call_id=tool_call_id,
                                 role="tool",
                                 content=json.dumps(
-                                    convert_nonserializable_objects(result_obj.raw_result.as_dict())
+                                    convert_nonserializable_objects(
+                                        result_obj.raw_result.as_dict()
+                                    )
                                 ),
                             )
-                            tr_evt = ToolResultEvent(event="tool_result", data=tool_result_data)
-                            async for line in yield_sse_event("tool_result", tr_evt.data.dict()):
+                            tr_evt = ToolResultEvent(
+                                event="tool_result", data=tool_result_data
+                            )
+                            async for line in yield_sse_event(
+                                "tool_result", tr_evt.data.dict()
+                            ):
                                 yield line
 
-                            # Add the toolcall + result to iteration_text 
+                            # Add the toolcall + result to iteration_text
                             # (so the next iteration can see it, if the LLM references it)
                             iteration_text += (
                                 "<Action><ToolCalls>"
@@ -996,10 +1130,16 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                             )
             else:
                 # Possibly there's a <Response> outside <Action>
-                resp_m = re.search(r"<Response>(.*?)</Response>", iteration_text, re.DOTALL)
+                resp_m = re.search(
+                    r"<Response>(.*?)</Response>", iteration_text, re.DOTALL
+                )
                 if resp_m:
-                    final_answer = "".join(user_facing_buffer) + resp_m.group(1)
-                    async for line in self._finalize_response(final_answer, relabeler, announced_refs):
+                    final_answer = "".join(user_facing_buffer) + resp_m.group(
+                        1
+                    )
+                    async for line in self._finalize_response(
+                        final_answer, relabeler, announced_refs
+                    ):
                         yield line
                     return
 
@@ -1008,18 +1148,24 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                 combined_text = "".join(user_facing_buffer).strip()
                 if combined_text:
                     # Re-write bracket references and emit any citation SSE
-                    rewritten_text, citation_sse = await self._rewrite_and_emit_citations(
-                        combined_text, relabeler, announced_refs
+                    rewritten_text, citation_sse = (
+                        await self._rewrite_and_emit_citations(
+                            combined_text, relabeler, announced_refs
+                        )
                     )
                     # yield the SSE lines
                     for line in citation_sse:
                         yield line
 
                     # Add as an assistant message
-                    await self.conversation.add_message(Message(role="assistant", content=rewritten_text))
+                    await self.conversation.add_message(
+                        Message(role="assistant", content=rewritten_text)
+                    )
 
         # If we used all max_steps with no <Response>, fallback:
-        async for line in self._finalize_response(COMPUTE_FAILURE, relabeler, announced_refs):
+        async for line in self._finalize_response(
+            COMPUTE_FAILURE, relabeler, announced_refs
+        ):
             yield line
 
     async def _rewrite_and_emit_citations(
@@ -1043,7 +1189,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                 announced_refs.add(old_ref)
                 all_results = self.search_results_collector.get_all_results()
                 if 1 <= old_ref <= len(all_results):
-                    (src_type, result_obj, agg_index) = all_results[old_ref - 1]
+                    (src_type, result_obj, agg_index) = all_results[
+                        old_ref - 1
+                    ]
                     citation_evt_payload = CitationData(
                         id=f"cit_{old_ref}",
                         object="agent.citation",
@@ -1054,14 +1202,19 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                         source_title=getattr(result_obj, "title", None),
                     )
                     # Collect SSE lines
-                    async for line in yield_sse_event("citation", citation_evt_payload.dict()):
+                    async for line in yield_sse_event(
+                        "citation", citation_evt_payload.dict()
+                    ):
                         sse_lines.append(line)
 
         rewritten = relabeler.rewrite_with_newrefs(text)
         return rewritten, sse_lines
 
     async def _finalize_response(
-        self, final_text: str, relabeler: CitationRelabeler, announced_refs: set[int]
+        self,
+        final_text: str,
+        relabeler: CitationRelabeler,
+        announced_refs: set[int],
     ) -> AsyncGenerator[str, None]:
         """
         Called when we see a <Response> or when we hit max_steps with no response.
@@ -1070,22 +1223,30 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
         3) SSE 'final_answer'
         4) SSE 'done'
         """
-        rewritten_text, citation_sse = await self._rewrite_and_emit_citations(final_text, relabeler, announced_refs)
+        rewritten_text, citation_sse = await self._rewrite_and_emit_citations(
+            final_text, relabeler, announced_refs
+        )
         # yield the citation SSE lines
         for line in citation_sse:
             yield line
 
         # Now store the final text in conversation
-        await self.conversation.add_message(Message(role="assistant", content=rewritten_text))
+        await self.conversation.add_message(
+            Message(role="assistant", content=rewritten_text)
+        )
 
         # Build final_answer SSE
         raw_citations = extract_citations(rewritten_text)
-        mapped_citations = map_citations_to_collector(raw_citations, self.search_results_collector)
+        mapped_citations = map_citations_to_collector(
+            raw_citations, self.search_results_collector
+        )
         final_evt_payload = FinalAnswerData(
             generated_answer=relabeler.finalize_all_citations(rewritten_text),
             citations=[c.model_dump() for c in mapped_citations],
         )
-        async for line in yield_sse_event("final_answer", final_evt_payload.dict()):
+        async for line in yield_sse_event(
+            "final_answer", final_evt_payload.dict()
+        ):
             yield line
 
         # SSE "done"
@@ -1099,7 +1260,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
         Returns a list of (segment, is_thought) pairs.
         Also handle <think> as <Thought> if needed.
         """
-        text = text.replace("<think>", "<Thought>").replace("</think>", "</Thought>")
+        text = text.replace("<think>", "<Thought>").replace(
+            "</think>", "</Thought>"
+        )
         pattern = re.compile(r"(<Thought>.*?</Thought>)", re.DOTALL)
         parts = pattern.split(text)
 
@@ -1119,11 +1282,21 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
         Parse <Action> blocks from the iteration text, extracting <ToolCall> and <Response>.
         Returns a list of dicts with shape: {"tool_calls": [...], "response": <str or None>}
         """
-        action_pattern = re.compile(r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE)
-        toolcall_pattern = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE)
-        name_pattern = re.compile(r"<Name>(.*?)</Name>", re.DOTALL | re.IGNORECASE)
-        params_pattern = re.compile(r"<Parameters>(.*?)</Parameters>", re.DOTALL | re.IGNORECASE)
-        response_pattern = re.compile(r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE)
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
+        toolcall_pattern = re.compile(
+            r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+        )
+        name_pattern = re.compile(
+            r"<Name>(.*?)</Name>", re.DOTALL | re.IGNORECASE
+        )
+        params_pattern = re.compile(
+            r"<Parameters>(.*?)</Parameters>", re.DOTALL | re.IGNORECASE
+        )
+        response_pattern = re.compile(
+            r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
+        )
 
         actions = []
         for ablock in action_pattern.findall(text):
@@ -1133,7 +1306,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
             for tcall in toolcall_pattern.findall(ablock):
                 name_m = name_pattern.search(tcall)
                 params_m = params_pattern.search(tcall)
-                tool_name = name_m.group(1).strip() if name_m else "unknown_tool"
+                tool_name = (
+                    name_m.group(1).strip() if name_m else "unknown_tool"
+                )
 
                 if params_m:
                     raw_params = params_m.group(1).strip()
@@ -1144,7 +1319,9 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
                 else:
                     tool_params = {}
 
-                block_data["tool_calls"].append({"name": tool_name, "params": tool_params})
+                block_data["tool_calls"].append(
+                    {"name": tool_name, "params": tool_params}
+                )
 
             # <Response>
             resp_match = response_pattern.search(ablock)
@@ -1154,525 +1331,6 @@ class R2RXMLToolsStreamingReasoningRAGAgent(RAGAgentMixin, R2RStreamingReasoning
             actions.append(block_data)
 
         return actions
-
-
-class GeminiXMLToolsStreamingReasoningRAGAgent(R2RXMLToolsStreamingReasoningRAGAgent):
-    """
-    A Gemini-based RAG Agent that extends the iterative XML-based streaming approach.
-    It overrides only the LLM call logic so that we get chain-of-thought streaming
-    from Gemini. The rest of the <Thought>, <Action>, <Response> logic is inherited
-    from R2RXMLToolsStreamingReasoningRAGAgent.
-
-    Usage:
-      - Provide gemini_api_key either in the constructor or via env var 'GEMINI_API_KEY'.
-      - Provide gemini_model_name if you want a specific Gemini model version.
-      - Then .arun() will produce SSE events for partial chain-of-thought,
-        user-facing text, tool calls/results, and final answers.
-    """
-
-    def __init__(
-        self,
-        database_provider: DatabaseProvider,
-        llm_provider: (
-            AnthropicCompletionProvider
-            | LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ),
-        config: AgentConfig,
-        search_settings,
-        rag_generation_config,
-        local_search_method,
-        content_method=None,
-        max_tool_context_length=20_000,
-        max_steps=10,
-        gemini_api_key: str = "",
-        gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
-    ):
-        # Call parent constructor
-        super().__init__(
-            database_provider=database_provider,
-            llm_provider=llm_provider,
-            config=config,
-            search_settings=search_settings,
-            rag_generation_config=rag_generation_config,
-            local_search_method=local_search_method,
-            content_method=content_method,
-            max_tool_context_length=max_tool_context_length,
-            max_steps=max_steps,
-        )
-        from google import genai  # "pip install google-genai"
-        import os
-
-        # Grab or confirm the Gemini key
-        self._gemini_key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
-        if not self._gemini_key:
-            raise ValueError("Gemini API key is required, none found in constructor or environment.")
-
-        # Create a Gemini client
-        self.gemini_client = genai.Client(
-            api_key=self._gemini_key,
-            http_options={"api_version": "v1alpha"},
-        )
-        self.gemini_model_name = gemini_model_name
-
-    async def _generate_thinking_response(
-        self,
-        user_prompt: str,
-        max_retries: int = 3,
-        initial_delay: float = 1.0,
-        **kwargs,
-    ) -> AsyncGenerator[Tuple[bool, str], None]:
-        """
-        Overridden from the base class. 
-        Calls Gemini to produce chain-of-thought tokens.
-
-        We yield tuples: (is_thought: bool, token_text).
-          - If is_thought=True, that text belongs inside <Thought>...</Thought>.
-          - If is_thought=False, that text is user-facing content.
-        """
-        config = {
-            "thinking_config": {"include_thoughts": True},
-            # e.g. "max_output_tokens": 8192,
-            # or additional config from your `rag_generation_config` if needed
-        }
-
-        attempt = 0
-        last_error = None
-
-        while attempt <= max_retries:
-            try:
-                # 1) Call Gemini
-                response = self.gemini_client.models.generate_content(
-                    model=self.gemini_model_name,
-                    contents=user_prompt,
-                    config=config,
-                )
-                # 2) If empty response
-                if not response.candidates:
-                    yield (False, "[Gemini: No candidates returned]")
-                    return
-
-                # 3) Stream chain-of-thought vs. normal text
-                for part in response.candidates[0].content.parts:
-                    # part has: .text (string), .thought (bool)
-                    if part.thought:
-                        yield (True, part.text)
-                    else:
-                        yield (False, part.text)
-
-                return  # Done
-
-            except ServerError as e:
-                last_error = e
-                attempt += 1
-                if attempt <= max_retries:
-                    # Exponential backoff + jitter
-                    delay = initial_delay * (2 ** (attempt - 1)) * (0.5 + random.random())
-                    await asyncio.sleep(delay)
-                else:
-                    # All retries exhausted
-                    error_msg = f"[Gemini Error] Exhausted {max_retries} attempts. Last error: {last_error}"
-                    yield (False, error_msg)
-                    return
-
-    def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
-        """
-        Convert the conversation messages to a single text prompt suitable for Gemini.
-        You can customize this logic as you prefer.
-        """
-        system_parts = []
-        user_parts = []
-        for msg in conversation_msgs:
-            role = msg["role"]
-            content = msg["content"]
-            if role == "system":
-                system_parts.append(content)
-            else:
-                # e.g. "[USER]\nHello\n"
-                user_parts.append(f"[{role.upper()}]\n{content}\n")
-
-        # Combine them into a single string
-        system_text = "\n".join(system_parts)
-        user_text = "\n".join(user_parts)
-        combined_prompt = ""
-        if system_text.strip():
-            combined_prompt += f"[System]\n{system_text}\n\n"
-        combined_prompt += user_text
-        return combined_prompt
-
-
-# class GeminiXMLToolsStreamingReasoningRAGAgent(
-#     R2RXMLToolsStreamingReasoningRAGAgent
-# ):
-#     """
-#     A Gemini-based implementation that uses the `XMLToolsStreamingRAGAgentBase`.
-#     """
-
-#     def __init__(
-#         self,
-#         *args,
-#         gemini_api_key: str = "",
-#         gemini_model_name: str = "gemini-2.0-flash-thinking-exp",
-#         **kwargs,
-#     ):
-#         super().__init__(*args, **kwargs)
-
-#         import os
-
-#         from google import genai  # "pip install google-genai"
-
-#         key = gemini_api_key or os.environ.get("GEMINI_API_KEY")
-#         if not key:
-#             raise ValueError(
-#                 "Gemini API key not provided or set in environment."
-#             )
-#         self.gemini_client = genai.Client(
-#             api_key=key,
-#             http_options={"api_version": "v1alpha"},
-#         )
-#         self.gemini_model_name = gemini_model_name
-
-#     async def arun(
-#         self,
-#         system_instruction: Optional[str] = None,
-#         messages: Optional[list[Message]] = None,
-#         *args,
-#         **kwargs,
-#     ) -> AsyncGenerator[str, None]:
-#         """
-#         Iterative approach with chain-of-thought wrapped in <Thought>...</Thought> each iteration.
-#         1) In each iteration (up to max_steps):
-#             a) Call _generate_thinking_response(conversation_context).
-#             b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
-#             c) Collect "assistant" tokens (is_thought=False) in a buffer to parse after.
-#             d) Parse <Action> blocks; if any <Action> has <Response>, yield it & stop.
-#             e) Else, if there's a bare <Response> outside <Action>, yield & stop.
-#             f) If still no <Response>, append iteration text to context, move to next iteration.
-#         2) If we exhaust steps, yield fallback <Response>.
-#         """
-
-#         # Step 1) Setup conversation
-#         await self._setup(system_instruction=system_instruction)
-#         if messages:
-#             for msg in messages:
-#                 await self.conversation.add_message(msg)
-
-#         # Build initial conversation context from all messages
-#         all_msgs = await self.conversation.get_messages()
-#         conversation_context = self._build_single_user_prompt(all_msgs)
-
-#         for step_i in range(self.max_steps):
-#             # We'll collect final text tokens to parse for <Action>/<Response>.
-#             assistant_text_buffer = []
-#             # Track whether we are “inside” a <Thought> block while streaming:
-#             inside_thought_block = False
-
-#             conversation_context += "\n\n[Assistant]\n"
-
-#             # Step 2) Single LLM call => yields (is_thought, text) pairs
-#             async for (
-#                 is_thought,
-#                 token_text,
-#             ) in self._generate_thinking_response(
-#                 conversation_context, **kwargs
-#             ):
-#                 if is_thought:
-#                     # Stream chain-of-thought text *inline*, but bracket with <Thought>...</Thought>
-#                     if not inside_thought_block:
-#                         inside_thought_block = True
-#                         conversation_context += "<Thought>"
-#                         yield "<Thought>"
-#                     conversation_context += token_text
-#                     yield token_text
-#                 else:
-#                     # If we were inside a thought block, close it
-#                     if inside_thought_block:
-#                         conversation_context += "</Thought>"
-#                         yield "</Thought>"
-#                         inside_thought_block = False
-
-#                     # “Assistant text” is user-facing text that we
-#                     # will parse for <Action> or <Response>
-#                     assistant_text_buffer.append(token_text)
-
-#             # If the model ended while still in a thought block, close it
-#             if inside_thought_block:
-#                 conversation_context += "</Thought>"
-#                 yield "</Thought>"
-
-#             # Step 3) Combine the final user-facing tokens
-#             iteration_text = "".join(assistant_text_buffer).strip()
-
-#             #
-#             # 3a) Parse out <Action> blocks
-#             #
-#             parsed_actions = self._parse_action_blocks(iteration_text)
-
-#             pre_text = iteration_text.split("<Action>")[0]
-#             conversation_context += pre_text
-
-#             if parsed_actions:
-#                 # For each action block, see if it has <ToolCalls>, <Response>
-#                 for action_block in parsed_actions:
-
-#                     # Prepare two separate <ToolCalls> blocks:
-#                     #  - "toolcalls_xml": with <Result> inside (for conversation_context)
-#                     #  - "toolcalls_minus_results": no <Result> (to show user)
-#                     toolcalls_xml = "<ToolCalls>"
-#                     toolcalls_minus_results = "<ToolCalls>"
-
-#                     # Execute any tool calls
-#                     for tc in action_block["tool_calls"]:
-#                         name = tc["name"]
-#                         params = tc["params"]
-#                         logger.info(f"Executing tool '{name}' with {params}")
-
-#                         if name == "result":
-#                             logger.info(
-#                                 f"Returning response = {params['answer']}"
-#                             )
-#                             yield f"<Response>{params['answer']}</Response>"
-#                             return
-
-#                         # Build the <ToolCall> to show user (minus <Result>)
-#                         minimal_toolcall = (
-#                             f"<ToolCall>"
-#                             f"<Name>{name}</Name>"
-#                             f"<Parameters>{json.dumps(params)}</Parameters>"
-#                             f"</ToolCall>"
-#                         )
-#                         toolcalls_minus_results += minimal_toolcall
-
-#                         # Build the <ToolCall> with results for context
-#                         toolcall_with_result = (
-#                             f"<ToolCall>"
-#                             f"<Name>{name}</Name>"
-#                             f"<Parameters>{json.dumps(params)}</Parameters>"
-#                         )
-#                         try:
-#                             result = await self.execute_tool(name, **params)
-
-#                             context_tokens = num_tokens(str(result))
-#                             max_to_result = (
-#                                 self.max_tool_context_length / context_tokens
-#                             )
-
-#                             if max_to_result < 1:
-#                                 result = (
-#                                     str(result)[
-#                                         0 : int(max_to_result * context_tokens)
-#                                     ]
-#                                     + "... RESULT TRUNCATED DUE TO MAX LENGTH ..."
-#                                 )
-#                         except Exception as e:
-#                             result = f"Error executing tool '{name}': {e}"
-
-#                         toolcall_with_result += (
-#                             f"<Result>{result}</Result></ToolCall>"
-#                         )
-
-#                         toolcalls_xml += toolcall_with_result
-
-#                     toolcalls_xml += "</ToolCalls>"
-#                     toolcalls_minus_results += "</ToolCalls>"
-
-#                     # Yield the no-results block so user sees the calls
-#                     yield toolcalls_minus_results
-
-#                     # Otherwise, embed the <ToolCalls> with <Result> in conversation context
-#                     conversation_context += f"<Action>{toolcalls_xml}</Action>"
-
-#             else:
-#                 #
-#                 # 3b) If no <Action> blocks at all, yield the iteration text below
-#                 failed_iteration_text = "<Action><ToolCalls></ToolCalls><Response>I failed to use any tools, I should probably return a response with the `result` tool now.</Response></Action>"
-#                 context_size = num_tokens(conversation_context)
-#                 if context_size > self.max_context_window_tokens:
-#                     yield COMPUTE_FAILURE
-#                     return
-
-#                 yield failed_iteration_text + f"\n\n[System]\n{step_i+1} steps completed, no <Action> blocks found. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
-#                 conversation_context += failed_iteration_text
-#                 continue
-
-#             post_text = iteration_text.split("</Action>")[-1]
-#             conversation_context += post_text
-#             context_size = num_tokens(conversation_context)
-#             if context_size > self.max_context_window_tokens:
-#                 yield COMPUTE_FAILURE
-#                 return
-#             conversation_context += f"\n\n[System]\n{step_i+1} steps completed. {context_size} tokens in context out of {self.max_context_window_tokens} consumed."
-#         # If we finish all steps with no <Response>, yield fallback:
-#         yield COMPUTE_FAILURE
-#         return
-
-#     async def _generate_thinking_response(
-#         self,
-#         user_prompt: str,
-#         max_retries: int = 3,
-#         initial_delay: float = 1.0,
-#         **kwargs,
-#     ) -> AsyncGenerator[tuple[bool, str], None]:
-#         """
-#         Generate thinking response with retry logic for handling transient failures.
-
-#         Args:
-#             user_prompt: The prompt to send to Gemini
-#             max_retries: Maximum number of retry attempts (default: 3)
-#             initial_delay: Initial delay between retries in seconds (default: 1.0)
-#             **kwargs: Additional arguments passed to generate_content
-
-#         Yields:
-#             Tuples of (is_thought: bool, text: str)
-#         """
-#         config = {
-#             "thinking_config": {"include_thoughts": True},
-#             # "max_output_tokens": 8192,
-#         }
-
-#         attempt = 0
-#         last_error = None
-
-#         while attempt <= max_retries:
-#             try:
-#                 response = self.gemini_client.models.generate_content(
-#                     model=self.gemini_model_name,
-#                     contents=user_prompt,
-#                     config=config,
-#                 )
-
-#                 # Handle empty response
-#                 if not response.candidates:
-#                     yield (
-#                         False,
-#                         "I failed to retrieve a valid Gemini response.",
-#                     )
-#                     return
-
-#                 # Process successful response
-#                 for part in response.candidates[0].content.parts:
-#                     if part.thought:
-#                         yield (True, part.text)
-#                     else:
-#                         yield (False, part.text)
-#                 return  # Success - exit the retry loop
-
-#             except ServerError as e:
-#                 last_error = e
-#                 attempt += 1
-
-#                 if attempt <= max_retries:
-#                     # Exponential backoff with jitter
-#                     delay = (
-#                         initial_delay
-#                         * (2 ** (attempt - 1))
-#                         * (0.5 + random.random())
-#                     )
-#                     await asyncio.sleep(delay)
-#                 else:
-#                     # All retries exhausted
-#                     error_msg = f"Failed after {max_retries} attempts. Last error: {str(last_error)}"
-#                     yield (False, error_msg)
-#                     return
-
-#     def _parse_action_blocks(self, text: str) -> list[dict]:
-#         """
-#         Find <Action>...</Action> blocks in 'text' using simple regex,
-#         then parse out <ToolCall> blocks within each <Action>.
-
-#         Returns a list of dicts, each with:
-#         {
-#             "tool_calls": [
-#                 {"name": <tool_name>, "params": <dict>},
-#                 ...
-#             ],
-#             "response": <str or None if no <Response> found>
-#         }
-#         """
-
-#         ### HARDCODE RESULT PARSING DUE TO TROUBLES
-#         if "<Name>result</Name>" in text:
-#             return [
-#                 {
-#                     "tool_calls": [
-#                         {
-#                             "name": "result",
-#                             "params": {
-#                                 "answer": text.split("<Parameters>")[-1]
-#                                 .split("</Parameters>")[0]
-#                                 .strip()[12:-2]
-#                             },
-#                         }
-#                     ],
-#                     "response": None,
-#                 }
-#             ]
-
-#         results = []
-
-#         # 1) Find all <Action>...</Action> blocks
-#         action_pattern = re.compile(
-#             r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
-#         )
-#         action_matches = action_pattern.findall(text)
-
-#         for action_content in action_matches:
-#             block_data = {
-#                 "tool_calls": [],
-#                 "response": None,
-#             }
-
-#             # 2) Within each <Action> block, find all <ToolCall>...</ToolCall> blocks
-#             toolcall_pattern = re.compile(
-#                 r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
-#             )
-#             toolcall_matches = toolcall_pattern.findall(action_content)
-
-#             for tc_text in toolcall_matches:
-#                 # Look for <Name>...</Name> and <Parameters>...</Parameters>
-#                 name_match = re.search(
-#                     r"<Name>(.*?)</Name>", tc_text, re.DOTALL | re.IGNORECASE
-#                 )
-#                 params_match = re.search(
-#                     r"<Parameters>(.*?)</Parameters>",
-#                     tc_text,
-#                     re.DOTALL | re.IGNORECASE,
-#                 )
-
-#                 if not name_match:
-#                     continue  # no <Name> => skip
-
-#                 tool_name = name_match.group(1).strip()
-
-#                 # If <Parameters> is present, try to parse as JSON
-#                 if params_match:
-#                     raw_params = params_match.group(1).strip()
-#                     try:
-#                         tool_params = json.loads(raw_params)
-#                     except json.JSONDecodeError:
-#                         logger.warning(
-#                             f"Failed to parse JSON from <Parameters>: {raw_params}"
-#                         )
-#                         tool_params = {}
-#                 else:
-#                     tool_params = {}
-
-#                 block_data["tool_calls"].append(
-#                     {"name": tool_name, "params": tool_params}
-#                 )
-
-#             # 3) Optionally, see if there's a <Response>...</Response> in the same <Action> block
-#             response_pattern = re.compile(
-#                 r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
-#             )
-#             response_match = response_pattern.search(action_content)
-#             if response_match:
-#                 block_data["response"] = response_match.group(1).strip()
-
-#             results.append(block_data)
-
-#         return results
 
 
 def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:

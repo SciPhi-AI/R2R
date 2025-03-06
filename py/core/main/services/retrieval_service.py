@@ -17,7 +17,6 @@ from core import (
     SearchResultsCollector,
 )
 from core.agent.rag import (
-    GeminiXMLToolsStreamingReasoningRAGAgent,
     R2RXMLToolsStreamingReasoningRAGAgent,
     dump_collector,
     num_tokens_from_messages,
@@ -1243,21 +1242,6 @@ class RetrievalService(Service):
                             )
                         else:
                             if (
-                                "gemini-2.0-flash-thinking-exp-01-21"
-                                in rag_generation_config.model
-                            ):
-                                agent_config.include_tools = False
-                                agent = GeminiXMLToolsStreamingReasoningRAGAgent(
-                                    database_provider=self.providers.database,
-                                    llm_provider=self.providers.llm,
-                                    config=agent_config,
-                                    search_settings=search_settings,
-                                    rag_generation_config=rag_generation_config,
-                                    max_tool_context_length=max_tool_context_length,
-                                    local_search_method=self.search,
-                                    content_method=self.get_context,
-                                )
-                            elif (
                                 "reasoner" in rag_generation_config.model
                                 or "deepseek-r1"
                                 in rag_generation_config.model.lower()

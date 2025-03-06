@@ -274,7 +274,7 @@ class CitationData(BaseModel):
     source_title: Optional[str] = None
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
 
 
 class CitationEvent(SSEEventBase):

@@ -440,7 +440,8 @@ def format_search_results_for_llm(
             for i, ch_text in enumerate(doc_result.chunks, start=1):
                 lines.append(f"Chunk {i}: {ch_text}")
 
-    return "\n".join(lines)
+    result = "\n".join(lines)
+    return result
 
 
 def _generate_id_from_label(label) -> UUID:

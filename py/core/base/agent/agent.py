@@ -43,7 +43,7 @@ class Conversation:
 class AgentConfig(BaseModel):
     agent_static_prompt: str = "static_rag_agent"
     agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
-    tools: list[str] = ["search"]
+    tools: list[str] = ["local_search"]
     tool_names: Optional[list[str]] = None
     stream: bool = False
     include_tools: bool = True

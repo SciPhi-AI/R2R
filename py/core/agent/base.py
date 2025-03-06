@@ -133,23 +133,6 @@ class R2RStreamingAgent(R2RAgent):
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
-        Return an async generator that yields SSE lines with partial text + tool calls + tool results + final answer.
-        """
-        self._reset()
-        await self._setup(system_instruction)
-
-        if messages:
-            for msg in messages:
-                await self.conversation.add_message(msg)
-
-    async def arun(
-        self,
-        system_instruction: Optional[str] = None,
-        messages: Optional[list[Message]] = None,
-        *args,
-        **kwargs,
-    ) -> AsyncGenerator[str, None]:
-        """
         Return an async generator that yields SSE lines with:
           - partial text
           - tool calls

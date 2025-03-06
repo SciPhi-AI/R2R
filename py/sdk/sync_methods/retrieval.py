@@ -12,6 +12,8 @@ from core.base.api.models import (
     MessageEvent,
     SearchResultsData,
     SearchResultsEvent,
+    ThinkingData,
+    ThinkingEvent,
     ToolCallData,
     ToolCallEvent,
     ToolResultData,
@@ -19,8 +21,6 @@ from core.base.api.models import (
     UnknownEvent,
     WrappedAgentResponse,
     WrappedRAGResponse,
-    ThinkingEvent,
-    ThinkingData,
     WrappedSearchResponse,
 )
 
@@ -503,7 +503,7 @@ class RetrievalSDK:
                 version="v3",
             )
             return (parse_agent_event(event) for event in raw_stream)
-        
+
         else:
             return self.client._make_request(
                 "POST",

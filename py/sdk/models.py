@@ -37,12 +37,12 @@ from shared.api.models import (
     SearchResultsData,
     SearchResultsEvent,
     SSEEventBase,
+    ThinkingData,
+    ThinkingEvent,
     ToolCallData,
     ToolCallEvent,
     ToolResultData,
     ToolResultEvent,
-    ThinkingEvent,
-    ThinkingData,
     UnknownEvent,
 )
 
@@ -86,5 +86,6 @@ __all__ = [
     "ToolResultEvent",
     "ThinkingEvent",
     "ThinkingData",
-    "UnknownEvent","User",
+    "UnknownEvent",
+    "User",
 ]
