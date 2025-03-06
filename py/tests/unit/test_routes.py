@@ -13,7 +13,6 @@ from core.main.api.v3.conversations_router import ConversationsRouter
 from core.main.api.v3.documents_router import DocumentsRouter
 from core.main.api.v3.graph_router import GraphRouter
 from core.main.api.v3.indices_router import IndicesRouter
-from core.main.api.v3.logs_router import LogsRouter
 from core.main.api.v3.prompts_router import PromptsRouter
 from core.main.api.v3.retrieval_router import RetrievalRouter
 from core.main.api.v3.system_router import SystemRouter
@@ -35,7 +34,6 @@ ROUTERS = [
     DocumentsRouter,
     GraphRouter,
     IndicesRouter,
-    LogsRouter,
     PromptsRouter,
     RetrievalRouter,
     SystemRouter,
