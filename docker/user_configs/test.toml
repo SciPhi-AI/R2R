@@ -1,0 +1,4 @@
+[app]
+fast_llm = "fake/model"
+quality_llm = "fake/model"
+vlm = "fake/model"
