@@ -73,7 +73,12 @@ export interface ConversationResponse {
 
 export interface Message {
   role: string;
-  content: string;
+  content: any;
+  name?: string;
+  functionCall?: Record<string, any>;
+  toolCalls?: Array<Record<string, any>>;
+  toolCallId?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface MessageResponse {
