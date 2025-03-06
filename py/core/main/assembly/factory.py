@@ -293,20 +293,11 @@ class R2RProviderFactory:
             | ConsoleMockEmailProvider
             | SendGridEmailProvider
         ] = None,
-        embedding_provider_override: Optional[
-            LiteLLMEmbeddingProvider
-            | OpenAIEmbeddingProvider
-            | OllamaEmbeddingProvider
-        ] = None,
+        embedding_provider_override: Optional[EmbeddingProvider] = None,
         ingestion_provider_override: Optional[
             R2RIngestionProvider | UnstructuredIngestionProvider
         ] = None,
-        llm_provider_override: Optional[
-            AnthropicCompletionProvider
-            | OpenAICompletionProvider
-            | LiteLLMCompletionProvider
-            | R2RCompletionProvider
-        ] = None,
+        llm_provider_override: Optional[CompletionProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
         *args,
         **kwargs,

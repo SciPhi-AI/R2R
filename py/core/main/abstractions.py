@@ -4,25 +4,20 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from core.providers import (
-    AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
-    LiteLLMCompletionProvider,
-    LiteLLMEmbeddingProvider,
-    OllamaEmbeddingProvider,
-    OpenAICompletionProvider,
-    OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
-    R2RCompletionProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
 )
+from core.base.providers.embedding import EmbeddingProvider
+from core.base.providers.llm import CompletionProvider
 
 if TYPE_CHECKING:
     from core.main.services.auth_service import AuthService
@@ -36,22 +31,9 @@ class R2RProviders(BaseModel):
     auth: R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
-    embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    completion_embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    llm: (
-        AnthropicCompletionProvider
-        | LiteLLMCompletionProvider
-        | OpenAICompletionProvider
-        | R2RCompletionProvider
-    )
+    embedding: EmbeddingProvider
+    completion_embedding: EmbeddingProvider
+    llm: CompletionProvider
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     email: (
         AsyncSMTPEmailProvider

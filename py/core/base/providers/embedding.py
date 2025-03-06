@@ -47,7 +47,26 @@ class EmbeddingConfig(ProviderConfig):
 
     @property
     def supported_providers(self) -> list[str]:
-        return ["litellm", "openai", "ollama"]
+        provider_names = ["litellm", "openai", "ollama"]
+
+        providers = get_all_subclasses(EmbeddingProvider)
+        logger.debug(f"Supported embedding providers: {providers}")
+        for provider in providers:
+            if hasattr(provider, "supported_providers"):
+                provider_names.extend(provider.supported_providers())
+
+        logger.debug(f"Supported embedding provider names: {provider_names}")
+
+        return provider_names
+
+
+def get_all_subclasses(cls: type) -> list[type]:
+    subclasses = cls.__subclasses__()
+    all_subclasses = []
+    for subclass in subclasses:
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+    return all_subclasses
 
 
 class EmbeddingProvider(Provider):
@@ -66,6 +85,11 @@ class EmbeddingProvider(Provider):
         self.config: EmbeddingConfig = config
         self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
         self.current_requests = 0
+
+    @classmethod
+    def supported_providers(self) -> list[str]:
+        # TODO should be annotated as an abstract method
+        return []
 
     async def _execute_with_backoff_async(self, task: dict[str, Any]):
         retries = 0
