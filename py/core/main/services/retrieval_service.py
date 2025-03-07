@@ -1153,12 +1153,12 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
+
                 async def stream_response():
                     try:
                         if (
                             "deepseek" in rag_generation_config.model.lower()
-                            or
-                            "gemini" in rag_generation_config.model.lower()
+                            or "gemini" in rag_generation_config.model.lower()
                         ):
                             agent_config.include_tools = False
                             agent = R2RXMLToolsStreamingRAGAgent(
@@ -1168,9 +1168,10 @@ class RetrievalService(Service):
                                 search_settings=search_settings,
                                 rag_generation_config=rag_generation_config,
                                 max_tool_context_length=max_tool_context_length,
-                                local_search_method=self.search,
+                                knowledge_search_method=self.search,
                                 content_method=self.get_context,
-                            )                            
+                                file_search_method=self.search_documents,
+                            )
                         else:
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
@@ -1179,8 +1180,9 @@ class RetrievalService(Service):
                                 search_settings=search_settings,
                                 rag_generation_config=rag_generation_config,
                                 max_tool_context_length=max_tool_context_length,
-                                local_search_method=self.search,
+                                knowledge_search_method=self.search,
                                 content_method=self.get_context,
+                                file_search_method=self.search_documents,
                             )
 
                         async for chunk in agent.arun(
@@ -1247,7 +1249,7 @@ class RetrievalService(Service):
                 search_settings=search_settings,
                 rag_generation_config=rag_generation_config,
                 max_tool_context_length=max_tool_context_length,
-                local_search_method=self.search,
+                knowledge_search_method=self.search,
                 content_method=self.get_context,
             )
 
@@ -1549,8 +1551,8 @@ class RetrievalService(Service):
             else self.config.agent.agent_static_prompt
         )
 
-        if ("gemini" in model):
-            prompt_name = prompt_name + "_prompted_reasoning"
+        if "gemini" in model or "deepseek" in model:
+            prompt_name = prompt_name + "_prompted_reasoning_xml_tooling"
 
         if use_system_context:
             doc_context_str = await self._build_documents_context(

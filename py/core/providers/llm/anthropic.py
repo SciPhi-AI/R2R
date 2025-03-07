@@ -322,9 +322,11 @@ class AnthropicCompletionProvider(CompletionProvider):
         args.pop("stream", None)
         try:
             async with self.async_client.messages.stream(**args) as stream:
+                # Minimal fix: add is_collecting_tool=False
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
+                    "is_collecting_tool": False,  # <-- added
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -376,9 +378,11 @@ class AnthropicCompletionProvider(CompletionProvider):
         args.pop("stream", None)
         try:
             with self.client.messages.stream(**args) as stream:
+                # Minimal fix: add is_collecting_tool=False
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
+                    "is_collecting_tool": False,  # <-- added
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -452,6 +456,11 @@ class AnthropicCompletionProvider(CompletionProvider):
                         chunk = make_base_chunk()
                         chunk["choices"][0]["delta"] = {"content": text_chunk}
                         chunks.append(chunk)
+
+            if hasattr(delta_obj, "partial_json"):
+                # This is a partial JSON chunk for a tool call
+                if buffer_data.get("is_collecting_tool"):
+                    buffer_data["tool_json_buffer"] += delta_obj.partial_json
 
             elif hasattr(delta_obj, "thinking"):
                 # This is a chunk of chain-of-thought

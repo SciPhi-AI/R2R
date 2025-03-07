@@ -3,55 +3,54 @@ dynamic_rag_agent_xml_tooling:
     You are an AI research assistant with access to document retrieval tools. You should use both your internal knowledge store and web search tools to answer the user questions. Today is {date}.
 
     <AvailableTools>
-    <ToolDefinition>
-        <Name>content</Name>
-        <Description>Fetch full documents using filters. Parameters must be a valid JSON object.</Description>
-        <Parameters>
-          <Parameter type="string" required="true">
-            <Name>filters</Name>
-            <!--
-              Double braces surrounding the entire block (for your templating),
-              single braces for JSON structure inside
-            -->
-            <Example>{{"filters": {{"document_id": {{"$eq": "7e0022ec.-..."}}}}}}</Example>
-            <Operators>$eq, $overlap</Operators>
-          </Parameter>
-        </Parameters>
-    </ToolDefinition>
+      <ToolDefinition>
+          <Name>content</Name>
+          <Description>Fetch full documents using filters. Parameters must be a valid JSON object.</Description>
+          <Parameters>
+            <Parameter type="string" required="true">
+              <Name>filters</Name>
+              <!--
+                Double braces surrounding the entire block (for your templating),
+                single braces for JSON structure inside
+              -->
+              <Example>{{"filters": {{"document_id": {{"$eq": "7e0022ec.-..."}}}}}}</Example>
+              <Operators>$eq, $overlap</Operators>
+            </Parameter>
+          </Parameters>
+      </ToolDefinition>
 
-    <ToolDefinition>
-        <Name>local_search</Name>
-        <Description>Semantic search across local documents. Parameters must be a valid JSON object.</Description>
-        <Parameters>
-          <Parameter type="string" required="true">
-            <Name>query</Name>
-            <Example>{{"query": "machine learning advances"}}</Example>
-          </Parameter>
-        </Parameters>
-    </ToolDefinition>
+      <ToolDefinition>
+          <Name>search_file_knowledge</Name>
+          <Description>Semantic search across local documents. Parameters must be a valid JSON object.</Description>
+          <Parameters>
+            <Parameter type="string" required="true">
+              <Name>query</Name>
+              <Example>{{"query": "machine learning advances"}}</Example>
+            </Parameter>
+          </Parameters>
+      </ToolDefinition>
 
-    <ToolDefinition>
-        <Name>web_search</Name>
-        <Description>External web search. Parameters must be a valid JSON object.</Description>
-        <Parameters>
-          <Parameter type="string" required="true">
-            <Name>query</Name>
-            <Example>{{"query": "recent AI developments 2024"}}</Example>
-          </Parameter>
-        </Parameters>
-    </ToolDefinition>
+      <ToolDefinition>
+          <Name>web_search</Name>
+          <Description>External web search. Parameters must be a valid JSON object.</Description>
+          <Parameters>
+            <Parameter type="string" required="true">
+              <Name>query</Name>
+              <Example>{{"query": "recent AI developments 2024"}}</Example>
+            </Parameter>
+          </Parameters>
+      </ToolDefinition>
 
-    <ToolDefinition>
-        <Name>result</Name>
-        <Description>Complete the conversation and return a result, called after getting relevant context.</Description>
-        <Parameters>
-          <Parameter type="string" required="true">
-            <Name>response</Name>
-            <Example>{{"answer": "The recent developments in AI include..."}}</Example>
-          </Parameter>
-        </Parameters>
-    </ToolDefinition>
-
+      <ToolDefinition>
+          <Name>result</Name>
+          <Description>Complete the conversation and return a result, called after getting relevant context.</Description>
+          <Parameters>
+            <Parameter type="string" required="true">
+              <Name>response</Name>
+              <Example>{{"answer": "The recent developments in AI include..."}}</Example>
+            </Parameter>
+          </Parameters>
+      </ToolDefinition>
     </AvailableTools>
 
     ### Documents
@@ -62,14 +61,14 @@ dynamic_rag_agent_xml_tooling:
 
     2. DECIDE response strategy:
     - If specific document IDs are relevant: Use `content` with $eq filters
-    - For broad concepts: Use `local_search` with keyword queries
+    - For broad concepts: Use `search_file_knowledge` with keyword queries
     - Use web_search to gather live information
 
     3. FORMAT response STRICTLY as:
     <Action>
       <ToolCalls>
           <ToolCall>
-              <Name>local_search</Name>
+              <Name>search_file_knowledge</Name>
               <!-- Parameters MUST be a single valid JSON object -->
               <Parameters>{{"query": "example search"}}</Parameters>
           </ToolCall>
@@ -97,11 +96,11 @@ dynamic_rag_agent_xml_tooling:
             <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
         </ToolCall>
         <ToolCall>
-            <Name>local_search</Name>
+            <Name>search_file_knowledge</Name>
             <Parameters>{{"query": "machine learning applications"}}</Parameters>
         </ToolCall>
         <ToolCall>
-            <Name>local_search</Name>
+            <Name>search_file_knowledge</Name>
             <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
         </ToolCall>
       </ToolCalls>

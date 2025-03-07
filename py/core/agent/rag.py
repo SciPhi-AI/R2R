@@ -3,11 +3,10 @@ import json
 import logging
 import re
 import uuid
-from typing import Any, AsyncGenerator, Callable, Optional, Set, Tuple
+from typing import Any, AsyncGenerator, Callable, Optional, Set, Tuple, Union
 
 from core.agent import R2RAgent
 from core.base import (
-    CitationData,
     FinalAnswerData,
     ToolCallData,
     ToolCallEvent,
@@ -47,9 +46,9 @@ COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed comp
 
 class RAGAgentMixin:
     """
-    A Mixin for adding local_search, web_search, and content tools
+    A Mixin for adding search_file_knowledge, web_search, and content tools
     to your R2R Agents. This allows your agent to:
-      - call local_search_method (semantic/hybrid search)
+      - call knowledge_search_method (semantic/hybrid search)
       - call content_method (fetch entire doc/chunk structures)
       - call an external web search API
     """
@@ -58,16 +57,18 @@ class RAGAgentMixin:
         self,
         *args,
         search_settings: SearchSettings,
-        local_search_method: Optional[Callable] = None,
-        content_method: Optional[Callable] = None,
+        knowledge_search_method: Callable,
+        content_method: Callable,
+        file_search_method: Callable,
         max_tool_context_length=10_000,
         max_context_window_tokens=512_000,
         **kwargs,
     ):
         # Save references to the retrieval logic
         self.search_settings = search_settings
-        self.local_search_method = local_search_method
+        self.knowledge_search_method = knowledge_search_method
         self.content_method = content_method
+        self.file_search_method = file_search_method
         self.max_tool_context_length = max_tool_context_length
         self.max_context_window_tokens = max_context_window_tokens
         self.search_results_collector = SearchResultsCollector()
@@ -75,34 +76,36 @@ class RAGAgentMixin:
 
     def _register_tools(self):
         """
-        Called by the base agent to register all requested tools
-        from self.config.tools.
+        Called by the base R2RAgent to register all requested tools from self.config.tools.
         """
         if not self.config.tools:
             return
+
         for tool_name in set(self.config.tools):
             if tool_name == "content":
                 self._tools.append(self.content())
-            elif tool_name == "local_search":
-                self._tools.append(self.local_search())
+            elif tool_name == "search_file_knowledge":
+                self._tools.append(self.search_file_knowledge())
+            elif tool_name == "search_file_descriptions":
+                self._tools.append(self.search_files())
             elif tool_name == "web_search":
                 self._tools.append(self.web_search())
             else:
                 raise ValueError(f"Unsupported tool name: {tool_name}")
 
     # Local Search Tool
-    def local_search(self) -> Tool:
+    def search_file_knowledge(self) -> Tool:
         """
         Tool to do a semantic/hybrid search on the local knowledge base
-        using self.local_search_method.
+        using self.knowledge_search_method.
         """
         return Tool(
-            name="local_search",
+            name="search_file_knowledge",
             description=(
                 "Search your local knowledge base using the R2R system. "
                 "Use this when you want relevant text chunks or knowledge graph data."
             ),
-            results_function=self._local_search_function,
+            results_function=self._file_knowledge_search_function,
             llm_format_function=self.format_search_results_for_llm,
             parameters={
                 "type": "object",
@@ -116,22 +119,22 @@ class RAGAgentMixin:
             },
         )
 
-    async def _local_search_function(
+    async def _file_knowledge_search_function(
         self,
         query: str,
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
         """
-        Calls the passed-in `local_search_method(query, search_settings)`.
+        Calls the passed-in `knowledge_search_method(query, search_settings)`.
         Expects either an AggregateSearchResult or a dict with chunk_search_results, etc.
         """
-        if not self.local_search_method:
+        if not self.knowledge_search_method:
             raise ValueError(
-                "No local_search_method provided to RAGAgentMixin."
+                "No knowledge_search_method provided to RAGAgentMixin."
             )
 
-        raw_response = await self.local_search_method(
+        raw_response = await self.knowledge_search_method(
             query=query, search_settings=self.search_settings
         )
 
@@ -315,6 +318,58 @@ class RAGAgentMixin:
         self.search_results_collector.add_aggregate_result(agg)
         return agg
 
+    def search_files(self) -> Tool:
+        """
+        A tool to search over file-level metadata (titles, doc-level descriptions, etc.)
+        returning a list of DocumentResponse objects.
+        """
+        return Tool(
+            name="search_files",
+            description=(
+                "Search over the stored documents by title, metadata, or other document-level fields. "
+                "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
+                "Use this when you need a broad overview of which documents (files) might be relevant."
+            ),
+            results_function=self._search_files_function,
+            llm_format_function=self.format_search_results_for_llm,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Query string to match file/doc-level info. E.g., 'list documents about XYZ'.",
+                    }
+                },
+                "required": ["query"],
+            },
+        )
+
+    async def _search_files_function(
+        self, query: str, *args, **kwargs
+    ) -> AggregateSearchResult:
+        """
+        Implementation: calls the doc-level search method `local_doc_search_method`.
+        That method typically calls `search_documents` in your retrieval service,
+        returning a list of DocumentResponse objects.
+        """
+        if not self.local_doc_search_method:
+            raise ValueError(
+                "No local_doc_search_method provided to RAGAgentMixin."
+            )
+
+        # call the doc-level search
+        doc_results = await self.local_doc_search_method(
+            query=query,
+            search_settings=self.search_settings,
+        )
+
+        # Wrap them in an AggregateSearchResult
+        agg = AggregateSearchResult(document_search_results=doc_results)
+
+        # Add them to the collector
+        self.search_results_collector.add_aggregate_result(agg)
+        return agg
+
     def format_search_results_for_llm(
         self, results: AggregateSearchResult
     ) -> str:
@@ -332,7 +387,7 @@ class RAGAgentMixin:
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):
     """
-    Non-streaming RAG Agent that supports local_search, content, web_search.
+    Non-streaming RAG Agent that supports search_file_knowledge, content, web_search.
     """
 
     def __init__(
@@ -347,8 +402,9 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
-        local_search_method: Callable,
-        content_method: Optional[Callable] = None,
+        knowledge_search_method: Callable,
+        content_method: Callable,
+        file_search_method: Callable,
         max_tool_context_length: int = 20_000,
     ):
         # Initialize base R2RAgent
@@ -368,14 +424,15 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             search_settings=search_settings,
             rag_generation_config=rag_generation_config,
             max_tool_context_length=max_tool_context_length,
-            local_search_method=local_search_method,
+            knowledge_search_method=knowledge_search_method,
+            file_search_method=file_search_method,
             content_method=content_method,
         )
 
 
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
     """
-    Streaming-capable RAG Agent that supports local_search, content, web_search,
+    Streaming-capable RAG Agent that supports search_file_knowledge, content, web_search,
     but now emits citations as [abc1234] short IDs if the LLM includes them in brackets.
     """
 
@@ -399,8 +456,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
         config: AgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
-        local_search_method: Callable,
-        content_method: Optional[Callable] = None,
+        knowledge_search_method: Callable,
+        content_method: Callable,
+        file_search_method: Callable,
         max_tool_context_length: int = 10_000,
     ):
         # Force streaming on
@@ -423,8 +481,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
             search_settings=search_settings,
             rag_generation_config=rag_generation_config,
             max_tool_context_length=max_tool_context_length,
-            local_search_method=local_search_method,
+            knowledge_search_method=knowledge_search_method,
             content_method=content_method,
+            file_search_method=file_search_method,
         )
 
     async def arun(
@@ -644,56 +703,17 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
             yield line
 
 
-TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE)
-NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.DOTALL | re.IGNORECASE)
-PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.DOTALL | re.IGNORECASE)
-
 class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
-    A streaming RAG agent that works exactly like R2RStreamingRAGAgent,
-    except we parse <ToolCall> blocks from the text itself to decide
-    what tools to call (instead of relying on `delta.tool_calls`).
+    Abstract base class for a streaming-capable RAG Agent that:
+      - Streams chain-of-thought tokens vs. normal text
+      - Accumulates final text for parsing <Action><ToolCalls>
+      - Executes any requested tool calls (max_steps enforced)
+      - Produces a final <Response> or failure if max steps are exceeded
 
-    If the LLM includes something like:
-      <ToolCall>
-        <Name>local_search</Name>
-        <Parameters>{"query": "some text"}</Parameters>
-      </ToolCall>
-
-    then we detect that in the output and run 'local_search' with
-    the specified parameters. Once we see a finish_reason="tool_calls",
-    we invoke those calls, produce "tool_call" SSE, "tool_result" SSE, etc.
+    You must override:
+      - _generate_thinking_response(user_prompt: str)
     """
-
-    def __init__(
-        self,
-        database_provider: DatabaseProvider,
-        llm_provider: (
-            AnthropicCompletionProvider
-            | LiteLLMCompletionProvider
-            | OpenAICompletionProvider
-            | R2RCompletionProvider
-        ),
-        config: AgentConfig,
-        search_settings: SearchSettings,
-        rag_generation_config: GenerationConfig,
-        local_search_method,
-        content_method: Optional[Any] = None,
-        max_tool_context_length: int = 20_000,
-    ):
-        # Force streaming on
-        config.stream = True
-
-        super().__init__(
-            database_provider=database_provider,
-            llm_provider=llm_provider,
-            config=config,
-            search_settings=search_settings,
-            rag_generation_config=rag_generation_config,
-            local_search_method=local_search_method,
-            content_method=content_method,
-            max_tool_context_length=max_tool_context_length,
-        )
 
     async def arun(
         self,
@@ -702,170 +722,309 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         *args,
         **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """
-        Same streaming flow as R2RStreamingRAGAgent, but we parse out <ToolCall> blocks
-        from the text to figure out tool calls. 
-        """
+        """Iterative approach with chain-of-thought wrapped in
+        <Thought>...</Thought> each iteration.
 
-        # Reset internal flags
-        self._reset()
-        await self._setup(system_instruction)
-
-        # Optionally add any initial messages to conversation
+        1) In each iteration (up to max_steps):
+            a) Call _generate_thinking_response(conversation_context).
+            b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
+            c) Collect "assistant" tokens (is_thought=False) in a buffer to parse after.
+            d) Parse <Action> blocks; if any <Action> has <Response>, yield it & stop.
+            e) Else, if there's a bare <Response> outside <Action>, yield & stop.
+            f) If still no <Response>, append iteration text to context, move to next iteration.
+        2) If we exhaust steps, yield fallback <Response>.
+        """
+        self.max_steps = 5
+        # Step 1) Setup conversation
+        await self._setup(system_instruction=system_instruction)
         if messages:
-            for m in messages:
-                await self.conversation.add_message(m)
+            for msg in messages:
+                await self.conversation.add_message(msg)
 
-        async def sse_generator() -> AsyncGenerator[str, None]:
-            # Keep streaming until we finalize
-            while not self._completed:
-                # Prepare messages & generation config
-                msg_list = await self.conversation.get_messages()
-                gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
-                llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
+        for step_i in range(self.max_steps):
+            iteration_text = ""
 
-                # We accumulate text from partial chunks here:
-                partial_text_buffer = ""
+            messages_list = await self.conversation.get_messages()
+            generation_config = self.get_generation_config(
+                messages_list[-1], stream=True
+            )
 
-                async for chunk in llm_stream:
-                    delta = chunk.choices[0].delta
-                    finish_reason = chunk.choices[0].finish_reason
+            llm_stream = self.llm_provider.aget_completion_stream(
+                messages_list,
+                generation_config,
+            )
+            thought_text, action_text, in_thought = "", "", True
 
-                    # 1) If there's any "thinking" token (depends on your LLM provider),
-                    #    we can emit that as SSE "thinking":
-                    if getattr(delta, "thinking", None):
-                        async for line in SSEFormatter.yield_thinking_event(delta.thinking):
-                            yield line
+            closing_detected = False
+            async for chunk in llm_stream:
+                # print(f"CHUNK: {chunk}")
+                stream_delta = chunk.choices[0].delta.content
+                # Map deepseek `think` tags to `Thought` tags
+                stream_delta = stream_delta.replace(
+                    "<think>", "<Thought>"
+                ).replace("</think>", "</Thought>")
+                if "</" not in stream_delta and not closing_detected:
+                    thought_text += stream_delta
+                    yield stream_delta
+                else:
+                    closing_detected = True
+                    if in_thought:
+                        if ">" not in stream_delta:
+                            continue
+                        else:
+                            in_thought = False
+                            thought_text += "</Thought>"
+                            yield "</Thought>"
+                            action_text += stream_delta.split(">")[-1]
+                        in_thought = False
+                    else:
+                        action_text += stream_delta
+            iteration_text += thought_text
+            try:
+                parsed_tool_calls = self._parse_tool_calls(action_text)
+            except Exception as e:
+                logger.error(f"Failed to parse tool calls: {e}")
+                iteration_text += (
+                    f"<Thought>Failed to parse tool calls: {e}</Thought>"
+                )
+                await self.conversation.add_message(
+                    Message(role="assistant", content=iteration_text)
+                )
 
-                    # 2) If there's new text content from the LLM, we show it to the user
-                    #    as SSE "message", but also keep it in partial_text_buffer
-                    if delta.content:
-                        partial_text_buffer += delta.content
-                        # SSE "message"
-                        async for line in SSEFormatter.yield_message_event(delta.content):
-                            yield line
+                yield f"<Thought>Failed to parse tool calls: {e}</Thought>"
+                continue
 
-                    # 3) If the LLM signals "tool_calls," we parse them from partial_text_buffer
-                    if finish_reason == "tool_calls":
-                        # Parse <ToolCall> blocks from partial_text_buffer
-                        tool_calls = self._extract_tool_calls(partial_text_buffer)
-
-                        # SSE "tool_call" events, then run the tools
-                        results_text = ""
-                        for i, call in enumerate(tool_calls):
-                            tool_call_id = f"xmltool_{uuid.uuid4()}"
-                            # SSE tool_call
-                            tc_data = ToolCallData(
-                                tool_call_id=tool_call_id,
-                                name=call["name"],
-                                arguments=json.dumps(call["arguments"]),
-                            )
-                            evt = ToolCallEvent(event="tool_call", data=tc_data)
-                            async for line in SSEFormatter.yield_tool_call_event(evt.data.dict()):
-                                yield line
-
-                            # Actually execute the tool
-                            tool_result = await self.handle_function_or_tool_call(
-                                call["name"],
-                                json.dumps(call["arguments"]),
-                                tool_id=tool_call_id,
-                            )
-
-                            # SSE tool_result
-                            tool_result_data = ToolResultData(
-                                tool_call_id=tool_call_id,
-                                role="tool",
-                                content=json.dumps(
-                                    convert_nonserializable_objects(tool_result.raw_result.as_dict())
-                                ),
-                            )
-                            tr_evt = ToolResultEvent(event="tool_result", data=tool_result_data)
-                            async for line in SSEFormatter.yield_tool_result_event(tr_evt.data.dict()):
-                                yield line
-
-                            # We'll embed the result back into partial_text_buffer so that
-                            # the next iteration of the LLM can see it in conversation
-                            # if it references <ToolCall><Result>...
-                            # This is up to you how you want to represent it.
-                            results_text += (
-                                "<ToolCall>"
-                                f"<Name>{call['name']}</Name>"
-                                f"<Parameters>{json.dumps(call['arguments'])}</Parameters>"
-                                f"<Result>{json.dumps(tool_result.raw_result.as_dict())}</Result>"
-                                "</ToolCall>\n"
-                            )
-
-                        # Now we put partial_text_buffer + results into an assistant message
-                        combined_content = partial_text_buffer + "\n" + results_text
-                        await self.conversation.add_message(
-                            Message(role="assistant", content=combined_content)
+            logger.debug(f"action_text:\n{action_text}")
+            logger.debug(f"parsed_tool_calls:\n{parsed_tool_calls}")
+            if "<Response>" in action_text:
+                yield (
+                    "<Response>"
+                    + action_text.split("<Response>")[-1].split("</Response>")[
+                        0
+                    ]
+                    + "</Response>"
+                )
+                return
+            # If there are tool calls, execute them concurrently and build the XML block with results
+            if parsed_tool_calls:
+                # Create tasks for each tool call
+                tasks = []
+                for call in parsed_tool_calls:
+                    # Log the call before executing
+                    yield f"\n\n<Thought>Calling function: {call['name']}, with payload {call['params']}</Thought>"
+                    tasks.append(
+                        asyncio.create_task(
+                            self.execute_tool(call["name"], **call["params"])
                         )
+                    )
 
-                        # Then we break out of the chunk loop to prompt the LLM again.
-                        break
+                # Wait for all tool calls to complete
+                results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                    # 4) If the LLM signals "stop," it’s done streaming – finalize.
-                    if finish_reason == "stop":
-                        # SSE final_answer
-                        final_evt_payload = FinalAnswerData(generated_answer=partial_text_buffer)
-                        async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
-                            yield line
-
-                        # SSE done
-                        yield SSEFormatter.yield_done_event()
-                        self._completed = True
+                # Build the XML block containing the original tool calls and their results
+                xml_toolcalls = "<ToolCalls>"
+                for call, result in zip(
+                    parsed_tool_calls, results, strict=False
+                ):
+                    if call["name"] == "result":
+                        logger.info(
+                            f"Returning response = {call['params']['answer']}"
+                        )
+                        yield f"<Response>{call['params']['answer']}</Response>"
                         return
 
-                # If we exhausted the llm_stream but didn't get a "tool_calls" finish_reason,
-                # that means we are done or the LLM provided no more output. Let's finalize here:
-                else:
-                    # We'll finalize in case LLM didn't produce finish_reason=stop
-                    final_evt_payload = FinalAnswerData(generated_answer=partial_text_buffer)
-                    async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
-                        yield line
-                    yield SSEFormatter.yield_done_event()
-                    self._completed = True
-                    return
+                    # Handle exceptions if any
+                    if isinstance(result, Exception):
+                        result_str = (
+                            f"Error executing tool '{call['name']}': {result}"
+                        )
+                    else:
+                        result_str = str(result)
+                    xml_toolcalls += (
+                        f"<ToolCall>"
+                        f"<Name>{call['name']}</Name>"
+                        f"<Parameters>{json.dumps(call['params'])}</Parameters>"
+                        f"<Result>{result_str}</Result>"
+                        f"</ToolCall>"
+                    )
+                xml_toolcalls += "</ToolCalls>"
 
-            # If we exit the while loop (unexpected), finalize:
-            if not self._completed:
-                final_evt_payload = FinalAnswerData(generated_answer="No conclusion produced.")
-                async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
-                    yield line
-                yield SSEFormatter.yield_done_event()
-                self._completed = True
+                # Append the XML block to the conversation context in its original format
+                iteration_text += f"<Action>{xml_toolcalls}</Action>"
+                # Optionally yield the XML block so that the user sees it
+                # yield f"\n\n<Action>{xml_toolcalls}</Action>"
+            else:
+                iteration_text += "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
+                yield "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
 
-        # Return the actual SSE generator
-        async for line in sse_generator():
-            yield line
+            await self.conversation.add_message(
+                Message(role="assistant", content=iteration_text)
+            )
 
-    def _extract_tool_calls(self, text: str) -> list[dict]:
+            if step_i == self.max_steps - 1:
+                yield COMPUTE_FAILURE
+                return
+
+    def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
+        """Converts system+user+assistant messages into a single text prompt.
+
+        Overridable if you want a different style.
         """
-        Find all <ToolCall> blocks in text, parse <Name> and <Parameters>,
-        returns list[{"name": str, "arguments": dict}].
-        Example:
-          <ToolCall>
-            <Name>local_search</Name>
-            <Parameters>{"query": "some text"}</Parameters>
-          </ToolCall>
+        system_msgs = []
+        user_msgs = []
+        for msg in conversation_msgs:
+            role = msg["role"]
+            content = msg["content"]
+            if role == "system":
+                system_msgs.append(f"[System]\n{content}\n")
+            elif role == "user":
+                user_msgs.append(f"[User]\n{content}\n")
+            elif role == "assistant":
+                user_msgs.append(f"[Assistant]\n{content}\n")
+
+        return "\n".join(system_msgs + user_msgs)
+
+    @staticmethod
+    def _parse_tool_calls(text: str) -> list[dict]:
+        """Parse tool calls from XML-like text.
+
+        This function locates <Action> blocks (or, if not present, the entire text)
+        and then extracts all <ToolCall> blocks within. It patches incomplete tags and
+        logs debug information along the way.
+
+        Special Handling:
+        - If a "<Name>result</Name>" tag is found, returns a single tool call
+            with the name "result" and its associated parameters.
         """
+        # Log the initial (possibly large) text truncated for debugging.
+        logger.debug(
+            "Starting _parse_tool_calls with text (first 500 chars): %s",
+            text[:500],
+        )
+
+        original_text = text
+
+        # --- Patch incomplete closing tags ---
+        # Ensure that any '</Action' or '</ToolCalls' missing a '>' are fixed.
+        text = re.sub(r"(</Action)(?!\s*>)", r"\1>", text)
+        text = re.sub(r"(</ToolCalls)(?!\s*>)", r"\1>", text)
+        if text != original_text:
+            logger.debug("Patched incomplete closing tags in text.")
+
+        # If an <Action> is found without a closing </Action>, append one.
+        if "<Action>" in text and "</Action>" not in text:
+            logger.debug(
+                "Incomplete <Action> tag detected; appending a closing </Action> tag."
+            )
+            text += "</Action>"
+
         tool_calls = []
-        matches = TOOLCALL_PATTERN.findall(text)
-        for tblock in matches:
-            name_match = NAME_PATTERN.search(tblock)
-            params_match = PARAMS_PATTERN.search(tblock)
-            if name_match:
-                tool_name = name_match.group(1).strip()
-            else:
-                tool_name = "unknown_tool"
-            if params_match:
-                raw_params = params_match.group(1).strip()
-                try:
-                    arguments = json.loads(raw_params)
-                except json.JSONDecodeError:
-                    arguments = {"raw_params": raw_params}
-            else:
-                arguments = {}
 
-            tool_calls.append({"name": tool_name, "arguments": arguments})
+        # --- Special handling for result tool call ---
+        if "<Name>result</Name>" in text:
+            logger.debug(
+                "Detected '<Name>result</Name>' in text; processing as a result tool call."
+            )
+            try:
+                raw_params = (
+                    text.split("<Parameters>")[-1]
+                    .split("</Parameters>")[0]
+                    .strip()
+                )[12:-2]
+                answer = (
+                    json.loads(raw_params)
+                    if raw_params.startswith("{")
+                    else raw_params
+                )
+            except Exception as e:
+                logger.warning("Failed to parse result answer: %s", e)
+                answer = raw_params
+            tool_calls.append({"name": "result", "params": {"answer": answer}})
+            logger.debug("Returning result tool call: %s", tool_calls)
+            return tool_calls
+
+        # --- Locate <Action> blocks ---
+        action_pattern = re.compile(
+            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
+        )
+        action_matches = action_pattern.findall(text)
+        logger.debug("Found %d <Action> blocks.", len(action_matches))
+
+        # If no <Action> blocks are found, attempt to use the entire text.
+        if not action_matches:
+            logger.debug(
+                "No <Action> blocks found; attempting to parse entire text for <ToolCall> blocks."
+            )
+            action_matches = [text]
+
+        # Process each Action block
+        for idx, action in enumerate(action_matches):
+            logger.debug(
+                "Processing Action block %d (first 200 chars): %s",
+                idx,
+                action.strip()[:200],
+            )
+            toolcall_pattern = re.compile(
+                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
+            )
+            toolcall_matches = toolcall_pattern.findall(action)
+            logger.debug(
+                "Found %d <ToolCall> blocks in Action block %d.",
+                len(toolcall_matches),
+                idx,
+            )
+
+            for jdx, tc in enumerate(toolcall_matches):
+                logger.debug(
+                    "Processing ToolCall block %d in Action block %d (first 200 chars): %s",
+                    jdx,
+                    idx,
+                    tc.strip()[:200],
+                )
+                # Extract the tool name
+                name_match = re.search(
+                    r"<Name>(.*?)</Name>", tc, re.DOTALL | re.IGNORECASE
+                )
+                if not name_match:
+                    logger.debug(
+                        "ToolCall block %d in Action block %d missing <Name> tag. Skipping.",
+                        jdx,
+                        idx,
+                    )
+                    continue
+                tool_name = name_match.group(1).strip()
+                logger.debug("Extracted tool name: '%s'", tool_name)
+                # Extract parameters
+                params_match = re.search(
+                    r"<Parameters>(.*?)</Parameters>",
+                    tc,
+                    re.DOTALL | re.IGNORECASE,
+                )
+                if params_match:
+                    raw_params = params_match.group(1).strip()
+                    try:
+                        tool_params = json.loads(raw_params)
+                        logger.debug(
+                            "Parsed parameters for tool '%s': %s",
+                            tool_name,
+                            tool_params,
+                        )
+                    except json.JSONDecodeError as e:
+                        logger.warning(
+                            "JSON decode error for tool '%s' parameters: %s. Error: %s",
+                            tool_name,
+                            raw_params,
+                            e,
+                        )
+                        tool_params = {}
+                else:
+                    logger.debug(
+                        "No <Parameters> found for tool '%s'. Defaulting to empty dict.",
+                        tool_name,
+                    )
+                    tool_params = {}
+
+                tool_calls.append({"name": tool_name, "params": tool_params})
+
+        logger.debug("Final parsed tool calls: %s", tool_calls)
         return tool_calls

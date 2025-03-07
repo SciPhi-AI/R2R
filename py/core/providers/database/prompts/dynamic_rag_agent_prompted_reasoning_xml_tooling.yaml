@@ -20,7 +20,7 @@ dynamic_rag_agent_prompted_reasoning_xml_tooling:
     </ToolDefinition>
 
     <ToolDefinition>
-        <Name>local_search</Name>
+        <Name>search_file_knowledge</Name>
         <Description>Semantic search across local documents. Parameters must be a valid JSON object.</Description>
         <Parameters>
           <Parameter type="string" required="true">
@@ -73,7 +73,7 @@ dynamic_rag_agent_prompted_reasoning_xml_tooling:
 
     RESPONSE STRATEGY:
     1. If specific document IDs are relevant: Use `content` with $eq filters
-    2. For broad concepts: Use `local_search` with keyword queries
+    2. For broad concepts: Use `search_file_knowledge` with keyword queries
     3. Use web_search to gather live information
     4. If no relevant results found, clearly state this
     5. If query unclear, ask for clarification
@@ -86,7 +86,7 @@ dynamic_rag_agent_prompted_reasoning_xml_tooling:
     <Action>
       <ToolCalls>
           <ToolCall>
-              <Name>local_search</Name>
+              <Name>search_file_knowledge</Name>
               <Parameters>{{"query": "example search"}}</Parameters>
           </ToolCall>
           <ToolCall>
@@ -123,11 +123,11 @@ dynamic_rag_agent_prompted_reasoning_xml_tooling:
             <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
         </ToolCall>
         <ToolCall>
-            <Name>local_search</Name>
+            <Name>search_file_knowledge</Name>
             <Parameters>{{"query": "machine learning applications"}}</Parameters>
         </ToolCall>
         <ToolCall>
-            <Name>local_search</Name>
+            <Name>search_file_knowledge</Name>
             <Parameters>{{"query": "recent advances in machine learning"}}</Parameters>
         </ToolCall>
       </ToolCalls>

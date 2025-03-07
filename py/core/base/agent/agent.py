@@ -43,7 +43,7 @@ class Conversation:
 class AgentConfig(BaseModel):
     agent_static_prompt: str = "static_rag_agent"
     agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
-    tools: list[str] = ["local_search"]
+    tools: list[str] = ["search_file_knowledge"]
     tool_names: Optional[list[str]] = None
     stream: bool = False
     include_tools: bool = True
@@ -179,6 +179,7 @@ class Agent(ABC):
         function_name: str,
         function_arguments: str,
         tool_id: Optional[str] = None,
+        save_messages: bool = True,
         *args,
         **kwargs,
     ) -> ToolResult:
@@ -197,14 +198,15 @@ class Agent(ABC):
                     raw_result=error_message,
                     llm_formatted_result=error_message,
                 )
-                await self.conversation.add_message(
-                    Message(
-                        role="tool" if tool_id else "function",
-                        content=str(tool_result.llm_formatted_result),
-                        name=function_name,
-                        tool_call_id=tool_id,
+                if save_messages:
+                    await self.conversation.add_message(
+                        Message(
+                            role="tool" if tool_id else "function",
+                            content=str(tool_result.llm_formatted_result),
+                            name=function_name,
+                            tool_call_id=tool_id,
+                        )
                     )
-                )
 
                 raise R2RException(
                     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
@@ -221,14 +223,15 @@ class Agent(ABC):
             if tool.stream_function:
                 tool_result.stream_result = tool.stream_function(raw_result)
 
-            await self.conversation.add_message(
-                Message(
-                    role="tool" if tool_id else "function",
-                    content=str(tool_result.llm_formatted_result),
-                    name=function_name,
-                    tool_call_id=tool_id,
+            if save_messages:
+                await self.conversation.add_message(
+                    Message(
+                        role="tool" if tool_id else "function",
+                        content=str(tool_result.llm_formatted_result),
+                        name=function_name,
+                        tool_call_id=tool_id,
+                    )
                 )
-            )
 
             # **Record the tool call and its result**
             self.tool_call_results.append(
