@@ -2,16 +2,12 @@ import asyncio
 import json
 import logging
 import re
-import uuid
-from typing import Any, AsyncGenerator, Callable, Optional, Set, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Optional, Tuple
 
 from core.agent import R2RAgent
 from core.base import (
-    FinalAnswerData,
     ToolCallData,
     ToolCallEvent,
-    ToolResultData,
-    ToolResultEvent,
     format_search_results_for_llm,
 )
 from core.base.abstractions import (
@@ -36,12 +32,10 @@ from core.utils import (
     convert_nonserializable_objects,
     extract_citations,
     num_tokens,
-    yield_sse_event,
 )
 
 logger = logging.getLogger(__name__)
 
-COMPUTE_FAILURE = "<Response>I failed to reach a conclusion with my allowed compute.</Response>"
 
 
 class RAGAgentMixin:
@@ -508,8 +502,10 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
             pending_tool_calls = {}
             partial_text_buffer = ""
 
+            iterations_count = 0
             # Keep streaming until we complete
-            while not self._completed:
+            while not self._completed and iterations_count < self.config.max_iterations:
+                iterations_count += 1
                 # 1) Get current messages
                 msg_list = await self.conversation.get_messages()
                 gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
@@ -705,326 +701,299 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
 
 class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
-    Abstract base class for a streaming-capable RAG Agent that:
-      - Streams chain-of-thought tokens vs. normal text
-      - Accumulates final text for parsing <Action><ToolCalls>
-      - Executes any requested tool calls (max_steps enforced)
-      - Produces a final <Response> or failure if max steps are exceeded
-
-    You must override:
-      - _generate_thinking_response(user_prompt: str)
+    A streaming agent that:
+     - treats <think> or <Thought> blocks as chain-of-thought
+       and emits them incrementally as SSE “thinking” events.
+     - accumulates user-visible text outside those tags as SSE “message” events.
+     - upon finishing each iteration (or upon 'tool_calls'/ 'stop'), it parses
+       <Action><ToolCalls><ToolCall> blocks, calls the appropriate tool,
+       and emits SSE “tool_call” / “tool_result”.
+     - if a <Response> is encountered, we emit SSE “final_answer” and end.
     """
+
+
+    # We treat <think> or <Thought> as the same token boundaries
+    THOUGHT_OPEN  = re.compile(r"<(Thought|think)>", re.IGNORECASE)
+    THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
+
+    # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
+    ACTION_PATTERN    = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
+    TOOLCALLS_PATTERN = re.compile(r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL)
+    TOOLCALL_PATTERN  = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
+    NAME_PATTERN      = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN    = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
+    RESPONSE_PATTERN  = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
 
     async def arun(
         self,
         system_instruction: Optional[str] = None,
         messages: Optional[list[Message]] = None,
         *args,
-        **kwargs,
+        **kwargs
     ) -> AsyncGenerator[str, None]:
-        """Iterative approach with chain-of-thought wrapped in
-        <Thought>...</Thought> each iteration.
-
-        1) In each iteration (up to max_steps):
-            a) Call _generate_thinking_response(conversation_context).
-            b) Stream chain-of-thought tokens *inline* but enclosed by <Thought>...</Thought>.
-            c) Collect "assistant" tokens (is_thought=False) in a buffer to parse after.
-            d) Parse <Action> blocks; if any <Action> has <Response>, yield it & stop.
-            e) Else, if there's a bare <Response> outside <Action>, yield & stop.
-            f) If still no <Response>, append iteration text to context, move to next iteration.
-        2) If we exhaust steps, yield fallback <Response>.
-        """
-        self.max_steps = 5
-        # Step 1) Setup conversation
+        self._reset()
         await self._setup(system_instruction=system_instruction)
+
         if messages:
-            for msg in messages:
-                await self.conversation.add_message(msg)
+            for m in messages:
+                await self.conversation.add_message(m)
 
-        for step_i in range(self.max_steps):
-            iteration_text = ""
+        # Track conversation state
+        iterations_count = 0
+        thinking_content = ""  # Store thinking content for final answer
+        announced_short_ids = set()  # Track announced citations - ADD THIS LINE
 
-            messages_list = await self.conversation.get_messages()
-            generation_config = self.get_generation_config(
-                messages_list[-1], stream=True
-            )
+        while not self._completed and iterations_count < self.config.max_iterations:
+            iterations_count += 1
+            iteration_buffer = ""
+            in_thought = False
 
-            llm_stream = self.llm_provider.aget_completion_stream(
-                messages_list,
-                generation_config,
-            )
-            thought_text, action_text, in_thought = "", "", True
+            # Get current conversation state
+            msg_list = await self.conversation.get_messages()
+            gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+            
+            # Start streaming from LLM
+            llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
+            finish_reason = None
 
-            closing_detected = False
+            # --- 1) Process streaming chunks from the LLM
             async for chunk in llm_stream:
-                # print(f"CHUNK: {chunk}")
-                stream_delta = chunk.choices[0].delta.content
-                # Map deepseek `think` tags to `Thought` tags
-                stream_delta = stream_delta.replace(
-                    "<think>", "<Thought>"
-                ).replace("</think>", "</Thought>")
-                if "</" not in stream_delta and not closing_detected:
-                    thought_text += stream_delta
-                    yield stream_delta
-                else:
-                    closing_detected = True
+                finish_reason = chunk.choices[0].finish_reason
+                delta_text = chunk.choices[0].delta.content or ""
+
+                # Process thoughts and visible text
+                while delta_text:
                     if in_thought:
-                        if ">" not in stream_delta:
-                            continue
-                        else:
+                        # Inside a <Thought> or <think> block - look for closing tag
+                        close_match = self.THOUGHT_CLOSE.search(delta_text)
+                        if close_match:
+                            # Everything up to close tag is "thinking" text
+                            idx_end = close_match.start()
+                            thinking_text = delta_text[:idx_end]
+                            
+                            if thinking_text:
+                                thinking_content += thinking_text  # Save thinking content
+                                async for line in SSEFormatter.yield_thinking_event(thinking_text):
+                                    yield line
+
+                            # Consume the closing tag and return to normal text
+                            delta_text = delta_text[close_match.end():]
                             in_thought = False
-                            thought_text += "</Thought>"
-                            yield "</Thought>"
-                            action_text += stream_delta.split(">")[-1]
-                        in_thought = False
+                        else:
+                            # No closing tag found - all is "thinking"
+                            if delta_text:
+                                thinking_content += delta_text  # Save thinking content
+                                async for line in SSEFormatter.yield_thinking_event(delta_text):
+                                    yield line
+                            delta_text = ""
                     else:
-                        action_text += stream_delta
-            iteration_text += thought_text
-            try:
-                parsed_tool_calls = self._parse_tool_calls(action_text)
-            except Exception as e:
-                logger.error(f"Failed to parse tool calls: {e}")
-                iteration_text += (
-                    f"<Thought>Failed to parse tool calls: {e}</Thought>"
-                )
-                await self.conversation.add_message(
-                    Message(role="assistant", content=iteration_text)
-                )
+                        # Outside <Thought> - look for opening tag
+                        open_match = self.THOUGHT_OPEN.search(delta_text)
+                        if open_match:
+                            # Text before this is visible to user
+                            out_text = delta_text[:open_match.start()]
+                            if out_text:
+                                iteration_buffer += out_text
+                                
+                                # ADD CITATION HANDLING HERE
+                                # Look for citation patterns in the text
+                                new_sids = extract_citations(out_text)
+                                for sid in new_sids:
+                                    if sid not in announced_short_ids:
+                                        announced_short_ids.add(sid)
+                                        # Emit citation event
+                                        citation_evt_payload = {
+                                            "id": f"cit_{sid}",
+                                            "object": "agent.citation",
+                                            "payload": self.search_results_collector.find_by_short_id(sid),
+                                        }
+                                        async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                            yield line
 
-                yield f"<Thought>Failed to parse tool calls: {e}</Thought>"
-                continue
+                                # Then emit the normal message event
+                                async for line in SSEFormatter.yield_message_event(out_text):
+                                    yield line
 
-            logger.debug(f"action_text:\n{action_text}")
-            logger.debug(f"parsed_tool_calls:\n{parsed_tool_calls}")
-            if "<Response>" in action_text:
-                yield (
-                    "<Response>"
-                    + action_text.split("<Response>")[-1].split("</Response>")[
-                        0
-                    ]
-                    + "</Response>"
-                )
-                return
-            # If there are tool calls, execute them concurrently and build the XML block with results
-            if parsed_tool_calls:
-                # Create tasks for each tool call
-                tasks = []
-                for call in parsed_tool_calls:
-                    # Log the call before executing
-                    yield f"\n\n<Thought>Calling function: {call['name']}, with payload {call['params']}</Thought>"
-                    tasks.append(
-                        asyncio.create_task(
-                            self.execute_tool(call["name"], **call["params"])
-                        )
-                    )
+                            # Consume that portion + the opening tag
+                            delta_text = delta_text[open_match.end():]
+                            in_thought = True
+                            thinking_content += "<think>"  # Save opening tag
+                        else:
+                            # No opening tag - all is normal text
+                            iteration_buffer += delta_text
 
-                # Wait for all tool calls to complete
-                results = await asyncio.gather(*tasks, return_exceptions=True)
+                            # ADD CITATION HANDLING HERE TOO
+                            # Look for citation patterns in the text
+                            new_sids = extract_citations(delta_text)
+                            for sid in new_sids:
+                                if sid not in announced_short_ids:
+                                    announced_short_ids.add(sid)
+                                    # Emit citation event
+                                    citation_evt_payload = {
+                                        "id": f"cit_{sid}",
+                                        "object": "agent.citation",
+                                        "payload": self.search_results_collector.find_by_short_id(sid),
+                                    }
+                                    async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                        yield line
 
-                # Build the XML block containing the original tool calls and their results
-                xml_toolcalls = "<ToolCalls>"
-                for call, result in zip(
-                    parsed_tool_calls, results, strict=False
+                            # Then emit the normal message event
+                            async for line in SSEFormatter.yield_message_event(delta_text):
+                                yield line
+                            delta_text = ""
+
+
+                # End early if needed
+                if finish_reason in ("stop", "tool_calls"):
+                    break
+
+            # --- 2) Check for <Response> block which indicates final answer
+            response_match = self.RESPONSE_PATTERN.search(iteration_buffer)
+            if response_match:
+                final_text = response_match.group(1).strip()
+                # Include thinking content in the final answer
+                full_response = f"{thinking_content}</think>\n\n{final_text}"
+                async for line in SSEFormatter.yield_final_answer_event(
+                    {
+                        "id": "msg_final",
+                        "object": "agent.final_answer",
+                        "generated_answer": full_response,
+                    }
                 ):
-                    if call["name"] == "result":
-                        logger.info(
-                            f"Returning response = {call['params']['answer']}"
-                        )
-                        yield f"<Response>{call['params']['answer']}</Response>"
-                        return
-
-                    # Handle exceptions if any
-                    if isinstance(result, Exception):
-                        result_str = (
-                            f"Error executing tool '{call['name']}': {result}"
-                        )
-                    else:
-                        result_str = str(result)
-                    xml_toolcalls += (
-                        f"<ToolCall>"
-                        f"<Name>{call['name']}</Name>"
-                        f"<Parameters>{json.dumps(call['params'])}</Parameters>"
-                        f"<Result>{result_str}</Result>"
-                        f"</ToolCall>"
-                    )
-                xml_toolcalls += "</ToolCalls>"
-
-                # Append the XML block to the conversation context in its original format
-                iteration_text += f"<Action>{xml_toolcalls}</Action>"
-                # Optionally yield the XML block so that the user sees it
-                # yield f"\n\n<Action>{xml_toolcalls}</Action>"
-            else:
-                iteration_text += "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
-                yield "<Thought>No tool calls found in this step, trying again. If I have completed my response I should use the `result` tool.</Thought>"
-
-            await self.conversation.add_message(
-                Message(role="assistant", content=iteration_text)
-            )
-
-            if step_i == self.max_steps - 1:
-                yield COMPUTE_FAILURE
+                    yield line
+                yield SSEFormatter.yield_done_event()
+                self._completed = True
                 return
 
-    def _build_single_user_prompt(self, conversation_msgs: list[dict]) -> str:
-        """Converts system+user+assistant messages into a single text prompt.
-
-        Overridable if you want a different style.
-        """
-        system_msgs = []
-        user_msgs = []
-        for msg in conversation_msgs:
-            role = msg["role"]
-            content = msg["content"]
-            if role == "system":
-                system_msgs.append(f"[System]\n{content}\n")
-            elif role == "user":
-                user_msgs.append(f"[User]\n{content}\n")
-            elif role == "assistant":
-                user_msgs.append(f"[Assistant]\n{content}\n")
-
-        return "\n".join(system_msgs + user_msgs)
-
-    @staticmethod
-    def _parse_tool_calls(text: str) -> list[dict]:
-        """Parse tool calls from XML-like text.
-
-        This function locates <Action> blocks (or, if not present, the entire text)
-        and then extracts all <ToolCall> blocks within. It patches incomplete tags and
-        logs debug information along the way.
-
-        Special Handling:
-        - If a "<Name>result</Name>" tag is found, returns a single tool call
-            with the name "result" and its associated parameters.
-        """
-        # Log the initial (possibly large) text truncated for debugging.
-        logger.debug(
-            "Starting _parse_tool_calls with text (first 500 chars): %s",
-            text[:500],
-        )
-
-        original_text = text
-
-        # --- Patch incomplete closing tags ---
-        # Ensure that any '</Action' or '</ToolCalls' missing a '>' are fixed.
-        text = re.sub(r"(</Action)(?!\s*>)", r"\1>", text)
-        text = re.sub(r"(</ToolCalls)(?!\s*>)", r"\1>", text)
-        if text != original_text:
-            logger.debug("Patched incomplete closing tags in text.")
-
-        # If an <Action> is found without a closing </Action>, append one.
-        if "<Action>" in text and "</Action>" not in text:
-            logger.debug(
-                "Incomplete <Action> tag detected; appending a closing </Action> tag."
-            )
-            text += "</Action>"
-
-        tool_calls = []
-
-        # --- Special handling for result tool call ---
-        if "<Name>result</Name>" in text:
-            logger.debug(
-                "Detected '<Name>result</Name>' in text; processing as a result tool call."
-            )
-            try:
-                raw_params = (
-                    text.split("<Parameters>")[-1]
-                    .split("</Parameters>")[0]
-                    .strip()
-                )[12:-2]
-                answer = (
-                    json.loads(raw_params)
-                    if raw_params.startswith("{")
-                    else raw_params
-                )
-            except Exception as e:
-                logger.warning("Failed to parse result answer: %s", e)
-                answer = raw_params
-            tool_calls.append({"name": "result", "params": {"answer": answer}})
-            logger.debug("Returning result tool call: %s", tool_calls)
-            return tool_calls
-
-        # --- Locate <Action> blocks ---
-        action_pattern = re.compile(
-            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
-        )
-        action_matches = action_pattern.findall(text)
-        logger.debug("Found %d <Action> blocks.", len(action_matches))
-
-        # If no <Action> blocks are found, attempt to use the entire text.
-        if not action_matches:
-            logger.debug(
-                "No <Action> blocks found; attempting to parse entire text for <ToolCall> blocks."
-            )
-            action_matches = [text]
-
-        # Process each Action block
-        for idx, action in enumerate(action_matches):
-            logger.debug(
-                "Processing Action block %d (first 200 chars): %s",
-                idx,
-                action.strip()[:200],
-            )
-            toolcall_pattern = re.compile(
-                r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
-            )
-            toolcall_matches = toolcall_pattern.findall(action)
-            logger.debug(
-                "Found %d <ToolCall> blocks in Action block %d.",
-                len(toolcall_matches),
-                idx,
-            )
-
-            for jdx, tc in enumerate(toolcall_matches):
-                logger.debug(
-                    "Processing ToolCall block %d in Action block %d (first 200 chars): %s",
-                    jdx,
-                    idx,
-                    tc.strip()[:200],
-                )
-                # Extract the tool name
-                name_match = re.search(
-                    r"<Name>(.*?)</Name>", tc, re.DOTALL | re.IGNORECASE
-                )
-                if not name_match:
-                    logger.debug(
-                        "ToolCall block %d in Action block %d missing <Name> tag. Skipping.",
-                        jdx,
-                        idx,
-                    )
-                    continue
-                tool_name = name_match.group(1).strip()
-                logger.debug("Extracted tool name: '%s'", tool_name)
-                # Extract parameters
-                params_match = re.search(
-                    r"<Parameters>(.*?)</Parameters>",
-                    tc,
-                    re.DOTALL | re.IGNORECASE,
-                )
-                if params_match:
-                    raw_params = params_match.group(1).strip()
-                    try:
-                        tool_params = json.loads(raw_params)
-                        logger.debug(
-                            "Parsed parameters for tool '%s': %s",
-                            tool_name,
-                            tool_params,
-                        )
-                    except json.JSONDecodeError as e:
-                        logger.warning(
-                            "JSON decode error for tool '%s' parameters: %s. Error: %s",
-                            tool_name,
-                            raw_params,
-                            e,
-                        )
-                        tool_params = {}
+            # --- 3) Process any <Action>/<ToolCalls> blocks
+            action_matches = self.ACTION_PATTERN.findall(iteration_buffer)
+            
+            for action_block in action_matches:
+                tool_calls_text = []
+                # Look for ToolCalls wrapper, or use the raw action block
+                calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
+                if calls_wrapper:
+                    for tw in calls_wrapper:
+                        tool_calls_text.append(tw)
                 else:
-                    logger.debug(
-                        "No <Parameters> found for tool '%s'. Defaulting to empty dict.",
-                        tool_name,
-                    )
-                    tool_params = {}
+                    tool_calls_text.append(action_block)
 
-                tool_calls.append({"name": tool_name, "params": tool_params})
+                # Process each ToolCall
+                for calls_region in tool_calls_text:
+                    calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
+                    for tc_block in calls_found:
+                        tool_name, tool_params = self._parse_single_tool_call(tc_block)
+                        if tool_name:
+                            # Emit SSE event for tool call
+                            tool_call_id = f"call_{hash(tc_block)}"
+                            call_evt_data = {
+                                "tool_call_id": tool_call_id,
+                                "name": tool_name,
+                                "arguments": json.dumps(tool_params),
+                            }
+                            async for line in SSEFormatter.yield_tool_call_event(call_evt_data):
+                                yield line
 
-        logger.debug("Final parsed tool calls: %s", tool_calls)
-        return tool_calls
+                            # Check if this is a result tool call (the final answer)
+                            if tool_name == "result" and "answer" in tool_params:
+                                # Include thinking content in the final answer
+                                final_text = tool_params["answer"]
+                                full_response = f"{thinking_content}</think>\n\n{final_text}"
+                                
+                                # Emit SSE tool result
+                                result_data = {
+                                    "tool_call_id": tool_call_id,
+                                    "role": "tool",
+                                    "content": json.dumps({"result": "success"}),
+                                }
+                                async for line in SSEFormatter.yield_tool_result_event(result_data):
+                                    yield line
+                                    
+                                # Send final answer
+                                async for line in SSEFormatter.yield_final_answer_event(
+                                    {
+                                        "id": "msg_final",
+                                        "object": "agent.final_answer",
+                                        "generated_answer": full_response,
+                                    }
+                                ):
+                                    yield line
+                                yield SSEFormatter.yield_done_event()
+                                self._completed = True
+                                return
+                            
+                            # For non-result tools, execute normally
+                            try:
+                                tool_result = await self.handle_function_or_tool_call(
+                                    tool_name,
+                                    json.dumps(tool_params),
+                                    tool_id=tool_call_id,
+                                )
+                                result_content = getattr(tool_result, "raw_result", str(tool_result))
+                            except Exception as e:
+                                result_content = f"Error in tool '{tool_name}': {str(e)}"
+
+                            # Emit SSE tool result for non-result tools
+                            result_data = {
+                                "tool_call_id": tool_call_id,
+                                "role": "tool",
+                                "content": json.dumps(convert_nonserializable_objects(result_content)),
+                            }
+                            async for line in SSEFormatter.yield_tool_result_event(result_data):
+                                yield line
+
+            # --- 4) Update conversation with iteration results
+            if iteration_buffer.strip():
+                await self.conversation.add_message(
+                    Message(role="assistant", content=iteration_buffer)
+                )
+
+        # Maximum iterations reached without finding a <Response> or result tool call
+        if not self._completed:
+            # Get the last messages and process them into a reasonable final answer
+            last_messages = await self.conversation.get_messages()
+            
+            # Get the last non-tool message from the assistant
+            last_assistant_messages = [m for m in reversed(last_messages) 
+                                    if m["role"] == "assistant" and m.get("content")]
+            
+            # Extract meaningful content and format the final answer
+            final_answer = "I apologize, but I reached the maximum number of iterations without finding a complete answer."
+            if last_assistant_messages:
+                raw_content = last_assistant_messages[0]["content"]
+                clean_content = re.sub(r'</?(?:Action|ToolCalls|ToolCall|Name|Parameters)[^>]*>', '', raw_content)
+                clean_content = re.sub(r'{.*?}', '', clean_content)
+                clean_content = clean_content.strip()
+                
+                if clean_content:
+                    final_answer = clean_content
+            
+            # Include thinking content in the final answer
+            full_response = f"{thinking_content}</think>\n\n{final_answer}\n\n(Note: The maximum number of conversation turns was reached without a proper conclusion.)"
+            
+            async for line in SSEFormatter.yield_final_answer_event(
+                {
+                    "id": "msg_final",
+                    "object": "agent.final_answer",
+                    "generated_answer": full_response,
+                }
+            ):
+                yield line
+            yield SSEFormatter.yield_done_event()
+
+    def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
+        name_match = self.NAME_PATTERN.search(toolcall_text)
+        if not name_match:
+            return None, {}
+        tool_name = name_match.group(1).strip()
+
+        params_match = self.PARAMS_PATTERN.search(toolcall_text)
+        if not params_match:
+            return tool_name, {}
+
+        raw_params = params_match.group(1).strip()
+        try:
+            tool_params = json.loads(raw_params)
+        except json.JSONDecodeError:
+            tool_params = {"value": raw_params}
+        return tool_name, tool_params

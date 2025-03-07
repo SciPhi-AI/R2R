@@ -47,6 +47,7 @@ class AgentConfig(BaseModel):
     tool_names: Optional[list[str]] = None
     stream: bool = False
     include_tools: bool = True
+    max_iterations: int = 10
 
     @classmethod
     def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":

@@ -137,7 +137,7 @@ dynamic_rag_agent_xml_tooling:
 
     RETURN A COMPLETE AND COMPREHENSIVE ANSWER WHEN POSSIBLE.
 
-    REMINDER - Use line item references to like [c910e2e], [b12cd2f], to refer to the specific search result IDs returned in the provided context.
+    REMINDER - Use line item references like `[c910e2e], [b12cd2f]` with THIS EXACT FORMAT to refer to the specific search result IDs returned in the provided context.
 
   input_types:
     date: str

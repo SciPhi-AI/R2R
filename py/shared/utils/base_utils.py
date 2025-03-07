@@ -346,6 +346,13 @@ class SearchResultsCollector:
 
 
 def convert_nonserializable_objects(obj):
+    if hasattr(obj, "model_dump"):
+        obj = obj.model_dump()
+    if hasattr(obj, "as_dict"):
+        obj = obj.as_dict()
+    if hasattr(obj, "to_dict"):
+        obj = obj.to_dict()
+               
     if isinstance(obj, dict):
         new_obj = {}
         for key, value in obj.items():

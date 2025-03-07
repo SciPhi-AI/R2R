@@ -1551,8 +1551,8 @@ class RetrievalService(Service):
             else self.config.agent.agent_static_prompt
         )
 
-        if "gemini" in model or "deepseek" in model:
-            prompt_name = prompt_name + "_prompted_reasoning_xml_tooling"
+        if "deepseek" in model:
+            prompt_name = prompt_name + "_xml_tooling"
 
         if use_system_context:
             doc_context_str = await self._build_documents_context(
