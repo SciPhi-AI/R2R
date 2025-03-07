@@ -698,31 +698,30 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
         async for line in sse_generator():
             yield line
 
-
 class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
     A streaming agent that:
      - treats <think> or <Thought> blocks as chain-of-thought
-       and emits them incrementally as SSE “thinking” events.
-     - accumulates user-visible text outside those tags as SSE “message” events.
-     - upon finishing each iteration (or upon 'tool_calls'/ 'stop'), it parses
-       <Action><ToolCalls><ToolCall> blocks, calls the appropriate tool,
-       and emits SSE “tool_call” / “tool_result”.
-     - if a <Response> is encountered, we emit SSE “final_answer” and end.
+       and emits them incrementally as SSE "thinking" events.
+     - accumulates user-visible text outside those tags as SSE "message" events.
+     - filters out all XML tags related to tool calls and actions.
+     - upon finishing each iteration, it parses <Action><ToolCalls><ToolCall> blocks,
+       calls the appropriate tool, and emits SSE "tool_call" / "tool_result".
+     - properly emits citations when they appear in the text
+     - if a <Response> or result tool is encountered, emits SSE "final_answer" and ends.
     """
 
-
     # We treat <think> or <Thought> as the same token boundaries
-    THOUGHT_OPEN  = re.compile(r"<(Thought|think)>", re.IGNORECASE)
+    THOUGHT_OPEN = re.compile(r"<(Thought|think)>", re.IGNORECASE)
     THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
 
     # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
-    ACTION_PATTERN    = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
+    ACTION_PATTERN = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
     TOOLCALLS_PATTERN = re.compile(r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL)
-    TOOLCALL_PATTERN  = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
-    NAME_PATTERN      = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
-    PARAMS_PATTERN    = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
-    RESPONSE_PATTERN  = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
+    TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
+    NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
+    RESPONSE_PATTERN = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
 
     async def arun(
         self,
@@ -731,6 +730,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         *args,
         **kwargs
     ) -> AsyncGenerator[str, None]:
+        """Main entry point for the streaming agent."""
         self._reset()
         await self._setup(system_instruction=system_instruction)
 
@@ -741,13 +741,18 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         # Track conversation state
         iterations_count = 0
         thinking_content = ""  # Store thinking content for final answer
-        announced_short_ids = set()  # Track announced citations - ADD THIS LINE
-
+        announced_short_ids = set()  # Track announced citations
+        
+        # Buffering for XML filtering
+        local_accumulator = ""  # Accumulate non-XML content
+        visible_text_accumulator = ""  # What has been shown to the user
+        final_answer_content = ""  # Store the final answer content
+                
         while not self._completed and iterations_count < self.config.max_iterations:
             iterations_count += 1
-            iteration_buffer = ""
-            in_thought = False
-
+            iteration_buffer = ""  # Complete content for this iteration
+            in_thought = False  # Whether we're inside a Thought/think block
+            
             # Get current conversation state
             msg_list = await self.conversation.get_messages()
             gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
@@ -756,7 +761,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
             finish_reason = None
 
-            # --- 1) Process streaming chunks from the LLM
+            # Process streaming chunks from the LLM
             async for chunk in llm_stream:
                 finish_reason = chunk.choices[0].finish_reason
                 delta_text = chunk.choices[0].delta.content or ""
@@ -790,59 +795,70 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         # Outside <Thought> - look for opening tag
                         open_match = self.THOUGHT_OPEN.search(delta_text)
                         if open_match:
-                            # Text before this is visible to user
-                            out_text = delta_text[:open_match.start()]
-                            if out_text:
-                                iteration_buffer += out_text
+                            # Text before the thought opening tag
+                            pre_thought_text = delta_text[:open_match.start()]
+                            
+                            if pre_thought_text:
+                                iteration_buffer += pre_thought_text
                                 
-                                # ADD CITATION HANDLING HERE
-                                # Look for citation patterns in the text
-                                new_sids = extract_citations(out_text)
+                                # Check for citations in the clean text
+                                new_sids = extract_citations(pre_thought_text)
                                 for sid in new_sids:
                                     if sid not in announced_short_ids:
                                         announced_short_ids.add(sid)
-                                        # Emit citation event
-                                        citation_evt_payload = {
-                                            "id": f"cit_{sid}",
-                                            "object": "agent.citation",
-                                            "payload": self.search_results_collector.find_by_short_id(sid),
-                                        }
-                                        async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
-                                            yield line
-
-                                # Then emit the normal message event
-                                async for line in SSEFormatter.yield_message_event(out_text):
+                                        citation_data = self.search_results_collector.find_by_short_id(sid)
+                                        if citation_data:  # Only emit if we found matching data
+                                            citation_evt_payload = {
+                                                "id": f"cit_{sid}",
+                                                "object": "agent.citation",
+                                                "payload": citation_data,
+                                            }
+                                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                                yield line
+                                
+                                # Add to visible text and emit message event
+                                visible_text_accumulator += pre_thought_text
+                                async for line in SSEFormatter.yield_message_event(pre_thought_text):
                                     yield line
-
-                            # Consume that portion + the opening tag
+                            
+                            # Move past opening tag
                             delta_text = delta_text[open_match.end():]
                             in_thought = True
                             thinking_content += "<think>"  # Save opening tag
                         else:
-                            # No opening tag - all is normal text
-                            iteration_buffer += delta_text
 
-                            # ADD CITATION HANDLING HERE TOO
-                            # Look for citation patterns in the text
+                            iteration_buffer += delta_text
+                            
+                            # Check for citations in the clean text
                             new_sids = extract_citations(delta_text)
                             for sid in new_sids:
                                 if sid not in announced_short_ids:
                                     announced_short_ids.add(sid)
-                                    # Emit citation event
-                                    citation_evt_payload = {
-                                        "id": f"cit_{sid}",
-                                        "object": "agent.citation",
-                                        "payload": self.search_results_collector.find_by_short_id(sid),
-                                    }
-                                    async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                    citation_data = self.search_results_collector.find_by_short_id(sid)
+                                    if citation_data:  # Only emit if we found matching data
+                                        citation_evt_payload = {
+                                            "id": f"cit_{sid}",
+                                            "object": "agent.citation",
+                                            "payload": citation_data,
+                                        }
+                                        async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                            yield line
+                            
+                            # Add to visible text and emit message event
+                            visible_text_accumulator += delta_text
+
+                            local_accumulator += delta_text
+                            if  "<" in local_accumulator and not "</Action>" in local_accumulator:
+                                delta_text = ""  # Consumed entire delta
+                            
+                            else:
+                                local_accumulator = local_accumulator.split("</Action>")[-1]
+                                if local_accumulator:
+                                    async for line in SSEFormatter.yield_message_event(local_accumulator):
                                         yield line
-
-                            # Then emit the normal message event
-                            async for line in SSEFormatter.yield_message_event(delta_text):
-                                yield line
-                            delta_text = ""
-
-
+                        
+                            delta_text = ""  # Consumed entire delta
+            
                 # End early if needed
                 if finish_reason in ("stop", "tool_calls"):
                     break
@@ -851,6 +867,32 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             response_match = self.RESPONSE_PATTERN.search(iteration_buffer)
             if response_match:
                 final_text = response_match.group(1).strip()
+                final_answer_content = final_text
+                
+                # Check one more time for any citations in the final text
+                new_sids = extract_citations(final_text)
+                for sid in new_sids:
+                    if sid not in announced_short_ids:
+                        announced_short_ids.add(sid)
+                        citation_data = self.search_results_collector.find_by_short_id(sid)
+                        if citation_data:
+                            citation_evt_payload = {
+                                "id": f"cit_{sid}",
+                                "object": "agent.citation",
+                                "payload": citation_data,
+                            }
+                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                yield line
+                
+                # Ensure the final text is completely streamed
+                if visible_text_accumulator != final_text:
+                    # Find what parts haven't been streamed
+                    remaining = self._find_unstreamed_text(visible_text_accumulator, final_text)
+                    if remaining:
+                        async for line in SSEFormatter.yield_message_event(remaining):
+                            yield line
+                        visible_text_accumulator += remaining
+                
                 # Include thinking content in the final answer
                 full_response = f"{thinking_content}</think>\n\n{final_text}"
                 async for line in SSEFormatter.yield_final_answer_event(
@@ -885,7 +927,7 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         tool_name, tool_params = self._parse_single_tool_call(tc_block)
                         if tool_name:
                             # Emit SSE event for tool call
-                            tool_call_id = f"call_{hash(tc_block)}"
+                            tool_call_id = f"call_{abs(hash(tc_block))}"
                             call_evt_data = {
                                 "tool_call_id": tool_call_id,
                                 "name": tool_name,
@@ -896,9 +938,33 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
                             # Check if this is a result tool call (the final answer)
                             if tool_name == "result" and "answer" in tool_params:
+                                # Save final answer and ensure it's streamed
+                                final_answer_content = tool_params["answer"]
+                                
+                                # Check for citations in the answer
+                                new_sids = extract_citations(final_answer_content)
+                                for sid in new_sids:
+                                    if sid not in announced_short_ids:
+                                        announced_short_ids.add(sid)
+                                        citation_data = self.search_results_collector.find_by_short_id(sid)
+                                        if citation_data:
+                                            citation_evt_payload = {
+                                                "id": f"cit_{sid}",
+                                                "object": "agent.citation",
+                                                "payload": citation_data,
+                                            }
+                                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                                yield line
+                                
+                                # Stream any parts of the answer not already streamed
+                                if visible_text_accumulator != final_answer_content:
+                                    remaining = self._find_unstreamed_text(visible_text_accumulator, final_answer_content)
+                                    if remaining:
+                                        async for line in SSEFormatter.yield_message_event(remaining):
+                                            yield line
+                                
                                 # Include thinking content in the final answer
-                                final_text = tool_params["answer"]
-                                full_response = f"{thinking_content}</think>\n\n{final_text}"
+                                full_response = f"{thinking_content}</think>\n\n{final_answer_content}"
                                 
                                 # Emit SSE tool result
                                 result_data = {
@@ -961,11 +1027,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             final_answer = "I apologize, but I reached the maximum number of iterations without finding a complete answer."
             if last_assistant_messages:
                 raw_content = last_assistant_messages[0]["content"]
-                clean_content = re.sub(r'</?(?:Action|ToolCalls|ToolCall|Name|Parameters)[^>]*>', '', raw_content)
-                clean_content = re.sub(r'{.*?}', '', clean_content)
-                clean_content = clean_content.strip()
-                
-                if clean_content:
+                # Clean the content by removing XML tags
+                clean_content = self._clean_xml_tags(raw_content)
+                if clean_content.strip():
                     final_answer = clean_content
             
             # Include thinking content in the final answer
@@ -981,7 +1045,73 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                 yield line
             yield SSEFormatter.yield_done_event()
 
+    def _find_unstreamed_text(self, visible_text: str, final_text: str) -> str:
+        """
+        Find parts of the final text that haven't been streamed yet.
+        Uses a smart comparison to handle situations where the text might have been
+        modified slightly during processing.
+        
+        Args:
+            visible_text: Text that has already been shown to the user
+            final_text: The complete final text that should be shown
+            
+        Returns:
+            String containing the text that still needs to be streamed
+        """
+        # Simple case: final text is identical to what's been streamed
+        if visible_text == final_text:
+            return ""
+            
+        # If visible text is empty, return the entire final text
+        if not visible_text:
+            return final_text
+            
+        # Try to find the longest common prefix
+        i = 0
+        min_len = min(len(visible_text), len(final_text))
+        while i < min_len and visible_text[i] == final_text[i]:
+            i += 1
+            
+        # Return remainder of final text
+        return final_text[i:]
+
+    def _clean_xml_tags(self, text: str) -> str:
+        """
+        Remove XML tags and their content from text.
+        
+        Args:
+            text: Text to clean
+            
+        Returns:
+            Cleaned text with XML tags removed
+        """
+        # Remove Action blocks and their content
+        text = re.sub(r'<Action>.*?</Action>', '', text, flags=re.DOTALL)
+        
+        # Remove ToolCalls blocks and their content
+        text = re.sub(r'<ToolCalls>.*?</ToolCalls>', '', text, flags=re.DOTALL)
+        
+        # Remove ToolCall blocks and their content
+        text = re.sub(r'<ToolCall>.*?</ToolCall>', '', text, flags=re.DOTALL)
+        
+        # Remove other tags but keep their content
+        text = re.sub(r'</?(?:Name|Parameters|Response)[^>]*>', '', text)
+        
+        # Clean up any extra whitespace resulting from removals
+        text = re.sub(r'\s+', ' ', text).strip()
+        
+        return text
+
     def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
+        """
+        Parse a ToolCall block to extract the name and parameters.
+        
+        Args:
+            toolcall_text: The text content of a ToolCall block
+            
+        Returns:
+            Tuple of (tool_name, tool_parameters)
+        """
         name_match = self.NAME_PATTERN.search(toolcall_text)
         if not name_match:
             return None, {}
@@ -993,7 +1123,18 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
         raw_params = params_match.group(1).strip()
         try:
+            # Handle potential JSON parsing issues
+            # First try direct parsing
             tool_params = json.loads(raw_params)
         except json.JSONDecodeError:
-            tool_params = {"value": raw_params}
+            # If that fails, try to clean up the JSON string
+            try:
+                # Replace escaped quotes that might cause issues
+                cleaned_params = raw_params.replace('\\"', '"')
+                # Try again with the cleaned string
+                tool_params = json.loads(cleaned_params)
+            except json.JSONDecodeError:
+                # If all else fails, treat as a plain string value
+                tool_params = {"value": raw_params}
+                
         return tool_name, tool_params
