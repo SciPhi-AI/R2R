@@ -54,8 +54,8 @@ from shared.abstractions.search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
-    WebSearchResult,
     WebPageResult,
+    WebSearchResult,
     select_search_filters,
 )
 from shared.abstractions.user import Token, TokenData, User

@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import logging
@@ -6,7 +5,7 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, Callable, Optional, Set, Tuple
 
-from core.agent import R2RAgent, R2RStreamingAgent, R2RStreamingReasoningAgent
+from core.agent import R2RAgent
 from core.base import (
     CitationData,
     FinalAnswerData,
@@ -32,7 +31,14 @@ from core.providers import (
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
-from core.utils import convert_nonserializable_objects, yield_sse_event, num_tokens, SearchResultsCollector, extract_citations, SSEFormatter
+from core.utils import (
+    SearchResultsCollector,
+    SSEFormatter,
+    convert_nonserializable_objects,
+    extract_citations,
+    num_tokens,
+    yield_sse_event,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -367,8 +373,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         )
 
 
-
-class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
+class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
     """
     Streaming-capable RAG Agent that supports local_search, content, web_search,
     but now emits citations as [abc1234] short IDs if the LLM includes them in brackets.
@@ -378,7 +383,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
     # If your IDs are exactly 8 characters (like "e43864f5"), you can update the pattern:
     # SHORT_ID_PATTERN = re.compile(r"[A-Za-z0-9]{8}")
     BRACKET_PATTERN = re.compile(r"\[([^\]]+)\]")
-    SHORT_ID_PATTERN = re.compile(r"[A-Za-z0-9]{7,8}")  # 7-8 chars, for example
+    SHORT_ID_PATTERN = re.compile(
+        r"[A-Za-z0-9]{7,8}"
+    )  # 7-8 chars, for example
 
     def __init__(
         self,
@@ -399,8 +406,8 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         # Force streaming on
         config.stream = True
 
-        # Initialize base R2RStreamingAgent
-        R2RStreamingAgent.__init__(
+        # Initialize base R2RAgent
+        R2RAgent.__init__(
             self,
             database_provider=database_provider,
             llm_provider=llm_provider,
@@ -420,7 +427,6 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             content_method=content_method,
         )
 
-    
     async def arun(
         self,
         system_instruction: str | None = None,
@@ -450,11 +456,19 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                 gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
 
                 # 2) Start streaming from LLM
-                llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
+                llm_stream = self.llm_provider.aget_completion_stream(
+                    msg_list, gen_cfg
+                )
                 async for chunk in llm_stream:
-                    print('chunk = ', chunk)
                     delta = chunk.choices[0].delta
                     finish_reason = chunk.choices[0].finish_reason
+
+                    if hasattr(delta, "thinking") and delta.thinking:
+                        # Emit SSE "thinking" event
+                        async for line in SSEFormatter.yield_thinking_event(
+                            delta.thinking
+                        ):
+                            yield line
 
                     # 3) If new text, accumulate it
                     if delta.content:
@@ -470,14 +484,22 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                                 citation_evt_payload = {
                                     "id": f"cit_{sid}",
                                     "object": "agent.citation",
-                                    "payload": self.search_results_collector.find_by_short_id(sid),
+                                    "payload": self.search_results_collector.find_by_short_id(
+                                        sid
+                                    ),
                                 }
                                 # Using SSEFormatter to yield a "citation" event
-                                async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_citation_event(
+                                    citation_evt_payload
+                                ):
                                     yield line
 
                         # (b) Now emit the newly streamed text as a "message" event
-                        async for line in SSEFormatter.yield_message_event(delta.content):
+                        async for line in SSEFormatter.yield_message_event(
+                            delta.content
+                        ):
                             yield line
 
                     # 4) Accumulate partial tool calls if present
@@ -493,9 +515,13 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                             else:
                                 # Accumulate partial name/arguments
                                 if tc.function.name:
-                                    pending_tool_calls[idx]["name"] = tc.function.name
+                                    pending_tool_calls[idx][
+                                        "name"
+                                    ] = tc.function.name
                                 if tc.function.arguments:
-                                    pending_tool_calls[idx]["arguments"] += tc.function.arguments
+                                    pending_tool_calls[idx][
+                                        "arguments"
+                                    ] += tc.function.arguments
 
                     # 5) If the stream signals we should handle "tool_calls"
                     if finish_reason == "tool_calls":
@@ -504,7 +530,8 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                             cinfo = pending_tool_calls[idx]
                             calls_list.append(
                                 {
-                                    "tool_call_id": cinfo["id"] or f"call_{idx}",
+                                    "tool_call_id": cinfo["id"]
+                                    or f"call_{idx}",
                                     "name": cinfo["name"],
                                     "arguments": cinfo["arguments"],
                                 }
@@ -517,9 +544,15 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                                 name=c["name"],
                                 arguments=c["arguments"],
                             )
-                            tc_evt = ToolCallEvent(event="tool_call", data=tc_data)
+                            tc_evt = ToolCallEvent(
+                                event="tool_call", data=tc_data
+                            )
                             # With SSEFormatter, you might do:
-                            async for line in SSEFormatter.yield_tool_call_event(tc_evt.dict()["data"]):
+                            async for (
+                                line
+                            ) in SSEFormatter.yield_tool_call_event(
+                                tc_evt.dict()["data"]
+                            ):
                                 yield line
 
                         # (b) Add an assistant message capturing these calls
@@ -544,7 +577,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                         tool_results = await asyncio.gather(
                             *[
                                 self.handle_function_or_tool_call(
-                                    c["name"], c["arguments"], tool_id=c["tool_call_id"]
+                                    c["name"],
+                                    c["arguments"],
+                                    tool_id=c["tool_call_id"],
                                 )
                                 for c in calls_list
                             ]
@@ -574,7 +609,10 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                         #    finalize it in the conversation
                         if partial_text_buffer:
                             await self.conversation.add_message(
-                                Message(role="assistant", content=partial_text_buffer)
+                                Message(
+                                    role="assistant",
+                                    content=partial_text_buffer,
+                                )
                             )
 
                         # (a) Emit final answer SSE event
@@ -584,7 +622,11 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
                             "generated_answer": partial_text_buffer,
                             # Optionally attach citations, tool calls, etc.
                         }
-                        async for line in SSEFormatter.yield_final_answer_event(final_evt_payload):
+                        async for (
+                            line
+                        ) in SSEFormatter.yield_final_answer_event(
+                            final_evt_payload
+                        ):
                             yield line
 
                         # (b) Signal the end of the SSE stream
@@ -601,22 +643,26 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
         async for line in sse_generator():
             yield line
 
-class R2RXMLToolsStreamingReasoningRAGAgent(
-    RAGAgentMixin, R2RStreamingReasoningAgent
-):
-    """
-    A streaming, iterative RAG Agent that looks for <Thought>, <Action>, <Response> blocks.
 
-    At a high level:
-      - We run up to `max_steps` iterations.
-      - Each iteration calls the LLM in streaming mode.
-      - For each partial chunk, we split out <Thought> vs. normal text =>
-        SSE "thinking" or "message".
-      - After streaming stops (finish_reason or tool_calls), we parse <Action> blocks:
-        - If there's a <Response>, we finalize and emit final_answer + done.
-        - Otherwise, if we see <ToolCall>, we run those tools and store the results,
-          then proceed to the next iteration.
-      - If we exhaust `max_steps` without a <Response>, we fallback to `COMPUTE_FAILURE`.
+TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE)
+NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.DOTALL | re.IGNORECASE)
+PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.DOTALL | re.IGNORECASE)
+
+class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
+    """
+    A streaming RAG agent that works exactly like R2RStreamingRAGAgent,
+    except we parse <ToolCall> blocks from the text itself to decide
+    what tools to call (instead of relying on `delta.tool_calls`).
+
+    If the LLM includes something like:
+      <ToolCall>
+        <Name>local_search</Name>
+        <Parameters>{"query": "some text"}</Parameters>
+      </ToolCall>
+
+    then we detect that in the output and run 'local_search' with
+    the specified parameters. Once we see a finish_reason="tool_calls",
+    we invoke those calls, produce "tool_call" SSE, "tool_result" SSE, etc.
     """
 
     def __init__(
@@ -634,23 +680,20 @@ class R2RXMLToolsStreamingReasoningRAGAgent(
         local_search_method,
         content_method: Optional[Any] = None,
         max_tool_context_length: int = 20_000,
-        max_steps: int = 10,
     ):
-        # Ensure streaming is on
+        # Force streaming on
         config.stream = True
 
-        # Initialize the parent streaming reasoning agent
         super().__init__(
             database_provider=database_provider,
             llm_provider=llm_provider,
             config=config,
-            rag_generation_config=rag_generation_config,
             search_settings=search_settings,
+            rag_generation_config=rag_generation_config,
             local_search_method=local_search_method,
             content_method=content_method,
             max_tool_context_length=max_tool_context_length,
         )
-        self.max_steps = max_steps
 
     async def arun(
         self,
@@ -660,371 +703,169 @@ class R2RXMLToolsStreamingReasoningRAGAgent(
         **kwargs,
     ) -> AsyncGenerator[str, None]:
         """
-        The main iterative loop. Each iteration:
-          1) Stream partial LLM output => parse <Thought> => SSE "thinking",
-             normal text => SSE "message".
-          2) Collect all text in iteration_text + user_facing_buffer.
-          3) Parse <Action> blocks for <ToolCall> or <Response>.
-             - If <Response>, finalize => SSE "final_answer" + "done".
-             - Else run <ToolCall>, store tool results, proceed.
-          4) If no <Response> after max_steps => fallback.
+        Same streaming flow as R2RStreamingRAGAgent, but we parse out <ToolCall> blocks
+        from the text to figure out tool calls. 
         """
-        # Reset internal state, run any setup
+
+        # Reset internal flags
         self._reset()
         await self._setup(system_instruction)
 
-        # Optionally add initial messages to conversation
+        # Optionally add any initial messages to conversation
         if messages:
             for m in messages:
                 await self.conversation.add_message(m)
 
-        # For bracket references
-        relabeler = CitationRelabeler()
-        announced_refs: Set[int] = set()
+        async def sse_generator() -> AsyncGenerator[str, None]:
+            # Keep streaming until we finalize
+            while not self._completed:
+                # Prepare messages & generation config
+                msg_list = await self.conversation.get_messages()
+                gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+                llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
 
-        for step_i in range(self.max_steps):
-            iteration_text = ""
-            user_facing_buffer = []
+                # We accumulate text from partial chunks here:
+                partial_text_buffer = ""
 
-            # 1) Single LLM streaming pass
-            msgs = await self.conversation.get_messages()
-            print("msgs = ", msgs)
-            gen_cfg = self.get_generation_config(msgs[-1], stream=True)
-            llm_stream = self.llm_provider.aget_completion_stream(
-                msgs, gen_cfg
-            )
+                async for chunk in llm_stream:
+                    delta = chunk.choices[0].delta
+                    finish_reason = chunk.choices[0].finish_reason
 
-            async for chunk in llm_stream:
-                finish_reason = chunk.choices[0].finish_reason
-                delta = chunk.choices[0].delta
-
-                # If we got new content
-                if delta.content:
-                    # Split out <Thought> from normal text
-                    segments = self._split_thought_tags(delta.content)
-                    for text_seg, is_thought in segments:
-                        if is_thought:
-                            # SSE "thinking"
-                            thinking_data = {
-                                "id": str(uuid.uuid4()),
-                                "object": "agent.thinking.delta",
-                                "delta": {
-                                    "content": [
-                                        {
-                                            "type": "text",
-                                            "payload": {
-                                                "value": text_seg,
-                                                "annotations": [],
-                                            },
-                                        }
-                                    ]
-                                },
-                            }
-                            async for line in yield_sse_event(
-                                "thinking", thinking_data
-                            ):
-                                yield line
-
-                            # Add to iteration_text with explicit <Thought> tags
-                            iteration_text += f"<Thought>{text_seg}</Thought>"
-                        else:
-                            # SSE "message"
-                            msg_data = {
-                                "id": str(uuid.uuid4()),
-                                "object": "agent.message.delta",
-                                "delta": {
-                                    "content": [
-                                        {
-                                            "type": "text",
-                                            "payload": {
-                                                "value": text_seg,
-                                                "annotations": [],
-                                            },
-                                        }
-                                    ]
-                                },
-                            }
-                            async for line in yield_sse_event(
-                                "message", msg_data
-                            ):
-                                yield line
-
-                            user_facing_buffer.append(text_seg)
-                            iteration_text += text_seg
-
-                if finish_reason in ("stop", "tool_calls"):
-                    # End the streaming loop for this iteration
-                    break
-
-            # 2) After streaming: parse <Action> blocks and <Response>
-            actions = self._parse_action_blocks(iteration_text)
-            if actions:
-                for action_block in actions:
-                    # If there's <Response>
-                    if action_block["response"] is not None:
-                        final_answer = (
-                            "".join(user_facing_buffer)
-                            + action_block["response"]
-                        )
-                        # Finalize => SSE "final_answer" + "done"
-                        async for line in self._finalize_response(
-                            final_answer, relabeler, announced_refs
-                        ):
+                    # 1) If there's any "thinking" token (depends on your LLM provider),
+                    #    we can emit that as SSE "thinking":
+                    if getattr(delta, "thinking", None):
+                        async for line in SSEFormatter.yield_thinking_event(delta.thinking):
                             yield line
-                        return
 
-                    # If there's <ToolCall>
-                    if action_block["tool_calls"]:
-                        for tc in action_block["tool_calls"]:
-                            # SSE "tool_call"
+                    # 2) If there's new text content from the LLM, we show it to the user
+                    #    as SSE "message", but also keep it in partial_text_buffer
+                    if delta.content:
+                        partial_text_buffer += delta.content
+                        # SSE "message"
+                        async for line in SSEFormatter.yield_message_event(delta.content):
+                            yield line
+
+                    # 3) If the LLM signals "tool_calls," we parse them from partial_text_buffer
+                    if finish_reason == "tool_calls":
+                        # Parse <ToolCall> blocks from partial_text_buffer
+                        tool_calls = self._extract_tool_calls(partial_text_buffer)
+
+                        # SSE "tool_call" events, then run the tools
+                        results_text = ""
+                        for i, call in enumerate(tool_calls):
                             tool_call_id = f"xmltool_{uuid.uuid4()}"
+                            # SSE tool_call
                             tc_data = ToolCallData(
                                 tool_call_id=tool_call_id,
-                                name=tc["name"],
-                                arguments=tc["params"],
+                                name=call["name"],
+                                arguments=json.dumps(call["arguments"]),
                             )
-                            evt = ToolCallEvent(
-                                event="tool_call", data=tc_data
-                            )
-                            async for line in yield_sse_event(
-                                "tool_call", evt.data.dict()
-                            ):
+                            evt = ToolCallEvent(event="tool_call", data=tc_data)
+                            async for line in SSEFormatter.yield_tool_call_event(evt.data.dict()):
                                 yield line
 
                             # Actually execute the tool
-                            result_obj = await self.execute_tool(
-                                tc["name"], **tc["params"]
+                            tool_result = await self.handle_function_or_tool_call(
+                                call["name"],
+                                json.dumps(call["arguments"]),
+                                tool_id=tool_call_id,
                             )
 
-                            # SSE "tool_result"
+                            # SSE tool_result
                             tool_result_data = ToolResultData(
                                 tool_call_id=tool_call_id,
                                 role="tool",
                                 content=json.dumps(
-                                    convert_nonserializable_objects(
-                                        result_obj.raw_result.as_dict()
-                                    )
+                                    convert_nonserializable_objects(tool_result.raw_result.as_dict())
                                 ),
                             )
-                            tr_evt = ToolResultEvent(
-                                event="tool_result", data=tool_result_data
-                            )
-                            async for line in yield_sse_event(
-                                "tool_result", tr_evt.data.dict()
-                            ):
+                            tr_evt = ToolResultEvent(event="tool_result", data=tool_result_data)
+                            async for line in SSEFormatter.yield_tool_result_event(tr_evt.data.dict()):
                                 yield line
 
-                            # Add the toolcall + result to iteration_text
-                            # (so the next iteration can see it, if the LLM references it)
-                            iteration_text += (
-                                "<Action><ToolCalls>"
-                                f"<ToolCall><Name>{tc['name']}</Name>"
-                                f"<Parameters>{json.dumps(tc['params'])}</Parameters>"
-                                f"<Result>{result_obj}</Result></ToolCall>"
-                                "</ToolCalls></Action>"
+                            # We'll embed the result back into partial_text_buffer so that
+                            # the next iteration of the LLM can see it in conversation
+                            # if it references <ToolCall><Result>...
+                            # This is up to you how you want to represent it.
+                            results_text += (
+                                "<ToolCall>"
+                                f"<Name>{call['name']}</Name>"
+                                f"<Parameters>{json.dumps(call['arguments'])}</Parameters>"
+                                f"<Result>{json.dumps(tool_result.raw_result.as_dict())}</Result>"
+                                "</ToolCall>\n"
                             )
-            else:
-                # Possibly there's a <Response> outside <Action>
-                resp_m = re.search(
-                    r"<Response>(.*?)</Response>", iteration_text, re.DOTALL
-                )
-                if resp_m:
-                    final_answer = "".join(user_facing_buffer) + resp_m.group(
-                        1
-                    )
-                    async for line in self._finalize_response(
-                        final_answer, relabeler, announced_refs
-                    ):
+
+                        # Now we put partial_text_buffer + results into an assistant message
+                        combined_content = partial_text_buffer + "\n" + results_text
+                        await self.conversation.add_message(
+                            Message(role="assistant", content=combined_content)
+                        )
+
+                        # Then we break out of the chunk loop to prompt the LLM again.
+                        break
+
+                    # 4) If the LLM signals "stop," it’s done streaming – finalize.
+                    if finish_reason == "stop":
+                        # SSE final_answer
+                        final_evt_payload = FinalAnswerData(generated_answer=partial_text_buffer)
+                        async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
+                            yield line
+
+                        # SSE done
+                        yield SSEFormatter.yield_done_event()
+                        self._completed = True
+                        return
+
+                # If we exhausted the llm_stream but didn't get a "tool_calls" finish_reason,
+                # that means we are done or the LLM provided no more output. Let's finalize here:
+                else:
+                    # We'll finalize in case LLM didn't produce finish_reason=stop
+                    final_evt_payload = FinalAnswerData(generated_answer=partial_text_buffer)
+                    async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
                         yield line
+                    yield SSEFormatter.yield_done_event()
+                    self._completed = True
                     return
 
-            # 3) If there's no <Response>, store the user-facing text in conversation
-            if user_facing_buffer:
-                combined_text = "".join(user_facing_buffer).strip()
-                if combined_text:
-                    # Re-write bracket references and emit any citation SSE
-                    rewritten_text, citation_sse = (
-                        await self._rewrite_and_emit_citations(
-                            combined_text, relabeler, announced_refs
-                        )
-                    )
-                    # yield the SSE lines
-                    for line in citation_sse:
-                        yield line
+            # If we exit the while loop (unexpected), finalize:
+            if not self._completed:
+                final_evt_payload = FinalAnswerData(generated_answer="No conclusion produced.")
+                async for line in SSEFormatter.yield_final_answer_event(final_evt_payload.dict()):
+                    yield line
+                yield SSEFormatter.yield_done_event()
+                self._completed = True
 
-                    # Add as an assistant message
-                    await self.conversation.add_message(
-                        Message(role="assistant", content=rewritten_text)
-                    )
-
-        # If we used all max_steps with no <Response>, fallback:
-        async for line in self._finalize_response(
-            COMPUTE_FAILURE, relabeler, announced_refs
-        ):
+        # Return the actual SSE generator
+        async for line in sse_generator():
             yield line
 
-    async def _rewrite_and_emit_citations(
-        self,
-        text: str,
-        # relabeler: CitationRelabeler,
-        announced_refs: set[int],
-    ) -> Tuple[str, list[str]]:
+    def _extract_tool_calls(self, text: str) -> list[dict]:
         """
-        Detect bracket references [1], [2] in 'text', produce SSE lines for each new citation,
-        then return (rewritten_text, sse_lines).
+        Find all <ToolCall> blocks in text, parse <Name> and <Parameters>,
+        returns list[{"name": str, "arguments": dict}].
+        Example:
+          <ToolCall>
+            <Name>local_search</Name>
+            <Parameters>{"query": "some text"}</Parameters>
+          </ToolCall>
         """
-        sse_lines = []
-        # bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
-        bracket_pattern = re.compile(r"\[\s*(\d+)\s*\](?!\d)")
-
-        for match in bracket_pattern.finditer(text):
-            old_ref = int(match.group(1))
-            new_ref = relabeler.get_or_assign_newref(old_ref)
-            if old_ref not in announced_refs:
-                announced_refs.add(old_ref)
-                all_results = self.search_results_collector.get_all_results()
-                if 1 <= old_ref <= len(all_results):
-                    (src_type, result_obj, agg_index) = all_results[
-                        old_ref - 1
-                    ]
-                    citation_evt_payload = CitationData(
-                        id=f"cit_{old_ref}",
-                        object="agent.citation",
-                        raw_index=old_ref,
-                        new_index=new_ref,
-                        agg_index=agg_index,
-                        source_type=src_type,
-                        source_title=getattr(result_obj, "title", None),
-                    )
-                    # Collect SSE lines
-                    async for line in yield_sse_event(
-                        "citation", citation_evt_payload.dict()
-                    ):
-                        sse_lines.append(line)
-
-        rewritten = relabeler.rewrite_with_newrefs(text)
-        return rewritten, sse_lines
-
-    async def _finalize_response(
-        self,
-        final_text: str,
-        # relabeler: CitationRelabeler,
-        announced_refs: set[int],
-    ) -> AsyncGenerator[str, None]:
-        """
-        Called when we see a <Response> or when we hit max_steps with no response.
-        1) Re-write bracket references => yield any 'citation' SSE lines.
-        2) Add final text as assistant message.
-        3) SSE 'final_answer'
-        4) SSE 'done'
-        """
-        rewritten_text, citation_sse = await self._rewrite_and_emit_citations(
-            final_text, relabeler, announced_refs
-        )
-        # yield the citation SSE lines
-        for line in citation_sse:
-            yield line
-
-        # Now store the final text in conversation
-        await self.conversation.add_message(
-            Message(role="assistant", content=rewritten_text)
-        )
-
-        # Build final_answer SSE
-        raw_citations = extract_citations(rewritten_text)
-        mapped_citations = map_citations_to_collector(
-            raw_citations, self.search_results_collector
-        )
-        final_evt_payload = FinalAnswerData(
-            generated_answer=relabeler.finalize_all_citations(rewritten_text),
-            citations=[c.model_dump() for c in mapped_citations],
-        )
-        async for line in yield_sse_event(
-            "final_answer", final_evt_payload.dict()
-        ):
-            yield line
-
-        # SSE "done"
-        yield "event: done\n"
-        yield "data: [DONE]\n\n"
-        self._completed = True
-
-    def _split_thought_tags(self, text: str) -> list[tuple[str, bool]]:
-        """
-        Splits out <Thought>...</Thought> from normal text.
-        Returns a list of (segment, is_thought) pairs.
-        Also handle <think> as <Thought> if needed.
-        """
-        text = text.replace("<think>", "<Thought>").replace(
-            "</think>", "</Thought>"
-        )
-        pattern = re.compile(r"(<Thought>.*?</Thought>)", re.DOTALL)
-        parts = pattern.split(text)
-
-        result = []
-        for p in parts:
-            if not p:
-                continue
-            if p.startswith("<Thought>") and p.endswith("</Thought>"):
-                content = p[len("<Thought>") : -len("</Thought>")]
-                result.append((content, True))
+        tool_calls = []
+        matches = TOOLCALL_PATTERN.findall(text)
+        for tblock in matches:
+            name_match = NAME_PATTERN.search(tblock)
+            params_match = PARAMS_PATTERN.search(tblock)
+            if name_match:
+                tool_name = name_match.group(1).strip()
             else:
-                result.append((p, False))
-        return result
+                tool_name = "unknown_tool"
+            if params_match:
+                raw_params = params_match.group(1).strip()
+                try:
+                    arguments = json.loads(raw_params)
+                except json.JSONDecodeError:
+                    arguments = {"raw_params": raw_params}
+            else:
+                arguments = {}
 
-    def _parse_action_blocks(self, text: str) -> list[dict]:
-        """
-        Parse <Action> blocks from the iteration text, extracting <ToolCall> and <Response>.
-        Returns a list of dicts with shape: {"tool_calls": [...], "response": <str or None>}
-        """
-        action_pattern = re.compile(
-            r"<Action>(.*?)</Action>", re.DOTALL | re.IGNORECASE
-        )
-        toolcall_pattern = re.compile(
-            r"<ToolCall>(.*?)</ToolCall>", re.DOTALL | re.IGNORECASE
-        )
-        name_pattern = re.compile(
-            r"<Name>(.*?)</Name>", re.DOTALL | re.IGNORECASE
-        )
-        params_pattern = re.compile(
-            r"<Parameters>(.*?)</Parameters>", re.DOTALL | re.IGNORECASE
-        )
-        response_pattern = re.compile(
-            r"<Response>(.*?)</Response>", re.DOTALL | re.IGNORECASE
-        )
-
-        actions = []
-        for ablock in action_pattern.findall(text):
-            block_data = {"tool_calls": [], "response": None}
-
-            # <ToolCall>
-            for tcall in toolcall_pattern.findall(ablock):
-                name_m = name_pattern.search(tcall)
-                params_m = params_pattern.search(tcall)
-                tool_name = (
-                    name_m.group(1).strip() if name_m else "unknown_tool"
-                )
-
-                if params_m:
-                    raw_params = params_m.group(1).strip()
-                    try:
-                        tool_params = json.loads(raw_params)
-                    except json.JSONDecodeError:
-                        tool_params = {"raw_params": raw_params}
-                else:
-                    tool_params = {}
-
-                block_data["tool_calls"].append(
-                    {"name": tool_name, "params": tool_params}
-                )
-
-            # <Response>
-            resp_match = response_pattern.search(ablock)
-            if resp_match:
-                block_data["response"] = resp_match.group(1).strip()
-
-            actions.append(block_data)
-
-        return actions
-
-
+            tool_calls.append({"name": tool_name, "arguments": arguments})
+        return tool_calls

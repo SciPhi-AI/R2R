@@ -1,19 +1,19 @@
-import uuid
-import tiktoken
-from abc import ABCMeta
 import json
 import logging
 import math
 import re
+import uuid
+from abc import ABCMeta
 from copy import deepcopy
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Tuple, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
+import tiktoken
 
 from ..abstractions import (
-    AsyncSyncMeta,
     AggregateSearchResult,
+    AsyncSyncMeta,
     GraphCommunityResult,
     GraphEntityResult,
     GraphRelationshipResult,
@@ -30,6 +30,7 @@ logger = logging.getLogger()
 def id_to_shorthand(id: str | UUID):
     return str(id)[0:7]
 
+
 def format_search_results_for_llm(
     results: AggregateSearchResult,
     collector: Any,  # SearchResultsCollector
@@ -45,7 +46,6 @@ def format_search_results_for_llm(
     # We'll build a quick helper to locate aggregator indices for each object:
     # Or you can rely on the fact that we've added them to the collector
     # in the same order. But let's do a "lookup aggregator index" approach:
-
 
     # 1) Chunk search
     if results.chunk_search_results:
@@ -98,7 +98,9 @@ def format_search_results_for_llm(
 
             # Then each chunk inside:
             for chunk in doc_result.chunks:
-                lines.append(f"\nChunk ID {id_to_shorthand(chunk.id)}:\n{chunk.text}")
+                lines.append(
+                    f"\nChunk ID {id_to_shorthand(chunk.id)}:\n{chunk.text}"
+                )
 
     result = "\n".join(lines)
     return result
@@ -313,9 +315,7 @@ class SearchResultsCollector:
 
         if agg.context_document_results:
             for cd in agg.context_document_results:
-                self._results_in_order.append(
-                    ("context_doc", cd)
-                )
+                self._results_in_order.append(("context_doc", cd))
 
     def get_all_results(self) -> list[Tuple[str, Any, int]]:
         """
@@ -324,8 +324,9 @@ class SearchResultsCollector:
         """
         return self._results_in_order
 
-
-    def find_by_short_id(self, short_id: str) -> Optional[Tuple[str, Any, int]]:
+    def find_by_short_id(
+        self, short_id: str
+    ) -> Optional[Tuple[str, Any, int]]:
         """
         Returns (source_type, result_obj) if any aggregator item
         has an .id whose string form starts with short_id, else None.
@@ -431,11 +432,14 @@ async def yield_sse_event(event_name: str, payload: dict, chunk_size=1024):
 
     # blank line signals end of SSE event
     yield "\n"
+
+
 # Updated SSEFormatter with additional helper methods:
 class SSEFormatter:
     """
     Standardized formatter for Server-Sent Events (SSE) across all agent types.
     """
+
     @staticmethod
     async def yield_message_event(text_segment, msg_id=None):
         msg_id = msg_id or f"msg_{uuid.uuid4().hex[:8]}"
@@ -481,15 +485,21 @@ class SSEFormatter:
     @staticmethod
     async def yield_tool_call_event(tool_call_data):
         from ..api.models.retrieval.responses import ToolCallEvent
+
         tc_event = ToolCallEvent(event="tool_call", data=tool_call_data)
-        async for line in yield_sse_event("tool_call", tc_event.dict()["data"]):
+        async for line in yield_sse_event(
+            "tool_call", tc_event.dict()["data"]
+        ):
             yield line
 
     @staticmethod
     async def yield_tool_result_event(tool_result_data):
         from ..api.models.retrieval.responses import ToolResultEvent
+
         tr_event = ToolResultEvent(event="tool_result", data=tool_result_data)
-        async for line in yield_sse_event("tool_result", tr_event.dict()["data"]):
+        async for line in yield_sse_event(
+            "tool_result", tr_event.dict()["data"]
+        ):
             yield line
 
     @staticmethod

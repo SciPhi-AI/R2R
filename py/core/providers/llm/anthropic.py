@@ -121,17 +121,32 @@ class AnthropicCompletionProvider(CompletionProvider):
                         args["tool_choice"] = {"type": "any"}
                 elif isinstance(tool_choice, dict):
                     if tool_choice.get("type") == "function":
-                        args["tool_choice"] = {"type": "function", "name": tool_choice.get("name")}
+                        args["tool_choice"] = {
+                            "type": "function",
+                            "name": tool_choice.get("name"),
+                        }
                 if hasattr(generation_config, "disable_parallel_tool_use"):
                     args["tool_choice"] = args.get("tool_choice", {})
-                    args["tool_choice"]["disable_parallel_tool_use"] = generation_config.disable_parallel_tool_use
+                    args["tool_choice"][
+                        "disable_parallel_tool_use"
+                    ] = generation_config.disable_parallel_tool_use
 
         # --- Extended Thinking Support ---
         if getattr(generation_config, "extended_thinking", False):
-            if not hasattr(generation_config, "thinking_budget") or generation_config.thinking_budget is None:
-                raise ValueError("Extended thinking is enabled but no thinking_budget is provided.")
-            if generation_config.thinking_budget >= generation_config.max_tokens_to_sample:
-                raise ValueError("thinking_budget must be less than max_tokens_to_sample.")
+            if (
+                not hasattr(generation_config, "thinking_budget")
+                or generation_config.thinking_budget is None
+            ):
+                raise ValueError(
+                    "Extended thinking is enabled but no thinking_budget is provided."
+                )
+            if (
+                generation_config.thinking_budget
+                >= generation_config.max_tokens_to_sample
+            ):
+                raise ValueError(
+                    "thinking_budget must be less than max_tokens_to_sample."
+                )
             args["thinking"] = {
                 "type": "enabled",
                 "budget_tokens": generation_config.thinking_budget,
@@ -158,7 +173,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             content_text = "".join(text_pieces)
 
         finish_reason = (
-            "stop" if anthropic_msg.stop_reason == "end_turn" else anthropic_msg.stop_reason
+            "stop"
+            if anthropic_msg.stop_reason == "end_turn"
+            else anthropic_msg.stop_reason
         )
 
         return {
@@ -167,11 +184,27 @@ class AnthropicCompletionProvider(CompletionProvider):
             "created": int(time.time()),
             "model": anthropic_msg.model.split("anthropic/")[-1],
             "usage": {
-                "prompt_tokens": anthropic_msg.usage.input_tokens if anthropic_msg.usage else 0,
-                "completion_tokens": anthropic_msg.usage.output_tokens if anthropic_msg.usage else 0,
+                "prompt_tokens": (
+                    anthropic_msg.usage.input_tokens
+                    if anthropic_msg.usage
+                    else 0
+                ),
+                "completion_tokens": (
+                    anthropic_msg.usage.output_tokens
+                    if anthropic_msg.usage
+                    else 0
+                ),
                 "total_tokens": (
-                    (anthropic_msg.usage.input_tokens if anthropic_msg.usage else 0)
-                    + (anthropic_msg.usage.output_tokens if anthropic_msg.usage else 0)
+                    (
+                        anthropic_msg.usage.input_tokens
+                        if anthropic_msg.usage
+                        else 0
+                    )
+                    + (
+                        anthropic_msg.usage.output_tokens
+                        if anthropic_msg.usage
+                        else 0
+                    )
                 ),
             },
             "choices": [
@@ -186,7 +219,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             ],
         }
 
-    def _split_system_messages(self, messages: list[dict]) -> (list[dict], Optional[str]):
+    def _split_system_messages(
+        self, messages: list[dict]
+    ) -> (list[dict], Optional[str]):
         system_msg = None
         filtered = []
         pending_tool_results = []
@@ -198,27 +233,37 @@ class AnthropicCompletionProvider(CompletionProvider):
 
             if m.get("tool_calls"):
                 if m.get("content"):
-                    filtered.append({"role": "assistant", "content": m["content"]})
-                filtered.append({
-                    "role": "assistant",
-                    "content": [
-                        {
-                            "type": "tool_use",
-                            "id": call["id"],
-                            "name": call["function"]["name"],
-                            "input": json.loads(call["function"]["arguments"]),
-                        }
-                        for call in m["tool_calls"]
-                    ],
-                })
+                    filtered.append(
+                        {"role": "assistant", "content": m["content"]}
+                    )
+                filtered.append(
+                    {
+                        "role": "assistant",
+                        "content": [
+                            {
+                                "type": "tool_use",
+                                "id": call["id"],
+                                "name": call["function"]["name"],
+                                "input": json.loads(
+                                    call["function"]["arguments"]
+                                ),
+                            }
+                            for call in m["tool_calls"]
+                        ],
+                    }
+                )
             elif m["role"] in ["function", "tool"]:
-                pending_tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": m.get("tool_call_id"),
-                    "content": m["content"],
-                })
+                pending_tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": m.get("tool_call_id"),
+                        "content": m["content"],
+                    }
+                )
                 if len(pending_tool_results) == len(filtered[-1]["content"]):
-                    filtered.append({"role": "user", "content": pending_tool_results})
+                    filtered.append(
+                        {"role": "user", "content": pending_tool_results}
+                    )
                     pending_tool_results = []
             else:
                 filtered.append(openai_message_to_anthropic_block(m))
@@ -229,7 +274,9 @@ class AnthropicCompletionProvider(CompletionProvider):
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             logger.error("Missing ANTHROPIC_API_KEY in environment.")
-            raise ValueError("Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")
+            raise ValueError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
 
         messages = task["messages"]
         generation_config = task["generation_config"]
@@ -249,21 +296,29 @@ class AnthropicCompletionProvider(CompletionProvider):
         else:
             return await self._execute_task_async_nonstreaming(args)
 
-    async def _execute_task_async_nonstreaming(self, args: dict) -> LLMChatCompletion:
+    async def _execute_task_async_nonstreaming(
+        self, args: dict
+    ) -> LLMChatCompletion:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             logger.error("Missing ANTHROPIC_API_KEY in environment.")
-            raise ValueError("Anthropic API key not found. Set ANTHROPIC_API_KEY env var.")
+            raise ValueError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
+            )
 
         try:
             response = await self.async_client.messages.create(**args)
             logger.debug("Anthropic async non-stream call succeeded.")
-            return LLMChatCompletion(**self._convert_to_chat_completion(response))
+            return LLMChatCompletion(
+                **self._convert_to_chat_completion(response)
+            )
         except Exception as e:
             logger.error(f"Anthropic async non-stream call failed: {e}")
             raise
 
-    async def _execute_task_async_streaming(self, args: dict) -> AsyncGenerator[dict, None]:
+    async def _execute_task_async_streaming(
+        self, args: dict
+    ) -> AsyncGenerator[dict, None]:
         args.pop("stream", None)
         try:
             async with self.async_client.messages.stream(**args) as stream:
@@ -308,12 +363,16 @@ class AnthropicCompletionProvider(CompletionProvider):
         try:
             response = self.client.messages.create(**args)
             logger.debug("Anthropic sync non-stream call succeeded.")
-            return LLMChatCompletion(**self._convert_to_chat_completion(response))
+            return LLMChatCompletion(
+                **self._convert_to_chat_completion(response)
+            )
         except Exception as e:
             logger.error(f"Anthropic sync call failed: {e}")
             raise
 
-    def _execute_task_sync_streaming(self, args: dict) -> Generator[dict, None, None]:
+    def _execute_task_sync_streaming(
+        self, args: dict
+    ) -> Generator[dict, None, None]:
         args.pop("stream", None)
         try:
             with self.client.messages.stream(**args) as stream:
@@ -335,8 +394,9 @@ class AnthropicCompletionProvider(CompletionProvider):
             logger.error(f"Anthropic sync streaming call failed: {e}")
             raise
 
-    def _process_stream_event(self, event: Any, buffer_data: dict, model_name: str) -> list[dict]:
-        print(f'raw event: {event}')
+    def _process_stream_event(
+        self, event: Any, buffer_data: dict, model_name: str
+    ) -> list[dict]:
         chunks: list[dict] = []
 
         def make_base_chunk() -> dict:
@@ -351,7 +411,9 @@ class AnthropicCompletionProvider(CompletionProvider):
         if isinstance(event, RawMessageStartEvent):
             buffer_data["message_id"] = event.message.id
             chunk = make_base_chunk()
-            input_tokens = event.message.usage.input_tokens if event.message.usage else 0
+            input_tokens = (
+                event.message.usage.input_tokens if event.message.usage else 0
+            )
             chunk["usage"] = {
                 "prompt_tokens": input_tokens,
                 "completion_tokens": 0,
@@ -360,16 +422,16 @@ class AnthropicCompletionProvider(CompletionProvider):
             chunks.append(chunk)
 
         elif isinstance(event, RawContentBlockStartEvent):
+            # Check the block type to handle tool use, etc.
+            # For thinking, we do NOT accumulate in any buffer — we'll stream deltas directly
             if hasattr(event.content_block, "type"):
-                if event.content_block.type == "thinking":
-                    buffer_data["is_collecting_thinking"] = True
-                    buffer_data["thinking_buffer"] = ""
-                elif event.content_block.type == "tool_use" or isinstance(event.content_block, ToolUseBlock):
-                    buffer_data["tool_name"] = event.content_block.name
-                    buffer_data["tool_json_buffer"] = ""
-                    buffer_data["is_collecting_tool"] = True
-            else:
-                if isinstance(event.content_block, ToolUseBlock):
+                block_type = event.content_block.type
+                if block_type == "thinking":
+                    # We do NOT set is_collecting_thinking or any buffer
+                    pass
+                elif block_type == "tool_use" or isinstance(
+                    event.content_block, ToolUseBlock
+                ):
                     buffer_data["tool_name"] = event.content_block.name
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["is_collecting_tool"] = True
@@ -377,29 +439,33 @@ class AnthropicCompletionProvider(CompletionProvider):
         elif isinstance(event, RawContentBlockDeltaEvent):
             delta_obj = getattr(event, "delta", None)
             if hasattr(delta_obj, "text"):
+                # This is normal text content
                 text_chunk = delta_obj.text
-                if buffer_data.get("is_collecting_thinking"):
-                    buffer_data["thinking_buffer"] += text_chunk
-                elif buffer_data.get("is_collecting_tool"):
+                if buffer_data.get("is_collecting_tool"):
+                    # This might be partial JSON for the tool call
                     partial_json = getattr(delta_obj, "partial_json", None)
                     if partial_json:
                         buffer_data["tool_json_buffer"] += partial_json
                 else:
+                    # It's just normal text to output
                     if text_chunk:
                         chunk = make_base_chunk()
                         chunk["choices"][0]["delta"] = {"content": text_chunk}
                         chunks.append(chunk)
 
+            elif hasattr(delta_obj, "thinking"):
+                # This is a chunk of chain-of-thought
+                thinking_chunk = delta_obj.thinking
+                if thinking_chunk:
+                    chunk = make_base_chunk()
+                    # Instead of waiting for block-stop, we emit the thinking text right here
+                    chunk["choices"][0]["delta"] = {"thinking": thinking_chunk}
+                    chunks.append(chunk)
+
         elif isinstance(event, ContentBlockStopEvent):
-            if buffer_data.get("is_collecting_thinking"):
-                thinking_text = buffer_data.get("thinking_buffer", "")
-                chunk = make_base_chunk()
-                # Include the accumulated thinking text in a separate key.
-                chunk["choices"][0]["delta"] = {"thinking": thinking_text}
-                chunks.append(chunk)
-                buffer_data["is_collecting_thinking"] = False
-                buffer_data["thinking_buffer"] = ""
-            elif buffer_data.get("is_collecting_tool"):
+            # We do NOT wait to yield the thinking text here (we already did it continuously)
+            # So we only check if we were collecting tool JSON:
+            if buffer_data.get("is_collecting_tool"):
                 try:
                     json.loads(buffer_data["tool_json_buffer"])
                     chunk = make_base_chunk()
@@ -411,7 +477,9 @@ class AnthropicCompletionProvider(CompletionProvider):
                                 "id": f"call_{generate_tool_id()}",
                                 "function": {
                                     "name": buffer_data["tool_name"],
-                                    "arguments": buffer_data["tool_json_buffer"],
+                                    "arguments": buffer_data[
+                                        "tool_json_buffer"
+                                    ],
                                 },
                             }
                         ]
@@ -421,7 +489,9 @@ class AnthropicCompletionProvider(CompletionProvider):
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["tool_name"] = None
                 except json.JSONDecodeError:
-                    logger.warning("Incomplete JSON in tool call, skipping chunk")
+                    logger.warning(
+                        "Incomplete JSON in tool call, skipping chunk"
+                    )
 
         elif isinstance(event, MessageStopEvent):
             stop_reason = event.message.stop_reason

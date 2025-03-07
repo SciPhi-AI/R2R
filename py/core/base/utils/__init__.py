@@ -7,6 +7,7 @@ from shared.utils import (
     _get_vector_column_str,
     decrement_version,
     deep_update,
+    dump_collector,
     format_search_results_for_llm,
     generate_default_prompt_id,
     generate_default_user_collection_id,
@@ -18,7 +19,6 @@ from shared.utils import (
     increment_version,
     validate_uuid,
     yield_sse_event,
-    dump_collector
 )
 
 __all__ = [
@@ -39,7 +39,5 @@ __all__ = [
     "_decorate_vector_type",
     "_get_vector_column_str",
     "yield_sse_event",
-    "dump_collector"
+    "dump_collector",
 ]
-
-

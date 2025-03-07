@@ -1,15 +1,15 @@
 import uuid
-from typing import Any, Literal, Optional, Union, Tuple
+from typing import Any, Literal, Optional, Tuple, Union
 
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
-    GraphSearchResult,
-    WebPageResult,
     ContextDocumentResult,
+    GraphSearchResult,
     Message,
+    WebPageResult,
 )
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
@@ -24,15 +24,21 @@ class Citation(BaseModel):
     """
 
     # Bracket references
-    id: str = Field(
-        ..., description="The ID of the citation object"
-    )
+    id: str = Field(..., description="The ID of the citation object")
     object: str = Field(
-        ..., description="The type of citation object (e.g. `agent.citation` or `rag.citation`)"
+        ...,
+        description="The type of citation object (e.g. `agent.citation` or `rag.citation`)",
     )
-    payload: Tuple[str, ChunkSearchResult | GraphSearchResult | WebPageResult | ContextDocumentResult] = Field(
-         ..., description="The object payload and it's corresponding type"
+    payload: Tuple[
+        str,
+        ChunkSearchResult
+        | GraphSearchResult
+        | WebPageResult
+        | ContextDocumentResult,
+    ] = Field(
+        ..., description="The object payload and it's corresponding type"
     )
+
     class Config:
         json_schema_extra = {
             "example": {

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import re
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional
@@ -9,18 +8,8 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import (
-    R2RRAGAgent,
-    R2RStreamingRAGAgent,
-)
-from core.agent.rag import (
-    R2RXMLToolsStreamingReasoningRAGAgent,
-)
-from core.utils import (
-    dump_collector,
-    extract_citations,
-    yield_sse_event,
-)
+from core import R2RRAGAgent, R2RStreamingRAGAgent
+from core.agent.rag import R2RXMLToolsStreamingRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -37,9 +26,15 @@ from core.base import (
     SearchSettings,
     format_search_results_for_llm,
 )
-from core.utils import SearchResultsCollector, num_tokens_from_messages, SSEFormatter
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
+from core.utils import (
+    SearchResultsCollector,
+    SSEFormatter,
+    dump_collector,
+    extract_citations,
+    num_tokens_from_messages,
+)
 from shared.api.models.management.responses import MessageResponse
 
 from ..abstractions import R2RProviders
@@ -768,7 +763,7 @@ class RetrievalService(Service):
         return await self.providers.completion_embedding.async_get_embedding(
             text=text
         )
-    
+
     @telemetry_event("RAG")
     async def rag(
         self,
@@ -800,7 +795,9 @@ class RetrievalService(Service):
             # 3) Build context from aggregator
             collector = SearchResultsCollector()
             collector.add_aggregate_result(aggregated_results)
-            context_str = format_search_results_for_llm(aggregated_results, collector)
+            context_str = format_search_results_for_llm(
+                aggregated_results, collector
+            )
 
             # 4) Prepare system+task messages
             system_prompt_name = system_prompt_name or "system"
@@ -839,7 +836,9 @@ class RetrievalService(Service):
                         {
                             "id": f"cit_{sid}",
                             "object": "rag.citation",
-                            "payload": self._find_item_by_shortid(sid, collector)
+                            "payload": self._find_item_by_shortid(
+                                sid, collector
+                            ),
                         }
                         for sid in raw_sids
                     ],
@@ -852,10 +851,14 @@ class RetrievalService(Service):
                 # ========== Streaming SSE Logic ==========
                 async def sse_generator() -> AsyncGenerator[str, None]:
                     # 1) Emit search results via SSEFormatter
-                    async for line in SSEFormatter.yield_search_results_event(aggregated_results):
+                    async for line in SSEFormatter.yield_search_results_event(
+                        aggregated_results
+                    ):
                         yield line
 
-                    announced_ids = set()  # keep track of which short IDs we’ve announced
+                    announced_ids = (
+                        set()
+                    )  # keep track of which short IDs we’ve announced
                     partial_text_buffer = ""
                     citations = []
 
@@ -867,13 +870,27 @@ class RetrievalService(Service):
 
                     try:
                         async for chunk in msg_stream:
-                            print('streaming chunk = ', chunk)
                             delta = chunk.choices[0].delta
                             finish_reason = chunk.choices[0].finish_reason
+                            # if delta.thinking:
+                            # check if delta has `thinking` attribute
+
+                            if hasattr(delta, "thinking") and delta.thinking:
+                                # Emit SSE "thinking" event
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_thinking_event(
+                                    delta.thinking
+                                ):
+                                    yield line
 
                             if delta.content:
                                 # (b) Emit SSE "message" event for this chunk of text
-                                async for line in SSEFormatter.yield_message_event(delta.content):
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_message_event(
+                                    delta.content
+                                ):
                                     yield line
 
                                 # Accumulate new text
@@ -881,20 +898,27 @@ class RetrievalService(Service):
 
                                 # (a) Extract citations from updated buffer
                                 #     For each *new* short ID, emit an SSE "citation" event
-                                found_ids = extract_citations(partial_text_buffer)
+                                found_ids = extract_citations(
+                                    partial_text_buffer
+                                )
                                 for sid in found_ids:
                                     if sid not in announced_ids:
                                         announced_ids.add(sid)
                                         citation_payload = {
                                             "id": f"cit_{sid}",
                                             "short_id": sid,
-                                            "payload": self._find_item_by_shortid(sid, collector),
+                                            "payload": self._find_item_by_shortid(
+                                                sid, collector
+                                            ),
                                         }
                                         citations.append(citation_payload)
                                         # Emit citation
-                                        async for line in SSEFormatter.yield_citation_event(citation_payload):
+                                        async for (
+                                            line
+                                        ) in SSEFormatter.yield_citation_event(
+                                            citation_payload
+                                        ):
                                             yield line
-
 
                             # If the LLM signals it’s done
                             if finish_reason == "stop":
@@ -905,7 +929,11 @@ class RetrievalService(Service):
                                     "generated_answer": partial_text_buffer,
                                     "citations": citations,
                                 }
-                                async for line in SSEFormatter.yield_final_answer_event(final_answer_evt):
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_final_answer_event(
+                                    final_answer_evt
+                                ):
                                     yield line
 
                                 # (d) Signal the end of the SSE stream
@@ -931,7 +959,6 @@ class RetrievalService(Service):
                 detail=f"Internal RAG Error - {str(e)}",
             )
 
-
         except Exception as e:
             logger.exception(f"Error in RAG pipeline: {e}")
             if "NoneType" in str(e):
@@ -951,7 +978,7 @@ class RetrievalService(Service):
         Example helper that tries to match aggregator items by short ID,
         meaning result_obj.id starts with sid.
         """
-        for (source_type, result_obj) in collector.get_all_results():
+        for source_type, result_obj in collector.get_all_results():
             # if the aggregator item has an 'id' attribute
             if getattr(result_obj, "id", None) is not None:
                 full_id_str = str(result_obj.id)
@@ -961,7 +988,6 @@ class RetrievalService(Service):
                     else:
                         return (source_type, result_obj)
         return None
-
 
     @telemetry_event("Agent")
     async def agent(
@@ -976,9 +1002,8 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
-        reasoning_agent: bool = False,
     ):
-        if reasoning_agent and not rag_generation_config.stream:
+        if not rag_generation_config.stream:
             raise R2RException(
                 status_code=400,
                 message="Currently, the reasoning agent can only be used with `stream=True`.",
@@ -1112,12 +1137,6 @@ class RetrievalService(Service):
 
             # STEP 1: Determine the final system prompt content
             if task_prompt_override:
-                if reasoning_agent:
-                    raise R2RException(
-                        status_code=400,
-                        message="Reasoning agent not supported with task prompt override",
-                    )
-
                 system_instruction = task_prompt_override
             else:
                 system_instruction = (
@@ -1127,7 +1146,6 @@ class RetrievalService(Service):
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
                         use_system_context=use_system_context,
-                        reasoning_agent=reasoning_agent,
                     )
                 )
 
@@ -1135,10 +1153,25 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
-
                 async def stream_response():
                     try:
-                        if not reasoning_agent:
+                        if (
+                            "deepseek" in rag_generation_config.model.lower()
+                            or
+                            "gemini" in rag_generation_config.model.lower()
+                        ):
+                            agent_config.include_tools = False
+                            agent = R2RXMLToolsStreamingRAGAgent(
+                                database_provider=self.providers.database,
+                                llm_provider=self.providers.llm,
+                                config=agent_config,
+                                search_settings=search_settings,
+                                rag_generation_config=rag_generation_config,
+                                max_tool_context_length=max_tool_context_length,
+                                local_search_method=self.search,
+                                content_method=self.get_context,
+                            )                            
+                        else:
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
@@ -1149,44 +1182,6 @@ class RetrievalService(Service):
                                 local_search_method=self.search,
                                 content_method=self.get_context,
                             )
-                        else:
-                            if (
-                                "reasoner" in rag_generation_config.model
-                                or "deepseek-r1"
-                                in rag_generation_config.model.lower()
-                            ):
-                                agent_config.include_tools = False
-                                agent = R2RXMLToolsStreamingReasoningRAGAgent(
-                                    database_provider=self.providers.database,
-                                    llm_provider=self.providers.llm,
-                                    config=agent_config,
-                                    search_settings=search_settings,
-                                    rag_generation_config=rag_generation_config,
-                                    max_tool_context_length=max_tool_context_length,
-                                    local_search_method=self.search,
-                                    content_method=self.get_context,
-                                )
-                            # elif (
-                            #     "claude-3-5-sonnet-20241022"
-                            #     in rag_generation_config.model
-                            #     or "gpt-4o" in rag_generation_config.model
-                            #     or "o3-mini" in rag_generation_config.model
-                            # ):
-                            #     agent = R2RStreamingReasoningRAGAgent(
-                            #         database_provider=self.providers.database,
-                            #         llm_provider=self.providers.llm,
-                            #         config=agent_config,
-                            #         search_settings=search_settings,
-                            #         rag_generation_config=rag_generation_config,
-                            #         max_tool_context_length=max_tool_context_length,
-                            #         local_search_method=self.search,
-                            #         content_method=self.get_context,
-                            #     )
-                            # else:
-                            #     raise R2RException(
-                            #         status_code=400,
-                            #         message=f"Reasoning agent not supported for this model {rag_generation_config.model}",
-                            #     )
 
                         async for chunk in agent.arun(
                             messages=messages,
@@ -1537,7 +1532,6 @@ class RetrievalService(Service):
         filter_collection_ids: Optional[list[UUID]] = None,
         model: Optional[str] = None,
         use_system_context: bool = False,
-        reasoning_agent: bool = False,
     ) -> str:
         """
         High-level method that:
@@ -1551,14 +1545,14 @@ class RetrievalService(Service):
 
         prompt_name = (
             self.config.agent.agent_dynamic_prompt
-            if use_system_context or reasoning_agent
+            if use_system_context
             else self.config.agent.agent_static_prompt
         )
 
-        if ("gemini" in model or "claude" in model) and reasoning_agent:
+        if ("gemini" in model):
             prompt_name = prompt_name + "_prompted_reasoning"
 
-        if use_system_context or reasoning_agent:
+        if use_system_context:
             doc_context_str = await self._build_documents_context(
                 filter_user_id=filter_user_id,
             )

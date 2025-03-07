@@ -3,14 +3,14 @@
 from copy import copy
 from enum import Enum
 from typing import Any, Optional
-from uuid import UUID
+from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from pydantic import Field
 
 from .base import R2RSerializable
 from .llm import GenerationConfig
 from .vector import IndexMeasure
-from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
+
 
 def generate_id_from_label(label) -> UUID:
     return uuid5(NAMESPACE_DNS, label)
@@ -29,7 +29,9 @@ class ChunkSearchResult(R2RSerializable):
 
     def __str__(self) -> str:
         if self.score:
-            return f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+            return (
+                f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+            )
         else:
             return f"ChunkSearchResult(text={self.text})"
 
@@ -203,11 +205,23 @@ class WebSearchResult(R2RSerializable):
 
         for result in results:
             if result["type"] == "organic":
-                organic.append(WebPageResult(**result, id=generate_id_from_label(result["link"])))
+                organic.append(
+                    WebPageResult(
+                        **result, id=generate_id_from_label(result["link"])
+                    )
+                )
             elif result["type"] == "relatedSearches":
-                related.append(RelatedSearchResult(**result, id=generate_id_from_label(result["query"])))
+                related.append(
+                    RelatedSearchResult(
+                        **result, id=generate_id_from_label(result["query"])
+                    )
+                )
             elif result["type"] == "peopleAlsoAsk":
-                paa.append(PeopleAlsoAskResult(**result, id=generate_id_from_label(result["link"])))
+                paa.append(
+                    PeopleAlsoAskResult(
+                        **result, id=generate_id_from_label(result["link"])
+                    )
+                )
 
         return cls(
             organic_results=organic,
