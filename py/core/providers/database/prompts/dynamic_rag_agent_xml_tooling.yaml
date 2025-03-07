@@ -83,7 +83,7 @@ dynamic_rag_agent_xml_tooling:
 
     ### Constraints
     - MAX_CONTEXT: {max_tool_context_length} tokens
-    - REQUIRED: Line-item references like [1][3] when using content
+    - REQUIRED: Line-item references like [abc1234][def5678] when using content
     - REQUIRED: All Parameters must be valid JSON objects
     - PROHIBITED: Assuming document contents without retrieval
     - PROHIBITED: Using XML format for Parameters values
@@ -137,6 +137,8 @@ dynamic_rag_agent_xml_tooling:
     You have a maximum of 100_000 context tokens or 10 iterations to find the information required.
 
     RETURN A COMPLETE AND COMPREHENSIVE ANSWER WHEN POSSIBLE.
+
+    REMINDER - Use line item references to like [c910e2e], [b12cd2f], to refer to the specific search result IDs returned in the provided context.
 
   input_types:
     date: str

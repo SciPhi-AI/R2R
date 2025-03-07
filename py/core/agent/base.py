@@ -14,8 +14,8 @@ from core.base import (
     ToolResultData,
     ToolResultEvent,
     syncable,
-    yield_sse_event,
 )
+from core.utils import yield_sse_event
 from core.base.agent import Agent, Conversation
 
 logger = logging.getLogger()

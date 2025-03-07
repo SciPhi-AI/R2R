@@ -176,6 +176,8 @@ dynamic_rag_agent_prompted_reasoning_xml_tooling:
     - Return complete and comprehensive answers when possible
     - Maintain proper tag structure: <Thought> -> <Action> -> <Response>
 
+    REMINDER - Use line item references to like [c910e2e], [b12cd2f], to refer to the specific search result IDs returned in the provided context.
+
   input_types:
     date: str
     document_context: str

@@ -56,12 +56,7 @@ class R2RCompletionProvider(CompletionProvider):
         """
         # Route to Anthropic if appropriate.
         if model_name.startswith("anthropic/"):
-            if not is_streaming:
-                return (
-                    self._litellm_provider
-                )  # Anthropic does not yet support non-streaming completions.
-            else:
-                return self._anthropic_provider
+            return self._anthropic_provider
 
         # Route to Azure Foundry explicitly.
         if model_name.startswith("azure-foundry/"):

@@ -10,6 +10,10 @@ from pydantic import Field
 from .base import R2RSerializable
 from .llm import GenerationConfig
 from .vector import IndexMeasure
+from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
+
+def generate_id_from_label(label) -> UUID:
+    return uuid5(NAMESPACE_DNS, label)
 
 
 class ChunkSearchResult(R2RSerializable):
@@ -19,12 +23,15 @@ class ChunkSearchResult(R2RSerializable):
     document_id: UUID
     owner_id: Optional[UUID]
     collection_ids: list[UUID]
-    score: float
+    score: Optional[float] = None
     text: str
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+        if self.score:
+            return f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+        else:
+            return f"ChunkSearchResult(text={self.text})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -125,6 +132,7 @@ class GraphSearchResult(R2RSerializable):
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
     score: Optional[float] = None
+    id: UUID
 
     class Config:
         json_schema_extra = {
@@ -138,7 +146,7 @@ class GraphSearchResult(R2RSerializable):
         return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
 
 
-class WebSearchResult(R2RSerializable):
+class WebPageResult(R2RSerializable):
     title: str
     link: str
     snippet: str
@@ -146,6 +154,7 @@ class WebSearchResult(R2RSerializable):
     type: str = "organic"
     date: Optional[str] = None
     sitelinks: Optional[list[dict]] = None
+    id: UUID
 
     class Config:
         json_schema_extra = {
@@ -163,12 +172,13 @@ class WebSearchResult(R2RSerializable):
         }
 
     def __str__(self) -> str:
-        return f"WebSearchResult(title={self.title}, link={self.link}, snippet={self.snippet})"
+        return f"WebPageResult(title={self.title}, link={self.link}, snippet={self.snippet})"
 
 
 class RelatedSearchResult(R2RSerializable):
     query: str
     type: str = "related"
+    id: UUID
 
 
 class PeopleAlsoAskResult(R2RSerializable):
@@ -176,27 +186,28 @@ class PeopleAlsoAskResult(R2RSerializable):
     snippet: str
     link: str
     title: str
+    id: UUID
     type: str = "peopleAlsoAsk"
 
 
-class WebSearchResponse(R2RSerializable):
-    organic_results: list[WebSearchResult] = []
+class WebSearchResult(R2RSerializable):
+    organic_results: list[WebPageResult] = []
     related_searches: list[RelatedSearchResult] = []
     people_also_ask: list[PeopleAlsoAskResult] = []
 
     @classmethod
-    def from_serper_results(cls, results: list[dict]) -> "WebSearchResponse":
+    def from_serper_results(cls, results: list[dict]) -> "WebSearchResult":
         organic = []
         related = []
         paa = []
 
         for result in results:
             if result["type"] == "organic":
-                organic.append(WebSearchResult(**result))
+                organic.append(WebPageResult(**result, id=generate_id_from_label(result["link"])))
             elif result["type"] == "relatedSearches":
-                related.append(RelatedSearchResult(**result))
+                related.append(RelatedSearchResult(**result, id=generate_id_from_label(result["query"])))
             elif result["type"] == "peopleAlsoAsk":
-                paa.append(PeopleAlsoAskResult(**result))
+                paa.append(PeopleAlsoAskResult(**result, id=generate_id_from_label(result["link"])))
 
         return cls(
             organic_results=organic,
@@ -212,7 +223,7 @@ class ContextDocumentResult(R2RSerializable):
     """
 
     document: dict[str, Any]  # or create a formal Document model
-    chunks: list[str] = Field(default_factory=list)
+    chunks: list[ChunkSearchResult] = Field(default_factory=list)
 
     def __str__(self) -> str:
         return f"ContextDocumentResult(document={self.document}, chunks={self.chunks})"
@@ -223,7 +234,7 @@ class AggregateSearchResult(R2RSerializable):
 
     chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
-    web_search_results: Optional[list[WebSearchResult]] = None
+    web_search_results: Optional[list[WebPageResult]] = None
     context_document_results: Optional[list[ContextDocumentResult]] = None
 
     def __str__(self) -> str:

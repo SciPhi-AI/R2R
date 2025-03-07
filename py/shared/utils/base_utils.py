@@ -1,3 +1,6 @@
+import uuid
+import tiktoken
+from abc import ABCMeta
 import json
 import logging
 import math
@@ -7,7 +10,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Tuple, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
-from ..abstractions.search import (
+
+from ..abstractions import (
+    AsyncSyncMeta,
     AggregateSearchResult,
     GraphCommunityResult,
     GraphEntityResult,
@@ -18,339 +23,12 @@ from ..abstractions.vector import VectorQuantizationType
 if TYPE_CHECKING:
     from ..api.models.retrieval.responses import Citation
 
+
 logger = logging.getLogger()
 
 
-def reorder_collector_to_match_final_brackets(
-    collector: Any,  # "SearchResultsCollector",
-    final_citations: list["Citation"],
-):
-    """
-    Rebuilds collector._results_in_order so that bracket i => aggregator[i-1].
-    Each citation's raw_index indicates which aggregator item the LLM used originally.
-    We place that aggregator item in the new position for bracket 'index'.
-    """
-    old_list = collector.get_all_results()  # [(source_type, result_obj), ...]
-    max_index = max((c.index for c in final_citations), default=0)
-    new_list = [None] * max_index
-
-    for cit in final_citations:
-        old_idx = cit.raw_index
-        new_idx = cit.index
-        if not old_idx:  # or old_idx <= 0
-            continue
-        pos = old_idx - 1
-        if pos < 0 or pos >= len(old_list):
-            continue
-        # aggregator item is old_list[pos]
-        # place it at new_list[new_idx - 1]
-        if new_list[new_idx - 1] is None:
-            new_list[new_idx - 1] = old_list[pos]
-
-    # remove any None in case some indexes never got filled
-    collector._results_in_order = [x for x in new_list if x is not None]
-
-
-def map_citations_to_collector(
-    citations: list["Citation"],
-    collector: Any,  # "SearchResultsCollector"
-) -> list["Citation"]:
-    """
-    For each citation, use its 'raw_index' to look up the aggregator item from the
-    collector. We then fill out the Citation’s source_type, doc_id, text, metadata, etc.
-    """
-    from ..api.models.retrieval.responses import Citation
-
-    # We'll build a dictionary aggregator_index -> (source_type, result_obj)
-    aggregator_map = {}
-    for stype, obj, agg_idx in collector.get_all_results():
-        aggregator_map[agg_idx] = (stype, obj)
-
-    logger.debug(
-        f"Performing `map_citations_to_collector` with aggregator map: {aggregator_map}."
-    )
-
-    mapped_citations: list[Citation] = []
-    for cit in citations:
-        old_ref = cit.raw_index  # aggregator index we want
-        if old_ref in aggregator_map:
-            (source_type, result_obj) = aggregator_map[old_ref]
-            logger.debug(
-                f"Performing citation extraction, cit={cit}, source_type={source_type}, result_obj={result_obj}"
-            )
-
-            # Make a copy with the updated fields
-            updated = cit.copy()
-            updated.source_type = source_type
-
-            # Fill chunk fields
-            if source_type == "chunk":
-                updated.id = str(result_obj.id)
-                updated.document_id = str(result_obj.document_id)
-                updated.owner_id = (
-                    str(result_obj.owner_id) if result_obj.owner_id else None
-                )
-                updated.collection_ids = [
-                    str(cid) for cid in result_obj.collection_ids
-                ]
-                updated.score = result_obj.score
-                # updated.text = result_obj.text
-                updated.metadata = dict(result_obj.metadata)
-
-            elif source_type == "graph":
-                updated.score = result_obj.score
-                updated.metadata = dict(result_obj.metadata)
-                if result_obj.content:
-                    updated.metadata["graphContent"] = (
-                        result_obj.content.model_dump()
-                    )
-
-            elif source_type == "web":
-                updated.metadata = {
-                    "link": result_obj.link,
-                    "title": result_obj.title,
-                    "position": result_obj.position,
-                    # "snippet": result_obj.snippet,
-                }
-
-            elif source_type == "contextDoc":
-                document = updated.metadata.pop("document", {})
-                updated.document_id = document.get("id")
-                updated.owner_id = document.get("owner_id")
-                updated.collection_ids = document.get("collection_ids")
-                # updated.text = document.get("chunks", [])[updated.raw_index - 1]
-                updated.metadata = document.get("metadata")
-
-            else:
-                # fallback unknown type
-                updated.metadata = {}
-            mapped_citations.append(updated)
-
-        else:
-            # aggregator index not found => out-of-range or unknown
-            updated = cit.copy()
-            updated.source_type = None
-            mapped_citations.append(updated)
-
-    return mapped_citations
-
-
-def _expand_citation_span_to_sentence(
-    full_text: str, start: int, end: int
-) -> Tuple[int, int]:
-    """
-    Unchanged from your existing code. We will reuse it so each sub-reference
-    in a multi bracket has the same snippet boundaries.
-    """
-    sentence_enders = {".", "?", "!"}
-
-    # Move backward from 'start' until we find a sentence ender or reach index 0
-    s = start
-    while s > 0:
-        if full_text[s] in sentence_enders:
-            s += 1
-            while s < len(full_text) and full_text[s].isspace():
-                s += 1
-            break
-        s -= 1
-    sentence_start = s
-
-    # Move forward from 'end' until we find a sentence ender or end of text
-    e = end
-    while e < len(full_text):
-        if full_text[e] in sentence_enders:
-            e += 1
-            while e < len(full_text) and full_text[e].isspace():
-                e += 1
-            break
-        e += 1
-    sentence_end = e
-
-    return (sentence_start, sentence_end)
-
-
-def extract_citations(text: str) -> list["Citation"]:
-    """
-    Extended to parse single or multiple references within one bracket.
-    E.g. "[18]" => one Citation with index=18,
-         "[3, 5]" => two Citations, both share start/end/snippet, but have index=3 and index=5.
-    """
-    from ..api.models.retrieval.responses import Citation
-
-    citations: list[Citation] = []
-    bracket_id_counter = 0
-    BRACKET_PATTERN = re.compile(r"\[([^\]]+)\]")
-
-    for match in BRACKET_PATTERN.finditer(text):
-        bracket_text = match.group(1)  # e.g. "18, 20"
-        start_i = match.start()
-        end_i = match.end()
-
-        # Expand snippet
-        snippet_start, snippet_end = _expand_citation_span_to_sentence(
-            text, start_i, end_i
-        )
-
-        # For consistent grouping later, we can store a bracket_id
-        bracket_id_counter += 1
-        bracket_id = f"B{bracket_id_counter}"  # e.g. "B1"
-
-        # Now parse out all integers inside the bracket:
-        # "18,20" => [18, 20]
-        # " 3 , 5  " => [3,5], etc.
-        nums_found = re.findall(r"\d+", bracket_text)
-        # If no digits found, skip
-        if not nums_found:
-            continue
-
-        # For each integer in that bracket, create a separate Citation
-        for num_str in nums_found:
-            old_ref = int(num_str)
-            c = Citation(
-                index=old_ref,  # We'll rename it raw_index later in reassign.
-                start_index=start_i,
-                end_index=end_i,
-                snippet_start_index=snippet_start,
-                snippet_end_index=snippet_end,
-                bracket_id=bracket_id,
-            )
-            # We'll attach an extra attribute to track which bracket group this came from
-            # so we can replace them together in re-labelling. You could also store this
-            # in a separate map, but let's do it inline:
-            # setattr(c, "bracket_id", bracket_id)
-            # Optionally store the order within that bracket.
-            citations.append(c)
-
-    return citations
-
-
-def reassign_citations_in_order(
-    text: str, citations: list["Citation"]
-) -> Tuple[str, list["Citation"]]:
-    """
-    Extended so that if one bracket has multiple references, we produce a single
-    bracket with multiple new references, e.g. "[18, 20]" => "[1, 2]".
-
-    1) If no citations => return original text & empty list
-    2) Group citations by bracket_id (or by (start_index, end_index)).
-    3) Build the oldRef->newRef map in the order brackets appear.
-    4) Replace from right to left in the text, each bracket with e.g. "[1, 2]".
-    5) Return (new_text, updated_citations).
-    """
-    from ..api.models.retrieval.responses import Citation
-
-    if not citations:
-        return text, []
-
-    # ---- 1) group by bracket_id ----
-    # Each bracket_id corresponds to a single matched bracket (start_index..end_index).
-    # If you didn't store bracket_id, you could do:
-    #   bracket_key = (cit.start_index, cit.end_index)
-    from collections import defaultdict
-
-    bracket_map = defaultdict(list)
-    for c in citations:
-        # bracket_id = (c.start_index, c.end_index) if you prefer
-        bracket_id = getattr(c, "bracket_id", f"{c.start_index}-{c.end_index}")
-        bracket_map[bracket_id].append(c)
-
-    # We'll want to do the bracket replacements from right to left by their
-    # start_index, so we don't mess up indexes for earlier brackets.
-    # But first let's figure out the order we discover new references.
-    # We'll keep a global oldRef->newRef map, assigned in the order encountered
-    old_to_new = {}
-    next_new_ref = 1
-
-    # We also need a list of bracket groups in the order they appear in the text (lowest start_index first).
-    # We'll store (start_index, bracket_id).
-    bracket_order = []
-    for bid, cits in bracket_map.items():
-        first_cit = min(cits, key=lambda c: c.start_index)
-        bracket_order.append((first_cit.start_index, bid))
-    bracket_order.sort(key=lambda x: x[0])  # ascending by start_index
-
-    # This final data structure will hold bracket replacements for each bracket_id
-    bracket_replacements = {}
-
-    # ---- 2) unify references in each bracket group in the order they appear inside that bracket ----
-    for _, bid in bracket_order:
-        # bracket_cits = bracket_map[bid], all share the same bracket region
-        # We want them in the order they appear in the bracket text. If you want
-        # strictly the order they appear in the original text, you might store
-        # an "extractedOrder" or something, but let's just keep ascending by index below:
-        bracket_cits = bracket_map[bid]
-
-        # Sort them by the order of extraction or their oldRef, depending on your preference.
-        # We'll do the order in which they appear in the *original citations* list to keep it stable.
-        # That means first occurrence in `citations` => first in bracket.
-        # or you can do bracket_cits.sort(key=lambda c: c.index).
-        # We'll do stable sorting by their position in the original citations list:
-        bracket_cits_sorted = sorted(
-            bracket_cits, key=lambda c: citations.index(c)
-        )
-
-        # For each oldRef we haven't seen, assign a newRef
-        # Then build a list of newRefs for this bracket
-        bracket_new_refs = []
-        for cit in bracket_cits_sorted:
-            old_ref = cit.index  # the 'oldRef' from extraction
-            if old_ref not in old_to_new:
-                old_to_new[old_ref] = next_new_ref
-                next_new_ref += 1
-            new_ref = old_to_new[old_ref]
-            bracket_new_refs.append(new_ref)
-
-        # We produce a single bracket text like: "[1, 2, 5]"
-        bracket_str = "[" + ", ".join(str(r) for r in bracket_new_refs) + "]"
-
-        # We'll store this so we can replace the text in one shot (later).
-        # All cits in bracket_map[bid] share the same (start_index, end_index).
-        # So let's pick any one of them to get the text range.
-        any_cit = bracket_cits[0]
-        bracket_replacements[bid] = {
-            "start": any_cit.start_index,
-            "end": any_cit.end_index,
-            "replacement": bracket_str,
-            "cits": bracket_cits_sorted,
-            "newRefs": bracket_new_refs,
-        }
-
-    # ---- 3) Now do the actual text replacements from right to left ----
-    # Sort bracket_replacements by start desc
-    bracket_repls_desc = sorted(
-        bracket_replacements.values(), key=lambda x: x["start"], reverse=True
-    )
-
-    text_chars = list(text)
-    for br_info in bracket_repls_desc:
-        s_i = br_info["start"]
-        e_i = br_info["end"]
-        replacement = br_info["replacement"]
-        text_chars[s_i:e_i] = list(replacement)
-
-    new_text = "".join(text_chars)
-
-    # ---- 4) update each Citation object with the final newRef ----
-    # Also fix up snippet boundaries if you want to be fancy. We can leave them as-is or re‐compute.
-    # We'll just keep them as-is for now.
-    updated_citations: list[Citation] = []
-
-    for bid in bracket_map.keys():
-        br_info = bracket_replacements[bid]
-        bracket_cits_sorted = br_info["cits"]
-        bracket_new_refs = br_info["newRefs"]
-        # zip them 1:1
-        for cit_obj, new_ref in zip(bracket_cits_sorted, bracket_new_refs):
-            # `cit_obj.index` = final bracket number
-            cit_obj.raw_index = cit_obj.index  # store original
-            cit_obj.index = new_ref
-            updated_citations.append(cit_obj)
-
-    # If you want them sorted by final start_index in ascending order:
-    updated_citations.sort(key=lambda c: c.start_index)
-
-    return new_text, updated_citations
-
+def id_to_shorthand(id: str | UUID):
+    return str(id)[0:7]
 
 def format_search_results_for_llm(
     results: AggregateSearchResult,
@@ -358,7 +36,7 @@ def format_search_results_for_llm(
 ) -> str:
     """
     Instead of resetting 'source_counter' to 1, we:
-     - For each chunk / graph / web / contextDoc in `results`,
+     - For each chunk / graph / web / context_doc in `results`,
      - Find the aggregator index from the collector,
      - Print 'Source [X]:' with that aggregator index.
     """
@@ -368,31 +46,19 @@ def format_search_results_for_llm(
     # Or you can rely on the fact that we've added them to the collector
     # in the same order. But let's do a "lookup aggregator index" approach:
 
-    def get_aggregator_index_for_item(item):
-        for stype, obj, agg_index in collector.get_all_results():
-            if obj is item:
-                return agg_index
-        return None  # not found, fallback
 
     # 1) Chunk search
     if results.chunk_search_results:
         lines.append("Vector Search Results:")
         for c in results.chunk_search_results:
-            agg_idx = get_aggregator_index_for_item(c)
-            if agg_idx is None:
-                # fallback if not found for some reason
-                agg_idx = "???"
-            lines.append(f"Source [{agg_idx}]:")
+            lines.append(f"Source ID [{id_to_shorthand(c.id)}]:")
             lines.append(c.text or "")  # or c.text[:200] to truncate
 
     # 2) Graph search
     if results.graph_search_results:
         lines.append("Graph Search Results:")
         for g in results.graph_search_results:
-            agg_idx = get_aggregator_index_for_item(g)
-            if agg_idx is None:
-                agg_idx = "???"
-            lines.append(f"Source [{agg_idx}]:")
+            lines.append(f"Source ID [{id_to_shorthand(g.id)}]:")
             if isinstance(g.content, GraphCommunityResult):
                 lines.append(f"Community Name: {g.content.name}")
                 lines.append(f"ID: {g.content.id}")
@@ -411,10 +77,7 @@ def format_search_results_for_llm(
     if results.web_search_results:
         lines.append("Web Search Results:")
         for w in results.web_search_results:
-            agg_idx = get_aggregator_index_for_item(w)
-            if agg_idx is None:
-                agg_idx = "???"
-            lines.append(f"Source [{agg_idx}]:")
+            lines.append(f"Source ID [{id_to_shorthand(w.id)}]:")
             lines.append(f"Title: {w.title}")
             lines.append(f"Link: {w.link}")
             lines.append(f"Snippet: {w.snippet}")
@@ -423,22 +86,19 @@ def format_search_results_for_llm(
     if results.context_document_results:
         lines.append("Local Context Documents:")
         for doc_result in results.context_document_results:
-            agg_idx = get_aggregator_index_for_item(doc_result)
-            if agg_idx is None:
-                agg_idx = "???"
             doc_data = doc_result.document
             doc_title = doc_data.get("title", "Untitled Document")
             doc_id = doc_data.get("id", "N/A")
             summary = doc_data.get("summary", "")
 
-            lines.append(f"Source [{agg_idx}]:")
-            lines.append(f"Document Title: {doc_title} (ID: {doc_id})")
+            lines.append(f"Document ID: {id_to_shorthand(doc_id)}")
+            lines.append(f"Document Title: {doc_title}")
             if summary:
                 lines.append(f"Summary: {summary}")
 
             # Then each chunk inside:
-            for i, ch_text in enumerate(doc_result.chunks, start=1):
-                lines.append(f"Chunk {i}: {ch_text}")
+            for chunk in doc_result.chunks:
+                lines.append(f"\nChunk ID {id_to_shorthand(chunk.id)}:\n{chunk.text}")
 
     result = "\n".join(lines)
     return result
@@ -582,3 +242,281 @@ def deep_update(
             else:
                 updated_mapping[k] = v
     return updated_mapping
+
+
+def tokens_count_for_message(message, encoding):
+    """Return the number of tokens used by a single message."""
+    tokens_per_message = 3
+
+    num_tokens = 0
+    num_tokens += tokens_per_message
+    if message.get("function_call"):
+        num_tokens += len(encoding.encode(message["function_call"]["name"]))
+        num_tokens += len(
+            encoding.encode(message["function_call"]["arguments"])
+        )
+    elif message.get("tool_calls"):
+        for tool_call in message["tool_calls"]:
+            num_tokens += len(encoding.encode(tool_call["function"]["name"]))
+            num_tokens += len(
+                encoding.encode(tool_call["function"]["arguments"])
+            )
+    else:
+        num_tokens += len(encoding.encode(message["content"]))
+
+    return num_tokens
+
+
+def num_tokens_from_messages(messages, model="gpt-4o"):
+    """Return the number of tokens used by a list of messages for both user and assistant."""
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        logger.warning("Warning: model not found. Using cl100k_base encoding.")
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    tokens = 0
+    for i, message in enumerate(messages):
+        tokens += tokens_count_for_message(messages[i], encoding)
+
+        tokens += 3  # every reply is primed with assistant
+    return tokens
+
+
+class SearchResultsCollector:
+    """
+    Collects search results in the form (source_type, result_obj, aggregator_index).
+    aggregator_index increments globally so that the nth item appended
+    is always aggregator_index == n, across the entire conversation.
+    """
+
+    def __init__(self):
+        # We'll store a list of (source_type, result_obj, agg_idx).
+        self._results_in_order: list[Tuple[str, Any, int]] = []
+
+    def add_aggregate_result(self, agg: "AggregateSearchResult"):
+        """
+        Flatten the chunk_search_results, graph_search_results, web_search_results,
+        and context_document_results, each assigned a unique aggregator index.
+        """
+        if agg.chunk_search_results:
+            for c in agg.chunk_search_results:
+                self._results_in_order.append(("chunk", c))
+
+        if agg.graph_search_results:
+            for g in agg.graph_search_results:
+                self._results_in_order.append(("graph", g))
+
+        if agg.web_search_results:
+            for w in agg.web_search_results:
+                self._results_in_order.append(("web", w))
+
+        if agg.context_document_results:
+            for cd in agg.context_document_results:
+                self._results_in_order.append(
+                    ("context_doc", cd)
+                )
+
+    def get_all_results(self) -> list[Tuple[str, Any, int]]:
+        """
+        Return list of (source_type, result_obj, aggregator_index),
+        in the order appended.
+        """
+        return self._results_in_order
+
+
+    def find_by_short_id(self, short_id: str) -> Optional[Tuple[str, Any, int]]:
+        """
+        Returns (source_type, result_obj) if any aggregator item
+        has an .id whose string form starts with short_id, else None.
+        """
+        for source_type, result_obj in self._results_in_order:
+            if source_type != "context_doc":
+                # If result_obj has an `id` attribute
+                if getattr(result_obj, "id", None) is not None:
+                    # Check if the full UUID starts with short_id
+                    if str(result_obj.id).startswith(short_id):
+                        return (source_type, result_obj.as_dict())
+            else:
+                for chunk in result_obj.chunks:
+                    if str(chunk.id).startswith(short_id):
+                        return (source_type, chunk)
+        return None
+
+
+def convert_nonserializable_objects(obj):
+    if isinstance(obj, dict):
+        new_obj = {}
+        for key, value in obj.items():
+            # Convert key to string if it is a UUID or not already a string.
+            new_key = str(key) if not isinstance(key, str) else key
+            new_obj[new_key] = convert_nonserializable_objects(value)
+        return new_obj
+    elif isinstance(obj, list):
+        return [convert_nonserializable_objects(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(convert_nonserializable_objects(item) for item in obj)
+    elif isinstance(obj, set):
+        return {convert_nonserializable_objects(item) for item in obj}
+    elif isinstance(obj, uuid.UUID):
+        return str(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()  # Convert datetime to ISO formatted string
+    else:
+        return obj
+
+
+def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
+    dumped = []
+    for source_type, result_obj in collector.get_all_results():
+        # Get the dictionary from the result object
+        if hasattr(result_obj, "model_dump"):
+            result_dict = result_obj.model_dump()
+        elif hasattr(result_obj, "dict"):
+            result_dict = result_obj.dict()
+        elif hasattr(result_obj, "as_dict"):
+            result_dict = result_obj.as_dict()
+        elif hasattr(result_obj, "to_dict"):
+            result_dict = result_obj.to_dict()
+        else:
+            result_dict = (
+                result_obj  # Fallback if no conversion method is available
+            )
+
+        # Use the recursive conversion on the entire dictionary
+        result_dict = convert_nonserializable_objects(result_dict)
+
+        dumped.append(
+            {
+                "source_type": source_type,
+                "result": result_dict,
+            }
+        )
+    return dumped
+
+
+def num_tokens(text, model="gpt-4o"):
+    try:
+        encoding = tiktoken.encoding_for_model(model)
+    except KeyError:
+        encoding = tiktoken.get_encoding("cl100k_base")
+
+    """Return the number of tokens used by a list of messages for both user and assistant."""
+    return len(encoding.encode(text, disallowed_special=()))
+
+
+class CombinedMeta(AsyncSyncMeta, ABCMeta):
+    pass
+
+
+async def yield_sse_event(event_name: str, payload: dict, chunk_size=1024):
+    """
+    Helper that yields a single SSE event in properly chunked lines.
+
+    e.g. event: event_name
+         data: (partial JSON 1)
+         data: (partial JSON 2)
+         ...
+         [blank line to end event]
+    """
+
+    # SSE: first the "event: ..."
+    yield f"event: {event_name}\n"
+
+    # Convert payload to JSON
+    content_str = json.dumps(payload, default=str)
+
+    # data
+    yield f"data: {content_str}\n"
+
+    # blank line signals end of SSE event
+    yield "\n"
+# Updated SSEFormatter with additional helper methods:
+class SSEFormatter:
+    """
+    Standardized formatter for Server-Sent Events (SSE) across all agent types.
+    """
+    @staticmethod
+    async def yield_message_event(text_segment, msg_id=None):
+        msg_id = msg_id or f"msg_{uuid.uuid4().hex[:8]}"
+        msg_payload = {
+            "id": msg_id,
+            "object": "agent.message.delta",
+            "delta": {
+                "content": [
+                    {
+                        "type": "text",
+                        "payload": {
+                            "value": text_segment,
+                            "annotations": [],
+                        },
+                    }
+                ]
+            },
+        }
+        async for line in yield_sse_event("message", msg_payload):
+            yield line
+
+    @staticmethod
+    async def yield_thinking_event(text_segment, thinking_id=None):
+        thinking_id = thinking_id or f"think_{uuid.uuid4().hex[:8]}"
+        thinking_data = {
+            "id": thinking_id,
+            "object": "agent.thinking.delta",
+            "delta": {
+                "content": [
+                    {
+                        "type": "text",
+                        "payload": {
+                            "value": text_segment,
+                            "annotations": [],
+                        },
+                    }
+                ]
+            },
+        }
+        async for line in yield_sse_event("thinking", thinking_data):
+            yield line
+
+    @staticmethod
+    async def yield_tool_call_event(tool_call_data):
+        from ..api.models.retrieval.responses import ToolCallEvent
+        tc_event = ToolCallEvent(event="tool_call", data=tool_call_data)
+        async for line in yield_sse_event("tool_call", tc_event.dict()["data"]):
+            yield line
+
+    @staticmethod
+    async def yield_tool_result_event(tool_result_data):
+        from ..api.models.retrieval.responses import ToolResultEvent
+        tr_event = ToolResultEvent(event="tool_result", data=tool_result_data)
+        async for line in yield_sse_event("tool_result", tr_event.dict()["data"]):
+            yield line
+
+    @staticmethod
+    async def yield_final_answer_event(final_data):
+        async for line in yield_sse_event("final_answer", final_data):
+            yield line
+
+    @staticmethod
+    def yield_done_event():
+        return "event: done\ndata: [DONE]\n\n"
+
+    # New helper for emitting search results:
+    @staticmethod
+    async def yield_search_results_event(aggregated_results):
+        payload = {
+            "id": "search_1",
+            "object": "rag.search_results",
+            "data": aggregated_results.as_dict(),
+        }
+        async for line in yield_sse_event("search_results", payload):
+            yield line
+
+    # New helper for emitting citation events:
+    @staticmethod
+    async def yield_citation_event(citation_payload):
+        # Ensure the payload includes the proper event object label.
+        if "object" not in citation_payload:
+            citation_payload["object"] = "rag.citation"
+        async for line in yield_sse_event("citation", citation_payload):
+            yield line

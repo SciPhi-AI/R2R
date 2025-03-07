@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 import re
-import time
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional
@@ -13,18 +12,18 @@ from fastapi import HTTPException
 from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
-    R2RStreamingReasoningRAGAgent,
-    SearchResultsCollector,
 )
 from core.agent.rag import (
     R2RXMLToolsStreamingReasoningRAGAgent,
+)
+from core.utils import (
     dump_collector,
-    num_tokens_from_messages,
+    extract_citations,
+    yield_sse_event,
 )
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
-    CitationRelabeler,
     DocumentResponse,
     GenerationConfig,
     GraphCommunityResult,
@@ -36,12 +35,9 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
-    extract_citations,
     format_search_results_for_llm,
-    map_citations_to_collector,
-    reassign_citations_in_order,
-    yield_sse_event,
 )
+from core.utils import SearchResultsCollector, num_tokens_from_messages, SSEFormatter
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
 from shared.api.models.management.responses import MessageResponse
@@ -574,6 +570,7 @@ class RetrievalService(Service):
 
             results.append(
                 GraphSearchResult(
+                    id=ent.get("id", None),
                     content=GraphEntityResult(
                         name=ent.get("name", ""),
                         description=ent.get("description", ""),
@@ -621,6 +618,7 @@ class RetrievalService(Service):
 
             results.append(
                 GraphSearchResult(
+                    id=ent.get("id", None),
                     content=GraphRelationshipResult(
                         id=rel.get("id", None),
                         subject=rel.get("subject", ""),
@@ -668,6 +666,7 @@ class RetrievalService(Service):
 
             results.append(
                 GraphSearchResult(
+                    id=ent.get("id", None),
                     content=GraphCommunityResult(
                         id=comm.get("id", None),
                         name=comm.get("name", ""),
@@ -769,7 +768,7 @@ class RetrievalService(Service):
         return await self.providers.completion_embedding.async_get_embedding(
             text=text
         )
-
+    
     @telemetry_event("RAG")
     async def rag(
         self,
@@ -778,15 +777,16 @@ class RetrievalService(Service):
         search_settings: SearchSettings = SearchSettings(),
         system_prompt_name: str | None = None,
         task_prompt_name: str | None = None,
-        *args,
         **kwargs,
-    ) -> RAGResponse:
+    ) -> Any:
         """
-        A simplified RAG method that does:
-          1) vector + graph search
-          2) build a big 'context' string
-          3) feed context + query + optional non-text data to LLM
-          4) parse LLM output & return a RAGResponse with text + metadata
+        A single RAG method that can do EITHER a one-shot synchronous RAG or
+        streaming SSE-based RAG, depending on rag_generation_config.stream.
+
+        1) Perform aggregator search => context
+        2) Build system+task prompts => messages
+        3) If not streaming => normal LLM call => return RAGResponse
+        4) If streaming => return an async generator of SSE lines
         """
         # 1) Possibly fix up any UUID filters in search_settings
         for f, val in list(search_settings.filters.items()):
@@ -794,24 +794,19 @@ class RetrievalService(Service):
                 search_settings.filters[f] = str(val)
 
         try:
-            # 2) Do the search => aggregator
+            # 2) Perform search => aggregated_results
             aggregated_results = await self.search(query, search_settings)
 
-            # 3) Build "context" string from aggregator
+            # 3) Build context from aggregator
             collector = SearchResultsCollector()
             collector.add_aggregate_result(aggregated_results)
-            context_str = format_search_results_for_llm(
-                aggregated_results, collector
-            )
+            context_str = format_search_results_for_llm(aggregated_results, collector)
 
-            # 4) Prepare system+user message
-            #    e.g. fetch system prompt & rag prompt from your DB or config
+            # 4) Prepare system+task messages
             system_prompt_name = system_prompt_name or "system"
             task_prompt_name = task_prompt_name or "rag"
-            task_prompt_override = kwargs.get("task_prompt_override", None)
+            task_prompt_override = kwargs.get("task_prompt_override")
 
-            # In your code, get_message_payload fetches or formats the prompt
-            # possibly substituting {query} and {context} into a template
             messages = await self.providers.database.prompts_handler.get_message_payload(
                 system_prompt_name=system_prompt_name,
                 task_prompt_name=task_prompt_name,
@@ -819,231 +814,113 @@ class RetrievalService(Service):
                 task_prompt_override=task_prompt_override,
             )
 
-            # Check if not streaming
+            # 5) Check streaming vs. non-streaming
             if not rag_generation_config.stream:
-                # ========== Non-streaming path ==========
+                # ========== Non-Streaming Logic ==========
                 response = await self.providers.llm.aget_completion(
                     messages=messages,
                     generation_config=rag_generation_config,
                 )
+                llm_text = response.choices[0].message.content
 
-                # 1) original LLM text
-                llm_text_response = response.choices[0].message.content
+                # (a) Extract short-ID references from final text
+                raw_sids = extract_citations(llm_text)
 
-                # 2) detect citations as the LLM wrote them
-                raw_citations = extract_citations(llm_text_response)
-
-                # 3) re-map them in ascending order => new_text has sequential references [1], [2], ...
-                re_labeled_text, new_citations = reassign_citations_in_order(
-                    llm_text_response, raw_citations
-                )
-
-                collector = SearchResultsCollector()
-                collector.add_aggregate_result(aggregated_results)
-
-                # 4) map to sources
-                mapped_citations = map_citations_to_collector(
-                    new_citations, collector
-                )
-
+                # (b) Possibly prune large content out of metadata
                 metadata = response.dict()
-                metadata["choices"][0]["message"].pop(
-                    "content", None
-                )  # remove content from metadata
+                if "choices" in metadata and len(metadata["choices"]) > 0:
+                    metadata["choices"][0]["message"].pop("content", None)
 
-                # 5) Build final RAG response
-                #    If you want to return the newly-labeled text to the user, do so:
-                rag_response = RAGResponse(
-                    generated_answer=re_labeled_text,  # or "generated_answer" if you prefer
+                # (c) Build final RAGResponse
+                rag_resp = RAGResponse(
+                    generated_answer=llm_text,
                     search_results=aggregated_results,
-                    citations=mapped_citations,
-                    metadata=metadata,
-                    completion=re_labeled_text,
-                )
-                return rag_response
-
-            async def sse_generator() -> AsyncGenerator[str, None]:
-                # 1) Send the initial 'search_results' event
-                results_dict = aggregated_results.as_dict()
-                search_evt = {
-                    "id": "run_1",
-                    "object": "rag.search_results",
-                    "data": results_dict,
-                }
-                async for line in yield_sse_event(
-                    "search_results", search_evt
-                ):
-                    yield line
-
-                # We'll keep a CitationRelabeler to track old->new references.
-                relabeler = CitationRelabeler()
-
-                # Keep a record of which `oldRef` we have announced to the client
-                announced_refs = set()
-
-                # We'll also keep track of partial text that we have *already* emitted
-                # in SSE "message" events, so we don't emit duplicates.
-                # Alternatively, we can just handle rewriting newly arrived text.
-                partial_text_buffer = ""
-
-                # 2) Stream partial text from the LLM
-                llm_stream = self.providers.llm.aget_completion_stream(
-                    messages=messages,
-                    generation_config=rag_generation_config,
-                )
-
-                try:
-                    async for chunk in llm_stream:
-                        token_text = chunk.choices[0].delta.content or ""
-                        if not token_text:
-                            continue
-
-                        # Step A: Append the new raw text
-                        partial_text_buffer += token_text
-
-                        # Step B: Identify any new bracket references in the newly added text
-                        #         We can do this by scanning the new substring only.
-                        #         But for simplicity, let's scan the entire buffer again from the
-                        #         last known parse position. We'll keep a small pointer.
-                        bracket_pattern = re.compile(r"\[\s*(\d+)\s*\]")
-
-                        # We'll scan just the newly added substring:
-                        # new_substring_start = len(partial_text_buffer) - len(token_text)
-                        # new_substring = partial_text_buffer[new_substring_start:]
-                        # for match in bracket_pattern.finditer(new_substring):
-                        #    ...
-                        # Or we can re-scan everything. We'll do the simpler approach below
-                        # but you might want to do something more optimal in production.
-
-                        for match in bracket_pattern.finditer(
-                            partial_text_buffer
-                        ):
-                            old_ref = int(match.group(1))
-                            new_ref = relabeler.get_or_assign_newref(old_ref)
-                            # If we haven't announced this old_ref yet, we can emit a SSE "citation" event
-                            if old_ref not in announced_refs:
-                                announced_refs.add(old_ref)
-                                citation_evt = {
-                                    "id": f"cit_{old_ref}",
-                                    "object": "rag.citation",
-                                    "raw_index": old_ref,
-                                    "new_index": new_ref,
-                                    "agg_index": 0,
-                                    # "source_type": src_type, # not available
-                                    # "source_title": ..., # not available
-                                }
-                                async for line in yield_sse_event(
-                                    "citation", citation_evt
-                                ):
-                                    yield line
-
-                        # Step C: Now let's produce the portion of text we haven't yet emitted,
-                        #         but with references replaced with the new labels.
-                        #         We'll just rewrite the entire partial_text_buffer for demonstration.
-                        #         Then we can figure out how much of it we have already emitted.
-                        rewritten_text = relabeler.rewrite_with_newrefs(
-                            partial_text_buffer
-                        )
-
-                        # We can do a "diff" approach: only yield the newly added portion
-                        # after rewriting. For simplicity, let's yield the entire newly
-                        # appended chunk from the rewritten text. We assume partial_text_buffer
-                        # was previously fully emitted in old form. We'll store the length
-                        # of previouslyEmittedRewritten, so we only yield the new tail.
-
-                        # Example approach:
-                        new_substring_start = len(rewritten_text) - len(
-                            token_text
-                        )
-                        new_text_to_emit = rewritten_text[new_substring_start:]
-
-                        # SSE partial text => 'message' event
-                        message_evt = {
-                            "id": "msg_1",
-                            "object": "thread.message.delta",
-                            "delta": {
-                                "content": [
-                                    {
-                                        "type": "text",
-                                        "payload": {
-                                            "value": new_text_to_emit,
-                                            "annotations": [],
-                                        },
-                                    }
-                                ]
-                            },
+                    citations=[
+                        {
+                            "id": f"cit_{sid}",
+                            "object": "rag.citation",
+                            "payload": self._find_item_by_shortid(sid, collector)
                         }
-                        async for line in yield_sse_event(
-                            "message", message_evt
-                        ):
-                            yield line
+                        for sid in raw_sids
+                    ],
+                    metadata=metadata,
+                    completion=llm_text,
+                )
+                return rag_resp
 
-                    # 3) Once the stream is fully done, we do a final re-labeling pass
-                    #    on the entire partial_text_buffer to ensure consistency:
-                    final_text = relabeler.finalize_all_citations(
-                        partial_text_buffer
-                    )
-
-                    # Re-extract the final citations so that we can do the aggregator mapping:
-                    raw_cits = extract_citations(final_text)
-
-                    # But remember that each raw_cit.index is the *already replaced* bracket,
-                    # i.e. it might be [1], [2], etc., so we treat that bracket number as the
-                    # newRef. If you want to track the original references that the LLM typed,
-                    # you can store that in relabeler’s data or do a more advanced approach.
-                    # For now, we'll assume the final bracket is the final label.
-
-                    # We can at least fill the "raw_index" with the same newIndex, or store them
-                    # in some separate approach.
-                    # Then map them to aggregator.
-                    # We'll do a direct approach here:
-
-                    # Because we want to map "newIndex" to aggregator, but aggregator is stored
-                    # under oldRef. We'll do a reverse-lookup from newRef => oldRef.
-                    # Something like:
-                    new_to_old = {
-                        v: k for k, v in relabeler.get_mapping().items()
-                    }
-
-                    # Now we can rewrite each final bracket's raw_index to find the aggregator index.
-                    for c in raw_cits:
-                        new_idx = (
-                            c.index
-                        )  # e.g. the bracket we see in final text
-                        # find old_ref
-                        old_ref = new_to_old.get(new_idx, -1)
-                        c.raw_index = old_ref
-
-                    final_coll = SearchResultsCollector()
-                    final_coll.add_aggregate_result(aggregated_results)
-                    mapped_cits = map_citations_to_collector(
-                        raw_cits, final_coll
-                    )
-
-                    # 4) Send the 'final_answer' event
-                    final_ans_evt = {
-                        "id": "msg_final",
-                        "object": "rag.final_answer",
-                        "generated_answer": final_text,
-                        "citations": [c.model_dump() for c in mapped_cits],
-                    }
-                    async for line in yield_sse_event(
-                        "final_answer", final_ans_evt
-                    ):
+            else:
+                # ========== Streaming SSE Logic ==========
+                async def sse_generator() -> AsyncGenerator[str, None]:
+                    # 1) Emit search results via SSEFormatter
+                    async for line in SSEFormatter.yield_search_results_event(aggregated_results):
                         yield line
 
-                    # 5) Indicate the stream is done
-                    yield "event: done\n"
-                    yield "data: [DONE]\n\n"
+                    announced_ids = set()  # keep track of which short IDs we’ve announced
+                    partial_text_buffer = ""
+                    citations = []
 
-                except Exception as e:
-                    logger.error(f"Error streaming RAG: {e}")
-                    raise
+                    # Begin streaming from the LLM
+                    msg_stream = self.providers.llm.aget_completion_stream(
+                        messages=messages,
+                        generation_config=rag_generation_config,
+                    )
 
-            return sse_generator()
+                    try:
+                        async for chunk in msg_stream:
+                            print('streaming chunk = ', chunk)
+                            delta = chunk.choices[0].delta
+                            finish_reason = chunk.choices[0].finish_reason
+
+                            if delta.content:
+                                # (b) Emit SSE "message" event for this chunk of text
+                                async for line in SSEFormatter.yield_message_event(delta.content):
+                                    yield line
+
+                                # Accumulate new text
+                                partial_text_buffer += delta.content
+
+                                # (a) Extract citations from updated buffer
+                                #     For each *new* short ID, emit an SSE "citation" event
+                                found_ids = extract_citations(partial_text_buffer)
+                                for sid in found_ids:
+                                    if sid not in announced_ids:
+                                        announced_ids.add(sid)
+                                        citation_payload = {
+                                            "id": f"cit_{sid}",
+                                            "short_id": sid,
+                                            "payload": self._find_item_by_shortid(sid, collector),
+                                        }
+                                        citations.append(citation_payload)
+                                        # Emit citation
+                                        async for line in SSEFormatter.yield_citation_event(citation_payload):
+                                            yield line
+
+
+                            # If the LLM signals it’s done
+                            if finish_reason == "stop":
+                                # (c) Emit final answer + all collected citations
+                                final_answer_evt = {
+                                    "id": "msg_final",
+                                    "object": "rag.final_answer",
+                                    "generated_answer": partial_text_buffer,
+                                    "citations": citations,
+                                }
+                                async for line in SSEFormatter.yield_final_answer_event(final_answer_evt):
+                                    yield line
+
+                                # (d) Signal the end of the SSE stream
+                                yield SSEFormatter.yield_done_event()
+                                break
+
+                    except Exception as e:
+                        logger.error(f"Error streaming LLM in rag: {e}")
+                        # Optionally yield an SSE "error" event or handle differently
+                        raise
+
+                return sse_generator()
 
         except Exception as e:
-            logger.error(f"Error in RAG: {e}")
+            logger.exception(f"Error in RAG pipeline: {e}")
             if "NoneType" in str(e):
                 raise HTTPException(
                     status_code=502,
@@ -1053,6 +930,38 @@ class RetrievalService(Service):
                 status_code=500,
                 detail=f"Internal RAG Error - {str(e)}",
             )
+
+
+        except Exception as e:
+            logger.exception(f"Error in RAG pipeline: {e}")
+            if "NoneType" in str(e):
+                raise HTTPException(
+                    status_code=502,
+                    detail="Server not reachable or returned an invalid response",
+                )
+            raise HTTPException(
+                status_code=500,
+                detail=f"Internal RAG Error - {str(e)}",
+            )
+
+    def _find_item_by_shortid(
+        self, sid: str, collector: SearchResultsCollector
+    ) -> Optional[tuple[str, Any, int]]:
+        """
+        Example helper that tries to match aggregator items by short ID,
+        meaning result_obj.id starts with sid.
+        """
+        for (source_type, result_obj) in collector.get_all_results():
+            # if the aggregator item has an 'id' attribute
+            if getattr(result_obj, "id", None) is not None:
+                full_id_str = str(result_obj.id)
+                if full_id_str.startswith(sid):
+                    if source_type == "chunk":
+                        return (source_type, result_obj.as_dict())
+                    else:
+                        return (source_type, result_obj)
+        return None
+
 
     @telemetry_event("Agent")
     async def agent(
@@ -1257,27 +1166,27 @@ class RetrievalService(Service):
                                     local_search_method=self.search,
                                     content_method=self.get_context,
                                 )
-                            elif (
-                                "claude-3-5-sonnet-20241022"
-                                in rag_generation_config.model
-                                or "gpt-4o" in rag_generation_config.model
-                                or "o3-mini" in rag_generation_config.model
-                            ):
-                                agent = R2RStreamingReasoningRAGAgent(
-                                    database_provider=self.providers.database,
-                                    llm_provider=self.providers.llm,
-                                    config=agent_config,
-                                    search_settings=search_settings,
-                                    rag_generation_config=rag_generation_config,
-                                    max_tool_context_length=max_tool_context_length,
-                                    local_search_method=self.search,
-                                    content_method=self.get_context,
-                                )
-                            else:
-                                raise R2RException(
-                                    status_code=400,
-                                    message=f"Reasoning agent not supported for this model {rag_generation_config.model}",
-                                )
+                            # elif (
+                            #     "claude-3-5-sonnet-20241022"
+                            #     in rag_generation_config.model
+                            #     or "gpt-4o" in rag_generation_config.model
+                            #     or "o3-mini" in rag_generation_config.model
+                            # ):
+                            #     agent = R2RStreamingReasoningRAGAgent(
+                            #         database_provider=self.providers.database,
+                            #         llm_provider=self.providers.llm,
+                            #         config=agent_config,
+                            #         search_settings=search_settings,
+                            #         rag_generation_config=rag_generation_config,
+                            #         max_tool_context_length=max_tool_context_length,
+                            #         local_search_method=self.search,
+                            #         content_method=self.get_context,
+                            #     )
+                            # else:
+                            #     raise R2RException(
+                            #         status_code=400,
+                            #         message=f"Reasoning agent not supported for this model {rag_generation_config.model}",
+                            #     )
 
                         async for chunk in agent.arun(
                             messages=messages,
@@ -1371,32 +1280,25 @@ class RetrievalService(Service):
             # Suppose your final assistant text is:
             raw_text = assistant_message.content or ""
 
-            # Step (1) - detect citations [2], [8], etc.
-            raw_citations = extract_citations(raw_text)
+            short_ids = extract_citations(raw_text)  # e.g. [abc1234]
 
-            # Step (2) - re-map them in ascending order => new_text has [1], [2], [3], ...
-            re_labeled_text, new_citations = reassign_citations_in_order(
-                raw_text, raw_citations
-            )
-
-            # Step (3) - map them to the aggregator-based search results
-            mapped_citations = map_citations_to_collector(
-                new_citations, agent.search_results_collector
-            )
-
-            # Overwrite final text in the conversation
-            assistant_message.content = re_labeled_text
-
-            # Then store the mapped citations if you wish:
-            citations_data = [c.model_dump() for c in mapped_citations]
-
-            # 4) Persist everything in the conversation DB
+            final_citations = []
+            for sid in short_ids:
+                final_citations.append(
+                    {
+                        "id": f"cit_{sid}",
+                        "object": "rag.citation",
+                        "short_id": sid,
+                        "payload": collector.find_by_short_id(sid),
+                    }
+                )
+            # Persist everything in the conversation DB
             await self.providers.database.conversations_handler.add_message(
                 conversation_id=str(conversation_id),
                 content=assistant_message,
                 parent_id=message_id,
                 metadata={
-                    "citations": citations_data,
+                    "citations": final_citations,
                     # You can also store the entire collector or just dump the underlying results
                     "aggregated_search_result": json.dumps(
                         dump_collector(collector)
@@ -1434,7 +1336,7 @@ class RetrievalService(Service):
                         role="assistant",
                         content=assistant_message.content,
                         metadata={
-                            "citations": citations_data,
+                            "citations": final_citations,
                             "tool_calls": agent.tool_call_results,
                             # You can also store the entire collector or just dump the underlying results
                             "aggregated_search_result": json.dumps(

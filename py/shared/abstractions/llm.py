@@ -42,6 +42,8 @@ class GenerationConfig(R2RSerializable):
         "add_generation_kwargs": None,
         "api_base": None,
         "response_format": None,
+        "extended_thinking": False,
+        "thinking_budget": None,
     }
 
     model: Optional[str] = Field(
@@ -50,7 +52,7 @@ class GenerationConfig(R2RSerializable):
     temperature: float = Field(
         default_factory=lambda: GenerationConfig._defaults["temperature"]
     )
-    top_p: float = Field(
+    top_p: Optional[float] = Field(
         default_factory=lambda: GenerationConfig._defaults["top_p"],
     )
     max_tokens_to_sample: int = Field(
@@ -76,6 +78,17 @@ class GenerationConfig(R2RSerializable):
         default_factory=lambda: GenerationConfig._defaults["api_base"],
     )
     response_format: Optional[dict | BaseModel] = None
+    extended_thinking: bool = Field(
+        default=False,
+        description="Flag to enable extended thinking mode (for Anthropic providers)",
+    )
+    thinking_budget: Optional[int] = Field(
+        default=None,
+        description=(
+            "Token budget for internal reasoning when extended thinking mode is enabled. "
+            "Must be less than max_tokens_to_sample."
+        ),
+    )
 
     @classmethod
     def set_default(cls, **kwargs):

@@ -54,8 +54,8 @@ from shared.abstractions.search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
-    WebSearchResponse,
     WebSearchResult,
+    WebPageResult,
     select_search_filters,
 )
 from shared.abstractions.user import Token, TokenData, User
@@ -115,7 +115,7 @@ __all__ = [
     # Prompt abstractions
     "Prompt",
     # Search abstractions
-    "WebSearchResponse",
+    "WebSearchResult",
     "ContextDocumentResult",
     "AggregateSearchResult",
     "GraphSearchResult",
@@ -126,7 +126,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
-    "WebSearchResult",
+    "WebPageResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

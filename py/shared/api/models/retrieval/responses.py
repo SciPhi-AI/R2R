@@ -1,11 +1,14 @@
 import uuid
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, Tuple
 
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
+    GraphSearchResult,
+    WebPageResult,
+    ContextDocumentResult,
     Message,
 )
 from shared.abstractions.llm import LLMChatCompletion
@@ -21,91 +24,21 @@ class Citation(BaseModel):
     """
 
     # Bracket references
-    index: int = Field(
-        ..., description="Citation bracket index after re-labeling"
+    id: str = Field(
+        ..., description="The ID of the citation object"
     )
-    raw_index: Optional[int] = Field(
-        None, description="Original citation bracket index before re-labeling"
+    object: str = Field(
+        ..., description="The type of citation object (e.g. `agent.citation` or `rag.citation`)"
     )
-    start_index: Optional[int] = Field(
-        None,
-        description="Character offset (start) for the bracket [n] in the final text",
+    payload: Tuple[str, ChunkSearchResult | GraphSearchResult | WebPageResult | ContextDocumentResult] = Field(
+         ..., description="The object payload and it's corresponding type"
     )
-    end_index: Optional[int] = Field(
-        None,
-        description="Character offset (end) for the bracket [n] in the final text",
-    )
-
-    # Expanded snippet offsets around the bracket
-    snippet_start_index: Optional[int] = Field(
-        None,
-        description="Start offset for the snippet region around the bracket",
-    )
-    snippet_end_index: Optional[int] = Field(
-        None,
-        description="End offset for the snippet region around the bracket",
-    )
-    # snippet: Optional[str] = Field(
-    #     None,
-    #     description="Sentence-based snippet or text chunk containing this bracket reference",
-    # )
-
-    # Mapped source fields
-    source_type: Optional[str] = Field(
-        None,
-        description="Type of the cited source (chunk, graph, web, contextDoc)",
-    )
-    id: Optional[uuid.UUID] = Field(
-        None, description="Search result ID (if chunk, e.g. chunk.id)"
-    )
-    document_id: Optional[uuid.UUID] = Field(
-        None, description="Document ID if chunk references a particular doc"
-    )
-    owner_id: Optional[str] = Field(
-        None,
-        description="Owner ID if chunk or doc references a particular user",
-    )
-    collection_ids: Optional[list[str]] = Field(
-        None, description="Collections this chunk or doc belongs to"
-    )
-    score: Optional[float] = Field(
-        None, description="Search score or similarity value"
-    )
-    text: Optional[str] = Field(
-        None, description="Full chunk text or short snippet from the source"
-    )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional key-value fields from the source (title, license, etc.)",
-    )
-    bracket_id: Optional[str] = Field(
-        None,
-        description="Unique ID for the bracket reference (if needed)",
-    )
-
     class Config:
         json_schema_extra = {
             "example": {
-                "index": 1,
-                "raw_index": 9,
-                "start_index": 393,
-                "end_index": 396,
-                "snippet_start_index": 320,
-                "snippet_end_index": 418,
-                # "snippet": "some line referencing the bracket [1]",
-                "source_type": "chunk",
-                "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
-                "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
-                "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-                "score": 0.64,
-                "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
-                "metadata": {
-                    "title": "DeepSeek_R1.pdf",
-                    "license": "CC-BY-4.0",
-                    "chunk_order": 68,
-                    "document_type": "pdf",
-                },
+                "id": "cit.abcd123",
+                "object": "agent.citation",
+                "payload": "ChunkSearchResult(...)",
             }
         }
 

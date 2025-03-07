@@ -82,7 +82,7 @@ class PostgresDocumentsHandler(Handler):
 
     async def create_tables(self):
         logger.info(
-            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+            f"Creating table, if it does not exist: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
 
         vector_dim = (
