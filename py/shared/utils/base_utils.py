@@ -534,6 +534,20 @@ class SSEFormatter:
     async def yield_citation_event(citation_payload):
         # Ensure the payload includes the proper event object label.
         if "object" not in citation_payload:
-            citation_payload["object"] = "rag.citation"
+            citation_payload["object"] = "citation"
         async for line in yield_sse_event("citation", citation_payload):
+            yield line
+
+    @staticmethod
+    async def yield_error_event(error_message, error_id=None):
+        error_id = error_id or f"err_{uuid.uuid4().hex[:8]}"
+        error_payload = {
+            "id": error_id,
+            "object": "agent.error",
+            "error": {
+                "message": error_message,
+                "type": "agent_error"
+            }
+        }
+        async for line in yield_sse_event("error", error_payload):
             yield line

@@ -1,3 +1,4 @@
+import json
 import asyncio
 import logging
 from abc import ABCMeta
@@ -79,28 +80,71 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
         return output_messages
 
-    async def process_llm_response(
-        self, response: LLMChatCompletion, *args, **kwargs
-    ) -> None:
-        # Unchanged from your snippet:
+    async def process_llm_response(self, response: LLMChatCompletion, *args, **kwargs) -> None:
         if not self._completed:
-            print('response = ', response)
             message = response.choices[0].message
             finish_reason = response.choices[0].finish_reason
-
+            
             if finish_reason == "stop":
                 self._completed = True
-    
-            if message.tool_calls:
-                assistant_msg = Message(
-                    role="assistant",
-                    content=None,
-                    tool_calls=[msg.dict() for msg in message.tool_calls],
+            
+            # First handle thinking blocks if present (which don't include tool_use)
+            if hasattr(message, "structured_content") and message.structured_content:
+                # Check if structured_content contains any tool_use blocks
+                has_tool_use = any(block.get("type") == "tool_use" for block in message.structured_content)
+                if not has_tool_use and message.tool_calls:
+                    # If it has thinking but no tool_use, add a separate message for tool_use
+                    assistant_msg = Message(
+                        role="assistant",
+                        content=message.structured_content
+                    )
+                    await self.conversation.add_message(assistant_msg)
+                    
+                    # Add explicit tool_use blocks in a separate message
+                    tool_uses = []
+                    for tool_call in message.tool_calls:
+                        tool_uses.append({
+                            "type": "tool_use",
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "input": json.loads(tool_call.function.arguments)
+                        })
+                    
+                    # Add tool_use blocks as a separate assistant message
+                    if tool_uses:
+                        await self.conversation.add_message(
+                            Message(role="assistant", content=tool_uses)
+                        )
+                else:
+                    # If it already has tool_use or no tool_calls, add as is
+                    assistant_msg = Message(
+                        role="assistant",
+                        content=message.structured_content
+                    )
+                    await self.conversation.add_message(assistant_msg)
+            elif message.content:
+                # For regular text content
+                await self.conversation.add_message(
+                    Message(role="assistant", content=message.content)
                 )
-                await self.conversation.add_message(assistant_msg)
-
-                # If there are multiple tool_calls, call them sequentially here
-                # (Because this is the non-streaming version, concurrency is less critical.)
+                
+                # If there are tool calls, add them as a separate message with tool_use blocks
+                if message.tool_calls:
+                    tool_uses = []
+                    for tool_call in message.tool_calls:
+                        tool_uses.append({
+                            "type": "tool_use",
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "input": json.loads(tool_call.function.arguments)
+                        })
+                    
+                    await self.conversation.add_message(
+                        Message(role="assistant", content=tool_uses)
+                    )
+            
+            # Now process the tool calls - this remains mostly unchanged
+            if message.tool_calls:
                 for tool_call in message.tool_calls:
                     await self.handle_function_or_tool_call(
                         tool_call.function.name,
@@ -109,7 +153,3 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                         *args,
                         **kwargs,
                     )
-            else:
-                await self.conversation.add_message(
-                    Message(role="assistant", content=message.content)
-                )

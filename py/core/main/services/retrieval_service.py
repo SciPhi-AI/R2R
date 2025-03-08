@@ -834,7 +834,7 @@ class RetrievalService(Service):
                     citations=[
                         {
                             "id": f"cit_{sid}",
-                            "object": "rag.citation",
+                            "object": "citation",
                             "payload": self._find_item_by_shortid(
                                 sid, collector
                             ),
@@ -1300,7 +1300,7 @@ class RetrievalService(Service):
                 final_citations.append(
                     {
                         "id": f"cit_{sid}",
-                        "object": "rag.citation",
+                        "object": "citation",
                         "short_id": sid,
                         "payload": collector.find_by_short_id(sid),
                     }

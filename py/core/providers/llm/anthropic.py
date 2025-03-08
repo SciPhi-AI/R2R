@@ -16,6 +16,8 @@ from anthropic.types import (
     RawMessageStartEvent,
     TextDelta,
     ToolUseBlock,
+    ThinkingBlock,
+    RedactedThinkingBlock,
 )
 
 from core.base.abstractions import GenerationConfig, LLMChatCompletion
@@ -42,6 +44,11 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
         return msg
 
     if role in ["user", "assistant"]:
+        # Check if this message has structured content (with thinking blocks)
+        if isinstance(content, list) and all(isinstance(block, dict) for block in content):
+            return {"role": role, "content": content}
+
+        # Check for function calls
         function_call = msg.get("function_call")
         if function_call:
             fn_name = function_call.get("name", "")
@@ -154,37 +161,86 @@ class AnthropicCompletionProvider(CompletionProvider):
         # -----------------------------------
         return args
 
+    def _create_openai_style_message(self, content_blocks, tool_calls=None):
+        """
+        Create an OpenAI-style message from Anthropic content blocks
+        while preserving the original structure.
+        """
+        display_content = ""
+        structured_content = []
+        
+        for block in content_blocks:
+            if block.type == "text":
+                display_content += block.text
+            elif block.type == "thinking" and hasattr(block, "thinking"):
+                # Store the complete thinking block
+                structured_content.append({
+                    "type": "thinking",
+                    "thinking": block.thinking,
+                    "signature": block.signature
+                })
+                # For display/logging
+                display_content += f"<think>{block.thinking}</think>"
+            elif block.type == "redacted_thinking" and hasattr(block, "data"):
+                # Store the complete redacted thinking block
+                structured_content.append({
+                    "type": "redacted_thinking",
+                    "data": block.data
+                })
+                # Add a placeholder for display/logging
+                display_content += "<redacted thinking block>"
+            elif block.type == "tool_use":
+                # Tool use blocks are handled separately via tool_calls
+                pass
+        
+        # If we have structured content (thinking blocks), use that
+        if structured_content:
+            # Add any text block at the end if needed
+            for block in content_blocks:
+                if block.type == "text":
+                    structured_content.append({
+                        "type": "text",
+                        "text": block.text
+                    })
+            
+            return {
+                "content": display_content or None,
+                "structured_content": structured_content
+            }
+        else:
+            # If no structured content, just return the display content
+            return {
+                "content": display_content or None
+            }
+
     def _convert_to_chat_completion(self, anthropic_msg: Message) -> dict:
         """
         Convert a non-streaming Anthropic Message into an OpenAI-style dict.
-        This implementation gathers text blocks as the final output.
-        (Internal thinking blocks are used only for reasoning and may be omitted.)
+        Preserves thinking blocks for proper handling.
         """
-        content_text = ""
         tool_calls = []
+        message_data = {"role": anthropic_msg.role}
         
         if anthropic_msg.content:
-            text_pieces = []
+            # First, extract any tool use blocks
             for block in anthropic_msg.content:
-                if hasattr(block, "type"):
-                    if block.type == "thinking":
-                        text_pieces.append("<think>")
-                        text_pieces.append(block.thinking)
-                        text_pieces.append("</think>")
-                    elif block.type == "text":
-                        text_pieces.append(block.text)
-                    elif block.type == "tool_use":
-                        # Process tool use blocks
-                        tool_calls.append({
-                            "index": len(tool_calls),
-                            "id": block.id,
-                            "type": "function",
-                            "function": {
-                                "name": block.name,
-                                "arguments": json.dumps(block.input),
-                            }
-                        })
-            content_text = "".join(text_pieces)
+                if hasattr(block, "type") and block.type == "tool_use":
+                    tool_calls.append({
+                        "index": len(tool_calls),
+                        "id": block.id,
+                        "type": "function",
+                        "function": {
+                            "name": block.name,
+                            "arguments": json.dumps(block.input),
+                        }
+                    })
+            
+            # Then create the message with appropriate content
+            message_data.update(self._create_openai_style_message(anthropic_msg.content, tool_calls))
+            
+            # If we have tool calls, add them
+            if tool_calls:
+                message_data["tool_calls"] = tool_calls
 
         finish_reason = (
             "stop"
@@ -192,15 +248,6 @@ class AnthropicCompletionProvider(CompletionProvider):
             else anthropic_msg.stop_reason
         )
         finish_reason = "tool_calls" if anthropic_msg.stop_reason == "tool_use" else finish_reason
-
-        message = {
-            "role": anthropic_msg.role,
-            "content": content_text,
-        }
-        
-        # Add tool_calls to the message if present
-        if tool_calls:
-            message["tool_calls"] = tool_calls
 
         return {
             "id": anthropic_msg.id,
@@ -234,7 +281,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             "choices": [
                 {
                     "index": 0,
-                    "message": message,
+                    "message": message_data,
                     "finish_reason": finish_reason,
                 }
             ],
@@ -243,52 +290,127 @@ class AnthropicCompletionProvider(CompletionProvider):
     def _split_system_messages(
         self, messages: list[dict]
     ) -> (list[dict], Optional[str]):
+        """
+        Process messages for Anthropic API, ensuring proper format for tool use and thinking blocks.
+        """
         system_msg = None
         filtered = []
-        pending_tool_results = []
-
-        for m in copy.deepcopy(messages):
+        
+        # Look for pairs of tool_use and tool_result
+        i = 0
+        while i < len(messages):
+            m = copy.deepcopy(messages[i])
+            
+            # Handle system message
             if m["role"] == "system" and system_msg is None:
                 system_msg = m["content"]
+                i += 1
                 continue
-
-            if m.get("tool_calls"):
-                if m.get("content"):
-                    filtered.append(
-                        {"role": "assistant", "content": m["content"]}
-                    )
-                filtered.append(
-                    {
-                        "role": "assistant",
-                        "content": [
-                            {
-                                "type": "tool_use",
-                                "id": call["id"],
-                                "name": call["function"]["name"],
-                                "input": json.loads(
-                                    call["function"]["arguments"]
-                                ),
-                            }
-                            for call in m["tool_calls"]
-                        ],
-                    }
-                )
-            elif m["role"] in ["function", "tool"]:
-                pending_tool_results.append(
-                    {
+            
+            # Case 1: Message with list format content (thinking blocks or tool blocks)
+            if isinstance(m.get("content"), list) and len(m["content"]) > 0 and isinstance(m["content"][0], dict):
+                filtered.append({"role": m["role"], "content": m["content"]})
+                i += 1
+                continue
+            
+            # Case 2: Message with structured_content field
+            elif m.get("structured_content") and m["role"] == "assistant":
+                filtered.append({"role": "assistant", "content": m["structured_content"]})
+                i += 1
+                continue
+                
+            # Case 3: Tool calls in an assistant message
+            elif m.get("tool_calls") and m["role"] == "assistant":
+                # Add content if it exists
+                if m.get("content") and not isinstance(m["content"], list):
+                    content_to_add = m["content"]
+                    # Handle content with thinking tags
+                    if "<think>" in content_to_add:
+                        thinking_start = content_to_add.find("<think>")
+                        thinking_end = content_to_add.find("</think>")
+                        if thinking_start >= 0 and thinking_end > thinking_start:
+                            thinking_content = content_to_add[thinking_start + 7:thinking_end]
+                            text_content = content_to_add[thinking_end + 8:].strip()
+                            filtered.append({
+                                "role": "assistant",
+                                "content": [
+                                    {
+                                        "type": "thinking",
+                                        "thinking": thinking_content,
+                                        "signature": "placeholder_signature"  # This is a placeholder
+                                    },
+                                    {
+                                        "type": "text",
+                                        "text": text_content
+                                    }
+                                ]
+                            })
+                        else:
+                            filtered.append({"role": "assistant", "content": content_to_add})
+                    else:
+                        filtered.append({"role": "assistant", "content": content_to_add})
+                    
+                # Add tool use blocks
+                tool_uses = []
+                for call in m["tool_calls"]:
+                    tool_uses.append({
+                        "type": "tool_use",
+                        "id": call["id"],
+                        "name": call["function"]["name"],
+                        "input": json.loads(call["function"]["arguments"]),
+                    })
+                
+                filtered.append({"role": "assistant", "content": tool_uses})
+                
+                # Check if next message is a tool result for this tool call
+                if i + 1 < len(messages) and messages[i + 1]["role"] in ["function", "tool"]:
+                    next_m = copy.deepcopy(messages[i + 1])
+                    
+                    # Make sure this is a tool result for the current tool use
+                    if next_m.get("tool_call_id") in [call["id"] for call in m["tool_calls"]]:
+                        # Add tool result as a user message
+                        filtered.append({
+                            "role": "user",
+                            "content": [{
+                                "type": "tool_result",
+                                "tool_use_id": next_m["tool_call_id"],
+                                "content": next_m["content"]
+                            }]
+                        })
+                        i += 2  # Skip both the tool call and result
+                        continue
+                
+                i += 1
+                continue
+                
+            # Case 4: Direct tool result (might be missing its paired tool call)
+            elif m["role"] in ["function", "tool"] and m.get("tool_call_id"):
+                # Add a user message with the tool result
+                filtered.append({
+                    "role": "user",
+                    "content": [{
                         "type": "tool_result",
-                        "tool_use_id": m.get("tool_call_id"),
-                        "content": m["content"],
-                    }
-                )
-                if len(pending_tool_results) == len(filtered[-1]["content"]):
-                    filtered.append(
-                        {"role": "user", "content": pending_tool_results}
-                    )
-                    pending_tool_results = []
+                        "tool_use_id": m["tool_call_id"],
+                        "content": m["content"]
+                    }]
+                })
+                i += 1
+                continue
+                
+            # Default case: normal message
             else:
                 filtered.append(openai_message_to_anthropic_block(m))
-
+                i += 1
+                
+        # Final validation: ensure no tool_use is at the end without a tool_result
+        if filtered and len(filtered) > 1:
+            last_msg = filtered[-1]
+            if (last_msg["role"] == "assistant" and 
+                isinstance(last_msg.get("content"), list) and 
+                any(block.get("type") == "tool_use" for block in last_msg["content"])):
+                logger.warning("Found tool_use at end of conversation without tool_result - removing it")
+                filtered.pop()  # Remove problematic message
+        
         return filtered, system_msg
 
     async def _execute_task(self, task: dict[str, Any]):
@@ -328,9 +450,10 @@ class AnthropicCompletionProvider(CompletionProvider):
             )
 
         try:
+            logger.debug(f"Anthropic API request: {args}")
+            print(f"MESSAGES = {args['messages']}")
             response = await self.async_client.messages.create(**args)
-            print('response = ', response)
-            logger.debug("Anthropic async non-stream call succeeded.")
+            logger.debug(f"Anthropic API response: {response}")
             return LLMChatCompletion(
                 **self._convert_to_chat_completion(response)
             )
@@ -344,12 +467,14 @@ class AnthropicCompletionProvider(CompletionProvider):
         args.pop("stream", None)
         try:
             async with self.async_client.messages.stream(**args) as stream:
-                # Minimal fix: add is_collecting_tool=False
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
-                    "tool_id": None,  # Added this field
+                    "tool_id": None,
                     "is_collecting_tool": False,
+                    "thinking_buffer": "",
+                    "is_collecting_thinking": False,
+                    "thinking_signature": None,
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -401,12 +526,14 @@ class AnthropicCompletionProvider(CompletionProvider):
         args.pop("stream", None)
         try:
             with self.client.messages.stream(**args) as stream:
-                # Minimal fix: add is_collecting_tool=False
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
-                    "tool_id": None,  # Added this field
+                    "tool_id": None,
                     "is_collecting_tool": False,
+                    "thinking_buffer": "",
+                    "is_collecting_thinking": False,
+                    "thinking_signature": None,
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -422,7 +549,6 @@ class AnthropicCompletionProvider(CompletionProvider):
             logger.error(f"Anthropic sync streaming call failed: {e}")
             raise
 
-        
     def _process_stream_event(
         self, event: Any, buffer_data: dict, model_name: str
     ) -> list[dict]:
@@ -451,56 +577,76 @@ class AnthropicCompletionProvider(CompletionProvider):
             chunks.append(chunk)
 
         elif isinstance(event, RawContentBlockStartEvent):
-            # Check the block type to handle tool use, etc.
-            # For thinking, we do NOT accumulate in any buffer — we'll stream deltas directly
             if hasattr(event.content_block, "type"):
                 block_type = event.content_block.type
                 if block_type == "thinking":
-                    # We do NOT set is_collecting_thinking or any buffer
-                    pass
+                    buffer_data["is_collecting_thinking"] = True
+                    buffer_data["thinking_buffer"] = ""
+                    # Don't emit anything yet
                 elif block_type == "tool_use" or isinstance(
                     event.content_block, ToolUseBlock
                 ):
                     buffer_data["tool_name"] = event.content_block.name
-                    buffer_data["tool_id"] = event.content_block.id  # Save tool ID
+                    buffer_data["tool_id"] = event.content_block.id
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["is_collecting_tool"] = True
 
         elif isinstance(event, RawContentBlockDeltaEvent):
             delta_obj = getattr(event, "delta", None)
-            if hasattr(delta_obj, "text"):
-                # This is normal text content
+            delta_type = getattr(delta_obj, "type", None)
+            
+            # Handle thinking deltas
+            if delta_type == "thinking_delta" and hasattr(delta_obj, "thinking"):
+                thinking_chunk = delta_obj.thinking
+                if buffer_data["is_collecting_thinking"]:
+                    buffer_data["thinking_buffer"] += thinking_chunk
+                    # Stream thinking chunks as they come in
+                    chunk = make_base_chunk()
+                    chunk["choices"][0]["delta"] = {"thinking": thinking_chunk}
+                    chunks.append(chunk)
+            
+            # Handle signature deltas for thinking blocks
+            elif delta_type == "signature_delta" and hasattr(delta_obj, "signature"):
+                if buffer_data["is_collecting_thinking"]:
+                    buffer_data["thinking_signature"] = delta_obj.signature
+                    # No need to emit anything for the signature
+            
+            # Handle text deltas
+            elif delta_type == "text_delta" and hasattr(delta_obj, "text"):
                 text_chunk = delta_obj.text
-                if buffer_data.get("is_collecting_tool"):
-                    # This might be partial JSON for the tool call
-                    partial_json = getattr(delta_obj, "partial_json", None)
-                    if partial_json:
-                        buffer_data["tool_json_buffer"] += partial_json
-                else:
-                    # It's just normal text to output
+                if not buffer_data["is_collecting_tool"]:
                     if text_chunk:
                         chunk = make_base_chunk()
                         chunk["choices"][0]["delta"] = {"content": text_chunk}
                         chunks.append(chunk)
-
-            if hasattr(delta_obj, "partial_json"):
-                # This is a partial JSON chunk for a tool call
-                if buffer_data.get("is_collecting_tool"):
+            
+            # Handle partial JSON for tools
+            elif hasattr(delta_obj, "partial_json"):
+                if buffer_data["is_collecting_tool"]:
                     buffer_data["tool_json_buffer"] += delta_obj.partial_json
 
-            elif hasattr(delta_obj, "thinking"):
-                # This is a chunk of chain-of-thought
-                thinking_chunk = delta_obj.thinking
-                if thinking_chunk:
-                    chunk = make_base_chunk()
-                    # Instead of waiting for block-stop, we emit the thinking text right here
-                    chunk["choices"][0]["delta"] = {"thinking": thinking_chunk}
-                    chunks.append(chunk)
-
         elif isinstance(event, ContentBlockStopEvent):
-            # We do NOT wait to yield the thinking text here (we already did it continuously)
-            # So we only check if we were collecting tool JSON:
-            if buffer_data.get("is_collecting_tool"):
+            # Handle the end of a thinking block
+            if buffer_data.get("is_collecting_thinking"):
+                # Emit a special "structured_content_delta" with the complete thinking block
+                if buffer_data["thinking_buffer"] and buffer_data["thinking_signature"]:
+                    chunk = make_base_chunk()
+                    chunk["choices"][0]["delta"] = {
+                        "structured_content": [{
+                            "type": "thinking",
+                            "thinking": buffer_data["thinking_buffer"],
+                            "signature": buffer_data["thinking_signature"]
+                        }]
+                    }
+                    chunks.append(chunk)
+                
+                # Reset thinking collection
+                buffer_data["is_collecting_thinking"] = False
+                buffer_data["thinking_buffer"] = ""
+                buffer_data["thinking_signature"] = None
+            
+            # Handle the end of a tool use block
+            elif buffer_data.get("is_collecting_tool"):
                 try:
                     json.loads(buffer_data["tool_json_buffer"])
                     chunk = make_base_chunk()
@@ -509,7 +655,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                             {
                                 "index": 0,
                                 "type": "function",
-                                "id": buffer_data["tool_id"] or f"call_{generate_tool_id()}",  # Use original ID if available
+                                "id": buffer_data["tool_id"] or f"call_{generate_tool_id()}",
                                 "function": {
                                     "name": buffer_data["tool_name"],
                                     "arguments": buffer_data["tool_json_buffer"],
@@ -521,7 +667,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     buffer_data["is_collecting_tool"] = False
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["tool_name"] = None
-                    buffer_data["tool_id"] = None  # Reset tool ID
+                    buffer_data["tool_id"] = None
                 except json.JSONDecodeError:
                     logger.warning(
                         "Incomplete JSON in tool call, skipping chunk"

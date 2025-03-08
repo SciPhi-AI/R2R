@@ -78,7 +78,6 @@ class Agent(ABC):
         self._completed = False
         self._tools: list[Tool] = []
         self.rag_generation_config = rag_generation_config
-        self.tool_call_results = []
         self._register_tools()
 
     @abstractmethod
@@ -194,16 +193,12 @@ class Agent(ABC):
                 function_args = json.loads(function_arguments)
 
             except JSONDecodeError as e:
-                error_message = f"The requested tool '{function_name}' is not available with arguments {function_arguments} failed."
-                tool_result = ToolResult(
-                    raw_result=error_message,
-                    llm_formatted_result=error_message,
-                )
+                error_message = f"Calling the requested tool '{function_name}' with arguments {function_arguments} failed with `JSONDecodeError`."
                 if save_messages:
                     await self.conversation.add_message(
                         Message(
                             role="tool" if tool_id else "function",
-                            content=str(tool_result.llm_formatted_result),
+                            content=error_message,
                             name=function_name,
                             tool_call_id=tool_id,
                         )
@@ -225,6 +220,7 @@ class Agent(ABC):
                 tool_result.stream_result = tool.stream_function(raw_result)
 
             if save_messages:
+                print('saving message...')
                 await self.conversation.add_message(
                     Message(
                         role="tool" if tool_id else "function",
@@ -233,15 +229,4 @@ class Agent(ABC):
                         tool_call_id=tool_id,
                     )
                 )
-
-            # **Record the tool call and its result**
-            self.tool_call_results.append(
-                {
-                    "tool_name": function_name,
-                    "tool_call_id": tool_id,
-                    "arguments": merged_kwargs,
-                    "result": raw_result,
-                }
-            )
-
         return tool_result

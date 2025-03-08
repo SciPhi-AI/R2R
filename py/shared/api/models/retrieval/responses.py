@@ -27,7 +27,7 @@ class Citation(BaseModel):
     id: str = Field(..., description="The ID of the citation object")
     object: str = Field(
         ...,
-        description="The type of citation object (e.g. `agent.citation` or `rag.citation`)",
+        description="The type of object, e.g. `citation`",
     )
     payload: Tuple[
         str,
@@ -43,7 +43,7 @@ class Citation(BaseModel):
         json_schema_extra = {
             "example": {
                 "id": "cit.abcd123",
-                "object": "agent.citation",
+                "object": "citation",
                 "payload": "ChunkSearchResult(...)",
             }
         }
