@@ -1003,11 +1003,12 @@ class RetrievalService(Service):
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
     ):
-        if not rag_generation_config.stream:
+        if not ('deepseek' in rag_generation_config.model or 'openai' in rag_generation_config.model or 'anthropic' in rag_generation_config.model):
             raise R2RException(
                 status_code=400,
-                message="Currently, the reasoning agent can only be used with `stream=True`.",
+                message="Currently, the agent can only be used with the 'deepseek' or 'openai' or 'anthropic' models.",
             )
+        
         try:
             if message and messages:
                 raise R2RException(
@@ -1153,12 +1154,10 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
-
                 async def stream_response():
                     try:
                         if (
                             "deepseek" in rag_generation_config.model.lower()
-                            or "gemini" in rag_generation_config.model.lower()
                         ):
                             agent_config.include_tools = False
                             agent = R2RXMLToolsStreamingRAGAgent(
@@ -1501,31 +1500,6 @@ class RetrievalService(Service):
             )
         return "\n".join(lines)
 
-    async def _build_collections_context(
-        self,
-        filter_collection_ids: Optional[list[UUID]] = None,
-        limit: int = 5,
-    ) -> str:
-        """
-        Fetches collections matching the given filters and returns a formatted string
-        enumerating them.
-        """
-        coll_data = await self.providers.database.collections_handler.get_collections_overview(
-            offset=0,
-            limit=limit,
-            filter_collection_ids=filter_collection_ids,
-        )
-        colls = coll_data["results"]
-        if not colls:
-            return "No collections found."
-
-        lines = []
-        for i, c in enumerate(colls, start=1):
-            name = c.name or "(Unnamed Collection)"
-            cid = str(c.id)
-            doc_count = c.document_count or 0
-            lines.append(f"[{i}] Name: {name} (ID: {cid}, docs: {doc_count})")
-        return "\n".join(lines)
 
     async def _build_aware_system_instruction(
         self,
@@ -1558,14 +1532,10 @@ class RetrievalService(Service):
             doc_context_str = await self._build_documents_context(
                 filter_user_id=filter_user_id,
             )
-
-            coll_context_str = await self._build_collections_context(
-                filter_collection_ids=filter_collection_ids,
-            )
             logger.debug(f"Loading prompt {prompt_name}")
             # Now fetch the prompt from the database prompts handler
             # This relies on your "rag_agent_extended" existing with
-            # placeholders: date, document_context, collection_context
+            # placeholders: date, document_context
             system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
                 # We use custom tooling and a custom agent to handle gemini models
                 prompt_name,
@@ -1573,7 +1543,6 @@ class RetrievalService(Service):
                     "date": date_str,
                     "max_tool_context_length": max_tool_context_length,
                     "document_context": doc_context_str,
-                    "collection_context": coll_context_str,
                 },
             )
         else:

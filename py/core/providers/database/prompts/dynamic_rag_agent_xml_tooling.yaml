@@ -41,28 +41,15 @@ dynamic_rag_agent_xml_tooling:
           </Parameters>
       </ToolDefinition>
 
-      <ToolDefinition>
-          <Name>result</Name>
-          <Description>Complete the conversation and return a result, called after getting relevant context.</Description>
-          <Parameters>
-            <Parameter type="string" required="true">
-              <Name>response</Name>
-              <Example>{{"answer": "The recent developments in AI include..."}}</Example>
-            </Parameter>
-          </Parameters>
-      </ToolDefinition>
     </AvailableTools>
 
     ### Documents
     {document_context}
 
-    ### Collections
-    {collection_context}
-
     2. DECIDE response strategy:
     - If specific document IDs are relevant: Use `content` with $eq filters
     - For broad concepts: Use `search_file_knowledge` with keyword queries
-    - Use web_search to gather live information
+    - Use `web_search` to gather live information
 
     3. FORMAT response STRICTLY as:
     <Action>
@@ -72,9 +59,10 @@ dynamic_rag_agent_xml_tooling:
               <!-- Parameters MUST be a single valid JSON object -->
               <Parameters>{{"query": "example search"}}</Parameters>
           </ToolCall>
-          <!-- Example with nested filters -->
+          <!-- Multiple tool call example -->
           <ToolCall>
               <Name>content</Name>
+              <!-- Example with nested filters -->
               <Parameters>{{"filters": {{"$and": [{{"document_id": {{"$eq": "abc123"}}, {{"collection_ids": {{"$overlap": ["id1"]}}}}]}}}}}}</Parameters>
           </ToolCall>
       </ToolCalls>
@@ -121,16 +109,6 @@ dynamic_rag_agent_xml_tooling:
       </ToolCalls>
     </Action>
 
-    3. After getting relevant context, use `result` to return an answer and complete the conversation:
-    <Action>
-      <ToolCalls>
-          <ToolCall>
-              <Name>result</Name>
-              <Parameters>{{"answer": "The recent developments in AI include..."}}</Parameters>
-          </ToolCall>
-      </ToolCalls>
-    </Action>
-
     ### Important!
     Continue to take actions until you have sufficient relevant context, then return your answer with the result tool.
     You have a maximum of 100_000 context tokens or 10 iterations to find the information required.
@@ -142,6 +120,6 @@ dynamic_rag_agent_xml_tooling:
   input_types:
     date: str
     document_context: str
-    collection_context: str
     max_tool_context_length: str
+    
   overwrite_on_diff: true

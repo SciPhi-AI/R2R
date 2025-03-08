@@ -12,13 +12,7 @@ dynamic_rag_agent:
     The available user documents and collections are shown below:
 
     <= Documents =>
-
     {document_context}
-
-
-    <= Collections =>
-
-    {collection_context}
 
 
     If no relevant results are found, then state that no results were found. If no obvious question is present given the available tools and context, then do not carry out a search, and instead ask for clarification.
@@ -29,7 +23,6 @@ dynamic_rag_agent:
   input_types:
     date: str
     document_context: str
-    collection_context: str
     max_tool_context_length: str
 
   overwrite_on_diff: true

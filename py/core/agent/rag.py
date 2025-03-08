@@ -708,7 +708,6 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
      - upon finishing each iteration, it parses <Action><ToolCalls><ToolCall> blocks,
        calls the appropriate tool, and emits SSE "tool_call" / "tool_result".
      - properly emits citations when they appear in the text
-     - if a <Response> or result tool is encountered, emits SSE "final_answer" and ends.
     """
 
     # We treat <think> or <Thought> as the same token boundaries
@@ -725,382 +724,175 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
     async def arun(
         self,
-        system_instruction: Optional[str] = None,
-        messages: Optional[list[Message]] = None,
+        system_instruction: str | None = None,
+        messages: list[Message] | None = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
-        """Main entry point for the streaming agent."""
+        """
+        Main streaming entrypoint: returns an async generator of SSE lines.
+        """
         self._reset()
-        await self._setup(system_instruction=system_instruction)
+        await self._setup(system_instruction)
 
         if messages:
             for m in messages:
                 await self.conversation.add_message(m)
 
-        # Track conversation state
-        iterations_count = 0
-        thinking_content = ""  # Store thinking content for final answer
-        announced_short_ids = set()  # Track announced citations
-        
-        # Buffering for XML filtering
-        local_accumulator = ""  # Accumulate non-XML content
-        visible_text_accumulator = ""  # What has been shown to the user
-        final_answer_content = ""  # Store the final answer content
-                
-        while not self._completed and iterations_count < self.config.max_iterations:
-            iterations_count += 1
-            iteration_buffer = ""  # Complete content for this iteration
-            in_thought = False  # Whether we're inside a Thought/think block
-            
-            # Get current conversation state
-            msg_list = await self.conversation.get_messages()
-            gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
-            
-            # Start streaming from LLM
-            llm_stream = self.llm_provider.aget_completion_stream(msg_list, gen_cfg)
-            finish_reason = None
+        async def sse_generator() -> AsyncGenerator[str, None]:
+            announced_short_ids = set()
 
-            # Process streaming chunks from the LLM
-            async for chunk in llm_stream:
-                finish_reason = chunk.choices[0].finish_reason
-                delta_text = chunk.choices[0].delta.content or ""
+            iterations_count = 0
+            # Keep streaming until we complete
+            while not self._completed and iterations_count < self.config.max_iterations:
+                iterations_count += 1
+                # 1) Get current messages
+                msg_list = await self.conversation.get_messages()
+                gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
 
-                # Process thoughts and visible text
-                while delta_text:
-                    if in_thought:
-                        # Inside a <Thought> or <think> block - look for closing tag
-                        close_match = self.THOUGHT_CLOSE.search(delta_text)
-                        if close_match:
-                            # Everything up to close tag is "thinking" text
-                            idx_end = close_match.start()
-                            thinking_text = delta_text[:idx_end]
-                            
-                            if thinking_text:
-                                thinking_content += thinking_text  # Save thinking content
-                                async for line in SSEFormatter.yield_thinking_event(thinking_text):
-                                    yield line
-
-                            # Consume the closing tag and return to normal text
-                            delta_text = delta_text[close_match.end():]
-                            in_thought = False
-                        else:
-                            # No closing tag found - all is "thinking"
-                            if delta_text:
-                                thinking_content += delta_text  # Save thinking content
-                                async for line in SSEFormatter.yield_thinking_event(delta_text):
-                                    yield line
-                            delta_text = ""
-                    else:
-                        # Outside <Thought> - look for opening tag
-                        open_match = self.THOUGHT_OPEN.search(delta_text)
-                        if open_match:
-                            # Text before the thought opening tag
-                            pre_thought_text = delta_text[:open_match.start()]
-                            
-                            if pre_thought_text:
-                                iteration_buffer += pre_thought_text
-                                
-                                # Check for citations in the clean text
-                                new_sids = extract_citations(pre_thought_text)
-                                for sid in new_sids:
-                                    if sid not in announced_short_ids:
-                                        announced_short_ids.add(sid)
-                                        citation_data = self.search_results_collector.find_by_short_id(sid)
-                                        if citation_data:  # Only emit if we found matching data
-                                            citation_evt_payload = {
-                                                "id": f"cit_{sid}",
-                                                "object": "agent.citation",
-                                                "payload": citation_data,
-                                            }
-                                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
-                                                yield line
-                                
-                                # Add to visible text and emit message event
-                                visible_text_accumulator += pre_thought_text
-                                async for line in SSEFormatter.yield_message_event(pre_thought_text):
-                                    yield line
-                            
-                            # Move past opening tag
-                            delta_text = delta_text[open_match.end():]
-                            in_thought = True
-                            thinking_content += "<think>"  # Save opening tag
-                        else:
-
-                            iteration_buffer += delta_text
-                            
-                            # Check for citations in the clean text
-                            new_sids = extract_citations(delta_text)
-                            for sid in new_sids:
-                                if sid not in announced_short_ids:
-                                    announced_short_ids.add(sid)
-                                    citation_data = self.search_results_collector.find_by_short_id(sid)
-                                    if citation_data:  # Only emit if we found matching data
-                                        citation_evt_payload = {
-                                            "id": f"cit_{sid}",
-                                            "object": "agent.citation",
-                                            "payload": citation_data,
-                                        }
-                                        async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
-                                            yield line
-                            
-                            # Add to visible text and emit message event
-                            visible_text_accumulator += delta_text
-
-                            local_accumulator += delta_text
-                            if  "<" in local_accumulator and not "</Action>" in local_accumulator:
-                                delta_text = ""  # Consumed entire delta
-                            
-                            else:
-                                local_accumulator = local_accumulator.split("</Action>")[-1]
-                                if local_accumulator:
-                                    async for line in SSEFormatter.yield_message_event(local_accumulator):
-                                        yield line
-                        
-                            delta_text = ""  # Consumed entire delta
-            
-                # End early if needed
-                if finish_reason in ("stop", "tool_calls"):
-                    break
-
-            # --- 2) Check for <Response> block which indicates final answer
-            response_match = self.RESPONSE_PATTERN.search(iteration_buffer)
-            if response_match:
-                final_text = response_match.group(1).strip()
-                final_answer_content = final_text
-                
-                # Check one more time for any citations in the final text
-                new_sids = extract_citations(final_text)
-                for sid in new_sids:
-                    if sid not in announced_short_ids:
-                        announced_short_ids.add(sid)
-                        citation_data = self.search_results_collector.find_by_short_id(sid)
-                        if citation_data:
-                            citation_evt_payload = {
-                                "id": f"cit_{sid}",
-                                "object": "agent.citation",
-                                "payload": citation_data,
-                            }
-                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
-                                yield line
-                
-                # Ensure the final text is completely streamed
-                if visible_text_accumulator != final_text:
-                    # Find what parts haven't been streamed
-                    remaining = self._find_unstreamed_text(visible_text_accumulator, final_text)
-                    if remaining:
-                        async for line in SSEFormatter.yield_message_event(remaining):
-                            yield line
-                        visible_text_accumulator += remaining
-                
-                # Include thinking content in the final answer
-                full_response = f"{thinking_content}</think>\n\n{final_text}"
-                async for line in SSEFormatter.yield_final_answer_event(
-                    {
-                        "id": "msg_final",
-                        "object": "agent.final_answer",
-                        "generated_answer": full_response,
-                    }
-                ):
-                    yield line
-                yield SSEFormatter.yield_done_event()
-                self._completed = True
-                return
-
-            # --- 3) Process any <Action>/<ToolCalls> blocks
-            action_matches = self.ACTION_PATTERN.findall(iteration_buffer)
-            
-            for action_block in action_matches:
-                tool_calls_text = []
-                # Look for ToolCalls wrapper, or use the raw action block
-                calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
-                if calls_wrapper:
-                    for tw in calls_wrapper:
-                        tool_calls_text.append(tw)
-                else:
-                    tool_calls_text.append(action_block)
-
-                # Process each ToolCall
-                for calls_region in tool_calls_text:
-                    calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
-                    for tc_block in calls_found:
-                        tool_name, tool_params = self._parse_single_tool_call(tc_block)
-                        if tool_name:
-                            # Emit SSE event for tool call
-                            tool_call_id = f"call_{abs(hash(tc_block))}"
-                            call_evt_data = {
-                                "tool_call_id": tool_call_id,
-                                "name": tool_name,
-                                "arguments": json.dumps(tool_params),
-                            }
-                            async for line in SSEFormatter.yield_tool_call_event(call_evt_data):
-                                yield line
-
-                            # Check if this is a result tool call (the final answer)
-                            if tool_name == "result" and "answer" in tool_params:
-                                # Save final answer and ensure it's streamed
-                                final_answer_content = tool_params["answer"]
-                                
-                                # Check for citations in the answer
-                                new_sids = extract_citations(final_answer_content)
-                                for sid in new_sids:
-                                    if sid not in announced_short_ids:
-                                        announced_short_ids.add(sid)
-                                        citation_data = self.search_results_collector.find_by_short_id(sid)
-                                        if citation_data:
-                                            citation_evt_payload = {
-                                                "id": f"cit_{sid}",
-                                                "object": "agent.citation",
-                                                "payload": citation_data,
-                                            }
-                                            async for line in SSEFormatter.yield_citation_event(citation_evt_payload):
-                                                yield line
-                                
-                                # Stream any parts of the answer not already streamed
-                                if visible_text_accumulator != final_answer_content:
-                                    remaining = self._find_unstreamed_text(visible_text_accumulator, final_answer_content)
-                                    if remaining:
-                                        async for line in SSEFormatter.yield_message_event(remaining):
-                                            yield line
-                                
-                                # Include thinking content in the final answer
-                                full_response = f"{thinking_content}</think>\n\n{final_answer_content}"
-                                
-                                # Emit SSE tool result
-                                result_data = {
-                                    "tool_call_id": tool_call_id,
-                                    "role": "tool",
-                                    "content": json.dumps({"result": "success"}),
-                                }
-                                async for line in SSEFormatter.yield_tool_result_event(result_data):
-                                    yield line
-                                    
-                                # Send final answer
-                                async for line in SSEFormatter.yield_final_answer_event(
-                                    {
-                                        "id": "msg_final",
-                                        "object": "agent.final_answer",
-                                        "generated_answer": full_response,
-                                    }
-                                ):
-                                    yield line
-                                yield SSEFormatter.yield_done_event()
-                                self._completed = True
-                                return
-                            
-                            # For non-result tools, execute normally
-                            try:
-                                tool_result = await self.handle_function_or_tool_call(
-                                    tool_name,
-                                    json.dumps(tool_params),
-                                    tool_id=tool_call_id,
-                                )
-                                result_content = getattr(tool_result, "raw_result", str(tool_result))
-                            except Exception as e:
-                                result_content = f"Error in tool '{tool_name}': {str(e)}"
-
-                            # Emit SSE tool result for non-result tools
-                            result_data = {
-                                "tool_call_id": tool_call_id,
-                                "role": "tool",
-                                "content": json.dumps(convert_nonserializable_objects(result_content)),
-                            }
-                            async for line in SSEFormatter.yield_tool_result_event(result_data):
-                                yield line
-
-            # --- 4) Update conversation with iteration results
-            if iteration_buffer.strip():
-                await self.conversation.add_message(
-                    Message(role="assistant", content=iteration_buffer)
+                # 2) Start streaming from LLM
+                llm_stream = self.llm_provider.aget_completion_stream(
+                    msg_list, gen_cfg
                 )
 
-        # Maximum iterations reached without finding a <Response> or result tool call
-        if not self._completed:
-            # Get the last messages and process them into a reasonable final answer
-            last_messages = await self.conversation.get_messages()
-            
-            # Get the last non-tool message from the assistant
-            last_assistant_messages = [m for m in reversed(last_messages) 
-                                    if m["role"] == "assistant" and m.get("content")]
-            
-            # Extract meaningful content and format the final answer
-            final_answer = "I apologize, but I reached the maximum number of iterations without finding a complete answer."
-            if last_assistant_messages:
-                raw_content = last_assistant_messages[0]["content"]
-                # Clean the content by removing XML tags
-                clean_content = self._clean_xml_tags(raw_content)
-                if clean_content.strip():
-                    final_answer = clean_content
-            
-            # Include thinking content in the final answer
-            full_response = f"{thinking_content}</think>\n\n{final_answer}\n\n(Note: The maximum number of conversation turns was reached without a proper conclusion.)"
-            
-            async for line in SSEFormatter.yield_final_answer_event(
-                {
-                    "id": "msg_final",
-                    "object": "agent.final_answer",
-                    "generated_answer": full_response,
-                }
-            ):
-                yield line
-            yield SSEFormatter.yield_done_event()
+                # buffer
+                iteration_buffer = ""
 
-    def _find_unstreamed_text(self, visible_text: str, final_text: str) -> str:
-        """
-        Find parts of the final text that haven't been streamed yet.
-        Uses a smart comparison to handle situations where the text might have been
-        modified slightly during processing.
-        
-        Args:
-            visible_text: Text that has already been shown to the user
-            final_text: The complete final text that should be shown
-            
-        Returns:
-            String containing the text that still needs to be streamed
-        """
-        # Simple case: final text is identical to what's been streamed
-        if visible_text == final_text:
-            return ""
-            
-        # If visible text is empty, return the entire final text
-        if not visible_text:
-            return final_text
-            
-        # Try to find the longest common prefix
-        i = 0
-        min_len = min(len(visible_text), len(final_text))
-        while i < min_len and visible_text[i] == final_text[i]:
-            i += 1
-            
-        # Return remainder of final text
-        return final_text[i:]
+                async for chunk in llm_stream:
+                    delta = chunk.choices[0].delta
+                    finish_reason = chunk.choices[0].finish_reason
 
-    def _clean_xml_tags(self, text: str) -> str:
-        """
-        Remove XML tags and their content from text.
-        
-        Args:
-            text: Text to clean
-            
-        Returns:
-            Cleaned text with XML tags removed
-        """
-        # Remove Action blocks and their content
-        text = re.sub(r'<Action>.*?</Action>', '', text, flags=re.DOTALL)
-        
-        # Remove ToolCalls blocks and their content
-        text = re.sub(r'<ToolCalls>.*?</ToolCalls>', '', text, flags=re.DOTALL)
-        
-        # Remove ToolCall blocks and their content
-        text = re.sub(r'<ToolCall>.*?</ToolCall>', '', text, flags=re.DOTALL)
-        
-        # Remove other tags but keep their content
-        text = re.sub(r'</?(?:Name|Parameters|Response)[^>]*>', '', text)
-        
-        # Clean up any extra whitespace resulting from removals
-        text = re.sub(r'\s+', ' ', text).strip()
-        
-        return text
+
+                    # 3) If new text, accumulate it
+                    if delta.content:
+
+                        iteration_buffer += delta.content
+
+                        if self.THOUGHT_OPEN.findall(iteration_buffer) and not self.THOUGHT_CLOSE.findall(iteration_buffer):
+                            # Emit SSE "thinking" event
+                            delta.content = delta.content.replace("<think>", "").replace("</think>", "")
+                            if delta.content:
+                                async for line in SSEFormatter.yield_thinking_event(
+                                    delta.content
+                                ):
+                                    yield line
+                            
+                            continue
+
+
+                        # (a) Extract bracket references from the entire iteration_buffer
+                        #     so we find newly appeared short IDs
+                        new_sids = extract_citations(iteration_buffer)
+                        for sid in new_sids:
+                            if sid not in announced_short_ids:
+                                announced_short_ids.add(sid)
+                                # SSE "citation"
+                                citation_evt_payload = {
+                                    "id": f"cit_{sid}",
+                                    "object": "agent.citation",
+                                    "payload": self.search_results_collector.find_by_short_id(
+                                        sid
+                                    ),
+                                }
+                                # Using SSEFormatter to yield a "citation" event
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_citation_event(
+                                    citation_evt_payload
+                                ):
+                                    yield line
+
+                        # (b) Now emit the newly streamed text as a "message" event
+                        async for line in SSEFormatter.yield_message_event(
+                            delta.content
+                        ):
+                            yield line
+
+                    elif finish_reason == "stop":
+                        break
+                
+                # 6) The LLM is done. If we have any leftover partial text,
+                #    finalize it in the conversation
+                if iteration_buffer:
+                    await self.conversation.add_message(
+                        Message(
+                            role="assistant",
+                            content=iteration_buffer,
+                        )
+                    )
+
+                # --- 4) Process any <Action>/<ToolCalls> blocks, or mark completed
+                action_matches = self.ACTION_PATTERN.findall(iteration_buffer)
+                
+                if len(action_matches) > 0:
+                    for action_block in action_matches:
+                        tool_calls_text = []
+                        # Look for ToolCalls wrapper, or use the raw action block
+                        calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
+                        if calls_wrapper:
+                            for tw in calls_wrapper:
+                                tool_calls_text.append(tw)
+                        else:
+                            tool_calls_text.append(action_block)
+
+                        # Process each ToolCall
+                        for calls_region in tool_calls_text:
+                            calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
+                            for tc_block in calls_found:
+                                tool_name, tool_params = self._parse_single_tool_call(tc_block)
+                                if tool_name:
+                                    # Emit SSE event for tool call
+                                    tool_call_id = f"call_{abs(hash(tc_block))}"
+                                    call_evt_data = {
+                                        "tool_call_id": tool_call_id,
+                                        "name": tool_name,
+                                        "arguments": json.dumps(tool_params),
+                                    }
+                                    async for line in SSEFormatter.yield_tool_call_event(call_evt_data):
+                                        yield line
+
+                                    try:
+                                        tool_result = await self.handle_function_or_tool_call(
+                                            tool_name,
+                                            json.dumps(tool_params),
+                                            tool_id=tool_call_id,
+                                        )
+                                        result_content = getattr(tool_result, "raw_result", str(tool_result))
+                                    except Exception as e:
+                                        result_content = f"Error in tool '{tool_name}': {str(e)}"
+
+                                    # Emit SSE tool result for non-result tools
+                                    result_data = {
+                                        "tool_call_id": tool_call_id,
+                                        "role": "tool",
+                                        "content": json.dumps(convert_nonserializable_objects(result_content)),
+                                    }
+                                    async for line in SSEFormatter.yield_tool_result_event(result_data):
+                                        yield line
+                else:
+
+                    # (a) Emit final answer SSE event
+                    final_evt_payload = {
+                        "id": "msg_final",
+                        "object": "agent.final_answer",
+                        "generated_answer": iteration_buffer,
+                        # Optionally attach citations, tool calls, etc.
+                    }
+                    async for (
+                        line
+                    ) in SSEFormatter.yield_final_answer_event(
+                        final_evt_payload
+                    ):
+                        yield line
+
+                    # (b) Signal the end of the SSE stream
+                    yield SSEFormatter.yield_done_event()
+                    self._completed = True
+                    
+
+        # Finally, we return the async generator
+        async for line in sse_generator():
+            yield line
 
     def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
         """
