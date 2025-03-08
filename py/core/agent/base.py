@@ -1,5 +1,5 @@
-import json
 import asyncio
+import json
 import logging
 from abc import ABCMeta
 from typing import Optional
@@ -80,36 +80,47 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
 
         return output_messages
 
-    async def process_llm_response(self, response: LLMChatCompletion, *args, **kwargs) -> None:
+    async def process_llm_response(
+        self, response: LLMChatCompletion, *args, **kwargs
+    ) -> None:
         if not self._completed:
             message = response.choices[0].message
             finish_reason = response.choices[0].finish_reason
-            
+
             if finish_reason == "stop":
                 self._completed = True
-            
+
             # First handle thinking blocks if present (which don't include tool_use)
-            if hasattr(message, "structured_content") and message.structured_content:
+            if (
+                hasattr(message, "structured_content")
+                and message.structured_content
+            ):
                 # Check if structured_content contains any tool_use blocks
-                has_tool_use = any(block.get("type") == "tool_use" for block in message.structured_content)
+                has_tool_use = any(
+                    block.get("type") == "tool_use"
+                    for block in message.structured_content
+                )
                 if not has_tool_use and message.tool_calls:
                     # If it has thinking but no tool_use, add a separate message for tool_use
                     assistant_msg = Message(
-                        role="assistant",
-                        content=message.structured_content
+                        role="assistant", content=message.structured_content
                     )
                     await self.conversation.add_message(assistant_msg)
-                    
+
                     # Add explicit tool_use blocks in a separate message
                     tool_uses = []
                     for tool_call in message.tool_calls:
-                        tool_uses.append({
-                            "type": "tool_use",
-                            "id": tool_call.id,
-                            "name": tool_call.function.name,
-                            "input": json.loads(tool_call.function.arguments)
-                        })
-                    
+                        tool_uses.append(
+                            {
+                                "type": "tool_use",
+                                "id": tool_call.id,
+                                "name": tool_call.function.name,
+                                "input": json.loads(
+                                    tool_call.function.arguments
+                                ),
+                            }
+                        )
+
                     # Add tool_use blocks as a separate assistant message
                     if tool_uses:
                         await self.conversation.add_message(
@@ -118,8 +129,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 else:
                     # If it already has tool_use or no tool_calls, add as is
                     assistant_msg = Message(
-                        role="assistant",
-                        content=message.structured_content
+                        role="assistant", content=message.structured_content
                     )
                     await self.conversation.add_message(assistant_msg)
             elif message.content:
@@ -127,22 +137,26 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 await self.conversation.add_message(
                     Message(role="assistant", content=message.content)
                 )
-                
+
                 # If there are tool calls, add them as a separate message with tool_use blocks
                 if message.tool_calls:
                     tool_uses = []
                     for tool_call in message.tool_calls:
-                        tool_uses.append({
-                            "type": "tool_use",
-                            "id": tool_call.id,
-                            "name": tool_call.function.name,
-                            "input": json.loads(tool_call.function.arguments)
-                        })
-                    
+                        tool_uses.append(
+                            {
+                                "type": "tool_use",
+                                "id": tool_call.id,
+                                "name": tool_call.function.name,
+                                "input": json.loads(
+                                    tool_call.function.arguments
+                                ),
+                            }
+                        )
+
                     await self.conversation.add_message(
                         Message(role="assistant", content=tool_uses)
                     )
-            
+
             # Now process the tool calls - this remains mostly unchanged
             if message.tool_calls:
                 for tool_call in message.tool_calls:

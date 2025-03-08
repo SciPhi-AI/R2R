@@ -352,7 +352,7 @@ def convert_nonserializable_objects(obj):
         obj = obj.as_dict()
     if hasattr(obj, "to_dict"):
         obj = obj.to_dict()
-               
+
     if isinstance(obj, dict):
         new_obj = {}
         for key, value in obj.items():
@@ -544,10 +544,7 @@ class SSEFormatter:
         error_payload = {
             "id": error_id,
             "object": "agent.error",
-            "error": {
-                "message": error_message,
-                "type": "agent_error"
-            }
+            "error": {"message": error_message, "type": "agent_error"},
         }
         async for line in yield_sse_event("error", error_payload):
             yield line

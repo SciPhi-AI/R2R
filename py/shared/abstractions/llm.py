@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 # LLMChatCompletion = ChatCompletion
 
 from typing import List, Optional
+
 from typing_extensions import Literal
+
 
 class Function(BaseModel):
     arguments: str
@@ -40,6 +42,7 @@ class ChatCompletionMessageToolCall(BaseModel):
 
     type: Literal["function"]
     """The type of the tool. Currently, only `function` is supported."""
+
 
 class FunctionCall(BaseModel):
     arguments: str
@@ -83,8 +86,11 @@ class ChatCompletionMessage(BaseModel):
 
     structured_content: Optional[List[dict]] = None
 
+
 class Choice(BaseModel):
-    finish_reason: Literal["stop", "length", "tool_calls", "content_filter", "function_call"]
+    finish_reason: Literal[
+        "stop", "length", "tool_calls", "content_filter", "function_call"
+    ]
     """The reason the model stopped generating tokens.
 
     This will be `stop` if the model hit a natural stop point or a provided stop
@@ -136,7 +142,9 @@ class LLMChatCompletion(BaseModel):
     usage: Optional[Any] = None
     """Usage statistics for the completion request."""
 
+
 LLMChatCompletionChunk = ChatCompletionChunk
+
 
 class RAGCompletion:
     completion: LLMChatCompletion

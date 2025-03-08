@@ -8,7 +8,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RRAGAgent, R2RXMLToolsAgent, R2RStreamingRAGAgent, R2RXMLToolsStreamingRAGAgent
+from core import (
+    R2RRAGAgent,
+    R2RStreamingRAGAgent,
+    R2RXMLToolsAgent,
+    R2RXMLToolsStreamingRAGAgent,
+)
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -1002,12 +1007,17 @@ class RetrievalService(Service):
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
     ):
-        if not ('deepseek' in rag_generation_config.model or 'openai' in rag_generation_config.model or 'anthropic' in rag_generation_config.model):
+        if not (
+            "deepseek" in rag_generation_config.model
+            or "gemini" in rag_generation_config.model
+            or "openai" in rag_generation_config.model
+            or "anthropic" in rag_generation_config.model
+        ):
             raise R2RException(
                 status_code=400,
                 message="Currently, the agent can only be used with the 'deepseek' or 'openai' or 'anthropic' models.",
             )
-        
+
         try:
             if message and messages:
                 raise R2RException(
@@ -1153,10 +1163,12 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
+
                 async def stream_response():
                     try:
                         if (
                             "deepseek" in rag_generation_config.model.lower()
+                            or "gemini" in rag_generation_config.model.lower()
                         ):
                             agent_config.include_tools = False
                             agent = R2RXMLToolsStreamingRAGAgent(
@@ -1241,7 +1253,10 @@ class RetrievalService(Service):
                 return stream_response()
 
             # For non-streaming mode, select the appropriate agent type based on model
-            if "deepseek" in rag_generation_config.model.lower():
+            if (
+                "deepseek" in rag_generation_config.model.lower()
+                or "gemini" in rag_generation_config.model.lower()
+            ):
                 # Use the new R2RXMLToolsAgent for non-streaming XML parsing for deepseek
                 agent_config.include_tools = False
                 agent = R2RXMLToolsAgent(
@@ -1517,7 +1532,6 @@ class RetrievalService(Service):
             )
         return "\n".join(lines)
 
-
     async def _build_aware_system_instruction(
         self,
         max_tool_context_length: int = 10_000,
@@ -1542,7 +1556,7 @@ class RetrievalService(Service):
             else self.config.agent.agent_static_prompt
         )
 
-        if "deepseek" in model:
+        if "deepseek" in model or "gemini" in model:
             prompt_name = prompt_name + "_xml_tooling"
 
         if use_system_context:

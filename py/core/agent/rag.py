@@ -37,7 +37,6 @@ from core.utils import (
 logger = logging.getLogger(__name__)
 
 
-
 class RAGAgentMixin:
     """
     A Mixin for adding search_file_knowledge, web_search, and content tools
@@ -424,7 +423,6 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         )
 
 
-
 class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
     """
     A non-streaming agent that:
@@ -439,12 +437,22 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
     THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
 
     # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
-    ACTION_PATTERN = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
-    TOOLCALLS_PATTERN = re.compile(r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL)
-    TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
+    ACTION_PATTERN = re.compile(
+        r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALLS_PATTERN = re.compile(
+        r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALL_PATTERN = re.compile(
+        r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL
+    )
     NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
-    PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
-    RESPONSE_PATTERN = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN = re.compile(
+        r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL
+    )
+    RESPONSE_PATTERN = re.compile(
+        r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL
+    )
 
     def __init__(
         self,
@@ -484,7 +492,7 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
             content_method=content_method,
             file_search_method=file_search_method,
         )
-        
+
     async def process_llm_response(self, response, *args, **kwargs):
         """
         Override the base process_llm_response to handle XML structured responses
@@ -496,14 +504,18 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
         message = response.choices[0].message
         if not message.content:
             # If there's no content, let the parent class handle the normal tool_calls flow
-            return await super().process_llm_response(response, *args, **kwargs)
+            return await super().process_llm_response(
+                response, *args, **kwargs
+            )
 
         # Get the response content
         content = message.content
 
-        if not content.startswith("<"): # HACK - fix issues with adding `<think>` to the beginning
+        if not content.startswith(
+            "<"
+        ):  # HACK - fix issues with adding `<think>` to the beginning
             content = "<think>" + content
-        
+
         # Process any tool calls in the content
         action_matches = self.ACTION_PATTERN.findall(content)
         if action_matches:
@@ -517,20 +529,24 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
                         tool_calls_text.append(tw)
                 else:
                     tool_calls_text.append(action_block)
-                
+
                 # Process each ToolCall
                 for calls_region in tool_calls_text:
                     calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
                     for tc_block in calls_found:
-                        tool_name, tool_params = self._parse_single_tool_call(tc_block)
+                        tool_name, tool_params = self._parse_single_tool_call(
+                            tc_block
+                        )
                         if tool_name:
                             tool_call_id = f"call_{abs(hash(tc_block))}"
                             try:
-                                tool_result = await self.handle_function_or_tool_call(
-                                    tool_name,
-                                    json.dumps(tool_params),
-                                    tool_id=tool_call_id,
-                                    save_messages=False
+                                tool_result = (
+                                    await self.handle_function_or_tool_call(
+                                        tool_name,
+                                        json.dumps(tool_params),
+                                        tool_id=tool_call_id,
+                                        save_messages=False,
+                                    )
                                 )
 
                                 xml_toolcalls += (
@@ -540,14 +556,18 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
                                     f"<Result>{tool_result.llm_formatted_result}</Result>"
                                     f"</ToolCall>"
                                 )
-                               
+
                             except Exception as e:
                                 pass
                 xml_toolcalls += "</ToolCalls>"
-                pre_action_text = content[:content.find(action_block)]
-                post_action_text = content[content.find(action_block) + len(action_block):]
-                iteration_text = pre_action_text + xml_toolcalls + post_action_text
-            
+                pre_action_text = content[: content.find(action_block)]
+                post_action_text = content[
+                    content.find(action_block) + len(action_block) :
+                ]
+                iteration_text = (
+                    pre_action_text + xml_toolcalls + post_action_text
+                )
+
                 # Create the final clean assistant message
                 await self.conversation.add_message(
                     Message(role="assistant", content=iteration_text)
@@ -557,16 +577,18 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
                 await self.conversation.add_message(
                     Message(role="assistant", content=content)
                 )
-            
+
         self._completed = True
 
-    def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
+    def _parse_single_tool_call(
+        self, toolcall_text: str
+    ) -> Tuple[Optional[str], dict]:
         """
         Parse a ToolCall block to extract the name and parameters.
-        
+
         Args:
             toolcall_text: The text content of a ToolCall block
-            
+
         Returns:
             Tuple of (tool_name, tool_parameters)
         """
@@ -594,9 +616,9 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
             except json.JSONDecodeError:
                 # If all else fails, treat as a plain string value
                 tool_params = {"value": raw_params}
-                
+
         return tool_name, tool_params
-    
+
     def _remove_xml_tags(self, content: str) -> str:
         """
         Remove all XML tags related to actions, tools, and thoughts from content.
@@ -612,18 +634,22 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
             # r"<Thought>.*?</Thought>",
             # r"<think>.*?</think>",
         ]
-        
+
         # Apply patterns to remove XML blocks
         cleaned_content = content
         for pattern in patterns:
-            cleaned_content = re.sub(pattern, "", cleaned_content, flags=re.DOTALL | re.IGNORECASE)
-        
+            cleaned_content = re.sub(
+                pattern, "", cleaned_content, flags=re.DOTALL | re.IGNORECASE
+            )
+
         # Remove any empty lines created by tag removal
-        cleaned_content = re.sub(r'\n\s*\n', '\n\n', cleaned_content)
-        
+        cleaned_content = re.sub(r"\n\s*\n", "\n\n", cleaned_content)
+
         return cleaned_content.strip()
 
-    def format_search_results_for_llm(self, results: AggregateSearchResult) -> str:
+    def format_search_results_for_llm(
+        self, results: AggregateSearchResult
+    ) -> str:
         """
         Format search results for the LLM, with token limit enforcement.
         """
@@ -637,6 +663,7 @@ class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
             return context
         else:
             return context[: int(frac_to_return * len(context))]
+
 
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
     """
@@ -719,11 +746,17 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
 
             try:
                 # Keep streaming until we complete
-                while not self._completed and iterations_count < self.config.max_iterations:
+                while (
+                    not self._completed
+                    and iterations_count < self.config.max_iterations
+                ):
                     iterations_count += 1
                     # 1) Get current messages
                     msg_list = await self.conversation.get_messages()
-                    gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+                    print("msg_list", msg_list)
+                    gen_cfg = self.get_generation_config(
+                        msg_list[-1], stream=True
+                    )
 
                     # 2) Start streaming from LLM
                     llm_stream = self.llm_provider.aget_completion_stream(
@@ -735,7 +768,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
 
                         if hasattr(delta, "thinking") and delta.thinking:
                             # Emit SSE "thinking" event
-                            async for line in SSEFormatter.yield_thinking_event(
+                            async for (
+                                line
+                            ) in SSEFormatter.yield_thinking_event(
                                 delta.thinking
                             ):
                                 yield line
@@ -780,7 +815,8 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                                     pending_tool_calls[idx] = {
                                         "id": tc.id,
                                         "name": tc.function.name or "",
-                                        "arguments": tc.function.arguments or "",
+                                        "arguments": tc.function.arguments
+                                        or "",
                                     }
                                 else:
                                     # Accumulate partial name/arguments
@@ -912,7 +948,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
             except Exception as e:
                 logger.error(f"Error in streaming agent: {str(e)}")
                 # Emit error event for client
-                async for line in SSEFormatter.yield_error_event(f"Agent error: {str(e)}"):
+                async for line in SSEFormatter.yield_error_event(
+                    f"Agent error: {str(e)}"
+                ):
                     yield line
                 # Send done event to close the stream
                 yield SSEFormatter.yield_done_event()
@@ -920,6 +958,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
         # Finally, we return the async generator
         async for line in sse_generator():
             yield line
+
 
 class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     """
@@ -938,12 +977,22 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
     THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
 
     # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
-    ACTION_PATTERN = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
-    TOOLCALLS_PATTERN = re.compile(r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL)
-    TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
+    ACTION_PATTERN = re.compile(
+        r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALLS_PATTERN = re.compile(
+        r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALL_PATTERN = re.compile(
+        r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL
+    )
     NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
-    PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
-    RESPONSE_PATTERN = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN = re.compile(
+        r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL
+    )
+    RESPONSE_PATTERN = re.compile(
+        r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL
+    )
 
     async def arun(
         self,
@@ -965,15 +1014,19 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         async def sse_generator() -> AsyncGenerator[str, None]:
             announced_short_ids = set()
             iterations_count = 0
-            
+
             try:
                 # Keep streaming until we complete
-                while not self._completed and iterations_count < self.config.max_iterations:
+                while (
+                    not self._completed
+                    and iterations_count < self.config.max_iterations
+                ):
                     iterations_count += 1
                     # 1) Get current messages
                     msg_list = await self.conversation.get_messages()
-                    print('msg_list:', msg_list)
-                    gen_cfg = self.get_generation_config(msg_list[-1], stream=True)
+                    gen_cfg = self.get_generation_config(
+                        msg_list[-1], stream=True
+                    )
 
                     # 2) Start streaming from LLM
                     llm_stream = self.llm_provider.aget_completion_stream(
@@ -997,46 +1050,60 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                             # Check if we have accumulated enough text for a `<Thought>` block
                             if len(iteration_buffer) < len("<Thought>"):
                                 continue
-                            
+
                             # Check if we have yielded the first event
                             if not yielded_first_event:
-                                # Emit the first chunk 
+                                # Emit the first chunk
                                 if self.THOUGHT_OPEN.findall(iteration_buffer):
                                     is_thinking = True
-                                    async for line in SSEFormatter.yield_thinking_event(
+                                    async for (
+                                        line
+                                    ) in SSEFormatter.yield_thinking_event(
                                         iteration_buffer
                                     ):
                                         yield line
                                 else:
-                                    async for line in SSEFormatter.yield_message_event(
+                                    async for (
+                                        line
+                                    ) in SSEFormatter.yield_message_event(
                                         iteration_buffer
                                     ):
                                         yield line
-                                
+
                                 # Mark as yielded
                                 yielded_first_event = True
                                 continue
-                                
+
                             # Check if we are in a thinking block
                             if is_thinking:
                                 # Still thinking, so keep yielding thinking events
-                                if not self.THOUGHT_CLOSE.findall(iteration_buffer):
+                                if not self.THOUGHT_CLOSE.findall(
+                                    iteration_buffer
+                                ):
                                     # Emit SSE "thinking" event
-                                    async for line in SSEFormatter.yield_thinking_event(
+                                    async for (
+                                        line
+                                    ) in SSEFormatter.yield_thinking_event(
                                         delta.content
                                     ):
                                         yield line
-                                
+
                                     continue
                                 # Done thinking, so emit the last thinking event
                                 else:
                                     is_thinking = False
-                                    thought_text = delta.content.split("</Thought>")[0].split("</think>")[0]
-                                    async for line in SSEFormatter.yield_thinking_event(
+                                    thought_text = delta.content.split(
+                                        "</Thought>"
+                                    )[0].split("</think>")[0]
+                                    async for (
+                                        line
+                                    ) in SSEFormatter.yield_thinking_event(
                                         thought_text
                                     ):
                                         yield line
-                                    post_thought_text = delta.content.split("</Thought>")[-1].split("</think>")[-1]
+                                    post_thought_text = delta.content.split(
+                                        "</Thought>"
+                                    )[-1].split("</think>")[-1]
                                     delta.content = post_thought_text
 
                             # Extract bracket references from the entire iteration_buffer
@@ -1062,31 +1129,48 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                         yield line
 
                             # Now prepare to emit the newly streamed text as a "message" event
-                            if iteration_buffer.count("<") and not in_action_block:
+                            if (
+                                iteration_buffer.count("<")
+                                and not in_action_block
+                            ):
                                 in_action_block = True
 
-                            if in_action_block and len(self.ACTION_PATTERN.findall(iteration_buffer)) < 2:
+                            if (
+                                in_action_block
+                                and len(
+                                    self.ACTION_PATTERN.findall(
+                                        iteration_buffer
+                                    )
+                                )
+                                < 2
+                            ):
                                 continue
 
                             elif in_action_block:
                                 in_action_block = False
                                 # Emit the post action block text, if it is there
-                                post_action_text = iteration_buffer.split("</Action>")[-1]
+                                post_action_text = iteration_buffer.split(
+                                    "</Action>"
+                                )[-1]
                                 if post_action_text:
-                                    async for line in SSEFormatter.yield_message_event(
+                                    async for (
+                                        line
+                                    ) in SSEFormatter.yield_message_event(
                                         post_action_text
                                     ):
                                         yield line
 
                             else:
-                                async for line in SSEFormatter.yield_message_event(
+                                async for (
+                                    line
+                                ) in SSEFormatter.yield_message_event(
                                     delta.content
                                 ):
                                     yield line
 
                         elif finish_reason == "stop":
                             break
-                    
+
                     # 6) The LLM is done. If we have any leftover partial text,
                     #    finalize it in the conversation
                     if iteration_buffer:
@@ -1098,8 +1182,10 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         )
 
                     # --- 4) Process any <Action>/<ToolCalls> blocks, or mark completed
-                    action_matches = self.ACTION_PATTERN.findall(iteration_buffer)
-                    
+                    action_matches = self.ACTION_PATTERN.findall(
+                        iteration_buffer
+                    )
+
                     if len(action_matches) > 0:
                         # Process each ToolCall
                         xml_toolcalls = "<ToolCalls>"
@@ -1107,7 +1193,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                         for action_block in action_matches:
                             tool_calls_text = []
                             # Look for ToolCalls wrapper, or use the raw action block
-                            calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
+                            calls_wrapper = self.TOOLCALLS_PATTERN.findall(
+                                action_block
+                            )
                             if calls_wrapper:
                                 for tw in calls_wrapper:
                                     tool_calls_text.append(tw)
@@ -1115,18 +1203,30 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                 tool_calls_text.append(action_block)
 
                             for calls_region in tool_calls_text:
-                                calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
+                                calls_found = self.TOOLCALL_PATTERN.findall(
+                                    calls_region
+                                )
                                 for tc_block in calls_found:
-                                    tool_name, tool_params = self._parse_single_tool_call(tc_block)
+                                    tool_name, tool_params = (
+                                        self._parse_single_tool_call(tc_block)
+                                    )
                                     if tool_name:
                                         # Emit SSE event for tool call
-                                        tool_call_id = f"call_{abs(hash(tc_block))}"
+                                        tool_call_id = (
+                                            f"call_{abs(hash(tc_block))}"
+                                        )
                                         call_evt_data = {
                                             "tool_call_id": tool_call_id,
                                             "name": tool_name,
-                                            "arguments": json.dumps(tool_params),
+                                            "arguments": json.dumps(
+                                                tool_params
+                                            ),
                                         }
-                                        async for line in SSEFormatter.yield_tool_call_event(call_evt_data):
+                                        async for (
+                                            line
+                                        ) in SSEFormatter.yield_tool_call_event(
+                                            call_evt_data
+                                        ):
                                             yield line
 
                                         try:
@@ -1134,9 +1234,11 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                                 tool_name,
                                                 json.dumps(tool_params),
                                                 tool_id=tool_call_id,
-                                                save_messages=False
+                                                save_messages=False,
                                             )
-                                            result_content = tool_result.llm_formatted_result
+                                            result_content = (
+                                                tool_result.llm_formatted_result
+                                            )
                                         except Exception as e:
                                             result_content = f"Error in tool '{tool_name}': {str(e)}"
 
@@ -1152,15 +1254,30 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                                         result_data = {
                                             "tool_call_id": tool_call_id,
                                             "role": "tool",
-                                            "content": json.dumps(convert_nonserializable_objects(result_content)),
+                                            "content": json.dumps(
+                                                convert_nonserializable_objects(
+                                                    result_content
+                                                )
+                                            ),
                                         }
-                                        async for line in SSEFormatter.yield_tool_result_event(result_data):
+                                        async for (
+                                            line
+                                        ) in SSEFormatter.yield_tool_result_event(
+                                            result_data
+                                        ):
                                             yield line
 
                         xml_toolcalls += "</ToolCalls>"
-                        pre_action_text = iteration_buffer[:iteration_buffer.find(action_block)]
-                        post_action_text = iteration_buffer[iteration_buffer.find(action_block) + len(action_block):]
-                        iteration_text = pre_action_text + xml_toolcalls + post_action_text
+                        pre_action_text = iteration_buffer[
+                            : iteration_buffer.find(action_block)
+                        ]
+                        post_action_text = iteration_buffer[
+                            iteration_buffer.find(action_block)
+                            + len(action_block) :
+                        ]
+                        iteration_text = (
+                            pre_action_text + xml_toolcalls + post_action_text
+                        )
                         await self.conversation.add_message(
                             Message(
                                 role="assistant",
@@ -1189,7 +1306,9 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             except Exception as e:
                 logger.error(f"Error in streaming agent: {str(e)}")
                 # Emit error event for client
-                async for line in SSEFormatter.yield_error_event(f"Agent error: {str(e)}"):
+                async for line in SSEFormatter.yield_error_event(
+                    f"Agent error: {str(e)}"
+                ):
                     yield line
                 # Send done event to close the stream
                 yield SSEFormatter.yield_done_event()
@@ -1198,13 +1317,15 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
         async for line in sse_generator():
             yield line
 
-    def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
+    def _parse_single_tool_call(
+        self, toolcall_text: str
+    ) -> Tuple[Optional[str], dict]:
         """
         Parse a ToolCall block to extract the name and parameters.
-        
+
         Args:
             toolcall_text: The text content of a ToolCall block
-            
+
         Returns:
             Tuple of (tool_name, tool_parameters)
         """
@@ -1232,5 +1353,5 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
             except json.JSONDecodeError:
                 # If all else fails, treat as a plain string value
                 tool_params = {"value": raw_params}
-                
+
         return tool_name, tool_params

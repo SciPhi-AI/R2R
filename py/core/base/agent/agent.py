@@ -220,7 +220,6 @@ class Agent(ABC):
                 tool_result.stream_result = tool.stream_function(raw_result)
 
             if save_messages:
-                print('saving message...')
                 await self.conversation.add_message(
                     Message(
                         role="tool" if tool_id else "function",
