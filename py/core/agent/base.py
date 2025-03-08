@@ -90,80 +90,243 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
             if finish_reason == "stop":
                 self._completed = True
 
-            # First handle thinking blocks if present (which don't include tool_use)
-            if (
-                hasattr(message, "structured_content")
-                and message.structured_content
-            ):
-                # Check if structured_content contains any tool_use blocks
-                has_tool_use = any(
-                    block.get("type") == "tool_use"
-                    for block in message.structured_content
-                )
-                if not has_tool_use and message.tool_calls:
-                    # If it has thinking but no tool_use, add a separate message for tool_use
+            # Determine which provider we're using
+            using_openai = "openai" in self.rag_generation_config.model.lower()
+            using_anthropic = (
+                "anthropic" in self.rag_generation_config.model.lower()
+            )
+
+            # OPENAI HANDLING
+            if using_openai:
+                if message.tool_calls:
+                    # import pdb; pdb.set_trace()
                     assistant_msg = Message(
-                        role="assistant", content=message.structured_content
+                        role="assistant",
+                        content=None,
+                        tool_calls=[msg.dict() for msg in message.tool_calls],
                     )
                     await self.conversation.add_message(assistant_msg)
 
-                    # Add explicit tool_use blocks in a separate message
-                    tool_uses = []
+                    # If there are multiple tool_calls, call them sequentially here
+                    # (Because this is the non-streaming version, concurrency is less critical.)
                     for tool_call in message.tool_calls:
-                        tool_uses.append(
-                            {
-                                "type": "tool_use",
-                                "id": tool_call.id,
-                                "name": tool_call.function.name,
-                                "input": json.loads(
-                                    tool_call.function.arguments
-                                ),
-                            }
-                        )
-
-                    # Add tool_use blocks as a separate assistant message
-                    if tool_uses:
-                        await self.conversation.add_message(
-                            Message(role="assistant", content=tool_uses)
+                        await self.handle_function_or_tool_call(
+                            tool_call.function.name,
+                            tool_call.function.arguments,
+                            tool_id=tool_call.id,
+                            *args,
+                            **kwargs,
                         )
                 else:
-                    # If it already has tool_use or no tool_calls, add as is
-                    assistant_msg = Message(
-                        role="assistant", content=message.structured_content
+                    await self.conversation.add_message(
+                        Message(role="assistant", content=message.content)
                     )
-                    await self.conversation.add_message(assistant_msg)
-            elif message.content:
-                # For regular text content
-                await self.conversation.add_message(
-                    Message(role="assistant", content=message.content)
-                )
+                    self._completed = True
 
-                # If there are tool calls, add them as a separate message with tool_use blocks
-                if message.tool_calls:
-                    tool_uses = []
-                    for tool_call in message.tool_calls:
-                        tool_uses.append(
-                            {
-                                "type": "tool_use",
-                                "id": tool_call.id,
-                                "name": tool_call.function.name,
-                                "input": json.loads(
-                                    tool_call.function.arguments
-                                ),
-                            }
+            else:
+                # First handle thinking blocks if present
+                if (
+                    hasattr(message, "structured_content")
+                    and message.structured_content
+                ):
+                    # Check if structured_content contains any tool_use blocks
+                    has_tool_use = any(
+                        block.get("type") == "tool_use"
+                        for block in message.structured_content
+                    )
+
+                    if not has_tool_use and message.tool_calls:
+                        # If it has thinking but no tool_use, add a separate message with structured_content
+                        assistant_msg = Message(
+                            role="assistant",
+                            structured_content=message.structured_content,  # Use structured_content field
+                        )
+                        await self.conversation.add_message(assistant_msg)
+
+                        # Add explicit tool_use blocks in a separate message
+                        tool_uses = []
+                        for tool_call in message.tool_calls:
+                            # Safely parse arguments if they're a string
+                            try:
+                                if isinstance(
+                                    tool_call.function.arguments, str
+                                ):
+                                    input_args = json.loads(
+                                        tool_call.function.arguments
+                                    )
+                                else:
+                                    input_args = tool_call.function.arguments
+                            except json.JSONDecodeError:
+                                logger.error(
+                                    f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                                )
+                                input_args = {
+                                    "_raw": tool_call.function.arguments
+                                }
+
+                            tool_uses.append(
+                                {
+                                    "type": "tool_use",
+                                    "id": tool_call.id,
+                                    "name": tool_call.function.name,
+                                    "input": input_args,
+                                }
+                            )
+
+                        # Add tool_use blocks as a separate assistant message with structured content
+                        if tool_uses:
+                            await self.conversation.add_message(
+                                Message(
+                                    role="assistant",
+                                    structured_content=tool_uses,
+                                )
+                            )
+                    else:
+                        # If it already has tool_use or no tool_calls, preserve original structure
+                        assistant_msg = Message(
+                            role="assistant",
+                            structured_content=message.structured_content,
+                        )
+                        await self.conversation.add_message(assistant_msg)
+
+                elif message.content:
+                    # For regular text content
+                    await self.conversation.add_message(
+                        Message(role="assistant", content=message.content)
+                    )
+
+                    # If there are tool calls, add them as structured content
+                    if message.tool_calls:
+                        tool_uses = []
+                        for tool_call in message.tool_calls:
+                            # Same safe parsing as above
+                            try:
+                                if isinstance(
+                                    tool_call.function.arguments, str
+                                ):
+                                    input_args = json.loads(
+                                        tool_call.function.arguments
+                                    )
+                                else:
+                                    input_args = tool_call.function.arguments
+                            except json.JSONDecodeError:
+                                logger.error(
+                                    f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                                )
+                                input_args = {
+                                    "_raw": tool_call.function.arguments
+                                }
+
+                            tool_uses.append(
+                                {
+                                    "type": "tool_use",
+                                    "id": tool_call.id,
+                                    "name": tool_call.function.name,
+                                    "input": input_args,
+                                }
+                            )
+
+                        await self.conversation.add_message(
+                            Message(
+                                role="assistant", structured_content=tool_uses
+                            )
                         )
 
-                    await self.conversation.add_message(
-                        Message(role="assistant", content=tool_uses)
-                    )
+                # Process the tool calls
+                if message.tool_calls:
+                    for tool_call in message.tool_calls:
+                        await self.handle_function_or_tool_call(
+                            tool_call.function.name,
+                            tool_call.function.arguments,  # Pass as is, let handler parse if needed
+                            tool_id=tool_call.id,
+                            *args,
+                            **kwargs,
+                        )
 
-            # Now process the tool calls - this remains mostly unchanged
-            if message.tool_calls:
-                for tool_call in message.tool_calls:
-                    await self.handle_function_or_tool_call(
-                        tool_call.function.name,
-                        tool_call.function.arguments,
-                        tool_id=tool_call.id,
-                        *args,
-                        **kwargs,
-                    )
+    # async def process_llm_response(
+    #     self, response: LLMChatCompletion, *args, **kwargs
+    # ) -> None:
+    #     if not self._completed:
+    #         message = response.choices[0].message
+    #         finish_reason = response.choices[0].finish_reason
+
+    #         if finish_reason == "stop":
+    #             self._completed = True
+
+    #         # First handle thinking blocks if present (which don't include tool_use)
+    #         if (
+    #             hasattr(message, "structured_content")
+    #             and message.structured_content
+    #         ):
+    #             # Check if structured_content contains any tool_use blocks
+    #             has_tool_use = any(
+    #                 block.get("type") == "tool_use"
+    #                 for block in message.structured_content
+    #             )
+    #             if not has_tool_use and message.tool_calls:
+    #                 # If it has thinking but no tool_use, add a separate message for tool_use
+    #                 assistant_msg = Message(
+    #                     role="assistant", content=message.structured_content
+    #                 )
+    #                 await self.conversation.add_message(assistant_msg)
+
+    #                 # Add explicit tool_use blocks in a separate message
+    #                 tool_uses = []
+    #                 for tool_call in message.tool_calls:
+    #                     tool_uses.append(
+    #                         {
+    #                             "type": "tool_use",
+    #                             "id": tool_call.id,
+    #                             "name": tool_call.function.name,
+    #                             "input": json.loads(
+    #                                 tool_call.function.arguments
+    #                             ),
+    #                         }
+    #                     )
+
+    #                 # Add tool_use blocks as a separate assistant message
+    #                 if tool_uses:
+    #                     await self.conversation.add_message(
+    #                         Message(role="assistant", content=tool_uses)
+    #                     )
+    #             else:
+    #                 # If it already has tool_use or no tool_calls, add as is
+    #                 assistant_msg = Message(
+    #                     role="assistant", content=message.structured_content
+    #                 )
+    #                 await self.conversation.add_message(assistant_msg)
+    #         elif message.content:
+    #             # For regular text content
+    #             await self.conversation.add_message(
+    #                 Message(role="assistant", content=message.content)
+    #             )
+
+    #             # If there are tool calls, add them as a separate message with tool_use blocks
+    #             if message.tool_calls:
+    #                 tool_uses = []
+    #                 for tool_call in message.tool_calls:
+    #                     tool_uses.append(
+    #                         {
+    #                             "type": "tool_use",
+    #                             "id": tool_call.id,
+    #                             "name": tool_call.function.name,
+    #                             "input": json.loads(
+    #                                 tool_call.function.arguments
+    #                             ),
+    #                         }
+    #                     )
+
+    #                 await self.conversation.add_message(
+    #                     Message(role="assistant", content=tool_uses)
+    #                 )
+
+    #         # Now process the tool calls - this remains mostly unchanged
+    #         if message.tool_calls:
+    #             for tool_call in message.tool_calls:
+    #                 await self.handle_function_or_tool_call(
+    #                     tool_call.function.name,
+    #                     tool_call.function.arguments,
+    #                     tool_id=tool_call.id,
+    #                     *args,
+    #                     **kwargs,
+    #                 )

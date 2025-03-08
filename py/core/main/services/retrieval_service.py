@@ -1006,18 +1006,8 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
+        use_xml_agent: bool = False,
     ):
-        if not (
-            "deepseek" in rag_generation_config.model
-            or "gemini" in rag_generation_config.model
-            or "openai" in rag_generation_config.model
-            or "anthropic" in rag_generation_config.model
-        ):
-            raise R2RException(
-                status_code=400,
-                message="Currently, the agent can only be used with the 'deepseek' or 'openai' or 'anthropic' models.",
-            )
-
         try:
             if message and messages:
                 raise R2RException(
@@ -1167,11 +1157,11 @@ class RetrievalService(Service):
                 async def stream_response():
                     try:
                         if (
-                            "deepseek" in rag_generation_config.model.lower()
-                            or "gemini" in rag_generation_config.model.lower()
-                        ):
-                            agent_config.include_tools = False
-                            agent = R2RXMLToolsStreamingRAGAgent(
+                            "openai" in rag_generation_config.model.lower()
+                            or "anthropic"
+                            in rag_generation_config.model.lower()
+                        ) or (not use_xml_agent):
+                            agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
                                 config=agent_config,
@@ -1183,7 +1173,8 @@ class RetrievalService(Service):
                                 file_search_method=self.search_documents,
                             )
                         else:
-                            agent = R2RStreamingRAGAgent(
+                            agent_config.include_tools = False
+                            agent = R2RXMLToolsStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
                                 config=agent_config,
@@ -1254,12 +1245,11 @@ class RetrievalService(Service):
 
             # For non-streaming mode, select the appropriate agent type based on model
             if (
-                "deepseek" in rag_generation_config.model.lower()
-                or "gemini" in rag_generation_config.model.lower()
-            ):
-                # Use the new R2RXMLToolsAgent for non-streaming XML parsing for deepseek
-                agent_config.include_tools = False
-                agent = R2RXMLToolsAgent(
+                "openai" in rag_generation_config.model.lower()
+                or "anthropic" in rag_generation_config.model.lower()
+            ) or (not use_xml_agent):
+                # Use the standard RAG agent for other models
+                agent = R2RRAGAgent(
                     database_provider=self.providers.database,
                     llm_provider=self.providers.llm,
                     config=agent_config,
@@ -1271,8 +1261,9 @@ class RetrievalService(Service):
                     file_search_method=self.search_documents,
                 )
             else:
-                # Use the standard RAG agent for other models
-                agent = R2RRAGAgent(
+                # Use the new R2RXMLToolsAgent for non-streaming XML parsing for deepseek
+                agent_config.include_tools = False
+                agent = R2RXMLToolsAgent(
                     database_provider=self.providers.database,
                     llm_provider=self.providers.llm,
                     config=agent_config,
@@ -1365,7 +1356,7 @@ class RetrievalService(Service):
                         content=assistant_message.content,
                         metadata={
                             "citations": final_citations,
-                            "tool_calls": agent.tool_call_results,
+                            "tool_calls": agent.tool_calls,
                             # You can also store the entire collector or just dump the underlying results
                             "aggregated_search_result": json.dumps(
                                 dump_collector(collector)

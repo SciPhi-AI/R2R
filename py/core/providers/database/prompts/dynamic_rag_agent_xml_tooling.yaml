@@ -31,6 +31,17 @@ dynamic_rag_agent_xml_tooling:
       </ToolDefinition>
 
       <ToolDefinition>
+          <Name>search_file_descriptions</Name>
+          <Description>Semantic search over the stored documents by document summary. </Description>
+          <Parameters>
+            <Parameter type="string" required="true">
+              <Name>query</Name>
+              <Example>{{"query": "list documents about XYZ"}}</Example>
+            </Parameter>
+          </Parameters>
+      </ToolDefinition>
+
+      <ToolDefinition>
           <Name>web_search</Name>
           <Description>External web search. Parameters must be a valid JSON object.</Description>
           <Parameters>
@@ -121,5 +132,5 @@ dynamic_rag_agent_xml_tooling:
     date: str
     document_context: str
     max_tool_context_length: str
-    
+
   overwrite_on_diff: true

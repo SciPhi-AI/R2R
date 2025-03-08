@@ -502,7 +502,6 @@ class AnthropicCompletionProvider(CompletionProvider):
 
         try:
             logger.debug(f"Anthropic API request: {args}")
-            print(f"MESSAGES = {args['messages']}")
             response = await self.async_client.messages.create(**args)
             logger.debug(f"Anthropic API response: {response}")
             return LLMChatCompletion(
@@ -665,6 +664,11 @@ class AnthropicCompletionProvider(CompletionProvider):
                 if buffer_data["is_collecting_thinking"]:
                     buffer_data["thinking_signature"] = delta_obj.signature
                     # No need to emit anything for the signature
+                    chunk = make_base_chunk()
+                    chunk["choices"][0]["delta"] = {
+                        "thinking_signature": delta_obj.signature
+                    }
+                    chunks.append(chunk)
 
             # Handle text deltas
             elif delta_type == "text_delta" and hasattr(delta_obj, "text"):

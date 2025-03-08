@@ -319,7 +319,7 @@ class RAGAgentMixin:
         return Tool(
             name="search_files",
             description=(
-                "Search over the stored documents by title, metadata, or other document-level fields. "
+                "Semantic search over the stored documents over AI generated summaries of input documents. "
                 "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
                 "Use this when you need a broad overview of which documents (files) might be relevant."
             ),
@@ -330,7 +330,7 @@ class RAGAgentMixin:
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Query string to match file/doc-level info. E.g., 'list documents about XYZ'.",
+                        "description": "Query string to semantic search over available files 'list documents about XYZ'.",
                     }
                 },
                 "required": ["query"],
@@ -758,6 +758,11 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                         msg_list[-1], stream=True
                     )
 
+                    accumulated_thinking = ""
+                    thinking_signatures = (
+                        {}
+                    )  # Map thinking content to signatures
+
                     # 2) Start streaming from LLM
                     llm_stream = self.llm_provider.aget_completion_stream(
                         msg_list, gen_cfg
@@ -767,6 +772,9 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                         finish_reason = chunk.choices[0].finish_reason
 
                         if hasattr(delta, "thinking") and delta.thinking:
+                            # Accumulate thinking for later use in messages
+                            accumulated_thinking += delta.thinking
+
                             # Emit SSE "thinking" event
                             async for (
                                 line
@@ -774,6 +782,13 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                                 delta.thinking
                             ):
                                 yield line
+
+                        # Add this new handler for thinking signatures
+                        if hasattr(delta, "thinking_signature"):
+                            thinking_signatures[accumulated_thinking] = (
+                                delta.thinking_signature
+                            )
+                            accumulated_thinking = ""
 
                         # 3) If new text, accumulate it
                         if delta.content:
@@ -807,7 +822,6 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                             ):
                                 yield line
 
-                        # 4) Accumulate partial tool calls if present
                         if delta.tool_calls:
                             for tc in delta.tool_calls:
                                 idx = tc.index
@@ -831,6 +845,30 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
 
                         # 5) If the stream signals we should handle "tool_calls"
                         if finish_reason == "tool_calls":
+                            # 4) Accumulate partial tool calls if present
+
+                            if thinking_signatures:
+                                for (
+                                    accumulated_thinking,
+                                    thinking_signature,
+                                ) in thinking_signatures.items():
+                                    structured_content = [
+                                        {
+                                            "type": "thinking",
+                                            "thinking": accumulated_thinking,
+                                            # Anthropic will validate this in their API
+                                            "signature": thinking_signature,
+                                        }
+                                    ]
+
+                                    assistant_msg = Message(
+                                        role="assistant",
+                                        structured_content=structured_content,
+                                    )
+                                    await self.conversation.add_message(
+                                        assistant_msg
+                                    )
+
                             calls_list = []
                             for idx in sorted(pending_tool_calls.keys()):
                                 cinfo = pending_tool_calls[idx]
@@ -911,6 +949,24 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                             partial_text_buffer = ""
 
                         elif finish_reason == "stop":
+                            if accumulated_thinking:
+                                structured_content = [
+                                    {
+                                        "type": "thinking",
+                                        "thinking": accumulated_thinking,
+                                        # Anthropic will validate this in their API
+                                        "signature": "placeholder_signature",
+                                    }
+                                ]
+
+                                assistant_msg = Message(
+                                    role="assistant",
+                                    structured_content=structured_content,
+                                )
+                                await self.conversation.add_message(
+                                    assistant_msg
+                                )
+
                             # 6) The LLM is done. If we have any leftover partial text,
                             #    finalize it in the conversation
                             if partial_text_buffer:

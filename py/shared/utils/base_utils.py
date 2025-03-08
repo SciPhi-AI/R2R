@@ -264,7 +264,8 @@ def tokens_count_for_message(message, encoding):
                 encoding.encode(tool_call["function"]["arguments"])
             )
     else:
-        num_tokens += len(encoding.encode(message["content"]))
+        if "content" in message:
+            num_tokens += len(encoding.encode(message["content"]))
 
     return num_tokens
 

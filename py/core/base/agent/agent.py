@@ -77,6 +77,7 @@ class Agent(ABC):
         self.conversation = Conversation()
         self._completed = False
         self._tools: list[Tool] = []
+        self.tool_calls: list[dict] = []
         self.rag_generation_config = rag_generation_config
         self._register_tools()
 
@@ -228,4 +229,10 @@ class Agent(ABC):
                         tool_call_id=tool_id,
                     )
                 )
+            self.tool_calls.append(
+                {
+                    "name": function_name,
+                    "args": function_arguments,
+                }
+            )
         return tool_result
