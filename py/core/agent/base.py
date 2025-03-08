@@ -84,10 +84,14 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
     ) -> None:
         # Unchanged from your snippet:
         if not self._completed:
+            print('response = ', response)
             message = response.choices[0].message
+            finish_reason = response.choices[0].finish_reason
 
+            if finish_reason == "stop":
+                self._completed = True
+    
             if message.tool_calls:
-                # import pdb; pdb.set_trace()
                 assistant_msg = Message(
                     role="assistant",
                     content=None,
@@ -109,4 +113,3 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 await self.conversation.add_message(
                     Message(role="assistant", content=message.content)
                 )
-                self._completed = True

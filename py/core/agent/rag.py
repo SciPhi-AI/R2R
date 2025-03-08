@@ -424,6 +424,250 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         )
 
 
+
+class R2RXMLToolsAgent(RAGAgentMixin, R2RAgent):
+    """
+    A non-streaming agent that:
+     - parses <think> or <Thought> blocks as chain-of-thought
+     - filters out XML tags related to tool calls and actions
+     - processes <Action><ToolCalls><ToolCall> blocks
+     - properly extracts citations when they appear in the text
+    """
+
+    # We treat <think> or <Thought> as the same token boundaries
+    THOUGHT_OPEN = re.compile(r"<(Thought|think)>", re.IGNORECASE)
+    THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
+
+    # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
+    ACTION_PATTERN = re.compile(r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL)
+    TOOLCALLS_PATTERN = re.compile(r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL)
+    TOOLCALL_PATTERN = re.compile(r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL)
+    NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN = re.compile(r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL)
+    RESPONSE_PATTERN = re.compile(r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL)
+
+    def __init__(
+        self,
+        database_provider: DatabaseProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
+        config: AgentConfig,
+        search_settings: SearchSettings,
+        rag_generation_config: GenerationConfig,
+        knowledge_search_method: Callable,
+        content_method: Callable,
+        file_search_method: Callable,
+        max_tool_context_length: int = 20_000,
+    ):
+        # Initialize base R2RAgent
+        R2RAgent.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            rag_generation_config=rag_generation_config,
+        )
+        # Initialize the RAGAgentMixin
+        RAGAgentMixin.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            search_settings=search_settings,
+            rag_generation_config=rag_generation_config,
+            max_tool_context_length=max_tool_context_length,
+            knowledge_search_method=knowledge_search_method,
+            content_method=content_method,
+            file_search_method=file_search_method,
+        )
+        self.tool_call_results = []  # Store results for final output
+        
+    async def process_llm_response(self, response, *args, **kwargs):
+        """
+        Override the base process_llm_response to handle XML structured responses
+        including thoughts and tool calls.
+        """
+        if self._completed:
+            return
+
+        message = response.choices[0].message
+        if not message.content:
+            # If there's no content, let the parent class handle the normal tool_calls flow
+            return await super().process_llm_response(response, *args, **kwargs)
+
+        # Get the response content
+        content = message.content
+
+        if not content.startswith("<"): # HACK - fix issues with adding `<think>` to the beginning
+            content = "<think>" + content
+        
+        # # Clean up: Extract and remove all thoughts/thinking blocks
+        # thoughts = []
+        # thought_matches = []
+        
+        # # Find all thought blocks
+        # for pattern in [r"<think>(.*?)</think>", r"<Thought>(.*?)</Thought>"]:
+        #     matches = re.finditer(pattern, content, re.DOTALL | re.IGNORECASE)
+        #     for match in matches:
+        #         thought_matches.append(match)
+        #         thoughts.append(match.group(1).strip())
+        
+        # # Remove thought blocks from content
+        # for match in reversed(thought_matches):  # Remove in reverse to preserve indices
+        #     content = content[:match.start()] + content[match.end():]
+        
+        # Process any tool calls in the content
+        action_matches = self.ACTION_PATTERN.findall(content)
+        if action_matches:
+            # Found action blocks - process the tool calls
+            tools_called = False
+            
+            # Use a placeholder for the assistant message while processing tools
+            assistant_msg = Message(
+                role="assistant",
+                content=content,  # Keep the full content initially
+            )
+            await self.conversation.add_message(assistant_msg)
+            
+            for action_block in action_matches:
+                tool_calls_text = []
+                # Look for ToolCalls wrapper, or use the raw action block
+                calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
+                if calls_wrapper:
+                    for tw in calls_wrapper:
+                        tool_calls_text.append(tw)
+                else:
+                    tool_calls_text.append(action_block)
+                
+                # Process each ToolCall
+                for calls_region in tool_calls_text:
+                    calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
+                    for tc_block in calls_found:
+                        tool_name, tool_params = self._parse_single_tool_call(tc_block)
+                        if tool_name:
+                            tools_called = True
+                            tool_call_id = f"call_{abs(hash(tc_block))}"
+                            
+                            try:
+                                tool_result = await self.handle_function_or_tool_call(
+                                    tool_name,
+                                    json.dumps(tool_params),
+                                    tool_id=tool_call_id,
+                                )
+                                
+                                # Store the result for later reference
+                                result_obj = {
+                                    "tool_call_id": tool_call_id,
+                                    "name": tool_name,
+                                    "arguments": tool_params,
+                                    "result": convert_nonserializable_objects(getattr(tool_result, "raw_result", str(tool_result)))
+                                }
+                                self.tool_call_results.append(result_obj)
+                                
+                            except Exception as e:
+                                logger.error(f"Error executing tool '{tool_name}': {str(e)}")
+                                self.tool_call_results.append({
+                                    "tool_call_id": tool_call_id,
+                                    "name": tool_name,
+                                    "arguments": tool_params,
+                                    "error": str(e)
+                                })
+            
+            # If we processed tools, we need to continue the conversation
+            if tools_called:
+                return
+        
+        # Clean the content by removing all XML tags related to actions/tools
+        clean_content = self._remove_xml_tags(content)
+            
+        # Create the final clean assistant message
+        await self.conversation.add_message(
+            Message(role="assistant", content=clean_content)
+        )
+        self._completed = True
+
+    def _parse_single_tool_call(self, toolcall_text: str) -> Tuple[Optional[str], dict]:
+        """
+        Parse a ToolCall block to extract the name and parameters.
+        
+        Args:
+            toolcall_text: The text content of a ToolCall block
+            
+        Returns:
+            Tuple of (tool_name, tool_parameters)
+        """
+        name_match = self.NAME_PATTERN.search(toolcall_text)
+        if not name_match:
+            return None, {}
+        tool_name = name_match.group(1).strip()
+
+        params_match = self.PARAMS_PATTERN.search(toolcall_text)
+        if not params_match:
+            return tool_name, {}
+
+        raw_params = params_match.group(1).strip()
+        try:
+            # Handle potential JSON parsing issues
+            # First try direct parsing
+            tool_params = json.loads(raw_params)
+        except json.JSONDecodeError:
+            # If that fails, try to clean up the JSON string
+            try:
+                # Replace escaped quotes that might cause issues
+                cleaned_params = raw_params.replace('\\"', '"')
+                # Try again with the cleaned string
+                tool_params = json.loads(cleaned_params)
+            except json.JSONDecodeError:
+                # If all else fails, treat as a plain string value
+                tool_params = {"value": raw_params}
+                
+        return tool_name, tool_params
+    
+    def _remove_xml_tags(self, content: str) -> str:
+        """
+        Remove all XML tags related to actions, tools, and thoughts from content.
+        """
+        # Define patterns for all tool-related XML tags
+        patterns = [
+            r"<Action>.*?</Action>",
+            r"<ToolCalls>.*?</ToolCalls>",
+            r"<ToolCall>.*?</ToolCall>",
+            r"<Name>.*?</Name>",
+            r"<Parameters>.*?</Parameters>",
+            r"<Response>.*?</Response>",
+            # r"<Thought>.*?</Thought>",
+            # r"<think>.*?</think>",
+        ]
+        
+        # Apply patterns to remove XML blocks
+        cleaned_content = content
+        for pattern in patterns:
+            cleaned_content = re.sub(pattern, "", cleaned_content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Remove any empty lines created by tag removal
+        cleaned_content = re.sub(r'\n\s*\n', '\n\n', cleaned_content)
+        
+        return cleaned_content.strip()
+
+    def format_search_results_for_llm(self, results: AggregateSearchResult) -> str:
+        """
+        Format search results for the LLM, with token limit enforcement.
+        """
+        context = format_search_results_for_llm(
+            results, self.search_results_collector
+        )
+        context_tokens = num_tokens(context) + 1
+        frac_to_return = self.max_tool_context_length / (context_tokens)
+
+        if frac_to_return > 1:
+            return context
+        else:
+            return context[: int(frac_to_return * len(context))]
+
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
     """
     Streaming-capable RAG Agent that supports search_file_knowledge, content, web_search,
@@ -765,6 +1009,14 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
 
                     # 3) If new text, accumulate it
                     if delta.content:
+                        # EDGE CASE HACK
+                        if iteration_buffer == "" and "<" not in delta.content:
+                            # There can be an issue where the initial think token is not yielded
+                            iteration_buffer += "<think>"
+                            async for line in SSEFormatter.yield_thinking_event(
+                                "<think>"
+                            ):
+                                yield line
 
                         iteration_buffer += delta.content
 

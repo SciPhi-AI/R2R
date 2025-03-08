@@ -161,15 +161,29 @@ class AnthropicCompletionProvider(CompletionProvider):
         (Internal thinking blocks are used only for reasoning and may be omitted.)
         """
         content_text = ""
+        tool_calls = []
+        
         if anthropic_msg.content:
             text_pieces = []
             for block in anthropic_msg.content:
-                if hasattr(block, "type") and block.type == "thinking":
-                    text_pieces.append("<think>")
-                    text_pieces.append(block.thinking)
-                    text_pieces.append("</think>")
-                if hasattr(block, "type") and block.type == "text":
-                    text_pieces.append(block.text)
+                if hasattr(block, "type"):
+                    if block.type == "thinking":
+                        text_pieces.append("<think>")
+                        text_pieces.append(block.thinking)
+                        text_pieces.append("</think>")
+                    elif block.type == "text":
+                        text_pieces.append(block.text)
+                    elif block.type == "tool_use":
+                        # Process tool use blocks
+                        tool_calls.append({
+                            "index": len(tool_calls),
+                            "id": block.id,
+                            "type": "function",
+                            "function": {
+                                "name": block.name,
+                                "arguments": json.dumps(block.input),
+                            }
+                        })
             content_text = "".join(text_pieces)
 
         finish_reason = (
@@ -177,6 +191,16 @@ class AnthropicCompletionProvider(CompletionProvider):
             if anthropic_msg.stop_reason == "end_turn"
             else anthropic_msg.stop_reason
         )
+        finish_reason = "tool_calls" if anthropic_msg.stop_reason == "tool_use" else finish_reason
+
+        message = {
+            "role": anthropic_msg.role,
+            "content": content_text,
+        }
+        
+        # Add tool_calls to the message if present
+        if tool_calls:
+            message["tool_calls"] = tool_calls
 
         return {
             "id": anthropic_msg.id,
@@ -210,10 +234,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             "choices": [
                 {
                     "index": 0,
-                    "message": {
-                        "role": anthropic_msg.role,
-                        "content": content_text,
-                    },
+                    "message": message,
                     "finish_reason": finish_reason,
                 }
             ],
@@ -308,6 +329,7 @@ class AnthropicCompletionProvider(CompletionProvider):
 
         try:
             response = await self.async_client.messages.create(**args)
+            print('response = ', response)
             logger.debug("Anthropic async non-stream call succeeded.")
             return LLMChatCompletion(
                 **self._convert_to_chat_completion(response)
@@ -326,7 +348,8 @@ class AnthropicCompletionProvider(CompletionProvider):
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
-                    "is_collecting_tool": False,  # <-- added
+                    "tool_id": None,  # Added this field
+                    "is_collecting_tool": False,
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -382,7 +405,8 @@ class AnthropicCompletionProvider(CompletionProvider):
                 buffer_data = {
                     "tool_json_buffer": "",
                     "tool_name": None,
-                    "is_collecting_tool": False,  # <-- added
+                    "tool_id": None,  # Added this field
+                    "is_collecting_tool": False,
                     "message_id": f"chatcmpl-{int(time.time())}",
                 }
                 model_name = args.get("model", "anthropic/claude-2")
@@ -398,6 +422,7 @@ class AnthropicCompletionProvider(CompletionProvider):
             logger.error(f"Anthropic sync streaming call failed: {e}")
             raise
 
+        
     def _process_stream_event(
         self, event: Any, buffer_data: dict, model_name: str
     ) -> list[dict]:
@@ -437,6 +462,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     event.content_block, ToolUseBlock
                 ):
                     buffer_data["tool_name"] = event.content_block.name
+                    buffer_data["tool_id"] = event.content_block.id  # Save tool ID
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["is_collecting_tool"] = True
 
@@ -483,12 +509,10 @@ class AnthropicCompletionProvider(CompletionProvider):
                             {
                                 "index": 0,
                                 "type": "function",
-                                "id": f"call_{generate_tool_id()}",
+                                "id": buffer_data["tool_id"] or f"call_{generate_tool_id()}",  # Use original ID if available
                                 "function": {
                                     "name": buffer_data["tool_name"],
-                                    "arguments": buffer_data[
-                                        "tool_json_buffer"
-                                    ],
+                                    "arguments": buffer_data["tool_json_buffer"],
                                 },
                             }
                         ]
@@ -497,6 +521,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     buffer_data["is_collecting_tool"] = False
                     buffer_data["tool_json_buffer"] = ""
                     buffer_data["tool_name"] = None
+                    buffer_data["tool_id"] = None  # Reset tool ID
                 except json.JSONDecodeError:
                     logger.warning(
                         "Incomplete JSON in tool call, skipping chunk"

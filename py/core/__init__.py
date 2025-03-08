@@ -36,6 +36,7 @@ __all__ = [
     "R2RAgent",
     "SearchResultsCollector",
     "R2RRAGAgent",
+    "R2RXMLToolsAgent",
     "R2RStreamingRAGAgent",
     "R2RXMLToolsStreamingRAGAgent",
     "AsyncSyncMeta",

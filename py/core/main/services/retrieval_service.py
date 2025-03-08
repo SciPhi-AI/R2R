@@ -8,8 +8,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from core import R2RRAGAgent, R2RStreamingRAGAgent
-from core.agent.rag import R2RXMLToolsStreamingRAGAgent
+from core import R2RRAGAgent, R2RXMLToolsAgent, R2RStreamingRAGAgent, R2RXMLToolsStreamingRAGAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -1241,16 +1240,34 @@ class RetrievalService(Service):
 
                 return stream_response()
 
-            agent = R2RRAGAgent(
-                database_provider=self.providers.database,
-                llm_provider=self.providers.llm,
-                config=agent_config,
-                search_settings=search_settings,
-                rag_generation_config=rag_generation_config,
-                max_tool_context_length=max_tool_context_length,
-                knowledge_search_method=self.search,
-                content_method=self.get_context,
-            )
+            # For non-streaming mode, select the appropriate agent type based on model
+            if "deepseek" in rag_generation_config.model.lower():
+                # Use the new R2RXMLToolsAgent for non-streaming XML parsing for deepseek
+                agent_config.include_tools = False
+                agent = R2RXMLToolsAgent(
+                    database_provider=self.providers.database,
+                    llm_provider=self.providers.llm,
+                    config=agent_config,
+                    search_settings=search_settings,
+                    rag_generation_config=rag_generation_config,
+                    max_tool_context_length=max_tool_context_length,
+                    knowledge_search_method=self.search,
+                    content_method=self.get_context,
+                    file_search_method=self.search_documents,
+                )
+            else:
+                # Use the standard RAG agent for other models
+                agent = R2RRAGAgent(
+                    database_provider=self.providers.database,
+                    llm_provider=self.providers.llm,
+                    config=agent_config,
+                    search_settings=search_settings,
+                    rag_generation_config=rag_generation_config,
+                    max_tool_context_length=max_tool_context_length,
+                    knowledge_search_method=self.search,
+                    content_method=self.get_context,
+                    file_search_method=self.search_documents,
+                )
 
             results = await agent.arun(
                 messages=messages,
