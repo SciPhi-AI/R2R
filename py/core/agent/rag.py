@@ -982,6 +982,16 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                                 "id": "msg_final",
                                 "object": "agent.final_answer",
                                 "generated_answer": partial_text_buffer,
+                                "citations": [
+                                    {
+                                        "id": f"cit_{sid}",
+                                        "object": "citation",
+                                        "payload": self.search_results_collector.find_by_short_id(
+                                            sid
+                                        ),
+                                    }
+                                    for sid in announced_short_ids
+                                ],
                                 # Optionally attach citations, tool calls, etc.
                             }
                             async for (
@@ -1346,7 +1356,16 @@ class R2RXMLToolsStreamingRAGAgent(R2RStreamingRAGAgent):
                             "id": "msg_final",
                             "object": "agent.final_answer",
                             "generated_answer": iteration_buffer,
-                            # Optionally attach citations, tool calls, etc.
+                            "citations": [
+                                {
+                                    "id": f"cit_{sid}",
+                                    "object": "citation",
+                                    "payload": self.search_results_collector.find_by_short_id(
+                                        sid
+                                    ),
+                                }
+                                for sid in announced_short_ids
+                            ],  # Optionally attach citations, tool calls, etc.
                         }
                         async for (
                             line

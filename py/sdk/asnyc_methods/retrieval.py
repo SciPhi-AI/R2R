@@ -18,9 +18,8 @@ from ..sync_methods.retrieval import (
     agent_arg_parser,
     completion_arg_parser,
     embedding_arg_parser,
-    parse_rag_event,
+    parse_retrieval_event,
     rag_arg_parser,
-    reasoning_agent_arg_parser,
     search_arg_parser,
 )
 
@@ -119,7 +118,7 @@ class RetrievalSDK:
                 version="v3",
             )
             # Wrap each raw SSE event with parse_rag_event
-            return (parse_rag_event(event) for event in raw_stream)
+            return (parse_retrieval_event(event) for event in raw_stream)
 
         # Otherwise, request fully and parse response
         response_dict = await self.client._make_request(
@@ -178,41 +177,3 @@ class RetrievalSDK:
             version="v3",
         )
         return WrappedAgentResponse(**response_dict)
-
-    async def reasoning_agent(
-        self,
-        message: Optional[dict | Message] = None,
-        rag_generation_config: Optional[dict | GenerationConfig] = None,
-        conversation_id: Optional[str] = None,
-        tools: Optional[list[dict]] = None,
-        max_tool_context_length: Optional[int] = None,
-    ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent in Reasoning mode (async).
-        May return a `WrappedAgentResponse` or a streaming generator if `stream=True`.
-        """
-        payload = reasoning_agent_arg_parser(
-            message=message,
-            rag_generation_config=rag_generation_config,
-            conversation_id=conversation_id,
-            tools=tools,
-            max_tool_context_length=max_tool_context_length,
-        )
-
-        if rag_generation_config and rag_generation_config.get(
-            "stream", False
-        ):
-            # Return an async streaming generator
-            return self.client._make_streaming_request(
-                "POST",
-                "retrieval/reasoning_agent",
-                json=payload,
-                version="v3",
-            )
-        else:
-            return await self.client._make_request(
-                "POST",
-                "retrieval/reasoning_agent",
-                json=payload,
-                version="v3",
-            )

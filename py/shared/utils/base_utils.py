@@ -338,11 +338,13 @@ class SearchResultsCollector:
                 if getattr(result_obj, "id", None) is not None:
                     # Check if the full UUID starts with short_id
                     if str(result_obj.id).startswith(short_id):
-                        return (source_type, result_obj.as_dict())
+                        # return (source_type, result_obj.as_dict())
+                        return result_obj.as_dict()
             else:
                 for chunk in result_obj.chunks:
                     if str(chunk.id).startswith(short_id):
-                        return (source_type, chunk)
+                        # return (source_type, chunk)
+                        return chunk
         return None
 
 

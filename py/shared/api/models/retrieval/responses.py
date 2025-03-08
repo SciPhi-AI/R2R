@@ -29,12 +29,13 @@ class Citation(BaseModel):
         ...,
         description="The type of object, e.g. `citation`",
     )
-    payload: Tuple[
-        str,
-        ChunkSearchResult
-        | GraphSearchResult
-        | WebPageResult
-        | ContextDocumentResult,
+    payload: Optional[
+        Union[
+            ChunkSearchResult,
+            GraphSearchResult,
+            WebPageResult,
+            ContextDocumentResult,
+        ]
     ] = Field(
         ..., description="The object payload and it's corresponding type"
     )
@@ -224,7 +225,7 @@ class CitationEvent(SSEEventBase):
 # Model for the final answer event
 class FinalAnswerData(BaseModel):
     generated_answer: str
-    citations: list[dict[str, Any]]  # refine if you have a citation model
+    citations: list[Citation]  # refine if you have a citation model
 
 
 class FinalAnswerEvent(SSEEventBase):

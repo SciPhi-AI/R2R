@@ -988,9 +988,11 @@ class RetrievalService(Service):
                 full_id_str = str(result_obj.id)
                 if full_id_str.startswith(sid):
                     if source_type == "chunk":
-                        return (source_type, result_obj.as_dict())
+                        return (
+                            result_obj.as_dict()
+                        )  # (source_type, result_obj.as_dict())
                     else:
-                        return (source_type, result_obj)
+                        return result_obj  # (source_type, result_obj)
         return None
 
     @telemetry_event("Agent")

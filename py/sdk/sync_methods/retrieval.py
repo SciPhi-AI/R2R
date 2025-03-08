@@ -33,7 +33,7 @@ from ..models import (
 )
 
 
-def parse_agent_event(raw: dict) -> Optional[AgentEvent]:
+def parse_retrieval_event(raw: dict) -> Optional[AgentEvent]:
     """
     Convert a raw SSE event dict into a typed Pydantic model.
 
@@ -76,72 +76,18 @@ def parse_agent_event(raw: dict) -> Optional[AgentEvent]:
         return ToolResultEvent(
             event=event_type, data=ToolResultData(**data_obj)
         )
-    elif event_type == "thinking":  # <--- NEW
-        return ThinkingEvent(
-            event=event_type,
-            data=ThinkingData(**data_obj),
-        )
-    elif event_type == "final_answer":
-        return FinalAnswerEvent(
-            event=event_type, data=FinalAnswerData(**data_obj)
-        )
-    else:
-        # Fallback if it doesn't match any known event
-        return UnknownEvent(
-            event=event_type,
-            data=data_obj,
-        )
-
-
-def parse_rag_event(raw: dict):
-    """
-    raw is something like:
-      {
-        "event": "search_results",
-        "data": "{\"id\":\"run_1\",\"object\":\"rag.search_results\", \"data\":{...}}"
-      }
-    """
-    event_type = raw.get("event", "unknown")
-    # Then branch on event_type:
-    if event_type == "done":
-        return None
-
-    # The SSE data is a JSON string, so parse it:
-    data_str = raw.get("data", "")
-    try:
-        data_obj = json.loads(data_str)  # Now we have a dict
-    except json.JSONDecodeError as e:
-        # Raise or return something
-        raise
-
-    if event_type == "search_results":
-        return SearchResultsEvent(
-            event=event_type,
-            data=SearchResultsData(**data_obj),
-        )
-    elif event_type == "message":
-        return MessageEvent(
-            event=event_type,
-            data=MessageData(**data_obj),
-        )
-    elif event_type == "citation":
-        return CitationEvent(event=event_type, data=CitationData(**data_obj))
-    elif event_type == "tool_call":
-        return ToolCallEvent(event=event_type, data=ToolCallData(**data_obj))
-    elif event_type == "tool_result":
-        return ToolResultEvent(
-            event=event_type, data=ToolResultData(**data_obj)
-        )
     elif event_type == "thinking":
         return ThinkingEvent(
             event=event_type,
             data=ThinkingData(**data_obj),
         )
     elif event_type == "final_answer":
+        print("data_obj = ", data_obj)
         return FinalAnswerEvent(
             event=event_type, data=FinalAnswerData(**data_obj)
         )
     else:
+        # Fallback if it doesn't match any known event
         return UnknownEvent(
             event=event_type,
             data=data_obj,
@@ -260,43 +206,6 @@ def agent_arg_parser(
     return data
 
 
-def reasoning_agent_arg_parser(
-    message: Optional[dict | Message] = None,
-    rag_generation_config: Optional[dict | GenerationConfig] = None,
-    conversation_id: Optional[str] = None,
-    tools: Optional[list[dict]] = None,
-    max_tool_context_length: Optional[int] = None,
-) -> dict:
-    """
-    Performs a single turn in a conversation with a RAG agent.
-
-    Args:
-        message (Optional[dict | Message]): The message to send to the agent.
-        search_settings (Optional[dict | SearchSettings]): Vector search settings.
-        task_prompt_override (Optional[str]): Task prompt override.
-        include_title_if_available (Optional[bool]): Include the title if available.
-
-    Returns:
-        WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
-    """
-    if rag_generation_config and not isinstance(rag_generation_config, dict):
-        rag_generation_config = rag_generation_config.model_dump()
-
-    data: dict[str, Any] = {
-        "rag_generation_config": rag_generation_config or {},
-        "conversation_id": (str(conversation_id) if conversation_id else None),
-        "tools": tools,
-        "max_tool_context_length": max_tool_context_length,
-    }
-
-    if message:
-        cast_message: Message = (
-            Message(**message) if isinstance(message, dict) else message
-        )
-        data["message"] = cast_message.model_dump()
-    return data
-
-
 class RetrievalSDK:
     """
     SDK for interacting with documents in the v3 API.
@@ -398,7 +307,7 @@ class RetrievalSDK:
                 version="v3",
             )
             # Wrap the raw stream to parse each event
-            return (parse_rag_event(event) for event in raw_stream)
+            return (parse_retrieval_event(event) for event in raw_stream)
 
         response_dict = self.client._make_request(
             "POST",
@@ -455,7 +364,7 @@ class RetrievalSDK:
                 json=data,
                 version="v3",
             )
-            return (parse_agent_event(event) for event in raw_stream)
+            return (parse_retrieval_event(event) for event in raw_stream)
 
         response_dict = self.client._make_request(
             "POST",
@@ -465,49 +374,3 @@ class RetrievalSDK:
         )
 
         return WrappedAgentResponse(**response_dict)
-
-    def reasoning_agent(
-        self,
-        message: Optional[dict | Message] = None,
-        rag_generation_config: Optional[dict | GenerationConfig] = None,
-        conversation_id: Optional[str] = None,
-        tools: Optional[list[dict]] = None,
-        max_tool_context_length: Optional[int] = None,
-    ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
-        """
-        Performs a single turn in a conversation with a RAG agent.
-
-        Args:
-            message (Optional[dict | Message]): The message to send to the agent.
-            search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
-            include_title_if_available (Optional[bool]): Include the title if available.
-
-        Returns:
-            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
-        """
-        data = reasoning_agent_arg_parser(
-            message=message,
-            rag_generation_config=rag_generation_config,
-            conversation_id=conversation_id,
-            tools=tools,
-            max_tool_context_length=max_tool_context_length,
-        )
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
-            raw_stream = self.client._make_streaming_request(
-                "POST",
-                "retrieval/reasoning_agent",
-                json=data,
-                version="v3",
-            )
-            return (parse_agent_event(event) for event in raw_stream)
-
-        else:
-            return self.client._make_request(
-                "POST",
-                "retrieval/reasoning_agent",
-                json=data,
-                version="v3",
-            )
