@@ -74,7 +74,7 @@ class PostgresDocumentsHandler(Handler):
         self,
         project_name: str,
         connection_manager: PostgresConnectionManager,
-        dimension: int,
+        dimension: int | float,
     ):
         self.dimension = dimension
         super().__init__(project_name, connection_manager)
