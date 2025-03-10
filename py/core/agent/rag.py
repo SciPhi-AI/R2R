@@ -753,7 +753,6 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RAgent):
                     iterations_count += 1
                     # 1) Get current messages
                     msg_list = await self.conversation.get_messages()
-                    print("msg_list", msg_list)
                     gen_cfg = self.get_generation_config(
                         msg_list[-1], stream=True
                     )

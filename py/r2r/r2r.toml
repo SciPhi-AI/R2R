@@ -23,7 +23,8 @@ audio_lm = "openai/whisper-1"
 [agent]
 agent_static_prompt = "static_rag_agent"
 agent_dynamic_prompt = "dynamic_rag_agent"
-tools = ["search_file_descriptions", "search_file_knowledge", "content", "web_search"]
+# tools = ["search_file_descriptions", "search_file_knowledge", "content", "web_search"]
+tools = ["search_file_descriptions", "search_file_knowledge", "content"]
 
 [auth]
 provider = "r2r"

@@ -1008,7 +1008,6 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
-        use_xml_agent: bool = False,
     ):
         try:
             if message and messages:
@@ -1162,7 +1161,7 @@ class RetrievalService(Service):
                             "openai" in rag_generation_config.model.lower()
                             or "anthropic"
                             in rag_generation_config.model.lower()
-                        ) or (not use_xml_agent):
+                        ):
                             agent = R2RStreamingRAGAgent(
                                 database_provider=self.providers.database,
                                 llm_provider=self.providers.llm,
