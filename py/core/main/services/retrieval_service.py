@@ -3,7 +3,7 @@ import json
 import logging
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Literal, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -11,9 +11,10 @@ from fastapi import HTTPException
 from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
-    R2RXMLToolsAgent,
+    R2RXMLToolsRAGAgent,
     R2RXMLToolsStreamingRAGAgent,
 )
+from core.agent.research import R2RResearchAgent
 from core.base import (
     AggregateSearchResult,
     ChunkSearchResult,
@@ -1008,6 +1009,7 @@ class RetrievalService(Service):
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
         override_tools: Optional[list[dict[str, Any]]] = None,
+        mode: Optional[Literal["rag", "research"]] = "rag",
     ):
         try:
             if message and messages:
@@ -1248,23 +1250,41 @@ class RetrievalService(Service):
             if (
                 "openai" in rag_generation_config.model.lower()
                 or "anthropic" in rag_generation_config.model.lower()
-            ) or (not use_xml_agent):
-                # Use the standard RAG agent for other models
-                agent = R2RRAGAgent(
-                    database_provider=self.providers.database,
-                    llm_provider=self.providers.llm,
-                    config=agent_config,
-                    search_settings=search_settings,
-                    rag_generation_config=rag_generation_config,
-                    max_tool_context_length=max_tool_context_length,
-                    knowledge_search_method=self.search,
-                    content_method=self.get_context,
-                    file_search_method=self.search_documents,
-                )
+            ):
+                if mode == "rag":
+                    agent = R2RRAGAgent(
+                        database_provider=self.providers.database,
+                        llm_provider=self.providers.llm,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=rag_generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=self.search,
+                        content_method=self.get_context,
+                        file_search_method=self.search_documents,
+                    )
+                else:
+                    # Use the standard RAG agent for other models
+                    agent = R2RResearchAgent(
+                        database_provider=self.providers.database,
+                        llm_provider=self.providers.llm,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=rag_generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=self.search,
+                        content_method=self.get_context,
+                        file_search_method=self.search_documents,
+                    )
             else:
-                # Use the new R2RXMLToolsAgent for non-streaming XML parsing for deepseek
+                if mode != "rag":
+                    raise R2RException(
+                        status_code=400,
+                        message="Research mode is only supported for OpenAI and Anthropic models",
+                    )
+                # Use the new R2RXMLToolsRAGAgent for non-streaming XML parsing for deepseek
                 agent_config.include_tools = False
-                agent = R2RXMLToolsAgent(
+                agent = R2RXMLToolsRAGAgent(
                     database_provider=self.providers.database,
                     llm_provider=self.providers.llm,
                     config=agent_config,

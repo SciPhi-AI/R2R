@@ -262,7 +262,6 @@ class OpenAICompletionProvider(CompletionProvider):
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         args = {
             "model": generation_config.model,
-            "top_p": generation_config.top_p,
             "stream": generation_config.stream,
         }
         if (
@@ -271,6 +270,7 @@ class OpenAICompletionProvider(CompletionProvider):
         ):
             args["max_tokens"] = generation_config.max_tokens_to_sample
             args["temperature"] = generation_config.temperature
+            args["top_p"] = generation_config.top_p
         else:
             args["max_completion_tokens"] = (
                 generation_config.max_tokens_to_sample

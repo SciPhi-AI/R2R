@@ -1,6 +1,6 @@
 import logging
 import textwrap
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends
@@ -640,6 +640,10 @@ class RetrievalRouterV3(BaseRouterV3):
                 default=True,
                 description="Use extended prompt for generation",
             ),
+            mode: Optional[Literal["rag", "research"]] = Body(
+                default="rag",
+                description="Mode to use for generation, either `rag` or `research`",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
@@ -694,6 +698,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     ),
                     use_system_context=use_system_context,
                     override_tools=tools,
+                    mode=mode,
                 )
 
                 if rag_generation_config.stream:
