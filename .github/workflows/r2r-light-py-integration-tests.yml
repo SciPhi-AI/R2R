@@ -26,6 +26,7 @@ jobs:
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
@@ -122,6 +123,7 @@ jobs:
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
@@ -168,6 +170,8 @@ jobs:
         id: start-server
         with:
           config-name: gemini
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Wait for server to be ready
         run: |
