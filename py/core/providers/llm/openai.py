@@ -276,6 +276,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 generation_config.max_tokens_to_sample
             )
 
+        if generation_config.reasoning_effort is not None:
+            args["reasoning_effort"] = generation_config.reasoning_effort
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:

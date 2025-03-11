@@ -173,6 +173,7 @@ class GenerationConfig(R2RSerializable):
         "response_format": None,
         "extended_thinking": False,
         "thinking_budget": None,
+        "reasoning_effort": None,
     }
 
     model: Optional[str] = Field(
@@ -216,6 +217,13 @@ class GenerationConfig(R2RSerializable):
         description=(
             "Token budget for internal reasoning when extended thinking mode is enabled. "
             "Must be less than max_tokens_to_sample."
+        ),
+    )
+    reasoning_effort: Optional[str] = Field(
+        default=None,
+        description=(
+            "Effort level for internal reasoning when extended thinking mode is enabled, `low`, `medium`, or `high`."
+            "Only applicable to OpenAI providers."
         ),
     )
 

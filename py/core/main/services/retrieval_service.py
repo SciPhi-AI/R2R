@@ -1156,7 +1156,6 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
-
                 async def stream_response():
                     try:
                         if (
@@ -1266,6 +1265,7 @@ class RetrievalService(Service):
                 else:
                     # Use the standard RAG agent for other models
                     agent = R2RResearchAgent(
+                        app_config=self.config.app,
                         database_provider=self.providers.database,
                         llm_provider=self.providers.llm,
                         config=agent_config,
@@ -1301,7 +1301,6 @@ class RetrievalService(Service):
                 system_instruction=system_instruction,
                 include_title_if_available=include_title_if_available,
             )
-
             # Save the assistant's reply to the conversation
             if isinstance(results[-1], dict):
                 assistant_message = Message(**results[-1])
@@ -1317,8 +1316,12 @@ class RetrievalService(Service):
             else:
                 collector = SearchResultsCollector()  # or fallback if needed
 
+            structured_content = assistant_message.structured_content # [-1].get('text')
+            structured_content = structured_content[-1].get('text') if structured_content else None
+
+
             # Suppose your final assistant text is:
-            raw_text = assistant_message.content or ""
+            raw_text = assistant_message.content or structured_content or  ""
 
             short_ids = extract_citations(raw_text)  # e.g. [abc1234]
 
@@ -1374,7 +1377,7 @@ class RetrievalService(Service):
                 "messages": [
                     Message(
                         role="assistant",
-                        content=assistant_message.content,
+                        content=assistant_message.content or structured_content or "",
                         metadata={
                             "citations": final_citations,
                             "tool_calls": agent.tool_calls,

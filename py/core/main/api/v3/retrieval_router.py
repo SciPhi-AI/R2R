@@ -678,7 +678,10 @@ class RetrievalRouterV3(BaseRouterV3):
             information, providing detailed, factual responses with proper attribution to source documents.
             """
             if "model" not in rag_generation_config.__fields_set__:
-                rag_generation_config.model = self.config.app.quality_llm
+                if mode == "rag":
+                    rag_generation_config.model = self.config.app.quality_llm
+                elif mode == "research":
+                    rag_generation_config.model = self.config.app.planning_llm
 
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings

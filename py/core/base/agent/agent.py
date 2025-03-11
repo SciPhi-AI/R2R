@@ -212,6 +212,7 @@ class Agent(ABC):
 
             merged_kwargs = {**kwargs, **function_args}
             raw_result = await tool.results_function(*args, **merged_kwargs)
+            print('raw_result = ', raw_result)
             llm_formatted_result = tool.llm_format_function(raw_result)
             tool_result = ToolResult(
                 raw_result=raw_result,
@@ -229,6 +230,15 @@ class Agent(ABC):
                         tool_call_id=tool_id,
                     )
                 )
+                # HACK - to fix issues with claude thinking + tool use [https://github.com/anthropics/anthropic-cookbook/blob/main/extended_thinking/extended_thinking_with_tool_use.ipynb]
+                if self.rag_generation_config.extended_thinking:
+                    await self.conversation.add_message(
+                        Message(
+                            role="user",
+                            content="Continue...",
+                        )
+                    )
+
             self.tool_calls.append(
                 {
                     "name": function_name,

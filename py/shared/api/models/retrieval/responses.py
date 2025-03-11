@@ -41,6 +41,7 @@ class Citation(BaseModel):
     )
 
     class Config:
+        extra = "ignore"  # This tells Pydantic to ignore extra fields
         json_schema_extra = {
             "example": {
                 "id": "cit.abcd123",

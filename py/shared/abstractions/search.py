@@ -149,9 +149,9 @@ class GraphSearchResult(R2RSerializable):
 
 
 class WebPageResult(R2RSerializable):
-    title: str
-    link: str
-    snippet: str
+    title: Optional[str] = None
+    link: Optional[str] = None
+    snippet: Optional[str] = None
     position: int
     type: str = "organic"
     date: Optional[str] = None
@@ -207,19 +207,19 @@ class WebSearchResult(R2RSerializable):
             if result["type"] == "organic":
                 organic.append(
                     WebPageResult(
-                        **result, id=generate_id_from_label(result["link"])
+                        **result, id=generate_id_from_label(result.get("link"))
                     )
                 )
             elif result["type"] == "relatedSearches":
                 related.append(
                     RelatedSearchResult(
-                        **result, id=generate_id_from_label(result["query"])
+                        **result, id=generate_id_from_label(result.get("query"))
                     )
                 )
             elif result["type"] == "peopleAlsoAsk":
                 paa.append(
                     PeopleAlsoAskResult(
-                        **result, id=generate_id_from_label(result["link"])
+                        **result, id=generate_id_from_label(result.get("link"))
                     )
                 )
 

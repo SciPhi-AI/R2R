@@ -139,7 +139,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     args["tool_choice"][
                         "disable_parallel_tool_use"
                     ] = generation_config.disable_parallel_tool_use
-
+        
         # --- Extended Thinking Support ---
         if getattr(generation_config, "extended_thinking", False):
             if (
@@ -159,6 +159,13 @@ class AnthropicCompletionProvider(CompletionProvider):
             args["thinking"] = {
                 "type": "enabled",
                 "budget_tokens": generation_config.thinking_budget,
+            }
+        elif generation_config.model == "anthropic/claude-3-7-sonnet-20250219":
+            logger.warning("Claude 3.7 selected without extended thinking enabled. Enabling extended thinking with default budget of 2048 tokens.")
+            generation_config.extended_thinking = True
+            args["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": 2048,
             }
         # -----------------------------------
         return args
@@ -184,7 +191,7 @@ class AnthropicCompletionProvider(CompletionProvider):
                     }
                 )
                 # For display/logging
-                display_content += f"<think>{block.thinking}</think>"
+                # display_content += f"<think>{block.thinking}</think>"
             elif block.type == "redacted_thinking" and hasattr(block, "data"):
                 # Store the complete redacted thinking block
                 structured_content.append(
@@ -475,7 +482,6 @@ class AnthropicCompletionProvider(CompletionProvider):
         messages = task["messages"]
         generation_config = task["generation_config"]
         extra_kwargs = task["kwargs"]
-
         base_args = self._get_base_args(generation_config)
         filtered_messages, system_msg = self._split_system_messages(messages)
         base_args["messages"] = filtered_messages
@@ -500,10 +506,13 @@ class AnthropicCompletionProvider(CompletionProvider):
                 "Anthropic API key not found. Set ANTHROPIC_API_KEY env var."
             )
 
+
         try:
             logger.debug(f"Anthropic API request: {args}")
             response = await self.async_client.messages.create(**args)
             logger.debug(f"Anthropic API response: {response}")
+            print('anthropic raw response = ', response)
+
             return LLMChatCompletion(
                 **self._convert_to_chat_completion(response)
             )
