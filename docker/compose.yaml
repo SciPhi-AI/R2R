@@ -22,16 +22,18 @@ services:
       postgres
       -c max_connections=1024
 
-  unstructured:
-    image: ragtoriches/unst-prod
+  graph_clustering:
+    image: ragtoriches/cluster-prod
+    ports:
+      - "7276:7276"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   r2r:
-    image: sciphiai/r2r:latest
+    image: r2r/test
     ports:
       - "7272:7272"
     env_file:
