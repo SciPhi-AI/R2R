@@ -22,6 +22,14 @@ services:
       postgres
       -c max_connections=1024
 
+  unstructured:
+    image: ragtoriches/unst-prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   r2r:
     image: sciphiai/r2r:latest
     ports:

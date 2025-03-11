@@ -634,13 +634,9 @@ class GraphService(Service):
     ) -> dict:
         """The actual clustering logic (previously in
         GraphClusteringPipe.cluster_graph_search_results)."""
-        clustering_mode = (
-            self.config.database.graph_creation_settings.clustering_mode
-        )
         num_communities = await self.providers.database.graphs_handler.perform_graph_clustering(
             collection_id=collection_id,
             leiden_params=leiden_params,
-            clustering_mode=clustering_mode,
         )
         return {"num_communities": num_communities}
 
@@ -714,9 +710,6 @@ class GraphService(Service):
         )
 
         # We can optionally re-run the clustering to produce fresh community assignments
-        clustering_mode = (
-            self.config.database.graph_creation_settings.clustering_mode
-        )
         (
             _,
             community_clusters,
@@ -724,22 +717,13 @@ class GraphService(Service):
             relationships=all_relationships,
             leiden_params=leiden_params,
             collection_id=collection_id,
-            clustering_mode=clustering_mode,
         )
 
         # Group clusters
         clusters: dict[Any, list[str]] = {}
         for item in community_clusters:
-            # item is either a dict (remote) or an object (local)
-            # unify logic accordingly
-            cluster_id = (
-                item["cluster"]
-                if clustering_mode == "remote"
-                else item.cluster
-            )
-            node_name = (
-                item["node"] if clustering_mode == "remote" else item.node
-            )
+            cluster_id = item["cluster"]
+            node_name = item["node"]
             clusters.setdefault(cluster_id, []).append(node_name)
 
         # create an async job for each cluster
