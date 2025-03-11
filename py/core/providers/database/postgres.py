@@ -136,7 +136,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.documents_handler = PostgresDocumentsHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
-            dimension=int(self.dimension),
+            dimension=self.dimension,
         )
         self.token_handler = PostgresTokensHandler(
             self.project_name, self.connection_manager
@@ -150,7 +150,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.chunks_handler = PostgresChunksHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
-            dimension=int(self.dimension),
+            dimension=self.dimension,
             quantization_type=(self.quantization_type),
         )
         self.conversations_handler = PostgresConversationsHandler(
