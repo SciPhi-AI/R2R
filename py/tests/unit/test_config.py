@@ -70,9 +70,6 @@ def merged_config(base_config, full_config):
 
 def test_base_config_loading(base_config):
     """Test that the base config loads correctly with the new expected values.
-
-    (For example, the old 'clustering_mode' key is gone, and now we check that
-    keys like 'graph_entity_description_prompt' are present.)
     """
     config = R2RConfig(base_config)
 

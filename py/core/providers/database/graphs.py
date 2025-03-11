@@ -1632,10 +1632,6 @@ class PostgresGraphsHandler(Handler):
             self.communities,
         ]
 
-        import networkx as nx
-
-        self.nx = nx
-
     async def create_tables(self) -> None:
         """Create the graph tables with mandatory collection_id support."""
         QUERY = f"""
@@ -2338,7 +2334,6 @@ class PostgresGraphsHandler(Handler):
         self,
         collection_id: UUID,
         leiden_params: dict[str, Any],
-        clustering_mode: str,
     ) -> Tuple[int, Any]:
         """Calls the external clustering service to cluster the graph."""
 
@@ -2375,7 +2370,6 @@ class PostgresGraphsHandler(Handler):
             relationships=all_relationships,
             leiden_params=leiden_params,
             collection_id=collection_id,
-            clustering_mode=clustering_mode,
         )
 
     async def _call_clustering_service(
@@ -2417,43 +2411,18 @@ class PostgresGraphsHandler(Handler):
         self,
         relationships: list[Relationship],
         leiden_params: dict[str, Any],
-        clustering_mode: str = "remote",
     ) -> Any:
-        """Create a graph and cluster it.
+        """Create a graph and cluster it."""
 
-        If clustering_mode='local', use hierarchical_leiden locally. If
-        clustering_mode='remote', call the external service.
-        """
-
-        if clustering_mode == "remote":
-            logger.info("Sending request to external clustering service...")
-            communities = await self._call_clustering_service(
-                relationships, leiden_params
-            )
-            logger.info("Received communities from clustering service.")
-            return communities
-        else:
-            # Local mode: run hierarchical_leiden directly
-            G = self.nx.Graph()
-            for relationship in relationships:
-                G.add_edge(
-                    relationship.subject,
-                    relationship.object,
-                    weight=relationship.weight,
-                    id=relationship.id,
-                )
-
-            logger.info(
-                f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges"
-            )
-            return await self._compute_leiden_communities(G, leiden_params)
+        return await self._call_clustering_service(
+            relationships, leiden_params
+        )
 
     async def _cluster_and_add_community_info(
         self,
         relationships: list[Relationship],
         leiden_params: dict[str, Any],
         collection_id: UUID,
-        clustering_mode: str = "local",
     ) -> Tuple[int, Any]:
         logger.info(f"Creating graph and clustering for {collection_id}")
 
@@ -2463,7 +2432,6 @@ class PostgresGraphsHandler(Handler):
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
             leiden_params=leiden_params,
-            clustering_mode=clustering_mode,
         )
 
         logger.info(
@@ -2473,17 +2441,9 @@ class PostgresGraphsHandler(Handler):
         if not hierarchical_communities:
             num_communities = 0
         else:
-            if (
-                clustering_mode == "remote"
-            ):  # Remote clustering: hierarchical_communities is a list of dicts
-                num_communities = (
-                    max(item["cluster"] for item in hierarchical_communities)
-                    + 1
-                )
-            else:  # Local clustering: hierarchical_communities is returned by hierarchical_leiden
-                num_communities = (
-                    max(item.cluster for item in hierarchical_communities) + 1
-                )
+            num_communities = (
+                max(item["cluster"] for item in hierarchical_communities) + 1
+            )
 
         logger.info(
             f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
@@ -2760,37 +2720,6 @@ class PostgresGraphsHandler(Handler):
             return " AND ".join(filter_conditions)
 
         return parse_filter(filter_dict)
-
-    async def _compute_leiden_communities(
-        self,
-        graph: Any,
-        leiden_params: dict[str, Any],
-    ) -> Any:
-        """Compute Leiden communities."""
-        try:
-            from graspologic.partition import hierarchical_leiden
-
-            if "random_seed" not in leiden_params:
-                leiden_params["random_seed"] = (
-                    7272  # add seed to control randomness
-                )
-
-            start_time = time.time()
-            logger.info(
-                f"Running Leiden clustering with params: {leiden_params}"
-            )
-
-            community_mapping = hierarchical_leiden(graph, **leiden_params)
-
-            logger.info(
-                f"Leiden clustering completed in {time.time() - start_time:.2f} seconds."
-            )
-            return community_mapping
-
-        except ImportError:
-            raise ImportError(
-                "Please install the graspologic package."
-            ) from None
 
     async def get_existing_document_entity_chunk_ids(
         self, document_id: UUID
