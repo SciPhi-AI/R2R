@@ -14,6 +14,7 @@ class EmailConfig(ProviderConfig):
     from_email: Optional[str] = None
     use_tls: Optional[bool] = True
     sendgrid_api_key: Optional[str] = None
+    mailersend_api_key: Optional[str] = None
     verify_email_template_id: Optional[str] = None
     reset_password_template_id: Optional[str] = None
     password_changed_template_id: Optional[str] = None
@@ -26,6 +27,7 @@ class EmailConfig(ProviderConfig):
             "smtp",
             "console",
             "sendgrid",
+            "mailersend",
         ]  # Could add more providers like AWS SES, SendGrid etc.
 
     def validate_config(self) -> None:
@@ -36,6 +38,15 @@ class EmailConfig(ProviderConfig):
         ):
             raise ValueError(
                 "SendGrid API key is required when using SendGrid provider"
+            )
+        
+        if (
+            self.provider == "mailersend"
+            and not self.mailersend_api_key
+            and not os.getenv("MAILERSEND_API_KEY")
+        ):
+            raise ValueError(
+                "MailerSend API key is required when using MailerSend provider"
             )
 
 

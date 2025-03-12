@@ -10,6 +10,7 @@ from .email import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
     SendGridEmailProvider,
+    MailerSendEmailProvider,
 )
 from .embeddings import (
     LiteLLMEmbeddingProvider,
@@ -58,6 +59,7 @@ __all__ = [
     "AsyncSMTPEmailProvider",
     "ConsoleMockEmailProvider",
     "SendGridEmailProvider",
+    "MailerSendEmailProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

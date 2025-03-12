@@ -40,6 +40,7 @@ from core.providers import (
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
+    MailerSendEmailProvider,
 )
 
 from ..abstractions import R2RProviders
@@ -61,6 +62,7 @@ class R2RProviderFactory:
             AsyncSMTPEmailProvider
             | ConsoleMockEmailProvider
             | SendGridEmailProvider
+            | MailerSendEmailProvider
         ),
         *args,
         **kwargs,
@@ -261,6 +263,7 @@ class R2RProviderFactory:
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider
         | SendGridEmailProvider
+        | MailerSendEmailProvider
     ):
         """Creates an email provider based on configuration."""
         if not email_config:
@@ -274,6 +277,8 @@ class R2RProviderFactory:
             return ConsoleMockEmailProvider(email_config)
         elif email_config.provider == "sendgrid":
             return SendGridEmailProvider(email_config)
+        elif email_config.provider == "mailersend":
+            return MailerSendEmailProvider(email_config)
         else:
             raise ValueError(
                 f"Email provider {email_config.provider} not supported."
@@ -292,6 +297,7 @@ class R2RProviderFactory:
             AsyncSMTPEmailProvider
             | ConsoleMockEmailProvider
             | SendGridEmailProvider
+            | MailerSendEmailProvider
         ] = None,
         embedding_provider_override: Optional[
             LiteLLMEmbeddingProvider
