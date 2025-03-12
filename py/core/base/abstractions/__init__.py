@@ -54,7 +54,7 @@ from shared.abstractions.search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
-    WebPageResult,
+    WebPageSearchResult,
     WebSearchResult,
     select_search_filters,
 )
@@ -126,7 +126,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
-    "WebPageResult",
+    "WebPageSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

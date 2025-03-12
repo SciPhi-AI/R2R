@@ -67,7 +67,7 @@ __all__ = [
     "ChunkSearchSettings",
     "GraphSearchSettings",
     "ChunkSearchResult",
-    "WebPageResult",
+    "WebPageSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

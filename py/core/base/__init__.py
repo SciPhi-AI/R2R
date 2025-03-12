@@ -49,7 +49,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
-    "WebPageResult",
+    "WebPageSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",

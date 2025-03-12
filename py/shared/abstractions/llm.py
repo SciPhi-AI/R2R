@@ -296,6 +296,10 @@ class Message(R2RSerializable):
     tool_call_id: Optional[str] = None
     metadata: Optional[dict[str, Any]] = None
     structured_content: Optional[list[dict]] = None
+    image_url: Optional[str] = None  # For URL-based images
+    image_data: Optional[dict[str, str]] = (
+        None  # For base64 {media_type, data}
+    )
 
     class Config:
         populate_by_name = True

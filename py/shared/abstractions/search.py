@@ -148,7 +148,7 @@ class GraphSearchResult(R2RSerializable):
         return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
 
 
-class WebPageResult(R2RSerializable):
+class WebPageSearchResult(R2RSerializable):
     title: Optional[str] = None
     link: Optional[str] = None
     snippet: Optional[str] = None
@@ -174,7 +174,7 @@ class WebPageResult(R2RSerializable):
         }
 
     def __str__(self) -> str:
-        return f"WebPageResult(title={self.title}, link={self.link}, snippet={self.snippet})"
+        return f"WebPageSearchResult(title={self.title}, link={self.link}, snippet={self.snippet})"
 
 
 class RelatedSearchResult(R2RSerializable):
@@ -193,7 +193,7 @@ class PeopleAlsoAskResult(R2RSerializable):
 
 
 class WebSearchResult(R2RSerializable):
-    organic_results: list[WebPageResult] = []
+    organic_results: list[WebPageSearchResult] = []
     related_searches: list[RelatedSearchResult] = []
     people_also_ask: list[PeopleAlsoAskResult] = []
 
@@ -206,14 +206,15 @@ class WebSearchResult(R2RSerializable):
         for result in results:
             if result["type"] == "organic":
                 organic.append(
-                    WebPageResult(
+                    WebPageSearchResult(
                         **result, id=generate_id_from_label(result.get("link"))
                     )
                 )
             elif result["type"] == "relatedSearches":
                 related.append(
                     RelatedSearchResult(
-                        **result, id=generate_id_from_label(result.get("query"))
+                        **result,
+                        id=generate_id_from_label(result.get("query")),
                     )
                 )
             elif result["type"] == "peopleAlsoAsk":
@@ -248,7 +249,7 @@ class AggregateSearchResult(R2RSerializable):
 
     chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
-    web_search_results: Optional[list[WebPageResult]] = None
+    web_search_results: Optional[list[WebPageSearchResult]] = None
     context_document_results: Optional[list[ContextDocumentResult]] = None
 
     def __str__(self) -> str:

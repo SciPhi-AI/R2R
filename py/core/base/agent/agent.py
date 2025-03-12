@@ -95,8 +95,11 @@ class Agent(ABC):
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
                         self.config.agent_static_prompt,
-                        inputs={"date": str(datetime.now().isoformat())},
+                        inputs={
+                            "date": str(datetime.now().strftime("%m/%d/%Y"))
+                        },
                     )
+                    + f"\n Note,you only have {self.config.max_iterations} iterations or tool calls to reach a conclusion before your operation terminates."
                 ),
             )
         )
@@ -205,15 +208,22 @@ class Agent(ABC):
                         )
                     )
 
-                raise R2RException(
-                    message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
-                    status_code=400,
-                )
+                # raise R2RException(
+                #     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
+                #     status_code=400,
+                # )
 
             merged_kwargs = {**kwargs, **function_args}
-            raw_result = await tool.results_function(*args, **merged_kwargs)
-            print('raw_result = ', raw_result)
-            llm_formatted_result = tool.llm_format_function(raw_result)
+            try:
+                raw_result = await tool.results_function(
+                    *args, **merged_kwargs
+                )
+                llm_formatted_result = tool.llm_format_function(raw_result)
+            except Exception as e:
+                raw_result = f"Calling the requested tool '{function_name}' with arguments {function_arguments} failed with an exception: {e}."
+                logger.error(raw_result)
+                llm_formatted_result = raw_result
+
             tool_result = ToolResult(
                 raw_result=raw_result,
                 llm_formatted_result=llm_formatted_result,

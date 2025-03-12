@@ -1107,7 +1107,7 @@ class RetrievalService(Service):
                 )
 
             current_message = messages[-1]
-            logger.info(
+            logger.debug(
                 f"Running the agent with conversation_id = {conversation_id} and message = {current_message}"
             )
             # Save the new message to the conversation
@@ -1149,6 +1149,7 @@ class RetrievalService(Service):
                         filter_collection_ids=filter_collection_ids,
                         model=rag_generation_config.model,
                         use_system_context=use_system_context,
+                        mode=mode,
                     )
                 )
 
@@ -1156,6 +1157,7 @@ class RetrievalService(Service):
             agent_config.tools = override_tools or agent_config.tools
 
             if rag_generation_config.stream:
+
                 async def stream_response():
                     try:
                         if (
@@ -1301,6 +1303,7 @@ class RetrievalService(Service):
                 system_instruction=system_instruction,
                 include_title_if_available=include_title_if_available,
             )
+
             # Save the assistant's reply to the conversation
             if isinstance(results[-1], dict):
                 assistant_message = Message(**results[-1])
@@ -1316,12 +1319,17 @@ class RetrievalService(Service):
             else:
                 collector = SearchResultsCollector()  # or fallback if needed
 
-            structured_content = assistant_message.structured_content # [-1].get('text')
-            structured_content = structured_content[-1].get('text') if structured_content else None
-
+            structured_content = (
+                assistant_message.structured_content
+            )  # [-1].get('text')
+            structured_content = (
+                structured_content[-1].get("text")
+                if structured_content
+                else None
+            )
 
             # Suppose your final assistant text is:
-            raw_text = assistant_message.content or structured_content or  ""
+            raw_text = assistant_message.content or structured_content or ""
 
             short_ids = extract_citations(raw_text)  # e.g. [abc1234]
 
@@ -1377,7 +1385,9 @@ class RetrievalService(Service):
                 "messages": [
                     Message(
                         role="assistant",
-                        content=assistant_message.content or structured_content or "",
+                        content=assistant_message.content
+                        or structured_content
+                        or "",
                         metadata={
                             "citations": final_citations,
                             "tool_calls": agent.tool_calls,
@@ -1554,6 +1564,7 @@ class RetrievalService(Service):
         filter_collection_ids: Optional[list[UUID]] = None,
         model: Optional[str] = None,
         use_system_context: bool = False,
+        mode: Optional[str] = "rag",
     ) -> str:
         """
         High-level method that:
@@ -1561,15 +1572,26 @@ class RetrievalService(Service):
           2) builds the collections context
           3) loads the new `dynamic_reasoning_rag_agent` prompt
         """
-        date_str = str(datetime.now().isoformat()).split("T")[0]
+        date_str = str(datetime.now().strftime("%m/%d/%Y"))
 
         # "dynamic_rag_agent" // "static_rag_agent"
 
-        prompt_name = (
-            self.config.agent.agent_dynamic_prompt
-            if use_system_context
-            else self.config.agent.agent_static_prompt
-        )
+        if mode == "rag":
+            prompt_name = (
+                self.config.agent.agent_dynamic_prompt
+                if use_system_context
+                else self.config.agent.agent_static_prompt
+            )
+        else:
+            prompt_name = "static_research_agent"
+            system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+                # We use custom tooling and a custom agent to handle gemini models
+                prompt_name,
+                inputs={
+                    "date": date_str,
+                },
+            )
+            return system_prompt
 
         if "deepseek" in model or "gemini" in model:
             prompt_name = prompt_name + "_xml_tooling"
@@ -1598,7 +1620,7 @@ class RetrievalService(Service):
                     "date": date_str,
                 },
             )
-        logger.info(f"Running agent with system prompt = {system_prompt}")
+        logger.debug(f"Running agent with system prompt = {system_prompt}")
         return system_prompt
 
 

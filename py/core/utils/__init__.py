@@ -25,31 +25,20 @@ from shared.utils.splitter.text import (
     TextSplitter,
 )
 
-SHORT_ID_PATTERN = re.compile(r"[A-Za-z0-9]{7,8}")
-
 
 def extract_citations(text: str) -> list[str]:
     """
-    Example: parse out bracket references containing short IDs like [abc1234].
-    Return a list of Citation objects (with .index = ???).
+    Extract citation IDs enclosed in brackets like [abc1234].
+    Returns a list of citation IDs.
     """
-    # This is up to you how you store them in the Citation model.
-    # For example:
+    # Direct pattern to match IDs inside brackets with alphanumeric pattern
+    CITATION_PATTERN = re.compile(r"\[([A-Za-z0-9]{7,8})\]")
+
     sids = []
-    BRACKET_PATTERN = re.compile(r"\[([^\]]+)\]")
-    bracket_id_counter = 0
+    for match in CITATION_PATTERN.finditer(text):
+        sid = match.group(1)
+        sids.append(sid)
 
-    for match in BRACKET_PATTERN.finditer(text):
-        bracket_text = match.group(1)
-
-        found_ids = SHORT_ID_PATTERN.findall(bracket_text)
-        if not found_ids:
-            continue
-
-        # For each short ID, create a Citation. If you want each ID in separate bracket objects:
-        for sid in found_ids:
-            bracket_id_counter += 1
-            sids.append(sid)
     return sids
 
 

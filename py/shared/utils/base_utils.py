@@ -288,35 +288,237 @@ def num_tokens_from_messages(messages, model="gpt-4o"):
 
 class SearchResultsCollector:
     """
-    Collects search results in the form (source_type, result_obj, aggregator_index).
-    aggregator_index increments globally so that the nth item appended
-    is always aggregator_index == n, across the entire conversation.
+    Collects search results in the form (source_type, result_obj).
+    Handles both object-oriented and dictionary-based search results.
     """
 
     def __init__(self):
-        # We'll store a list of (source_type, result_obj, agg_idx).
-        self._results_in_order: list[Tuple[str, Any, int]] = []
+        # We'll store a list of (source_type, result_obj)
+        self._results_in_order = []
 
-    def add_aggregate_result(self, agg: "AggregateSearchResult"):
+    @property
+    def results(self):
+        """Get the results list"""
+        return self._results_in_order
+
+    @results.setter
+    def results(self, value):
+        """
+        Set the results directly, with automatic type detection for 'unknown' items
+        Handles the format: [('unknown', {...}), ('unknown', {...})]
+        """
+        self._results_in_order = []
+
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, tuple) and len(item) == 2:
+                    source_type, result_obj = item
+
+                    # Only auto-detect if the source type is "unknown"
+                    if source_type == "unknown":
+                        detected_type = self._detect_result_type(result_obj)
+                        self._results_in_order.append(
+                            (detected_type, result_obj)
+                        )
+                    else:
+                        self._results_in_order.append(
+                            (source_type, result_obj)
+                        )
+                else:
+                    # If not a tuple, detect and add
+                    detected_type = self._detect_result_type(item)
+                    self._results_in_order.append((detected_type, item))
+        else:
+            raise ValueError("Results must be a list")
+
+    def add_aggregate_result(self, agg):
         """
         Flatten the chunk_search_results, graph_search_results, web_search_results,
-        and context_document_results, each assigned a unique aggregator index.
+        and context_document_results into the collector.
         """
-        if agg.chunk_search_results:
+        if hasattr(agg, "chunk_search_results") and agg.chunk_search_results:
             for c in agg.chunk_search_results:
                 self._results_in_order.append(("chunk", c))
 
-        if agg.graph_search_results:
+        if hasattr(agg, "graph_search_results") and agg.graph_search_results:
             for g in agg.graph_search_results:
                 self._results_in_order.append(("graph", g))
 
-        if agg.web_search_results:
+        if hasattr(agg, "web_search_results") and agg.web_search_results:
             for w in agg.web_search_results:
                 self._results_in_order.append(("web", w))
 
-        if agg.context_document_results:
+        if (
+            hasattr(agg, "context_document_results")
+            and agg.context_document_results
+        ):
             for cd in agg.context_document_results:
                 self._results_in_order.append(("context_doc", cd))
+
+    def add_result(self, result_obj, source_type=None):
+        """
+        Add a single result object to the collector.
+        If source_type is not provided, automatically detect the type.
+        """
+        if source_type:
+            self._results_in_order.append((source_type, result_obj))
+            return source_type
+
+        detected_type = self._detect_result_type(result_obj)
+        self._results_in_order.append((detected_type, result_obj))
+        return detected_type
+
+    def _detect_result_type(self, obj):
+        """
+        Detect the type of a result object based on its properties.
+        Works with both object attributes and dictionary keys.
+        """
+        # Handle dictionary types first (common for web search results)
+        if isinstance(obj, dict):
+            # Web search pattern
+            if all(k in obj for k in ["title", "link"]) and any(
+                k in obj for k in ["snippet", "description"]
+            ):
+                return "web"
+
+            # Check for graph dictionary patterns
+            if "content" in obj and isinstance(obj["content"], dict):
+                content = obj["content"]
+                if all(k in content for k in ["name", "description"]):
+                    return "graph"  # Entity
+                if all(
+                    k in content for k in ["subject", "predicate", "object"]
+                ):
+                    return "graph"  # Relationship
+                if all(k in content for k in ["name", "summary"]):
+                    return "graph"  # Community
+
+            # Chunk pattern
+            if all(k in obj for k in ["text", "id"]) and any(
+                k in obj for k in ["score", "metadata"]
+            ):
+                return "chunk"
+
+            # Context document pattern
+            if "document" in obj and "chunks" in obj:
+                return "context_doc"
+
+            # Check for explicit type indicator
+            if "type" in obj:
+                type_val = str(obj["type"]).lower()
+                if any(t in type_val for t in ["web", "organic"]):
+                    return "web"
+                if "graph" in type_val:
+                    return "graph"
+                if "chunk" in type_val:
+                    return "chunk"
+                if "document" in type_val:
+                    return "context_doc"
+
+        # Handle object attributes for OOP-style results
+        if hasattr(obj, "result_type"):
+            result_type = str(obj.result_type).lower()
+            if result_type in ["entity", "relationship", "community"]:
+                return "graph"
+
+        # Check class name hints
+        class_name = obj.__class__.__name__
+        if "Graph" in class_name:
+            return "graph"
+        if "Chunk" in class_name:
+            return "chunk"
+        if "Web" in class_name:
+            return "web"
+        if "Document" in class_name:
+            return "context_doc"
+
+        # Check for object attribute patterns
+        if hasattr(obj, "content"):
+            content = obj.content
+            if hasattr(content, "name") and hasattr(content, "description"):
+                return "graph"  # Entity
+            if hasattr(content, "subject") and hasattr(content, "predicate"):
+                return "graph"  # Relationship
+            if hasattr(content, "name") and hasattr(content, "summary"):
+                return "graph"  # Community
+
+        if (
+            hasattr(obj, "text")
+            and hasattr(obj, "id")
+            and (hasattr(obj, "score") or hasattr(obj, "metadata"))
+        ):
+            return "chunk"
+
+        if (
+            hasattr(obj, "title")
+            and hasattr(obj, "link")
+            and hasattr(obj, "snippet")
+        ):
+            return "web"
+
+        if hasattr(obj, "document") and hasattr(obj, "chunks"):
+            return "context_doc"
+
+        # Default when type can't be determined
+        return "unknown"
+
+    def get_all_results(self):
+        """Return all results as a list of (source_type, result_obj) tuples"""
+        return self._results_in_order
+
+    def find_by_short_id(self, short_id):
+        """Find a result by its short ID prefix"""
+        if not short_id:
+            return None
+
+        for i, (source_type, result_obj) in enumerate(self._results_in_order):
+            # Check dictionary objects
+            if isinstance(result_obj, dict) and "id" in result_obj:
+                result_id = str(result_obj["id"])
+                does_match = result_id.startswith(short_id)
+
+                if does_match:
+                    return result_obj
+
+            # Special handling for context_doc with chunks
+            elif source_type == "context_doc":
+                chunks = getattr(result_obj, "chunks", [])
+                for chunk in chunks:
+                    chunk_id = getattr(chunk, "id", None)
+                    if chunk_id and str(chunk_id).startswith(short_id):
+                        return chunk
+
+            # Handle object with id attribute
+            else:
+                obj_id = getattr(result_obj, "id", None)
+                if obj_id and str(obj_id).startswith(short_id):
+                    # Convert to dict if possible
+                    if hasattr(result_obj, "as_dict"):
+                        return result_obj.as_dict()
+                    elif hasattr(result_obj, "model_dump"):
+                        return result_obj.model_dump()
+                    elif hasattr(result_obj, "dict"):
+                        return result_obj.dict()
+                    else:
+                        return result_obj
+
+        return None
+
+    def get_results_by_type(self, type_name):
+        """Get all results of a specific type"""
+        return [
+            result_obj
+            for source_type, result_obj in self._results_in_order
+            if source_type == type_name
+        ]
+
+    def __repr__(self):
+        """String representation showing counts by type"""
+        type_counts = {}
+        for source_type, _ in self._results_in_order:
+            type_counts[source_type] = type_counts.get(source_type, 0) + 1
+
+        return f"SearchResultsCollector with {len(self._results_in_order)} results: {type_counts}"
 
     def get_all_results(self) -> list[Tuple[str, Any, int]]:
         """
@@ -324,28 +526,6 @@ class SearchResultsCollector:
         in the order appended.
         """
         return self._results_in_order
-
-    def find_by_short_id(
-        self, short_id: str
-    ) -> Optional[Tuple[str, Any, int]]:
-        """
-        Returns (source_type, result_obj) if any aggregator item
-        has an .id whose string form starts with short_id, else None.
-        """
-        for source_type, result_obj in self._results_in_order:
-            if source_type != "context_doc":
-                # If result_obj has an `id` attribute
-                if getattr(result_obj, "id", None) is not None:
-                    # Check if the full UUID starts with short_id
-                    if str(result_obj.id).startswith(short_id):
-                        # return (source_type, result_obj.as_dict())
-                        return result_obj.as_dict()
-            else:
-                for chunk in result_obj.chunks:
-                    if str(chunk.id).startswith(short_id):
-                        # return (source_type, chunk)
-                        return chunk
-        return None
 
 
 def convert_nonserializable_objects(obj):

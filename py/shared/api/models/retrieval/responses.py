@@ -9,7 +9,7 @@ from shared.abstractions import (
     ContextDocumentResult,
     GraphSearchResult,
     Message,
-    WebPageResult,
+    WebPageSearchResult,
 )
 from shared.abstractions.llm import LLMChatCompletion
 from shared.api.models.base import R2RResults
@@ -33,7 +33,7 @@ class Citation(BaseModel):
         Union[
             ChunkSearchResult,
             GraphSearchResult,
-            WebPageResult,
+            WebPageSearchResult,
             ContextDocumentResult,
         ]
     ] = Field(

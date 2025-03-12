@@ -14,6 +14,7 @@ from core.base.abstractions import (
     GenerationConfig,
     Message,
     SearchSettings,
+    WebPageSearchResult,
     WebSearchResult,
 )
 from core.base.agent import AgentConfig, Tool
@@ -29,6 +30,7 @@ from core.utils import (
     SSEFormatter,
     convert_nonserializable_objects,
     extract_citations,
+    generate_id,
     num_tokens,
 )
 
@@ -83,6 +85,8 @@ class RAGAgentMixin:
         for tool_name in set(self.config.tools):
             if tool_name == "content":
                 self._tools.append(self.content())
+            elif tool_name == "firecrawl_scrape":
+                self._tools.append(self.firecrawl_scrape())
             elif tool_name == "search_file_knowledge":
                 self._tools.append(self.search_file_knowledge())
             elif tool_name == "search_file_descriptions":
@@ -378,33 +382,112 @@ class RAGAgentMixin:
         else:
             return context[: int(frac_to_return * len(context))]
 
-    def _create_citation_payload(self, short_id):
-        """Create citation payload with search results for a short ID"""
-        return {
-            "id": f"cit_{short_id}",
-            "object": "citation",
-            "payload": self.search_results_collector.find_by_short_id(
-                short_id
+    def firecrawl_scrape(self) -> Tool:
+        """
+        A new Tool that uses Firecrawl to scrape a single URL and return
+        its contents in an LLM-friendly format (e.g. markdown).
+        """
+        return Tool(
+            name="firecrawl_scrape",
+            description=(
+                "Use Firecrawl to scrape a single webpage and retrieve its contents "
+                "as clean markdown. Useful when you need the entire body of a page, "
+                "not just a quick snippet or standard web search result."
             ),
-        }
+            results_function=self._firecrawl_scrape_function,
+            llm_format_function=self.format_search_results_for_llm,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": (
+                            "The absolute URL of the webpage you want to scrape. "
+                            "Example: 'https://docs.firecrawl.dev/getting-started'"
+                        ),
+                    }
+                },
+                "required": ["url"],
+            },
+        )
 
-    def _create_final_answer_payload(self, answer_text, announced_short_ids):
-        """Create the final answer payload with citations"""
-        return {
-            "id": "msg_final",
-            "object": "agent.final_answer",
-            "generated_answer": answer_text,
-            "citations": [
-                {
-                    "id": f"cit_{sid}",
-                    "object": "citation",
-                    "payload": self.search_results_collector.find_by_short_id(
-                        sid
-                    ),
-                }
-                for sid in announced_short_ids
-            ],
-        }
+    async def _firecrawl_scrape_function(
+        self,
+        url: str,
+        *args,
+        **kwargs,
+    ) -> AggregateSearchResult:
+        """
+        Actually performs the Firecrawl scrape, returning results
+        as an `AggregateSearchResult` with a single WebPageSearchResult.
+        """
+        from firecrawl import FirecrawlApp
+
+        app = FirecrawlApp()
+
+        # if not self.firecrawl_app:
+        #     raise ValueError(
+        #         "No FirecrawlApp initialized. Provide a valid 'firecrawl_api_key' "
+        #         "when creating this agent."
+        #     )
+
+        logger.debug(f"[Firecrawl] Scraping URL={url}")
+
+        # Example Firecrawl usage:
+        response = app.scrape_url(
+            url=url,
+            # adapt params to your needs:
+            params={"formats": ["markdown"]},
+        )
+
+        # According to Firecrawl docs, the response is typically:
+        # {
+        #   "success": True,
+        #   "data": {
+        #       "markdown": "...",
+        #       "metadata": {...}
+        #   }
+        # }
+        # if not response.get("success"):
+        #     raise ValueError(
+        #         f"Firecrawl failed to scrape {url}. "
+        #         f"Details: {response}"
+        #     )
+        # data = response["data"]
+        markdown_text = response.get("markdown", "")
+        metadata = response.get("metadata", {})
+
+        # Optionally grab a snippet from the markdown to serve as preview
+        # snippet = markdown_text[:200] + ("..." if len(markdown_text) > 200 else "")
+
+        page_title = metadata.get("title", "Untitled page")
+        # You could also store the entire markdown in `snippet`,
+        # but typically we keep snippet short. We'll keep the entire text
+        # in a .body or .extra_data if we want to replicate standard patterns.
+
+        if len(markdown_text) > 100_000:
+            markdown_text = (
+                markdown_text[:100_000] + "...FURTHER CONTENT TRUNCATED..."
+            )
+        # Create a single WebPageSearchResult HACK - TODO FIX
+        web_result = WebPageSearchResult(
+            title=page_title,
+            link=url,
+            snippet=markdown_text,
+            position=0,
+            id=generate_id(markdown_text),
+            # Some frameworks store the "full content" in an `extra_data`, or you can store it in snippet
+            # body=markdown_text,
+            type="firecrawl",
+        )
+
+        agg = AggregateSearchResult(web_search_results=[web_result])
+
+        # Add results to the collector, so that they can be cited or used in the final answer
+        if self.search_results_collector:
+            self.search_results_collector.add_aggregate_result(agg)
+
+        return agg
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):

@@ -3,43 +3,6 @@ dynamic_rag_agent_xml_tooling:
     You are an AI research assistant with access to document retrieval tools. You should use both your internal knowledge store and web search tools to answer the user questions. Today is {date}.
 
     <AvailableTools>
-      <ToolDefinition>
-          <Name>content</Name>
-          <Description>Fetch full documents using filters. Parameters must be a valid JSON object.</Description>
-          <Parameters>
-            <Parameter type="string" required="true">
-              <Name>filters</Name>
-              <!--
-                Double braces surrounding the entire block (for your templating),
-                single braces for JSON structure inside
-              -->
-              <Example>{{"filters": {{"document_id": {{"$eq": "7e0022ec.-..."}}}}}}</Example>
-              <Operators>$eq, $overlap</Operators>
-            </Parameter>
-          </Parameters>
-      </ToolDefinition>
-
-      <ToolDefinition>
-          <Name>search_file_knowledge</Name>
-          <Description>Semantic search across local documents. Parameters must be a valid JSON object.</Description>
-          <Parameters>
-            <Parameter type="string" required="true">
-              <Name>query</Name>
-              <Example>{{"query": "machine learning advances"}}</Example>
-            </Parameter>
-          </Parameters>
-      </ToolDefinition>
-
-      <ToolDefinition>
-          <Name>search_file_descriptions</Name>
-          <Description>Semantic search over the stored documents by document summary. </Description>
-          <Parameters>
-            <Parameter type="string" required="true">
-              <Name>query</Name>
-              <Example>{{"query": "list documents about XYZ"}}</Example>
-            </Parameter>
-          </Parameters>
-      </ToolDefinition>
 
       <ToolDefinition>
           <Name>web_search</Name>

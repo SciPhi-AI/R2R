@@ -44,44 +44,44 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
     async def _generate_llm_summary(self, iterations_count: int) -> str:
         """
         Generate a summary of the conversation using the LLM when max iterations are exceeded.
-        
+
         Args:
             iterations_count: The number of iterations that were completed
-            
+
         Returns:
             A string containing the LLM-generated summary
         """
         try:
             # Get all messages in the conversation
             all_messages = await self.conversation.get_messages()
-            
+
             # Create a prompt for the LLM to summarize
             summary_prompt = {
-                'role':"user",
-                "content":(
+                "role": "user",
+                "content": (
                     f"The conversation has reached the maximum limit of {iterations_count} iterations "
                     f"without completing the task. Please provide a concise summary of: "
                     f"1) The key information you've gathered that's relevant to the original query, "
                     f"2) What you've attempted so far and why it's incomplete, and "
                     f"3) A specific recommendation for how to proceed. "
-                    f"Keep your summary brief (3-4 sentences total) and focused on the most valuable insights. "
+                    f"Keep your summary brief (3-4 sentences total) and focused on the most valuable insights. If it is possible to answer the original user query, then do so now instead."
                     f"Start with '⚠️ **Maximum iterations exceeded**'"
-                )
+                ),
             }
-            
+
             # Create a new message list with just the conversation history and summary request
             summary_messages = all_messages + [summary_prompt]
-            
+
             # Get a completion for the summary
             generation_config = self.get_generation_config(summary_prompt)
             response = await self.llm_provider.aget_completion(
                 summary_messages,
                 generation_config,
             )
-            
+
             # Extract the summary text
             summary = response.choices[0].message.content
-            
+
             return summary
         except Exception as e:
             logger.error(f"Error generating LLM summary: {str(e)}")
@@ -111,7 +111,10 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
             for message in messages:
                 await self.conversation.add_message(message)
         iterations_count = 0
-        while not self._completed and iterations_count < self.config.max_iterations:
+        while (
+            not self._completed
+            and iterations_count < self.config.max_iterations
+        ):
             iterations_count += 1
             messages_list = await self.conversation.get_messages()
             generation_config = self.get_generation_config(messages_list[-1])
@@ -136,7 +139,8 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         for message_2 in all_messages:
             if (
                 # message_2.get("content")
-                message_2.get("content") != messages[-1].content
+                message_2.get("content")
+                != messages[-1].content
             ):
                 output_messages.append(message_2)
             else:
@@ -144,7 +148,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         output_messages.reverse()
 
         return output_messages
-    
+
     async def process_llm_response(
         self, response: LLMChatCompletion, *args, **kwargs
     ) -> None:
@@ -291,7 +295,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                                 role="assistant", structured_content=tool_uses
                             )
                         )
-                        
+
                 # NEW CASE: Handle tool_calls with no content or structured_content
                 elif message.tool_calls:
                     # Create tool_uses for the message with only tool_calls
@@ -299,19 +303,25 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                     for tool_call in message.tool_calls:
                         try:
                             if isinstance(tool_call.function.arguments, str):
-                                input_args = json.loads(tool_call.function.arguments)
+                                input_args = json.loads(
+                                    tool_call.function.arguments
+                                )
                             else:
                                 input_args = tool_call.function.arguments
                         except json.JSONDecodeError:
-                            logger.error(f"Failed to parse tool arguments: {tool_call.function.arguments}")
+                            logger.error(
+                                f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                            )
                             input_args = {"_raw": tool_call.function.arguments}
 
-                        tool_uses.append({
-                            "type": "tool_use",
-                            "id": tool_call.id,
-                            "name": tool_call.function.name,
-                            "input": input_args,
-                        })
+                        tool_uses.append(
+                            {
+                                "type": "tool_use",
+                                "id": tool_call.id,
+                                "name": tool_call.function.name,
+                                "input": input_args,
+                            }
+                        )
 
                     # Add tool_use blocks as a message before processing tools
                     if tool_uses:
@@ -332,6 +342,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                             *args,
                             **kwargs,
                         )
+
 
 class R2RStreamingAgent(R2RAgent):
     """
@@ -552,17 +563,20 @@ class R2RStreamingAgent(R2RAgent):
                             self._completed = True
                             break
 
-
                 # For R2RStreamingAgent, replace the code after the while loop:
                 # If we exit the while loop due to hitting max iterations
                 if not self._completed:
                     # Generate a summary using the LLM
-                    summary = await self._generate_llm_summary(iterations_count)
-                    
+                    summary = await self._generate_llm_summary(
+                        iterations_count
+                    )
+
                     # Send the summary as a message event
-                    async for line in SSEFormatter.yield_message_event(summary):
+                    async for line in SSEFormatter.yield_message_event(
+                        summary
+                    ):
                         yield line
-                        
+
                     # Add summary to conversation
                     await self.conversation.add_message(
                         Message(
@@ -570,14 +584,16 @@ class R2RStreamingAgent(R2RAgent):
                             content=summary,
                         )
                     )
-                    
+
                     # Create and emit a final answer payload with the summary
                     final_evt_payload = self._create_final_answer_payload(
                         summary, announced_short_ids
                     )
-                    async for line in SSEFormatter.yield_final_answer_event(final_evt_payload):
+                    async for line in SSEFormatter.yield_final_answer_event(
+                        final_evt_payload
+                    ):
                         yield line
-                        
+
                     # Signal the end of the SSE stream
                     yield SSEFormatter.yield_done_event()
                     self._completed = True
@@ -1018,12 +1034,16 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                 # If we exit the while loop due to hitting max iterations
                 if not self._completed:
                     # Generate a summary using the LLM
-                    summary = await self._generate_llm_summary(iterations_count)
-                    
+                    summary = await self._generate_llm_summary(
+                        iterations_count
+                    )
+
                     # Send the summary as a message event
-                    async for line in SSEFormatter.yield_message_event(summary):
+                    async for line in SSEFormatter.yield_message_event(
+                        summary
+                    ):
                         yield line
-                        
+
                     # Add summary to conversation
                     await self.conversation.add_message(
                         Message(
@@ -1031,18 +1051,20 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                             content=summary,
                         )
                     )
-                    
+
                     # Create and emit a final answer payload with the summary
                     final_evt_payload = self._create_final_answer_payload(
                         summary, announced_short_ids
                     )
-                    async for line in SSEFormatter.yield_final_answer_event(final_evt_payload):
+                    async for line in SSEFormatter.yield_final_answer_event(
+                        final_evt_payload
+                    ):
                         yield line
-                        
+
                     # Signal the end of the SSE stream
                     yield SSEFormatter.yield_done_event()
                     self._completed = True
-                    
+
             except Exception as e:
                 logger.error(f"Error in streaming agent: {str(e)}")
                 # Emit error event for client
@@ -1137,6 +1159,8 @@ class R2RXMLToolsAgent(R2RAgent):
             return
 
         message = response.choices[0].message
+        finish_reason = response.choices[0].finish_reason
+
         if not message.content:
             # If there's no content, let the parent class handle the normal tool_calls flow
             return await super().process_llm_response(
@@ -1145,9 +1169,17 @@ class R2RXMLToolsAgent(R2RAgent):
 
         # Get the response content
         content = message.content
+        print("raw content = ", content)
 
-        if not content.startswith(
-            "<"
+        # HACK for gemini
+        content = content.replace("```action", "")
+        content = content.replace("```tool_code", "")
+        content = content.replace("```", "")
+
+        print("clea ned content = ", content)
+        if (
+            not content.startswith("<")
+            and "deepseek" in self.rag_generation_config.model
         ):  # HACK - fix issues with adding `<think>` to the beginning
             content = "<think>" + content
 
@@ -1184,6 +1216,7 @@ class R2RXMLToolsAgent(R2RAgent):
                                     )
                                 )
 
+                                # Add tool result to XML
                                 xml_toolcalls += (
                                     f"<ToolCall>"
                                     f"<Name>{tool_name}</Name>"
@@ -1193,27 +1226,37 @@ class R2RXMLToolsAgent(R2RAgent):
                                 )
 
                             except Exception as e:
-                                pass
-                xml_toolcalls += "</ToolCalls>"
-                pre_action_text = content[: content.find(action_block)]
-                post_action_text = content[
-                    content.find(action_block) + len(action_block) :
-                ]
-                iteration_text = (
-                    pre_action_text + xml_toolcalls + post_action_text
-                )
+                                logger.error(f"Error in tool call: {str(e)}")
+                                # Add error to XML
+                                xml_toolcalls += (
+                                    f"<ToolCall>"
+                                    f"<Name>{tool_name}</Name>"
+                                    f"<Parameters>{json.dumps(tool_params)}</Parameters>"
+                                    f"<Result>Error: {str(e)}</Result>"
+                                    f"</ToolCall>"
+                                )
 
-                # Create the final clean assistant message
-                await self.conversation.add_message(
-                    Message(role="assistant", content=iteration_text)
-                )
-            else:
-                # Create the final clean assistant message
-                await self.conversation.add_message(
-                    Message(role="assistant", content=content)
-                )
+            xml_toolcalls += "</ToolCalls>"
+            pre_action_text = content[: content.find(action_block)]
+            post_action_text = content[
+                content.find(action_block) + len(action_block) :
+            ]
+            iteration_text = pre_action_text + xml_toolcalls + post_action_text
 
-        self._completed = True
+            # Create the assistant message
+            await self.conversation.add_message(
+                Message(role="assistant", content=iteration_text)
+            )
+        else:
+            # Create an assistant message with the content as-is
+            await self.conversation.add_message(
+                Message(role="assistant", content=content)
+            )
+
+        # Only mark as completed if the finish_reason is "stop" or there are no action calls
+        # This allows the agent to continue the conversation when tool calls are processed
+        if finish_reason == "stop":
+            self._completed = True
 
     def _parse_single_tool_call(
         self, toolcall_text: str

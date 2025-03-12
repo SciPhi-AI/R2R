@@ -259,7 +259,56 @@ class OpenAICompletionProvider(CompletionProvider):
                     "No valid async client available for model prefix"
                 )
 
+    def _process_messages_with_images(
+        self, messages: list[dict]
+    ) -> list[dict]:
+        """Process messages that may contain image_url or image_data fields."""
+        processed_messages = []
+
+        for msg in messages:
+            if msg.get("role") == "system":
+                # System messages don't support content arrays in OpenAI
+                processed_messages.append(msg)
+                continue
+
+            # Check if the message contains image data
+            image_url = msg.pop("image_url", None)
+            image_data = msg.pop("image_data", None)
+            content = msg.get("content")
+
+            if image_url or image_data:
+                # Convert to content array format
+                new_content = []
+
+                # Add image content
+                if image_url:
+                    new_content.append(
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    )
+                elif image_data:
+                    # OpenAI expects base64 images in data URL format
+                    media_type = image_data.get("media_type", "image/jpeg")
+                    data = image_data.get("data", "")
+                    data_url = f"data:{media_type};base64,{data}"
+                    new_content.append(
+                        {"type": "image_url", "image_url": {"url": data_url}}
+                    )
+
+                # Add text content if present
+                if content:
+                    new_content.append({"type": "text", "text": content})
+
+                # Update the message
+                new_msg = dict(msg)
+                new_msg["content"] = new_content
+                processed_messages.append(new_msg)
+            else:
+                processed_messages.append(msg)
+
+        return processed_messages
+
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
+        # Keep existing implementation...
         args = {
             "model": generation_config.model,
             "stream": generation_config.stream,
@@ -291,14 +340,37 @@ class OpenAICompletionProvider(CompletionProvider):
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
 
+        # Process messages with images
+        processed_messages = self._process_messages_with_images(messages)
+
         args = self._get_base_args(generation_config)
         client, model_name = self._get_async_client_and_model(args["model"])
         args["model"] = model_name
-        args["messages"] = messages
+        args["messages"] = processed_messages
         args = {**args, **kwargs}
+
+        # Check if we're using a vision-capable model when images are present
+        contains_images = any(
+            isinstance(msg.get("content"), list)
+            and any(
+                item.get("type") == "image_url"
+                for item in msg.get("content", [])
+            )
+            for msg in processed_messages
+        )
+
+        if contains_images:
+            vision_models = ["gpt-4-vision", "gpt-4o"]
+            if not any(
+                vision_model in model_name for vision_model in vision_models
+            ):
+                logger.warning(
+                    f"Using model {model_name} with images, but it may not support vision"
+                )
+
         logger.debug(f"Executing async task with args: {args}")
         try:
-            # For Azure Foundry, use the `complete` method; otherwise, use the OpenAI-style method.
+            # Same as before...
             if client == self.async_azure_foundry_client:
                 args.pop("model")
                 response = await client.complete(**args)
@@ -308,6 +380,10 @@ class OpenAICompletionProvider(CompletionProvider):
             return response
         except Exception as e:
             logger.error(f"Async task execution failed: {str(e)}")
+            # HACK: print the exception to the console for debugging
+            # if "maximum context length" in e["error"]["message"]:
+            print("messages = ", messages)
+
             raise
 
     def _execute_task_sync(self, task: dict[str, Any]):
@@ -315,15 +391,37 @@ class OpenAICompletionProvider(CompletionProvider):
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
 
+        # Process messages with images
+        processed_messages = self._process_messages_with_images(messages)
+
         args = self._get_base_args(generation_config)
         client, model_name = self._get_client_and_model(args["model"])
         args["model"] = model_name
-        args["messages"] = messages
+        args["messages"] = processed_messages
         args = {**args, **kwargs}
+
+        # Same vision model check as in async version
+        contains_images = any(
+            isinstance(msg.get("content"), list)
+            and any(
+                item.get("type") == "image_url"
+                for item in msg.get("content", [])
+            )
+            for msg in processed_messages
+        )
+
+        if contains_images:
+            vision_models = ["gpt-4-vision", "gpt-4o"]
+            if not any(
+                vision_model in model_name for vision_model in vision_models
+            ):
+                logger.warning(
+                    f"Using model {model_name} with images, but it may not support vision"
+                )
 
         logger.debug(f"Executing sync task with args: {args}")
         try:
-            # For Azure Foundry, use `complete`; otherwise, use the standard method.
+            # Same as before...
             if client == self.azure_foundry_client:
                 response = client.complete(**args)
             else:
