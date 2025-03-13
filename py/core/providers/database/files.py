@@ -217,7 +217,7 @@ class PostgresFilesHandler(Handler):
         async with conn.transaction():
             try:
                 lo_exists = await conn.fetchval(
-                    "SELECT EXISTS(SELECT 1 FROM pg_largeobject WHERE loid = $1)",
+                    "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_largeobject_metadata WHERE oid = $1);",
                     oid,
                 )
                 if not lo_exists:
