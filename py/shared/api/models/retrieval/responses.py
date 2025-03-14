@@ -193,10 +193,14 @@ class MessageDelta(BaseModel):
     payload: DeltaPayload
 
 
+class Delta(BaseModel):
+    content: list[MessageDelta]
+
+
 class MessageData(BaseModel):
     id: str
     object: str
-    delta: dict[str, list[MessageDelta]]  # This reflects your nested structure
+    delta: Delta
 
 
 class MessageEvent(SSEEventBase):
@@ -208,11 +212,6 @@ class MessageEvent(SSEEventBase):
 class CitationData(BaseModel):
     id: str
     object: str
-    raw_index: Optional[int] = None
-    new_index: Optional[int] = None
-    agg_index: Optional[int] = None
-    source_type: Optional[str] = None
-    source_title: Optional[str] = None
 
     class Config:
         populate_by_name = True
@@ -267,7 +266,7 @@ class UnknownEvent(SSEEventBase):
 class ThinkingData(BaseModel):
     id: str
     object: str
-    delta: dict[str, list[MessageDelta]]
+    delta: Delta
 
 
 class ThinkingEvent(SSEEventBase):

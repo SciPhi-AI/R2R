@@ -17,7 +17,7 @@ from core.base.abstractions import (
     WebPageSearchResult,
     WebSearchResult,
 )
-from core.base.agent import AgentConfig, Tool
+from core.base.agent import Tool
 from core.base.providers import DatabaseProvider
 from core.providers import (
     AnthropicCompletionProvider,
@@ -33,6 +33,8 @@ from core.utils import (
     generate_id,
     num_tokens,
 )
+
+from ..base.agent.agent import RAGAgentConfig
 
 # Import the base classes from the refactored base file
 from .base import (
@@ -77,16 +79,16 @@ class RAGAgentMixin:
 
     def _register_tools(self):
         """
-        Called by the base R2RAgent to register all requested tools from self.config.tools.
+        Called by the base R2RAgent to register all requested tools from self.config.rag_tools.
         """
-        if not self.config.tools:
+        if not self.config.rag_tools:
             return
 
-        for tool_name in set(self.config.tools):
-            if tool_name == "content":
+        for tool_name in set(self.config.rag_tools):
+            if tool_name == "get_file_content":
                 self._tools.append(self.content())
-            elif tool_name == "firecrawl_scrape":
-                self._tools.append(self.firecrawl_scrape())
+            elif tool_name == "web_scrape":
+                self._tools.append(self.web_scrape())
             elif tool_name == "search_file_knowledge":
                 self._tools.append(self.search_file_knowledge())
             elif tool_name == "search_file_descriptions":
@@ -94,7 +96,8 @@ class RAGAgentMixin:
             elif tool_name == "web_search":
                 self._tools.append(self.web_search())
             else:
-                raise ValueError(f"Unsupported tool name: {tool_name}")
+                raise ValueError(f"Unknown tool requested: {tool_name}")
+        logger.debug(f"Registered {len(self._tools)} RAG tools.")
 
     # Local Search Tool
     def search_file_knowledge(self) -> Tool:
@@ -382,19 +385,19 @@ class RAGAgentMixin:
         else:
             return context[: int(frac_to_return * len(context))]
 
-    def firecrawl_scrape(self) -> Tool:
+    def web_scrape(self) -> Tool:
         """
         A new Tool that uses Firecrawl to scrape a single URL and return
         its contents in an LLM-friendly format (e.g. markdown).
         """
         return Tool(
-            name="firecrawl_scrape",
+            name="web_scrape",
             description=(
                 "Use Firecrawl to scrape a single webpage and retrieve its contents "
                 "as clean markdown. Useful when you need the entire body of a page, "
                 "not just a quick snippet or standard web search result."
             ),
-            results_function=self._firecrawl_scrape_function,
+            results_function=self._web_scrape_function,
             llm_format_function=self.format_search_results_for_llm,
             parameters={
                 "type": "object",
@@ -411,7 +414,7 @@ class RAGAgentMixin:
             },
         )
 
-    async def _firecrawl_scrape_function(
+    async def _web_scrape_function(
         self,
         url: str,
         *args,
@@ -504,7 +507,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
-        config: AgentConfig,
+        config: RAGAgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         knowledge_search_method: Callable,
@@ -549,7 +552,7 @@ class R2RXMLToolsRAGAgent(RAGAgentMixin, R2RXMLToolsAgent):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
-        config: AgentConfig,
+        config: RAGAgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         knowledge_search_method: Callable,
@@ -595,7 +598,7 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
-        config: AgentConfig,
+        config: RAGAgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         knowledge_search_method: Callable,
@@ -651,7 +654,7 @@ class R2RXMLToolsStreamingRAGAgent(RAGAgentMixin, R2RXMLStreamingAgent):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
-        config: AgentConfig,
+        config: RAGAgentConfig,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
         knowledge_search_method: Callable,

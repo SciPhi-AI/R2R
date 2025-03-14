@@ -197,7 +197,10 @@ export interface GenerationConfig {
   tools?: Array<Record<string, any>>;
   addGenerationKwargs?: Record<string, any>;
   apiBase?: string;
-  responseFormat?: string;
+  responseFormat?: Record<string, any> | object;
+  extendedThinking?: boolean;
+  thinkingBudget?: number;
+  reasoningEffort?: string;
 }
 
 export interface HybridSearchSettings {

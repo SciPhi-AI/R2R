@@ -1,7 +1,4 @@
-![Screenshot 2025-01-30 at 5 11 34 PM](https://github.com/user-attachments/assets/16d32b31-4c7d-4e84-be19-24574b33527b)
-
-
-
+![R2R Logo](https://github.com/user-attachments/assets/16d32b31-4c7d-4e84-be19-24574b33527b)
 
 <h3 align="center">
 The most advanced AI retrieval system.
@@ -12,11 +9,8 @@ Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
 <div align="center">
    <div>
       <h3>
-         <a href="https://app.sciphi.ai">
-            <strong>Sign up</strong>
-         </a> ·
-         <a href="https://r2r-docs.sciphi.ai/self-hosting/installation/overview">
-            <strong>Self Host</strong>
+         <a href="https://app.sciphi.ai"><strong>Sign up</strong></a> ·
+         <a href="https://r2r-docs.sciphi.ai/self-hosting/installation/overview"><strong>Self Host</strong></a>
       </h3>
    </div>
    <div>
@@ -32,89 +26,109 @@ Agentic Retrieval-Augmented Generation (RAG) with a RESTful API.
     <a href="https://github.com/SciPhi-AI"><img src="https://img.shields.io/github/stars/SciPhi-AI/R2R" alt="Github Stars"></a>
     <a href="https://github.com/SciPhi-AI/R2R/pulse"><img src="https://img.shields.io/github/commit-activity/w/SciPhi-AI/R2R" alt="Commits-per-week"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-purple.svg" alt="License: MIT"></a>
-    <a href="https://gurubase.io/g/r2r"><img src="https://img.shields.io/badge/Gurubase-Ask%20R2R%20Guru-006BFF" alt="Gurubase: R2R Guru"></a>
   </p>
 </div>
 
 # About
-R2R (Reason to Retrieve) is the most advanced AI retrieval system, supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a containerized RESTful API, R2R offers multimodal content ingestion, hybrid search functionality, knowledge graphs, and comprehensive user and document management.
+R2R (Reason to Retrieve) is an advanced AI retrieval system supporting Retrieval-Augmented Generation (RAG) with production-ready features. Built around a RESTful API, R2R offers multimodal content ingestion, hybrid search, knowledge graphs, and comprehensive document management.
 
-For a more complete view of R2R, check out the [full documentation](https://r2r-docs.sciphi.ai/).
-
+R2R also includes a **Deep Research API**, a multi-step reasoning system that fetches relevant data from your knowledgebase and/or the internet to deliver richer, context-aware answers for complex queries.
 
 ## Getting Started
 
-### [SciPhi Cloud](https://app.sciphi.ai)
+### Cloud Option: [SciPhi Cloud](https://app.sciphi.ai)
+Access R2R through SciPhi's managed deployment with a generous free tier. No credit card required.
 
-Access R2R through a deployment managed by the SciPhi team, which includes a generous free-tier. No credit card required.
-
-## Local
-
-Install and run R2R:
+### Self-Hosting Option
 
 ```bash
-# Install the R2R package
+# Quick install and run in light mode
 pip install r2r
-
-# Set necessary environment variables
 export OPENAI_API_KEY=sk-...
-
-# Run R2R in `light` mode
 python -m r2r.serve
 
-# Alternatively, run R2R in `full` mode
-# git clone git@github.com:SciPhi-AI/R2R.git . && cd R2R
-# export OPENAI_API_KEY=sk-...
-# export R2R_CONFIG_NAME=full
-
+# Or run in full mode with Docker
+# git clone git@github.com:SciPhi-AI/R2R.git && cd R2R
+# export R2R_CONFIG_NAME=full OPENAI_API_KEY=sk-...
 # docker compose -f compose.full.yaml --profile postgres up -d
-# `--profile postgres` can be omitted when using external Postgres
+```
 
-# Refer to docs for local LLM setup - https://r2r-docs.sciphi.ai/self-hosting/local-rag
+For detailed self-hosting instructions, see the [self-hosting docs](https://r2r-docs.sciphi.ai/self-hosting/installation/overview).
+
+## Using the API
+
+### 1. Install SDK & Setup
+
+```bash
+# Install SDK
+pip install r2r  # Python
+# or
+npm i r2r-js    # JavaScript
+
+# Setup API key
+export R2R_API_KEY=pk_..sk_...  # Get from SciPhi Cloud dashboard
+```
+
+### 2. Client Initialization
+
+```python
+from r2r import R2RClient
+client = R2RClient()  # Use base_url=... for self-hosted
+```
+
+```javascript
+const { r2rClient } = require('r2r-js');
+const client = new r2rClient();  // Use baseURL=... for self-hosted
+```
+
+### 3. Document Operations
+
+```python
+# Ingest sample or your own document
+client.documents.create_sample(hi_res=True)
+# client.documents.create(file_path="/path/to/file")
+
+# List documents
+client.documents.list()
+```
+
+### 4. Search & RAG
+
+```python
+# Basic search
+results = client.retrieval.search(query="What is DeepSeek R1?")
+
+# RAG with citations
+response = client.retrieval.rag(query="What is DeepSeek R1?")
+
+# Agentic reasoning with RAG
+response = client.retrieval.agent(
+  message={"role":"user", "content": "What does deepseek r1 imply? Think about market, societal implications, and more."},
+  rag_generation_config={
+    "model"="anthropic/claude-3-7-sonnet-20250219",
+    "extended_thinking": True,
+    "thinking_budget": 4096,
+    "temperature": 1,
+    "top_p": None,
+    "max_tokens_to_sample": 16000,
+  },
+  mode="research" # for Deep Research style output
+)
 ```
 
 ## Key Features
 
-### Ingestion & Retrieval
+- **📁 Multimodal Ingestion**: Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more
+- **🔍 Hybrid Search**: Semantic + keyword search with reciprocal rank fusion
+- **🔗 Knowledge Graphs**: Automatic entity & relationship extraction
+- **🤖 Agentic RAG**: Reasoning agent integrated with retrieval
+- **🔐 User & Access Management**: Complete authentication & collection system
 
-- **📁 [Multimodal Ingestion](https://r2r-docs.sciphi.ai/self-hosting/configuration/ingestion)**
-  Parse `.txt`, `.pdf`, `.json`, `.png`, `.mp3`, and more.
-- **🔍 [Hybrid Search](https://r2r-docs.sciphi.ai/documentation/search-and-rag)**
-  Combine semantic and keyword search with reciprocal rank fusion for enhanced relevancy.
-- **🔗 [Knowledge Graphs](https://r2r-docs.sciphi.ai/cookbooks/graphs)**
-  Automatically extract entities and relationships to build knowledge graphs.
-- **🤖 [Agentic RAG](https://r2r-docs.sciphi.ai/documentation/retrieval/reasoning_agent)**
-  R2R's powerful reasoning agent integrated with RAG.
+## Community & Contributing
 
-
-### Application Layer
-
-- 💻 **[Web Development](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
-  Building web apps using R2R.
-- 🔐 **[User Auth](https://r2r-docs.sciphi.ai/documentation/user-auth)**
-  Authenticating users.
-- 📂 **[Collections](https://r2r-docs.sciphi.ai/self-hosting/collections)**
-  Document collections management.
-- 🌐 **[Web Application](https://r2r-docs.sciphi.ai/cookbooks/web-dev)**
-  Connecting with the R2R Application.
-
-### Self-Hosting
-
-- 🐋 **[Docker](/self-hosting/installation/full/docker)**
-  Use Docker to easily deploy the full R2R system into your local environment
-- 🧩 **[Configuration](https://r2r-docs.sciphi.ai/self-hosting/configuration/overview)**
-  Set up your application using intuitive configuration files.
-
-## Community
-
-[Join our Discord](https://discord.gg/p6KqD2kjtB) to get support and connect with both the R2R team and other developers in the community. Whether you're encountering issues, looking for advice on best practices, or just want to share your experiences, we're here to help.
-
-## Contributing
-
-We welcome contributions of all sizes! Here's how you can help:
-
-- Open a PR for new features, improvements, or better documentation.
-- Submit a [feature request](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) or [bug report](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
+- [Join our Discord](https://discord.gg/p6KqD2kjtB) for support and discussion
+- Submit [feature requests](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) or [bug reports](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
+- Open PRs for new features, improvements, or documentation
 
 ### Our Contributors
 <a href="https://github.com/SciPhi-AI/R2R/graphs/contributors">

@@ -8,6 +8,7 @@ from typing import AsyncGenerator, Optional, Tuple
 from core.base import AsyncSyncMeta, LLMChatCompletion, Message, syncable
 from core.base.agent import Agent, Conversation
 from core.utils import (
+    SearchResultsCollector,
     SSEFormatter,
     convert_nonserializable_objects,
     extract_citations,
@@ -38,6 +39,7 @@ def sync_wrapper(async_gen):
 
 class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
+        self.search_results_collector = SearchResultsCollector()
         super().__init__(*args, **kwargs)
         self._reset()
 
@@ -379,6 +381,9 @@ class R2RStreamingAgent(R2RAgent):
             for m in messages:
                 await self.conversation.add_message(m)
 
+        # Track all citations emitted during streaming for final persistence
+        self.streaming_citations = []
+
         async def sse_generator() -> AsyncGenerator[str, None]:
             announced_short_ids = set()
             pending_tool_calls = {}
@@ -434,16 +439,31 @@ class R2RStreamingAgent(R2RAgent):
                         if delta.content:
                             partial_text_buffer += delta.content
 
-                            # (a) Extract bracket references from the entire partial_text_buffer
+                            # (a) Now emit the newly streamed text as a "message" event
+                            async for line in SSEFormatter.yield_message_event(
+                                delta.content
+                            ):
+                                yield line
+
+                            # (b) Extract bracket references from the entire partial_text_buffer
                             #     so we find newly appeared short IDs
                             new_sids = extract_citations(partial_text_buffer)
                             for sid in new_sids:
                                 if sid not in announced_short_ids:
                                     announced_short_ids.add(sid)
                                     # SSE "citation"
-                                    citation_evt_payload = (
-                                        self._create_citation_payload(sid)
+                                    citation_evt_payload = self._create_citation_payload(
+                                        sid,
+                                        self.search_results_collector.find_by_short_id(
+                                            sid
+                                        ),
                                     )
+
+                                    # Store citations for final persistence
+                                    self.streaming_citations.append(
+                                        citation_evt_payload
+                                    )
+
                                     # Using SSEFormatter to yield a "citation" event
                                     async for (
                                         line
@@ -451,12 +471,6 @@ class R2RStreamingAgent(R2RAgent):
                                         citation_evt_payload
                                     ):
                                         yield line
-
-                            # (b) Now emit the newly streamed text as a "message" event
-                            async for line in SSEFormatter.yield_message_event(
-                                delta.content
-                            ):
-                                yield line
 
                         if delta.tool_calls:
                             for tc in delta.tool_calls:
@@ -538,17 +552,26 @@ class R2RStreamingAgent(R2RAgent):
                             # 6) The LLM is done. If we have any leftover partial text,
                             #    finalize it in the conversation
                             if partial_text_buffer:
+                                # Create the final message with metadata including citations
+                                final_message = Message(
+                                    role="assistant",
+                                    content=partial_text_buffer,
+                                    metadata={
+                                        "citations": self.streaming_citations
+                                    },
+                                )
+
+                                print("final_message = ", final_message)
+                                # Add it to the conversation
                                 await self.conversation.add_message(
-                                    Message(
-                                        role="assistant",
-                                        content=partial_text_buffer,
-                                    )
+                                    final_message
                                 )
 
                             # (a) Emit final answer SSE event
                             final_evt_payload = (
                                 self._create_final_answer_payload(
-                                    partial_text_buffer, announced_short_ids
+                                    partial_text_buffer,
+                                    self.streaming_citations,
                                 )
                             )
                             async for (
@@ -563,7 +586,6 @@ class R2RStreamingAgent(R2RAgent):
                             self._completed = True
                             break
 
-                # For R2RStreamingAgent, replace the code after the while loop:
                 # If we exit the while loop due to hitting max iterations
                 if not self._completed:
                     # Generate a summary using the LLM
@@ -577,17 +599,18 @@ class R2RStreamingAgent(R2RAgent):
                     ):
                         yield line
 
-                    # Add summary to conversation
+                    # Add summary to conversation with citations metadata
                     await self.conversation.add_message(
                         Message(
                             role="assistant",
                             content=summary,
+                            metadata={"citations": self.streaming_citations},
                         )
                     )
 
                     # Create and emit a final answer payload with the summary
                     final_evt_payload = self._create_final_answer_payload(
-                        summary, announced_short_ids
+                        summary, self.streaming_citations
                     )
                     async for line in SSEFormatter.yield_final_answer_event(
                         final_evt_payload
@@ -679,23 +702,31 @@ class R2RStreamingAgent(R2RAgent):
             "arguments": call_info["arguments"],
         }
 
-    def _create_citation_payload(self, short_id):
+    def _create_citation_payload(self, short_id, payload):
         """Create citation payload for a short ID"""
         # This will be overridden in RAG subclasses
+        # check if as_dict is on payload
+        if hasattr(payload, "as_dict"):
+            payload = payload.as_dict()
+        if hasattr(payload, "dict"):
+            payload = payload.dict
+        if hasattr(payload, "to_dict"):
+            payload = payload.to_dict()
+
         return {
-            "id": f"cit_{short_id}",
+            "id": f"{short_id}",
             "object": "citation",
-            "payload": {},  # Will be populated in RAG agents
+            "payload": payload,  # Will be populated in RAG agents
         }
 
-    def _create_final_answer_payload(self, answer_text, announced_short_ids):
+    def _create_final_answer_payload(self, answer_text, citations):
         """Create the final answer payload"""
         # This will be extended in RAG subclasses
         return {
             "id": "msg_final",
             "object": "agent.final_answer",
             "generated_answer": answer_text,
-            "citations": [],  # Will be populated in RAG agents
+            "citations": citations,
         }
 
 
@@ -847,8 +878,11 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                 if sid not in announced_short_ids:
                                     announced_short_ids.add(sid)
                                     # SSE "citation"
-                                    citation_evt_payload = (
-                                        self._create_citation_payload(sid)
+                                    citation_evt_payload = self._create_citation_payload(
+                                        sid,
+                                        self.search_results_collector.find_by_short_id(
+                                            sid
+                                        ),
                                     )
                                     # Using SSEFormatter to yield a "citation" event
                                     async for (
@@ -1017,7 +1051,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                     else:
                         # (a) Emit final answer SSE event
                         final_evt_payload = self._create_final_answer_payload(
-                            iteration_buffer, announced_short_ids
+                            iteration_buffer, self.streaming_citations
                         )
                         async for (
                             line
@@ -1054,7 +1088,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
 
                     # Create and emit a final answer payload with the summary
                     final_evt_payload = self._create_final_answer_payload(
-                        summary, announced_short_ids
+                        summary, []  # TODO - propagate citations here
                     )
                     async for line in SSEFormatter.yield_final_answer_event(
                         final_evt_payload

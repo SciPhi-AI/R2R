@@ -29,9 +29,12 @@ planning_llm = "openai/o3-mini"
 
 
 [agent]
-agent_static_prompt = "static_rag_agent"
-agent_dynamic_prompt = "dynamic_rag_agent"
-tools = ["search_file_descriptions", "search_file_knowledge", "content", "web_search", "firecrawl_scrape"]
+rag_agent_static_prompt = "static_rag_agent"
+rag_agent_dynamic_prompt = "dynamic_rag_agent"
+# The following tools are available to the `rag` agent
+rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_content"] # can add  "web_search" | "web_scrape"
+# The following tools are available to the `research` agent
+research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
 provider = "r2r"

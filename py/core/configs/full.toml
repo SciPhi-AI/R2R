@@ -1,5 +1,5 @@
 [completion]
-provider = "litellm"
+provider = "r2r"
 concurrent_request_limit = 128
 
 [database]

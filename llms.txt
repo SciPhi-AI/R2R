@@ -762,7 +762,7 @@ semantic_similarity_threshold = 0.7
 generation_config = { model = "openai/gpt-4o-mini" }
 
 [agent]
-agent_static_prompt = "rag_agent"
+rag_agent_static_prompt = "rag_agent"
 tools = ["search_file_knowledge", "web_search"]
 
 [database.graph_creation_settings]
@@ -2265,7 +2265,7 @@ The RAG agent is configured through the `r2r.toml` file. By default, it uses loc
 
 ```toml
 [agent]
-agent_static_prompt = "rag_agent"
+rag_agent_static_prompt = "rag_agent"
 tools = ["search_file_knowledge"]
 ```
 
@@ -2273,7 +2273,7 @@ tools = ["search_file_knowledge"]
 
 ```toml
 [agent]
-agent_static_prompt = "rag_agent"
+rag_agent_static_prompt = "rag_agent"
 tools = ["search_file_knowledge", "web_search"]
 ```
 
@@ -11005,7 +11005,7 @@ default_max_chunks_per_user = 10000
 default_max_collections_per_user = 10
 
 [agent]
-agent_static_prompt = "rag_agent"
+rag_agent_static_prompt = "rag_agent"
 tools = ["search_file_knowledge"]
 
   [agent.generation_config]

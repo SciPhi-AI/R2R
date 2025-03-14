@@ -1,5 +1,7 @@
 static_research_agent:
   template: >-
+    # You are a helpful agent that can search for information, the date is {date}.
+
     # Comprehensive Strategic Analysis Report
 
     ## Objective

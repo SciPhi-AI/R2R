@@ -31,6 +31,9 @@ logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
 __all__ = [
+    "ThinkingEvent",
+    "ToolCallEvent",
+    "ToolResultEvent",
     "CitationEvent",
     "Citation",
     "R2RAgent",

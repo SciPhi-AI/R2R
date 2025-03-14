@@ -11,8 +11,11 @@ from fastapi import HTTPException
 from core import (
     R2RRAGAgent,
     R2RStreamingRAGAgent,
+    R2RStreamingResearchAgent,
     R2RXMLToolsRAGAgent,
+    R2RXMLToolsResearchAgent,
     R2RXMLToolsStreamingRAGAgent,
+    R2RXMLToolsStreamingResearchAgent,
 )
 from core.agent.research import R2RResearchAgent
 from core.base import (
@@ -29,6 +32,7 @@ from core.base import (
     Message,
     R2RException,
     SearchSettings,
+    WebSearchResult,
     format_search_results_for_llm,
 )
 from core.base.api.models import RAGResponse, User
@@ -47,6 +51,190 @@ from ..config import R2RConfig
 from .base import Service
 
 logger = logging.getLogger()
+
+
+class AgentFactory:
+    """
+    Factory class that creates appropriate agent instances based on mode,
+    model type, and streaming preferences.
+    """
+
+    @staticmethod
+    def create_agent(
+        mode: Literal["rag", "research"],
+        database_provider,
+        llm_provider,
+        config,  # : AgentConfig
+        search_settings,  # : SearchSettings
+        generation_config,  #: GenerationConfig
+        app_config,  #: AppConfig
+        knowledge_search_method,
+        content_method,
+        file_search_method,
+        max_tool_context_length: int = 32_768,
+        rag_tools: Optional[list[str]] = None,
+        research_tools: Optional[list[str]] = None,
+        tools: Optional[list[str]] = None,  # For backward compatibility
+    ):
+        """
+        Creates and returns the appropriate agent based on provided parameters.
+
+        Args:
+            mode: Either "rag" or "research" to determine agent type
+            database_provider: Provider for database operations
+            llm_provider: Provider for LLM operations
+            config: Agent configuration
+            search_settings: Search settings for retrieval
+            generation_config: Generation configuration with LLM parameters
+            app_config: Application configuration
+            knowledge_search_method: Method for knowledge search
+            content_method: Method for content retrieval
+            file_search_method: Method for file search
+            max_tool_context_length: Maximum context length for tools
+            rag_tools: Tools specifically for RAG mode
+            research_tools: Tools specifically for Research mode
+            tools: Deprecated backward compatibility parameter
+
+        Returns:
+            An appropriate agent instance
+        """
+        # Create a deep copy of the config to avoid modifying the original
+        agent_config = deepcopy(config)
+
+        # Handle tool specifications based on mode
+        if mode == "rag":
+            # For RAG mode, prioritize explicitly passed rag_tools, then tools, then config defaults
+            if rag_tools:
+                agent_config.rag_tools = rag_tools
+            elif tools:  # Backward compatibility
+                agent_config.rag_tools = tools
+            # If neither was provided, the config's default rag_tools will be used
+        elif mode == "research":
+            # For Research mode, prioritize explicitly passed research_tools, then tools, then config defaults
+            if research_tools:
+                agent_config.research_tools = research_tools
+            elif tools:  # Backward compatibility
+                agent_config.research_tools = tools
+            # If neither was provided, the config's default research_tools will be used
+
+        # Determine if we need XML-based tools based on model
+        use_xml_format = False
+        if generation_config.model:
+            model_str = generation_config.model.lower()
+            use_xml_format = "deepseek" in model_str or "gemini" in model_str
+
+        # Set streaming mode based on generation config
+        is_streaming = generation_config.stream
+
+        # Create the appropriate agent based on all factors
+        if mode == "rag":
+            # RAG mode agents
+            if is_streaming:
+                if use_xml_format:
+                    return R2RXMLToolsStreamingRAGAgent(
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+                else:
+                    return R2RStreamingRAGAgent(
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+            else:
+                if use_xml_format:
+                    return R2RXMLToolsRAGAgent(
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+                else:
+                    return R2RRAGAgent(
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+        else:
+            # Research mode agents
+            if is_streaming:
+                if use_xml_format:
+                    return R2RXMLToolsStreamingResearchAgent(
+                        app_config=app_config,
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+                else:
+                    return R2RStreamingResearchAgent(
+                        app_config=app_config,
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+            else:
+                if use_xml_format:
+                    return R2RXMLToolsResearchAgent(
+                        app_config=app_config,
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+                else:
+                    return R2RResearchAgent(
+                        app_config=app_config,
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
 
 
 class RetrievalService(Service):
@@ -777,6 +965,7 @@ class RetrievalService(Service):
         search_settings: SearchSettings = SearchSettings(),
         system_prompt_name: str | None = None,
         task_prompt_name: str | None = None,
+        include_web_search: bool = False,
         **kwargs,
     ) -> Any:
         """
@@ -796,6 +985,21 @@ class RetrievalService(Service):
         try:
             # 2) Perform search => aggregated_results
             aggregated_results = await self.search(query, search_settings)
+            print("include_web_search = ", include_web_search)
+            # 3) Optionally add web search results if flag is enabled
+            if include_web_search:
+                web_results = await self._perform_web_search(query)
+                # Merge web search results with existing aggregated results
+                if web_results and web_results.web_search_results:
+                    if not aggregated_results.web_search_results:
+                        aggregated_results.web_search_results = (
+                            web_results.web_search_results
+                        )
+                    else:
+                        aggregated_results.web_search_results.extend(
+                            web_results.web_search_results
+                        )
+            print("aggregated_results = ", aggregated_results)
 
             # 3) Build context from aggregator
             collector = SearchResultsCollector()
@@ -807,13 +1011,13 @@ class RetrievalService(Service):
             # 4) Prepare system+task messages
             system_prompt_name = system_prompt_name or "system"
             task_prompt_name = task_prompt_name or "rag"
-            task_prompt_override = kwargs.get("task_prompt_override")
+            task_prompt = kwargs.get("task_prompt")
 
             messages = await self.providers.database.prompts_handler.get_message_payload(
                 system_prompt_name=system_prompt_name,
                 task_prompt_name=task_prompt_name,
                 task_inputs={"query": query, "context": context_str},
-                task_prompt_override=task_prompt_override,
+                task_prompt=task_prompt,
             )
 
             # 5) Check streaming vs. non-streaming
@@ -839,7 +1043,7 @@ class RetrievalService(Service):
                     search_results=aggregated_results,
                     citations=[
                         {
-                            "id": f"cit_{sid}",
+                            "id": f"{sid}",
                             "object": "citation",
                             "payload": self._find_item_by_shortid(
                                 sid, collector
@@ -909,14 +1113,26 @@ class RetrievalService(Service):
                                 for sid in found_ids:
                                     if sid not in announced_ids:
                                         announced_ids.add(sid)
+                                        payload = self._find_item_by_shortid(
+                                            sid, collector
+                                        )
+                                        # citations.append(citation_payload)
+                                        """Create citation payload for a short ID"""
+                                        # This will be overridden in RAG subclasses
+                                        # check if as_dict is on payload
+                                        if hasattr(payload, "as_dict"):
+                                            payload = payload.as_dict()
+                                        if hasattr(payload, "dict"):
+                                            payload = payload.dict
+                                        if hasattr(payload, "to_dict"):
+                                            payload = payload.to_dict()
+
                                         citation_payload = {
-                                            "id": f"cit_{sid}",
-                                            "short_id": sid,
-                                            "payload": self._find_item_by_shortid(
-                                                sid, collector
-                                            ),
+                                            "id": f"{sid}",
+                                            "object": "citation",
+                                            "payload": payload,  # Will be populated in RAG agents
                                         }
-                                        citations.append(citation_payload)
+
                                         # Emit citation
                                         async for (
                                             line
@@ -1000,18 +1216,43 @@ class RetrievalService(Service):
     async def agent(
         self,
         rag_generation_config: GenerationConfig,
+        rag_tools: Optional[list[str]] = None,
+        tools: Optional[list[str]] = None,  # backward compatibility
         search_settings: SearchSettings = SearchSettings(),
-        task_prompt_override: Optional[str] = None,
+        task_prompt: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         conversation_id: Optional[UUID] = None,
         message: Optional[Message] = None,
         messages: Optional[list[Message]] = None,
         use_system_context: bool = False,
         max_tool_context_length: int = 32_768,
-        override_tools: Optional[list[dict[str, Any]]] = None,
+        research_tools: Optional[list[str]] = None,
+        research_generation_config: Optional[GenerationConfig] = None,
         mode: Optional[Literal["rag", "research"]] = "rag",
     ):
+        """
+        Engage with an intelligent agent for information retrieval, analysis, and research.
+
+        Args:
+            rag_generation_config: Configuration for RAG mode generation
+            search_settings: Search configuration for retrieving context
+            task_prompt: Optional custom prompt override
+            include_title_if_available: Whether to include document titles
+            conversation_id: Optional conversation ID for continuity
+            message: Current message to process
+            messages: List of messages (deprecated)
+            use_system_context: Whether to use extended prompt
+            max_tool_context_length: Maximum context length for tools
+            rag_tools: List of tools for RAG mode
+            research_tools: List of tools for Research mode
+            research_generation_config: Configuration for Research mode generation
+            mode: Either "rag" or "research"
+
+        Returns:
+            Agent response with messages and conversation ID
+        """
         try:
+            # Validate message inputs
             if message and messages:
                 raise R2RException(
                     status_code=400,
@@ -1044,30 +1285,53 @@ class RetrievalService(Service):
             # Ensure 'messages' is a list of Message instances
             if messages:
                 processed_messages = []
-                for message in messages:
-                    if isinstance(message, Message):
-                        processed_messages.append(message)
-                    elif hasattr(message, "dict"):
+                for msg in messages:
+                    if isinstance(msg, Message):
+                        processed_messages.append(msg)
+                    elif hasattr(msg, "dict"):
                         processed_messages.append(
-                            Message.from_dict(message.dict())
+                            Message.from_dict(msg.dict())
                         )
-                    elif isinstance(message, dict):
-                        processed_messages.append(Message.from_dict(message))
+                    elif isinstance(msg, dict):
+                        processed_messages.append(Message.from_dict(msg))
                     else:
-                        processed_messages.append(
-                            Message.from_dict(str(message))
-                        )
+                        processed_messages.append(Message.from_dict(str(msg)))
                 messages = processed_messages
             else:
                 messages = []
+
+            # Validate and process mode-specific configurations
+            if mode == "rag" and research_tools:
+                logger.warning(
+                    "research_tools provided but mode is 'rag'. These tools will be ignored."
+                )
+                research_tools = None
+
+            # Determine effective generation config based on mode
+            effective_generation_config = rag_generation_config
+            if mode == "research" and research_generation_config:
+                effective_generation_config = research_generation_config
+
+            # Set appropriate LLM model based on mode if not explicitly specified
+            if "model" not in effective_generation_config.__fields_set__:
+                if mode == "rag":
+                    effective_generation_config.model = (
+                        self.config.app.rag_llm or self.config.app.quality_llm
+                    )
+                elif mode == "research":
+                    effective_generation_config.model = (
+                        self.config.app.planning_llm
+                    )
 
             # Transform UUID filters to strings
             for filter_key, value in search_settings.filters.items():
                 if isinstance(value, UUID):
                     search_settings.filters[filter_key] = str(value)
 
+            # Process conversation data
             ids = []
             needs_conversation_name = False
+
             if conversation_id:  # Fetch the existing conversation
                 try:
                     conversation_messages = await self.providers.database.conversations_handler.get_conversation(
@@ -1110,6 +1374,7 @@ class RetrievalService(Service):
             logger.debug(
                 f"Running the agent with conversation_id = {conversation_id} and message = {current_message}"
             )
+
             # Save the new message to the conversation
             parent_id = ids[-1] if ids else None
             message_response = await self.providers.database.conversations_handler.add_message(
@@ -1122,74 +1387,72 @@ class RetrievalService(Service):
                 message_response.id if message_response is not None else None
             )
 
-            # -- Step 1: parse the filter dict from search_settings
-            #    (assuming search_settings.filters is the dict you want to parse)
+            # Extract filter information from search settings
             filter_user_id, filter_collection_ids = (
                 self._parse_user_and_collection_filters(
                     search_settings.filters
                 )
             )
 
-            system_instruction = None
-
-            if use_system_context and task_prompt_override:
+            # Validate system instruction configuration
+            if use_system_context and task_prompt:
                 raise R2RException(
                     status_code=400,
-                    message="Both use_system_context and task_prompt_override cannot be True at the same time",
+                    message="Both use_system_context and task_prompt cannot be True at the same time",
                 )
 
-            # STEP 1: Determine the final system prompt content
-            if task_prompt_override:
-                system_instruction = task_prompt_override
+            # Build the system instruction
+            if task_prompt:
+                system_instruction = task_prompt
             else:
                 system_instruction = (
                     await self._build_aware_system_instruction(
                         max_tool_context_length=max_tool_context_length,
                         filter_user_id=filter_user_id,
                         filter_collection_ids=filter_collection_ids,
-                        model=rag_generation_config.model,
+                        model=effective_generation_config.model,
                         use_system_context=use_system_context,
                         mode=mode,
                     )
                 )
 
+            print("self.config.agent = ", self.config.agent)
+            # Configure agent with appropriate tools
             agent_config = deepcopy(self.config.agent)
-            agent_config.tools = override_tools or agent_config.tools
+            if mode == "rag":
+                # Use provided RAG tools or default from config
+                agent_config.rag_tools = (
+                    rag_tools or tools or self.config.agent.rag_tools
+                )
+            else:  # research mode
+                # Use provided Research tools or default from config
+                agent_config.research_tools = (
+                    research_tools or tools or self.config.agent.research_tools
+                )
 
-            if rag_generation_config.stream:
+            # Create the agent using our factory
+            agent = AgentFactory.create_agent(
+                mode=mode,
+                database_provider=self.providers.database,
+                llm_provider=self.providers.llm,
+                config=agent_config,
+                search_settings=search_settings,
+                generation_config=effective_generation_config,
+                app_config=self.config.app,
+                knowledge_search_method=self.search,
+                content_method=self.get_context,
+                file_search_method=self.search_documents,
+                max_tool_context_length=max_tool_context_length,
+                rag_tools=rag_tools,
+                research_tools=research_tools,
+                tools=tools,  # Backward compatibility
+            )
+
+            # Handle streaming vs. non-streaming response
+            if effective_generation_config.stream:
 
                 async def stream_response():
                     try:
-                        if (
-                            "openai" in rag_generation_config.model.lower()
-                            or "anthropic"
-                            in rag_generation_config.model.lower()
-                        ):
-                            agent = R2RStreamingRAGAgent(
-                                database_provider=self.providers.database,
-                                llm_provider=self.providers.llm,
-                                config=agent_config,
-                                search_settings=search_settings,
-                                rag_generation_config=rag_generation_config,
-                                max_tool_context_length=max_tool_context_length,
-                                knowledge_search_method=self.search,
-                                content_method=self.get_context,
-                                file_search_method=self.search_documents,
-                            )
-                        else:
-                            agent_config.include_tools = False
-                            agent = R2RXMLToolsStreamingRAGAgent(
-                                database_provider=self.providers.database,
-                                llm_provider=self.providers.llm,
-                                config=agent_config,
-                                search_settings=search_settings,
-                                rag_generation_config=rag_generation_config,
-                                max_tool_context_length=max_tool_context_length,
-                                knowledge_search_method=self.search,
-                                content_method=self.get_context,
-                                file_search_method=self.search_documents,
-                            )
-
                         async for chunk in agent.arun(
                             messages=messages,
                             system_instruction=system_instruction,
@@ -1200,6 +1463,7 @@ class RetrievalService(Service):
                         logger.error(f"Error streaming agent output: {e}")
                         raise e
                     finally:
+                        # Persist conversation data
                         msgs = [
                             msg.to_dict()
                             for msg in agent.conversation.messages
@@ -1215,7 +1479,8 @@ class RetrievalService(Service):
                                 "output_tokens": output_tokens,
                             },
                         )
-                        # TODO  - no copy pasta!
+
+                        # Generate conversation name if needed
                         if needs_conversation_name:
                             try:
                                 prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
@@ -1246,162 +1511,111 @@ class RetrievalService(Service):
                                 )
 
                 return stream_response()
+            else:
+                # Non-streaming path
+                results = await agent.arun(
+                    messages=messages,
+                    system_instruction=system_instruction,
+                    include_title_if_available=include_title_if_available,
+                )
 
-            # For non-streaming mode, select the appropriate agent type based on model
-            if (
-                "openai" in rag_generation_config.model.lower()
-                or "anthropic" in rag_generation_config.model.lower()
-            ):
-                if mode == "rag":
-                    agent = R2RRAGAgent(
-                        database_provider=self.providers.database,
-                        llm_provider=self.providers.llm,
-                        config=agent_config,
-                        search_settings=search_settings,
-                        rag_generation_config=rag_generation_config,
-                        max_tool_context_length=max_tool_context_length,
-                        knowledge_search_method=self.search,
-                        content_method=self.get_context,
-                        file_search_method=self.search_documents,
-                    )
+                # Process the agent results
+                if isinstance(results[-1], dict):
+                    assistant_message = Message(**results[-1])
+                elif isinstance(results[-1], Message):
+                    assistant_message = results[-1]
                 else:
-                    # Use the standard RAG agent for other models
-                    agent = R2RResearchAgent(
-                        app_config=self.config.app,
-                        database_provider=self.providers.database,
-                        llm_provider=self.providers.llm,
-                        config=agent_config,
-                        search_settings=search_settings,
-                        rag_generation_config=rag_generation_config,
-                        max_tool_context_length=max_tool_context_length,
-                        knowledge_search_method=self.search,
-                        content_method=self.get_context,
-                        file_search_method=self.search_documents,
+                    assistant_message = Message(
+                        role="assistant", content=str(results[-1])
                     )
-            else:
-                if mode != "rag":
-                    raise R2RException(
-                        status_code=400,
-                        message="Research mode is only supported for OpenAI and Anthropic models",
+
+                # Get search results collector for citations
+                if hasattr(agent, "search_results_collector"):
+                    collector = agent.search_results_collector
+                else:
+                    collector = SearchResultsCollector()
+
+                # Extract content from the message
+                structured_content = assistant_message.structured_content
+                structured_content = (
+                    structured_content[-1].get("text")
+                    if structured_content
+                    else None
+                )
+                raw_text = (
+                    assistant_message.content or structured_content or ""
+                )
+
+                # Process citations
+                short_ids = extract_citations(raw_text)
+                final_citations = []
+                for sid in short_ids:
+                    final_citations.append(
+                        {
+                            "id": sid,
+                            "object": "citation",
+                            "short_id": sid,
+                            "payload": collector.find_by_short_id(sid),
+                        }
                     )
-                # Use the new R2RXMLToolsRAGAgent for non-streaming XML parsing for deepseek
-                agent_config.include_tools = False
-                agent = R2RXMLToolsRAGAgent(
-                    database_provider=self.providers.database,
-                    llm_provider=self.providers.llm,
-                    config=agent_config,
-                    search_settings=search_settings,
-                    rag_generation_config=rag_generation_config,
-                    max_tool_context_length=max_tool_context_length,
-                    knowledge_search_method=self.search,
-                    content_method=self.get_context,
-                    file_search_method=self.search_documents,
+
+                # Persist in conversation DB
+                await self.providers.database.conversations_handler.add_message(
+                    conversation_id=str(conversation_id),
+                    content=assistant_message,
+                    parent_id=message_id,
+                    metadata={
+                        "citations": final_citations,
+                        "aggregated_search_result": json.dumps(
+                            dump_collector(collector)
+                        ),
+                    },
                 )
 
-            results = await agent.arun(
-                messages=messages,
-                system_instruction=system_instruction,
-                include_title_if_available=include_title_if_available,
-            )
-
-            # Save the assistant's reply to the conversation
-            if isinstance(results[-1], dict):
-                assistant_message = Message(**results[-1])
-            elif isinstance(results[-1], Message):
-                assistant_message = results[-1]
-            else:
-                assistant_message = Message(
-                    role="assistant", content=str(results[-1])
-                )
-
-            if hasattr(agent, "search_results_collector"):
-                collector = agent.search_results_collector
-            else:
-                collector = SearchResultsCollector()  # or fallback if needed
-
-            structured_content = (
-                assistant_message.structured_content
-            )  # [-1].get('text')
-            structured_content = (
-                structured_content[-1].get("text")
-                if structured_content
-                else None
-            )
-
-            # Suppose your final assistant text is:
-            raw_text = assistant_message.content or structured_content or ""
-
-            short_ids = extract_citations(raw_text)  # e.g. [abc1234]
-
-            final_citations = []
-            for sid in short_ids:
-                final_citations.append(
-                    {
-                        "id": f"cit_{sid}",
-                        "object": "citation",
-                        "short_id": sid,
-                        "payload": collector.find_by_short_id(sid),
-                    }
-                )
-            # Persist everything in the conversation DB
-            await self.providers.database.conversations_handler.add_message(
-                conversation_id=str(conversation_id),
-                content=assistant_message,
-                parent_id=message_id,
-                metadata={
-                    "citations": final_citations,
-                    # You can also store the entire collector or just dump the underlying results
-                    "aggregated_search_result": json.dumps(
-                        dump_collector(collector)
-                    ),
-                },
-            )
-
-            if needs_conversation_name:
-                conversation_name = None
-                try:
-                    prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
-                    conversation_name = (
-                        (
-                            await self.providers.llm.aget_completion(
-                                [{"role": "system", "content": prompt}],
-                                GenerationConfig(
-                                    model=self.config.app.fast_llm
-                                ),
+                # Generate conversation name if needed
+                if needs_conversation_name:
+                    conversation_name = None
+                    try:
+                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                        conversation_name = (
+                            (
+                                await self.providers.llm.aget_completion(
+                                    [{"role": "system", "content": prompt}],
+                                    GenerationConfig(
+                                        model=self.config.app.fast_llm
+                                    ),
+                                )
                             )
+                            .choices[0]
+                            .message.content
                         )
-                        .choices[0]
-                        .message.content
-                    )
-                except Exception as e:
-                    pass
-                finally:
-                    await self.providers.database.conversations_handler.update_conversation(
-                        conversation_id=conversation_id,
-                        name=conversation_name or "",
-                    )
+                    except Exception as e:
+                        pass
+                    finally:
+                        await self.providers.database.conversations_handler.update_conversation(
+                            conversation_id=conversation_id,
+                            name=conversation_name or "",
+                        )
 
-            return {
-                "messages": [
-                    Message(
-                        role="assistant",
-                        content=assistant_message.content
-                        or structured_content
-                        or "",
-                        metadata={
-                            "citations": final_citations,
-                            "tool_calls": agent.tool_calls,
-                            # You can also store the entire collector or just dump the underlying results
-                            "aggregated_search_result": json.dumps(
-                                dump_collector(collector)
-                            ),
-                        },
-                    )
-                ],
-                "conversation_id": str(
-                    conversation_id
-                ),  # Ensure it's a string
-            }
+                # Return the final response
+                return {
+                    "messages": [
+                        Message(
+                            role="assistant",
+                            content=assistant_message.content
+                            or structured_content
+                            or "",
+                            metadata={
+                                "citations": final_citations,
+                                "tool_calls": agent.tool_calls,
+                                "aggregated_search_result": json.dumps(
+                                    dump_collector(collector)
+                                ),
+                            },
+                        )
+                    ],
+                    "conversation_id": str(conversation_id),
+                }
 
         except Exception as e:
             logger.error(f"Error in agent response: {str(e)}")
@@ -1521,7 +1735,8 @@ class RetrievalService(Service):
         self,
         filter_user_id: Optional[UUID] = None,
         max_summary_length: int = 128,
-        limit: int = 1000,
+        limit: int = 25,
+        reverse_order: bool = True,
     ) -> str:
         """
         Fetches documents matching the given filters and returns a formatted string
@@ -1533,6 +1748,7 @@ class RetrievalService(Service):
             limit=limit,
             filter_user_ids=[filter_user_id] if filter_user_id else None,
             include_summary_embedding=False,
+            sort_order="DESC" if reverse_order else "ASC",
         )
 
         docs = docs_data["results"]
@@ -1578,9 +1794,9 @@ class RetrievalService(Service):
 
         if mode == "rag":
             prompt_name = (
-                self.config.agent.agent_dynamic_prompt
+                self.config.agent.rag_agent_dynamic_prompt
                 if use_system_context
-                else self.config.agent.agent_static_prompt
+                else self.config.agent.rag_rag_agent_static_prompt
             )
         else:
             prompt_name = "static_research_agent"
@@ -1623,6 +1839,58 @@ class RetrievalService(Service):
         logger.debug(f"Running agent with system prompt = {system_prompt}")
         return system_prompt
 
+    async def _perform_web_search(
+        self,
+        query: str,
+        search_settings: SearchSettings = SearchSettings(),
+    ) -> AggregateSearchResult:
+        """
+        Perform a web search using an external search engine API (Serper).
+
+        Args:
+            query: The search query string
+            search_settings: Optional search settings to customize the search
+
+        Returns:
+            AggregateSearchResult containing web search results
+        """
+        try:
+            # Import the Serper client here to avoid circular imports
+            from core.utils.serper import SerperClient
+
+            # Initialize the Serper client
+            serper_client = SerperClient()
+
+            # Perform the raw search using Serper API
+            raw_results = serper_client.get_raw(query)
+
+            # Process the raw results into a WebSearchResult object
+            web_response = WebSearchResult.from_serper_results(raw_results)
+
+            # Create an AggregateSearchResult with the web search results
+            agg_result = AggregateSearchResult(
+                chunk_search_results=None,
+                graph_search_results=None,
+                web_search_results=web_response.organic_results,
+            )
+
+            # Log the search for monitoring purposes
+            logger.debug(f"Web search completed for query: {query}")
+            logger.debug(
+                f"Found {len(web_response.organic_results)} web results"
+            )
+
+            return agg_result
+
+        except Exception as e:
+            logger.error(f"Error performing web search: {str(e)}")
+            # Return empty results rather than failing completely
+            return AggregateSearchResult(
+                chunk_search_results=None,
+                graph_search_results=None,
+                web_search_results=[],
+            )
+
 
 class RetrievalServiceAdapter:
     @staticmethod
@@ -1661,14 +1929,16 @@ class RetrievalServiceAdapter:
         query: str,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
-        task_prompt_override: Optional[str],
+        task_prompt: Optional[str],
+        include_web_search: bool,
         user: User,
     ) -> dict:
         return {
             "query": query,
             "search_settings": search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
-            "task_prompt_override": task_prompt_override,
+            "task_prompt": task_prompt,
+            "include_web_search": include_web_search,
             "user": user.to_dict(),
         }
 
@@ -1682,7 +1952,8 @@ class RetrievalServiceAdapter:
             "rag_generation_config": GenerationConfig.from_dict(
                 data["rag_generation_config"]
             ),
-            "task_prompt_override": data["task_prompt_override"],
+            "task_prompt": data["task_prompt"],
+            "include_web_search": data["include_web_search"],
             "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
         }
 
@@ -1691,7 +1962,7 @@ class RetrievalServiceAdapter:
         message: Message,
         search_settings: SearchSettings,
         rag_generation_config: GenerationConfig,
-        task_prompt_override: Optional[str],
+        task_prompt: Optional[str],
         include_title_if_available: bool,
         user: User,
         conversation_id: Optional[str] = None,
@@ -1700,7 +1971,7 @@ class RetrievalServiceAdapter:
             "message": message.to_dict(),
             "search_settings": search_settings.to_dict(),
             "rag_generation_config": rag_generation_config.to_dict(),
-            "task_prompt_override": task_prompt_override,
+            "task_prompt": task_prompt,
             "include_title_if_available": include_title_if_available,
             "user": user.to_dict(),
             "conversation_id": conversation_id,
@@ -1716,7 +1987,7 @@ class RetrievalServiceAdapter:
             "rag_generation_config": GenerationConfig.from_dict(
                 data["rag_generation_config"]
             ),
-            "task_prompt_override": data["task_prompt_override"],
+            "task_prompt": data["task_prompt"],
             "include_title_if_available": data["include_title_if_available"],
             "user": RetrievalServiceAdapter._parse_user_data(data["user"]),
             "conversation_id": data.get("conversation_id"),

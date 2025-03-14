@@ -6,6 +6,14 @@ from .rag import (
     R2RXMLToolsStreamingRAGAgent,
 )
 
+# Import the concrete implementations
+from .research import (
+    R2RResearchAgent,
+    R2RStreamingResearchAgent,
+    R2RXMLToolsResearchAgent,
+    R2RXMLToolsStreamingResearchAgent,
+)
+
 __all__ = [
     # Base
     "R2RAgent",
@@ -16,4 +24,8 @@ __all__ = [
     "R2RXMLToolsRAGAgent",
     "R2RStreamingRAGAgent",
     "R2RXMLToolsStreamingRAGAgent",
+    "R2RResearchAgent",
+    "R2RStreamingResearchAgent",
+    "R2RXMLToolsResearchAgent",
+    "R2RXMLToolsStreamingResearchAgent",
 ]

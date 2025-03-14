@@ -6,9 +6,12 @@ from core.base.api.models import (
     AgentEvent,
     CitationData,
     CitationEvent,
+    Delta,
+    DeltaPayload,
     FinalAnswerData,
     FinalAnswerEvent,
     MessageData,
+    MessageDelta,
     MessageEvent,
     SearchResultsData,
     SearchResultsEvent,
@@ -64,6 +67,31 @@ def parse_retrieval_event(raw: dict) -> Optional[AgentEvent]:
             data=SearchResultsData(**data_obj),
         )
     elif event_type == "message":
+        # Parse nested delta structure manually before creating MessageData
+        if "delta" in data_obj and isinstance(data_obj["delta"], dict):
+            delta_dict = data_obj["delta"]
+
+            # Convert content items to MessageDelta objects
+            if "content" in delta_dict and isinstance(
+                delta_dict["content"], list
+            ):
+                parsed_content = []
+                for item in delta_dict["content"]:
+                    if isinstance(item, dict):
+                        # Parse payload to DeltaPayload
+                        if "payload" in item and isinstance(
+                            item["payload"], dict
+                        ):
+                            payload_dict = item["payload"]
+                            item["payload"] = DeltaPayload(**payload_dict)
+                        parsed_content.append(MessageDelta(**item))
+
+                # Replace with parsed content
+                delta_dict["content"] = parsed_content
+
+            # Create properly typed Delta object
+            data_obj["delta"] = Delta(**delta_dict)
+
         return MessageEvent(
             event=event_type,
             data=MessageData(**data_obj),
@@ -77,6 +105,31 @@ def parse_retrieval_event(raw: dict) -> Optional[AgentEvent]:
             event=event_type, data=ToolResultData(**data_obj)
         )
     elif event_type == "thinking":
+        # Parse nested delta structure manually before creating ThinkingData
+        if "delta" in data_obj and isinstance(data_obj["delta"], dict):
+            delta_dict = data_obj["delta"]
+
+            # Convert content items to MessageDelta objects
+            if "content" in delta_dict and isinstance(
+                delta_dict["content"], list
+            ):
+                parsed_content = []
+                for item in delta_dict["content"]:
+                    if isinstance(item, dict):
+                        # Parse payload to DeltaPayload
+                        if "payload" in item and isinstance(
+                            item["payload"], dict
+                        ):
+                            payload_dict = item["payload"]
+                            item["payload"] = DeltaPayload(**payload_dict)
+                        parsed_content.append(MessageDelta(**item))
+
+                # Replace with parsed content
+                delta_dict["content"] = parsed_content
+
+            # Create properly typed Delta object
+            data_obj["delta"] = Delta(**delta_dict)
+
         return ThinkingEvent(
             event=event_type,
             data=ThinkingData(**data_obj),
@@ -148,8 +201,9 @@ def rag_arg_parser(
     rag_generation_config: Optional[dict | GenerationConfig] = None,
     search_mode: Optional[str | SearchMode] = "custom",
     search_settings: Optional[dict | SearchSettings] = None,
-    task_prompt_override: Optional[str] = None,
+    task_prompt: Optional[str] = None,
     include_title_if_available: Optional[bool] = False,
+    include_web_search: Optional[bool] = False,
 ) -> dict:
     if rag_generation_config and not isinstance(rag_generation_config, dict):
         rag_generation_config = rag_generation_config.model_dump()
@@ -160,8 +214,9 @@ def rag_arg_parser(
         "query": query,
         "rag_generation_config": rag_generation_config,
         "search_settings": search_settings,
-        "task_prompt_override": task_prompt_override,
+        "task_prompt": task_prompt,
         "include_title_if_available": include_title_if_available,
+        "include_web_search": include_web_search,
     }
     if search_mode:
         data["search_mode"] = search_mode
@@ -171,30 +226,51 @@ def rag_arg_parser(
 def agent_arg_parser(
     message: Optional[dict | Message] = None,
     rag_generation_config: Optional[dict | GenerationConfig] = None,
+    research_generation_config: Optional[dict | GenerationConfig] = None,
     search_mode: Optional[str | SearchMode] = "custom",
     search_settings: Optional[dict | SearchSettings] = None,
-    task_prompt_override: Optional[str] = None,
-    include_title_if_available: Optional[bool] = False,
+    task_prompt: Optional[str] = None,
+    include_title_if_available: Optional[bool] = True,
     conversation_id: Optional[Union[str, uuid.UUID]] = None,
-    tools: Optional[list[dict]] = None,
     max_tool_context_length: Optional[int] = None,
-    use_extended_prompt: Optional[bool] = True,
+    use_system_context: Optional[bool] = True,
+    rag_tools: Optional[list[str]] = None,
+    research_tools: Optional[list[str]] = None,
+    tools: Optional[list[str]] = None,  # For backward compatibility
+    mode: Optional[str] = "rag",
 ) -> dict:
     if rag_generation_config and not isinstance(rag_generation_config, dict):
         rag_generation_config = rag_generation_config.model_dump()
+    if research_generation_config and not isinstance(
+        research_generation_config, dict
+    ):
+        research_generation_config = research_generation_config.model_dump()
     if search_settings and not isinstance(search_settings, dict):
         search_settings = search_settings.model_dump()
 
     data: dict[str, Any] = {
         "rag_generation_config": rag_generation_config or {},
         "search_settings": search_settings,
-        "task_prompt_override": task_prompt_override,
+        "task_prompt": task_prompt,
         "include_title_if_available": include_title_if_available,
         "conversation_id": (str(conversation_id) if conversation_id else None),
-        "tools": tools,
         "max_tool_context_length": max_tool_context_length,
-        "use_extended_prompt": use_extended_prompt,
+        "use_system_context": use_system_context,
+        "mode": mode,
     }
+
+    # Handle generation configs based on mode
+    if research_generation_config and mode == "research":
+        data["research_generation_config"] = research_generation_config
+
+    # Handle tool configurations
+    if rag_tools:
+        data["rag_tools"] = rag_tools
+    if research_tools:
+        data["research_tools"] = research_tools
+    if tools:  # Backward compatibility
+        data["tools"] = tools
+
     if search_mode:
         data["search_mode"] = search_mode
 
@@ -273,8 +349,9 @@ class RetrievalSDK:
         rag_generation_config: Optional[dict | GenerationConfig] = None,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-        task_prompt_override: Optional[str] = None,
+        task_prompt: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
+        include_web_search: Optional[bool] = False,
     ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
         """
         Conducts a Retrieval Augmented Generation (RAG) search with the given query.
@@ -283,7 +360,7 @@ class RetrievalSDK:
             query (str): The query to search for.
             rag_generation_config (Optional[dict | GenerationConfig]): RAG generation configuration.
             search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
+            task_prompt (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
@@ -294,8 +371,9 @@ class RetrievalSDK:
             rag_generation_config=rag_generation_config,
             search_mode=search_mode,
             search_settings=search_settings,
-            task_prompt_override=task_prompt_override,
+            task_prompt=task_prompt,
             include_title_if_available=include_title_if_available,
+            include_web_search=include_web_search,
         )
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
@@ -322,42 +400,76 @@ class RetrievalSDK:
         self,
         message: Optional[dict | Message] = None,
         rag_generation_config: Optional[dict | GenerationConfig] = None,
+        research_generation_config: Optional[dict | GenerationConfig] = None,
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
-        task_prompt_override: Optional[str] = None,
-        include_title_if_available: Optional[bool] = False,
+        task_prompt: Optional[str] = None,
+        include_title_if_available: Optional[bool] = True,
         conversation_id: Optional[Union[str, uuid.UUID]] = None,
-        tools: Optional[list[dict]] = None,
         max_tool_context_length: Optional[int] = None,
-        use_extended_prompt: Optional[bool] = True,
-    ) -> WrappedAgentResponse | AsyncGenerator[Message, None]:
+        use_system_context: Optional[bool] = True,
+        # Tool configurations
+        rag_tools: Optional[list[str]] = None,
+        research_tools: Optional[list[str]] = None,
+        tools: Optional[list[str]] = None,  # For backward compatibility
+        mode: Optional[str] = "rag",
+    ) -> WrappedAgentResponse | AsyncGenerator[AgentEvent, None]:
         """
-        Performs a single turn in a conversation with a RAG agent.
+        Performs a single turn in a conversation with an agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.
+            rag_generation_config (Optional[dict | GenerationConfig]): Configuration for RAG generation in 'rag' mode.
+            research_generation_config (Optional[dict | GenerationConfig]): Configuration for generation in 'research' mode.
+            search_mode (Optional[str | SearchMode]): Pre-configured search modes: "basic", "advanced", or "custom".
             search_settings (Optional[dict | SearchSettings]): Vector search settings.
-            task_prompt_override (Optional[str]): Task prompt override.
+            task_prompt (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
+            conversation_id (Optional[Union[str, uuid.UUID]]): ID of the conversation for maintaining context.
+            max_tool_context_length (Optional[int]): Maximum context length for tool replies.
+            use_system_context (Optional[bool]): Whether to use system context in the prompt.
+            rag_tools (Optional[list[str]]): List of tools to enable for RAG mode.
+                Available tools: "search_file_knowledge", "content", "web_search", "web_scrape", "search_file_descriptions".
+            research_tools (Optional[list[str]]): List of tools to enable for Research mode.
+                Available tools: "rag", "reasoning", "critique", "python_executor".
+            tools (Optional[list[str]]): Deprecated. List of tools to execute.
+            mode (Optional[str]): Mode to use for generation: "rag" for standard retrieval or "research" for deep analysis.
+                Defaults to "rag".
 
         Returns:
-            WrappedAgentResponse, AsyncGenerator[Message, None]]: The agent response.
+            WrappedAgentResponse | AsyncGenerator[AgentEvent, None]: The agent response.
         """
         data = agent_arg_parser(
             message=message,
             rag_generation_config=rag_generation_config,
+            research_generation_config=research_generation_config,
             search_mode=search_mode,
             search_settings=search_settings,
-            task_prompt_override=task_prompt_override,
+            task_prompt=task_prompt,
             include_title_if_available=include_title_if_available,
             conversation_id=conversation_id,
-            tools=tools,
             max_tool_context_length=max_tool_context_length,
-            use_extended_prompt=use_extended_prompt,
+            use_system_context=use_system_context,
+            rag_tools=rag_tools,
+            research_tools=research_tools,
+            tools=tools,
+            mode=mode,
         )
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
+
+        # Determine if streaming is enabled
+        is_stream = False
+        if rag_generation_config and rag_generation_config.get(
             "stream", False
         ):
+            is_stream = True
+        elif (
+            research_generation_config
+            and mode == "research"
+            and research_generation_config.get("stream", False)
+        ):
+            is_stream = True
+
+        if is_stream:
             raw_stream = self.client._make_streaming_request(
                 "POST",
                 "retrieval/agent",

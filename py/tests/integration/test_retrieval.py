@@ -214,7 +214,7 @@ def test_pagination_offset(client: R2RClient):
     ), "Offset should return different results"
 
 
-def test_rag_task_prompt_override(client: R2RClient):
+def test_rag_task_prompt(client: R2RClient):
     custom_prompt = """
     Answer the query given immediately below given the context. End your answer with: [END-TEST-PROMPT]
 
@@ -228,7 +228,7 @@ def test_rag_task_prompt_override(client: R2RClient):
         query="Tell me about Aristotle",
         rag_generation_config={"stream": False, "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
-        task_prompt_override=custom_prompt,
+        task_prompt=custom_prompt,
     ).results
     answer = results.completion
     assert (

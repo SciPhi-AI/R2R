@@ -6,6 +6,9 @@ from .providers import *
 from .utils import *
 
 __all__ = [
+    "ThinkingEvent",
+    "ToolCallEvent",
+    "ToolResultEvent",
     "CitationEvent",
     "Citation",
     ## ABSTRACTIONS

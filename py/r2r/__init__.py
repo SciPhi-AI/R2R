@@ -7,6 +7,9 @@ from sdk.models import (
     MessageEvent,
     R2RException,
     SearchResultsEvent,
+    ThinkingEvent,
+    ToolCallEvent,
+    ToolResultEvent,
 )
 from sdk.sync_client import R2RClient
 
@@ -18,6 +21,9 @@ __all__ = [
     "__version__",
     "R2RException",
     "CitationEvent",
+    "ThinkingEvent",
+    "ToolCallEvent",
+    "ToolResultEvent",
     "FinalAnswerEvent",
     "MessageEvent",
     "SearchResultsEvent",

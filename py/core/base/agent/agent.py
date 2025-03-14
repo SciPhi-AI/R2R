@@ -41,10 +41,8 @@ class Conversation:
 
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
-    agent_static_prompt: str = "static_rag_agent"
-    agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
-    tools: list[str] = ["search_file_knowledge"]
-    tool_names: Optional[list[str]] = None
+    rag_rag_agent_static_prompt: str = "static_rag_agent"
+    rag_agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
     stream: bool = False
     include_tools: bool = True
     max_iterations: int = 10
@@ -57,9 +55,6 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
-        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
-            "tool_names", None
-        )
         return cls(**filtered_kwargs)  # type: ignore
 
 
@@ -94,7 +89,7 @@ class Agent(ABC):
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.agent_static_prompt,
+                        self.config.rag_rag_agent_static_prompt,
                         inputs={
                             "date": str(datetime.now().strftime("%m/%d/%Y"))
                         },
@@ -187,7 +182,7 @@ class Agent(ABC):
         *args,
         **kwargs,
     ) -> ToolResult:
-        logger.info(
+        logger.debug(
             f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
         )
         if tool := next(
@@ -256,3 +251,41 @@ class Agent(ABC):
                 }
             )
         return tool_result
+
+
+# TODO - Move agents to provider pattern
+class RAGAgentConfig(AgentConfig):
+    rag_rag_agent_static_prompt: str = "static_rag_agent"
+    rag_agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
+    stream: bool = False
+    include_tools: bool = True
+    max_iterations: int = 10
+    # tools: list[str] = [] # HACK - unused variable.
+
+    # Default RAG tools
+    rag_tools: list[str] = [
+        "search_file_descriptions",
+        "search_file_knowledge",
+        "content",
+    ]
+
+    # Default Research tools
+    research_tools: list[str] = [
+        "rag",
+        "reasoning",
+        "critique",
+        "python_executor",
+    ]
+
+    @classmethod
+    def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
+        base_args = cls.model_fields.keys()
+        filtered_kwargs = {
+            k: v if v != "None" else None
+            for k, v in kwargs.items()
+            if k in base_args
+        }
+        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
+            "tool_names", None
+        )
+        return cls(**filtered_kwargs)  # type: ignore
