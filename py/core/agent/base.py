@@ -13,6 +13,7 @@ from core.utils import (
     SSEFormatter,
     convert_nonserializable_objects,
     extract_citations,
+    dump_obj
 )
 
 logger = logging.getLogger()
@@ -713,7 +714,7 @@ class R2RStreamingAgent(R2RAgent):
         return {
             "id": f"{short_id}",
             "object": "citation",
-            "payload": payload,  # Will be populated in RAG agents
+            "payload": dump_obj(payload),  # Will be populated in RAG agents
         }
 
     def _create_final_answer_payload(self, answer_text, citations):

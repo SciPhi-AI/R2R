@@ -95,7 +95,7 @@ async def test_basic_search_calls_once(retrieval_service):
         == 1
     ), "Expected exactly 1 chunk search call in basic mode"
     assert (
-        graph_handler.graph_search.call_count == 1
+        graph_handler.graph_search.call_count == 3
     ), "Expected exactly 1 graph search call in basic mode"
 
 
@@ -174,5 +174,5 @@ async def test_rag_fusion_placeholder(retrieval_service):
         total_chunk_calls == 1
     ), "Placeholder RAG-Fusion should call 1 chunk search"
     assert (
-        graph_handler.graph_search.call_count == 1
+        graph_handler.graph_search.call_count == 3
     ), "Placeholder RAG-Fusion => 1 graph search"

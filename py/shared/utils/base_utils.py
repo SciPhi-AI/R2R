@@ -537,6 +537,21 @@ def convert_nonserializable_objects(obj):
         return obj
 
 
+
+def dump_obj(obj) -> list[dict[str, Any]]:
+    if hasattr(obj, "model_dump"):
+        obj = obj.model_dump()
+    elif hasattr(obj, "dict"):
+        obj = obj.dict()
+    elif hasattr(obj, "as_dict"):
+        obj = obj.as_dict()
+    elif hasattr(obj, "to_dict"):
+        obj = obj.to_dict()
+    obj = convert_nonserializable_objects(obj)
+
+    return obj
+
+
 def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
     dumped = []
     for source_type, result_obj in collector.get_all_results():

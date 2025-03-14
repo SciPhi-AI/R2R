@@ -7,7 +7,7 @@ def test_agentic_citations_0(client: R2RClient, test_collection):
         query="Who was Aristotle? USE YOUR SOURCES.",
     )
     assert (
-        response.results.citations[0].document_id
+        response.results.citations[0].payload.document_id
         == test_collection["document_ids"][0]
     ), "Expected first citation to first doc"
 
@@ -18,7 +18,7 @@ def test_agentic_citations_1(client: R2RClient, test_collection):
         query="Who was Socrates? USE YOUR SOURCES.",
     )
     assert (
-        response.results.citations[0].document_id
+        response.results.citations[0].payload.document_id
         == test_collection["document_ids"][1]
     ), "Expected first citation to second doc"
 
@@ -29,11 +29,11 @@ def test_agentic_citations_2(client: R2RClient, test_collection):
         query="Who were Rene Descartes and Immanuel Kant? USE YOUR SOURCES.",
     )
     assert test_collection["document_ids"][2] in [
-        citation.document_id for citation in response.results.citations
+        citation.payload.document_id for citation in response.results.citations
     ], "Expected a citation to third doc"
     assert test_collection["document_ids"][3] in [
-        citation.document_id for citation in response.results.citations
-    ], "Expected a citation to fourth doc"
+        citation.payload.document_id for citation in response.results.citations
+    ], "Expected a citation to third doc"
 
 
 def test_agentic_citations_3(client: R2RClient, test_collection):
@@ -55,11 +55,11 @@ def test_agentic_citations_3(client: R2RClient, test_collection):
     assistant_msg = response.results.messages[-1]
     assert "Socrates" in assistant_msg.content
 
-    print("response.results.messages = ", response.results.messages)
     # If your server includes citations in `metadata`, you can check them here:
     if assistant_msg.metadata and "citations" in assistant_msg.metadata:
         citations = assistant_msg.metadata["citations"]
-        doc_ids = [c["document_id"] for c in citations]
+        print("citations = ", citations)
+        doc_ids = [c["payload"]['document_id'] for c in citations]
         assert (
-            test_collection["document_ids"][1] in doc_ids
+            str(test_collection["document_ids"][1]) in doc_ids
         ), "Expected Socrates doc citation"

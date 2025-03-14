@@ -40,6 +40,7 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import (
     SearchResultsCollector,
     SSEFormatter,
+    dump_obj,
     dump_collector,
     extract_citations,
     num_tokens_from_messages,
@@ -739,7 +740,7 @@ class RetrievalService(Service):
 
         # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
-        entity_cursor = self.providers.database.graphs_handler.graph_search(
+        entity_cursor = await self.providers.database.graphs_handler.graph_search(
             query_text,
             search_type="entities",
             limit=entity_limit,
@@ -747,7 +748,7 @@ class RetrievalService(Service):
             property_names=["name", "description", "id"],
             filters=search_settings.filters,
         )
-        async for ent in entity_cursor:
+        for ent in entity_cursor:
             score = ent.get("similarity_score")
             metadata = ent.get("metadata", {})
             if isinstance(metadata, str):
@@ -779,7 +780,7 @@ class RetrievalService(Service):
 
         # Relationship search
         rel_limit = graph_limits.get("relationships", base_limit)
-        rel_cursor = self.providers.database.graphs_handler.graph_search(
+        rel_cursor = await self.providers.database.graphs_handler.graph_search(
             query_text,
             search_type="relationships",
             limit=rel_limit,
@@ -795,7 +796,7 @@ class RetrievalService(Service):
             ],
             filters=search_settings.filters,
         )
-        async for rel in rel_cursor:
+        for rel in rel_cursor:
             score = rel.get("similarity_score")
             metadata = rel.get("metadata", {})
             if isinstance(metadata, str):
@@ -831,7 +832,7 @@ class RetrievalService(Service):
 
         # Community search
         comm_limit = graph_limits.get("communities", base_limit)
-        comm_cursor = self.providers.database.graphs_handler.graph_search(
+        comm_cursor = await self.providers.database.graphs_handler.graph_search(
             query_text,
             search_type="communities",
             limit=comm_limit,
@@ -843,7 +844,7 @@ class RetrievalService(Service):
             ],
             filters=search_settings.filters,
         )
-        async for comm in comm_cursor:
+        for comm in comm_cursor:
             score = comm.get("similarity_score")
             metadata = comm.get("metadata", {})
             if isinstance(metadata, str):
@@ -1042,9 +1043,9 @@ class RetrievalService(Service):
                         {
                             "id": f"{sid}",
                             "object": "citation",
-                            "payload": self._find_item_by_shortid(
+                            "payload": dump_obj(self._find_item_by_shortid(
                                 sid, collector
-                            ),
+                            )),
                         }
                         for sid in raw_sids
                     ],
@@ -1127,7 +1128,7 @@ class RetrievalService(Service):
                                         citation_payload = {
                                             "id": f"{sid}",
                                             "object": "citation",
-                                            "payload": payload,  # Will be populated in RAG agents
+                                            "payload": dump_obj(payload),  # Will be populated in RAG agents
                                         }
 
                                         # Emit citation
@@ -1537,7 +1538,7 @@ class RetrievalService(Service):
                             "id": sid,
                             "object": "citation",
                             "short_id": sid,
-                            "payload": collector.find_by_short_id(sid),
+                            "payload": dump_obj(collector.find_by_short_id(sid)),
                         }
                     )
 

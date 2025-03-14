@@ -284,9 +284,9 @@ class RetrievalRouter(BaseRouterV3):
             "search_results": { ... },
             "citations": [
                 {
-                "id": "cit.123456",
-                "object": "citation",
-                "payload": { ... }
+                    "id": "cit.123456",
+                    "object": "citation",
+                    "payload": { ... }
                 }
             ]
             }

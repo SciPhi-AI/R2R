@@ -4,6 +4,7 @@ from .base_utils import (
     decrement_version,
     deep_update,
     dump_collector,
+    dump_obj,
     format_search_results_for_llm,
     generate_default_prompt_id,
     generate_default_user_collection_id,
@@ -41,4 +42,5 @@ __all__ = [
     "_get_vector_column_str",
     "yield_sse_event",
     "dump_collector",
+    "dump_obj"
 ]
