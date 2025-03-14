@@ -453,7 +453,6 @@ class DocumentsRouter(BaseRouterV3):
             else:
                 if file:
                     file_data = await self._process_file(file)
-                    content_length = len(file_data["content"])
 
                     if not file.filename:
                         raise R2RException(
@@ -468,7 +467,7 @@ class DocumentsRouter(BaseRouterV3):
                         user_id=auth_user.id, file_type_or_ext=file_ext
                     )
 
-                    if content_length > max_allowed_size:
+                    if file_data["content_length"] > max_allowed_size:
                         raise R2RException(
                             status_code=413,  # HTTP 413: Payload Too Large
                             message=(
@@ -476,6 +475,8 @@ class DocumentsRouter(BaseRouterV3):
                                 f"for extension '{file_ext}'."
                             ),
                         )
+
+                    content_length = file_data["content_length"]
 
                     file_content = BytesIO(
                         base64.b64decode(file_data["content"])
@@ -2170,8 +2171,11 @@ class DocumentsRouter(BaseRouterV3):
         import base64
 
         content = await file.read()
+        content_length = len(content)
+
         return {
             "filename": file.filename,
             "content": base64.b64encode(content).decode("utf-8"),
             "content_type": file.content_type,
+            "content_length": content_length,
         }
