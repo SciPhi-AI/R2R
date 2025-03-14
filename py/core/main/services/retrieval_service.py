@@ -742,7 +742,7 @@ class RetrievalService(Service):
         # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
         entity_cursor = (
-            await self.providers.database.graphs_handler.graph_search(
+            self.providers.database.graphs_handler.graph_search(
                 query_text,
                 search_type="entities",
                 limit=entity_limit,
@@ -751,7 +751,7 @@ class RetrievalService(Service):
                 filters=search_settings.filters,
             )
         )
-        for ent in entity_cursor:
+        async for ent in entity_cursor:
             score = ent.get("similarity_score")
             metadata = ent.get("metadata", {})
             if isinstance(metadata, str):
@@ -783,7 +783,7 @@ class RetrievalService(Service):
 
         # Relationship search
         rel_limit = graph_limits.get("relationships", base_limit)
-        rel_cursor = await self.providers.database.graphs_handler.graph_search(
+        rel_cursor = self.providers.database.graphs_handler.graph_search(
             query_text,
             search_type="relationships",
             limit=rel_limit,
@@ -799,7 +799,7 @@ class RetrievalService(Service):
             ],
             filters=search_settings.filters,
         )
-        for rel in rel_cursor:
+        async for rel in rel_cursor:
             score = rel.get("similarity_score")
             metadata = rel.get("metadata", {})
             if isinstance(metadata, str):
@@ -836,7 +836,7 @@ class RetrievalService(Service):
         # Community search
         comm_limit = graph_limits.get("communities", base_limit)
         comm_cursor = (
-            await self.providers.database.graphs_handler.graph_search(
+            self.providers.database.graphs_handler.graph_search(
                 query_text,
                 search_type="communities",
                 limit=comm_limit,
@@ -849,7 +849,7 @@ class RetrievalService(Service):
                 filters=search_settings.filters,
             )
         )
-        for comm in comm_cursor:
+        async for comm in comm_cursor:
             score = comm.get("similarity_score")
             metadata = comm.get("metadata", {})
             if isinstance(metadata, str):
