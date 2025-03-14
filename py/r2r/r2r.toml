@@ -20,12 +20,10 @@ vlm = "openai/gpt-4o"
 # LLM used for transcription
 audio_lm = "openai/whisper-1"
 
-# Default model for RAG
-rag_llm = "anthropic/claude-3-7-sonnet-20250219"
 # Reasoning model, used for `research` agent
 reasoning_llm = "openai/o3-mini"
 # Planning model, used for `research` agent
-planning_llm = "openai/o3-mini"
+planning_llm = "anthropic/claude-3-7-sonnet-20250219"
 
 
 [agent]

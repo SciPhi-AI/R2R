@@ -221,7 +221,7 @@ class ResearchAgentMixin(RAGAgentMixin):
 
         # Create a generation config for the RAG agent
         generation_config = GenerationConfig(
-            model=self.app_config.rag_llm or self.app_config.quality_llm,
+            model=self.app_config.quality_llm,
             max_tokens_to_sample=16000,
         )
 

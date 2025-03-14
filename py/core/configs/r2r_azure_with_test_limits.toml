@@ -12,8 +12,6 @@ vlm = "azure/gpt-4o"
 audio_lm = "azure/whisper-1"
 
 
-# Default model for RAG
-rag_llm = "azure/gpt-4o"
 # Reasoning model, used for `research` agent
 reasoning_llm = "azure/o3-mini"
 # Planning model, used for `research` agent

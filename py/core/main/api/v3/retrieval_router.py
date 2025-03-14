@@ -295,7 +295,7 @@ class RetrievalRouter(BaseRouterV3):
 
             if "model" not in rag_generation_config.__fields_set__:
                 rag_generation_config.model = (
-                    self.config.app.rag_llm or self.config.app.quality_llm
+                    self.config.app.quality_llm
                 )
 
             effective_settings = self._prepare_search_settings(
@@ -489,7 +489,7 @@ class RetrievalRouter(BaseRouterV3):
             if "model" not in rag_generation_config.__fields_set__:
                 if mode == "rag":
                     rag_generation_config.model = (
-                        self.config.app.rag_llm or self.config.app.quality_llm
+                        self.config.app.quality_llm
                     )
                 elif mode == "research":
                     rag_generation_config.model = self.config.app.planning_llm

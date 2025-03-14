@@ -12,8 +12,6 @@ vlm = "openai/llama3.1" # TODO - Replace with viable candidate
 audio_lm = "openai/llama3.1" # TODO - Replace with viable candidate
 
 
-# Default model for RAG
-rag_llm = "openai/llama3.1"
 # Reasoning model, used for `research` agent
 reasoning_llm = "openai/llama3.1"
 # Planning model, used for `research` agent

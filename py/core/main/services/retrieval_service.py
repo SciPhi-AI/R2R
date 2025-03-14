@@ -1309,7 +1309,7 @@ class RetrievalService(Service):
             if "model" not in effective_generation_config.__fields_set__:
                 if mode == "rag":
                     effective_generation_config.model = (
-                        self.config.app.rag_llm or self.config.app.quality_llm
+                        self.config.app.quality_llm
                     )
                 elif mode == "research":
                     effective_generation_config.model = (
