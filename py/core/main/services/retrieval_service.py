@@ -741,15 +741,13 @@ class RetrievalService(Service):
 
         # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
-        entity_cursor = (
-            self.providers.database.graphs_handler.graph_search(
-                query_text,
-                search_type="entities",
-                limit=entity_limit,
-                query_embedding=query_embedding,
-                property_names=["name", "description", "id"],
-                filters=search_settings.filters,
-            )
+        entity_cursor = self.providers.database.graphs_handler.graph_search(
+            query_text,
+            search_type="entities",
+            limit=entity_limit,
+            query_embedding=query_embedding,
+            property_names=["name", "description", "id"],
+            filters=search_settings.filters,
         )
         async for ent in entity_cursor:
             score = ent.get("similarity_score")
@@ -835,19 +833,17 @@ class RetrievalService(Service):
 
         # Community search
         comm_limit = graph_limits.get("communities", base_limit)
-        comm_cursor = (
-            self.providers.database.graphs_handler.graph_search(
-                query_text,
-                search_type="communities",
-                limit=comm_limit,
-                query_embedding=query_embedding,
-                property_names=[
-                    "id",
-                    "name",
-                    "summary",
-                ],
-                filters=search_settings.filters,
-            )
+        comm_cursor = self.providers.database.graphs_handler.graph_search(
+            query_text,
+            search_type="communities",
+            limit=comm_limit,
+            query_embedding=query_embedding,
+            property_names=[
+                "id",
+                "name",
+                "summary",
+            ],
+            filters=search_settings.filters,
         )
         async for comm in comm_cursor:
             score = comm.get("similarity_score")
