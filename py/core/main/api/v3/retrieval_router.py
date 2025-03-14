@@ -512,7 +512,6 @@ class RetrievalRouter(BaseRouterV3):
                 effective_generation_config = research_generation_config
 
             try:
-                print("running agent now...")
                 response = await self.services.retrieval.agent(
                     message=message,
                     messages=messages,

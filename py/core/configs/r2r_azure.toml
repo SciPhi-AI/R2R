@@ -17,7 +17,6 @@ rag_llm = "azure/gpt-4o"
 reasoning_llm = "azure/o3-mini"
 # Planning model, used for `research` agent
 planning_llm = "azure/o3-mini"
-" }
 
 [embedding]
 base_model = "azure/text-embedding-3-small"

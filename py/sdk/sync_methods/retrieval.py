@@ -137,7 +137,6 @@ def parse_retrieval_event(raw: dict) -> Optional[AgentEvent]:
             data=ThinkingData(**data_obj),
         )
     elif event_type == "final_answer":
-        print("data_obj = ", data_obj)
         return FinalAnswerEvent(
             event=event_type, data=FinalAnswerData(**data_obj)
         )

@@ -985,7 +985,6 @@ class RetrievalService(Service):
         try:
             # 2) Perform search => aggregated_results
             aggregated_results = await self.search(query, search_settings)
-            print("include_web_search = ", include_web_search)
             # 3) Optionally add web search results if flag is enabled
             if include_web_search:
                 web_results = await self._perform_web_search(query)
@@ -999,8 +998,6 @@ class RetrievalService(Service):
                         aggregated_results.web_search_results.extend(
                             web_results.web_search_results
                         )
-            print("aggregated_results = ", aggregated_results)
-
             # 3) Build context from aggregator
             collector = SearchResultsCollector()
             collector.add_aggregate_result(aggregated_results)
@@ -1402,7 +1399,6 @@ class RetrievalService(Service):
                     )
                 )
 
-            print("self.config.agent = ", self.config.agent)
             # Configure agent with appropriate tools
             agent_config = deepcopy(self.config.agent)
             if mode == "rag":

@@ -588,7 +588,6 @@ class OpenAICompletionProvider(CompletionProvider):
         except Exception as e:
             logger.error(f"Async task execution failed: {str(e)}")
             # HACK: print the exception to the console for debugging
-            print("messages = ", messages)
             raise
 
     def _execute_task_sync(self, task: dict[str, Any]):

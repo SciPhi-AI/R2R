@@ -559,7 +559,6 @@ class R2RStreamingAgent(R2RAgent):
                                     },
                                 )
 
-                                print("final_message = ", final_message)
                                 # Add it to the conversation
                                 await self.conversation.add_message(
                                     final_message
@@ -1198,14 +1197,12 @@ class R2RXMLToolsAgent(R2RAgent):
 
         # Get the response content
         content = message.content
-        print("raw content = ", content)
 
         # HACK for gemini
         content = content.replace("```action", "")
         content = content.replace("```tool_code", "")
         content = content.replace("```", "")
 
-        print("clea ned content = ", content)
         if (
             not content.startswith("<")
             and "deepseek" in self.rag_generation_config.model

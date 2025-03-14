@@ -99,7 +99,7 @@ export class RetrievalClient {
       ...(options.taskPrompt && {
         task_prompt_override: options.taskPrompt,
       }),
-      ...(options.includeTitleIfAvailable && {
+      ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
       }),
       ...(options.includeWebSearch && {
