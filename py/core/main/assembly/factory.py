@@ -36,11 +36,11 @@ from core.providers import (
     R2RIngestionConfig,
     R2RIngestionProvider,
     SendGridEmailProvider,
+    MailerSendEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
-    MailerSendEmailProvider,
 )
 
 from ..abstractions import R2RProviders

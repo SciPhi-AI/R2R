@@ -72,7 +72,7 @@ class MailerSendEmailProvider(EmailProvider):
                 },
                 "to": [{"email": to_email}],
             }
-            logger.info("Template ID: %s", template_id)
+  
             if template_id:
                 # Transform the template data to MailerSend's expected format
                 if dynamic_template_data:
@@ -97,11 +97,8 @@ class MailerSendEmailProvider(EmailProvider):
                     "html": html_body or "",
                 })
 
-            logger.info(f"MailerSend message: {mail_body!r}, type: {type(mail_body)}")
             import asyncio
             response = await asyncio.to_thread(self.client.send, mail_body)
-
-            logger.info(f"MailerSend response: {response!r}, type: {type(response)}")
 
             # Handle different response formats
             if isinstance(response, str):
@@ -120,12 +117,10 @@ class MailerSendEmailProvider(EmailProvider):
             # If we get here, it's an error
             error_msg = f"MailerSend error: {response}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
 
         except Exception as e:
             error_msg = f"Failed to send email to {to_email}: {str(e)}"
             logger.error(error_msg)
-            raise RuntimeError(error_msg) from e
 
     async def send_verification_email(
         self,
@@ -179,7 +174,6 @@ class MailerSendEmailProvider(EmailProvider):
                 f"Failed to send verification email to {to_email}: {str(e)}"
             )
             logger.error(error_msg)
-            raise RuntimeError(error_msg) from e
 
     async def send_password_reset_email(
         self,
@@ -228,7 +222,6 @@ class MailerSendEmailProvider(EmailProvider):
                 f"Failed to send password reset email to {to_email}: {str(e)}"
             )
             logger.error(error_msg)
-            raise RuntimeError(error_msg) from e
 
     async def send_password_changed_email(
         self,
