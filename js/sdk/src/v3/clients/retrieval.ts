@@ -82,7 +82,7 @@ export class RetrievalClient {
       ...(options.taskPromptOverride && {
         task_prompt_override: options.taskPromptOverride,
       }),
-      ...(options.includeTitleIfAvailable && {
+      ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
       }),
     };
@@ -185,7 +185,7 @@ export class RetrievalClient {
       ...(options.taskPromptOverride && {
         task_prompt_override: options.taskPromptOverride,
       }),
-      ...(options.includeTitleIfAvailable && {
+      ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
       }),
       ...(options.conversationId && {
@@ -200,7 +200,7 @@ export class RetrievalClient {
       ...(options.tools && {
         tools: options.tools,
       }),
-      ...(typeof options.useSystemContext !== "undefined" && {
+      ...(typeof options.useSystemContext !== undefined && {
         use_system_context: options.useSystemContext,
       }),
     };

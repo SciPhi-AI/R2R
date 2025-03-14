@@ -1,5 +1,6 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
+import exp from "constants";
 import fs from "fs";
 import path from "path";
 
@@ -159,6 +160,43 @@ describe("r2rClient V3 Users Integration Tests", () => {
     const response = await client.users.listCollections({ id: userId });
     expect(response.results).toBeDefined();
     expect(Array.isArray(response.results)).toBe(true);
+  });
+
+  test("List users as superuser and filter with user ID", async () => {
+    const response = await superUserClient.users.list({
+      ids: [userId],
+    });
+    console.log(response);
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    expect(response.results.length).toBe(1);
+    expect(response.results[0].id).toBe(userId);
+  });
+
+  test("Mark new user as superuser", async () => {
+    const response = await superUserClient.users.update({
+      id: userId,
+      isSuperuser: true,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.isSuperuser).toBe(true);
+  });
+
+  test("Retrieve the updated user", async () => {
+    const response = await client.users.retrieve({ id: userId });
+    expect(response.results).toBeDefined();
+    expect(response.results.isSuperuser).toBe(true);
+  });
+
+  test("Make the user a normal user again", async () => {
+    const response = await superUserClient.users.update({
+      id: userId,
+      isSuperuser: false,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
   });
 
   test("Delete a user", async () => {
