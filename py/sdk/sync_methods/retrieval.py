@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, AsyncGenerator, Optional, Union
+from typing import Any, Generator, Optional, Union
 
 from core.base.api.models import (
     AgentEvent,
@@ -32,7 +32,6 @@ from core.base.api.models import (
 from ..models import (
     GenerationConfig,
     Message,
-    RAGResponse,
     SearchMode,
     SearchSettings,
 )
@@ -366,7 +365,22 @@ class RetrievalSDK:
         task_prompt: Optional[str] = None,
         include_title_if_available: Optional[bool] = False,
         include_web_search: Optional[bool] = False,
-    ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
+    ) -> (
+        WrappedRAGResponse
+        | Generator[
+            ThinkingEvent
+            | SearchResultsEvent
+            | MessageEvent
+            | CitationEvent
+            | FinalAnswerEvent
+            | ToolCallEvent
+            | ToolResultEvent
+            | UnknownEvent
+            | None,
+            None,
+            None,
+        ]
+    ):
         """Conducts a Retrieval Augmented Generation (RAG) search with the
         given query.
 
@@ -428,7 +442,20 @@ class RetrievalSDK:
         tools: Optional[list[str]] = None,  # For backward compatibility
         mode: Optional[str] = "rag",
     ) -> (
-        WrappedAgentResponse | AsyncGenerator[Union[AgentEvent, Message], None]
+        WrappedAgentResponse
+        | Generator[
+            ThinkingEvent
+            | SearchResultsEvent
+            | MessageEvent
+            | CitationEvent
+            | FinalAnswerEvent
+            | ToolCallEvent
+            | ToolResultEvent
+            | UnknownEvent
+            | None,
+            None,
+            None,
+        ]
     ):
         """Performs a single turn in a conversation with a RAG agent.
 
@@ -472,24 +499,6 @@ class RetrievalSDK:
         )
 
         # Determine if streaming is enabled
-        is_stream = False
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
-            is_stream = True
-
-        data: dict[str, Any] = {
-            "rag_generation_config": rag_generation_config or {},
-            "search_settings": search_settings,
-            "task_prompt": task_prompt,
-            "include_title_if_available": include_title_if_available,
-            "conversation_id": (
-                str(conversation_id) if conversation_id else None
-            ),
-            "tools": tools,
-            "max_tool_context_length": max_tool_context_length,
-            "use_system_context": use_system_context,
-        }
         if search_mode:
             data["search_mode"] = search_mode
 
@@ -498,16 +507,24 @@ class RetrievalSDK:
                 Message(**message) if isinstance(message, dict) else message
             )
             data["message"] = cast_message.model_dump()
-        if rag_generation_config and rag_generation_config.get(  # type: ignore
-            "stream", False
-        ):
-            is_stream = True
-        elif (
-            research_generation_config
-            and mode == "research"
-            and research_generation_config.get("stream", False)
-        ):
-            is_stream = True
+
+        is_stream = False
+        if mode != "research":
+            if rag_generation_config:
+                if isinstance(rag_generation_config, dict):
+                    is_stream = rag_generation_config.get(  # type: ignore
+                        "stream", False
+                    )
+                else:
+                    is_stream = rag_generation_config.stream
+        else:
+            if research_generation_config:
+                if isinstance(research_generation_config, dict):
+                    is_stream = research_generation_config.get(  # type: ignore
+                        "stream", False
+                    )
+                else:
+                    is_stream = research_generation_config.stream
 
         if is_stream:
             raw_stream = self.client._make_streaming_request(

@@ -126,5 +126,5 @@ __all__ = [
     "increment_version",
     "yield_sse_event",
     "dump_collector",
-    "dump_obj"
+    "dump_obj",
 ]

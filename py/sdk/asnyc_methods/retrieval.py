@@ -1,7 +1,14 @@
-from typing import AsyncGenerator
+from typing import Generator
 
 from shared.api.models import (
-    AgentEvent,
+    CitationEvent,
+    FinalAnswerEvent,
+    MessageEvent,
+    SearchResultsEvent,
+    ThinkingEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    UnknownEvent,
     WrappedAgentResponse,
     WrappedRAGResponse,
     WrappedSearchResponse,
@@ -9,7 +16,6 @@ from shared.api.models import (
 
 from ..models import (
     Message,
-    RAGResponse,
 )
 from ..sync_methods.retrieval import parse_retrieval_event
 
@@ -144,7 +150,22 @@ class RetrievalSDK:
 
     async def rag(
         self, **kwargs
-    ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
+    ) -> (
+        WrappedRAGResponse
+        | Generator[
+            ThinkingEvent
+            | SearchResultsEvent
+            | MessageEvent
+            | CitationEvent
+            | FinalAnswerEvent
+            | ToolCallEvent
+            | ToolResultEvent
+            | UnknownEvent
+            | None,
+            None,
+            None,
+        ]
+    ):
         """
         Conducts a Retrieval Augmented Generation (RAG) search (async).
         May return a `WrappedRAGResponse` or a streaming generator if `stream=True`.
@@ -230,7 +251,22 @@ class RetrievalSDK:
 
     async def agent(
         self, **kwargs
-    ) -> WrappedAgentResponse | AsyncGenerator[AgentEvent, None]:
+    ) -> (
+        WrappedAgentResponse
+        | Generator[
+            ThinkingEvent
+            | SearchResultsEvent
+            | MessageEvent
+            | CitationEvent
+            | FinalAnswerEvent
+            | ToolCallEvent
+            | ToolResultEvent
+            | UnknownEvent
+            | None,
+            None,
+            None,
+        ]
+    ):
         """
         Performs a single turn in a conversation with a RAG agent (async).
         May return a `WrappedAgentResponse` or a streaming generator if `stream=True`.

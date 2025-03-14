@@ -2,7 +2,7 @@ rag:
   template: >
     ## Task:
 
-    Answer the query given immediately below given the context which follows later. Use line item references to like [c910e2e], [b12cd2f], ... refer to provided search results. 
+    Answer the query given immediately below given the context which follows later. Use line item references to like [c910e2e], [b12cd2f], ... refer to provided search results.
 
 
     ### Query:

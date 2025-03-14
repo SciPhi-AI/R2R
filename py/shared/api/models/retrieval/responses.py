@@ -337,7 +337,7 @@ class DocumentSearchResult(BaseModel):
 # A generic base model for SSE events
 class SSEEventBase(BaseModel):
     event: str
-    data: dict[str, Any]
+    data: Any
 
 
 # Model for the search results event

@@ -91,7 +91,7 @@ class R2RClient(BaseClient):
             with client.stream(method, url, **request_args) as response:
                 self._handle_response(response)
 
-                sse_event_block = {"event": None, "data": []}
+                sse_event_block: dict[str, Any] = {"event": None, "data": []}
 
                 for line in response.iter_lines():
                     if isinstance(line, bytes):

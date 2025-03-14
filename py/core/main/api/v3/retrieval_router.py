@@ -504,7 +504,7 @@ class RetrievalRouter(BaseRouterV3):
                 logger.warning(
                     "The 'tools' parameter is deprecated. Use 'rag_tools' or 'research_tools' based on mode."
                 )
-                rag_tools = tools
+                rag_tools = tools  # type: ignore
 
             # Determine effective generation config
             effective_generation_config = rag_generation_config
@@ -544,7 +544,7 @@ class RetrievalRouter(BaseRouterV3):
                             # Clean up if needed, then return
                             return
 
-                    return StreamingResponse(
+                    return StreamingResponse(  # type: ignore
                         stream_generator(), media_type="text/event-stream"
                     )
                 else:

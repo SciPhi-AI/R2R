@@ -8,7 +8,7 @@ import toml
 from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
-from ..base.agent.agent import RAGAgentConfig
+from ..base.agent.agent import RAGAgentConfig  # type: ignore
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig

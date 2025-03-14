@@ -4,7 +4,7 @@ import subprocess
 import sys
 import tempfile
 from copy import copy
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Optional
 
 from core.base import AppConfig
 from core.base.abstractions import GenerationConfig, Message, SearchSettings
@@ -18,10 +18,10 @@ from core.providers import (
 )
 from core.utils import extract_citations
 
-from ..base.agent.agent import RAGAgentConfig
+from ..base.agent.agent import RAGAgentConfig  # type: ignore
 
 # Import the RAG agents we'll leverage
-from .rag import (
+from .rag import (  # type: ignore
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RXMLToolsRAGAgent,
@@ -186,7 +186,7 @@ class ResearchAgentMixin(RAGAgentMixin):
                 "The execution environment includes common libraries such as numpy, pandas, sympy, scipy, statsmodels, biopython, etc.\n\n"
                 "USAGE:\n"
                 "1. Send complete, executable Python code as a string.\n"
-                "2. Use print() statements for output you want to see.\n"
+                "2. Use print statements for output you want to see.\n"
                 "3. Assign to the 'result' variable for values you want to return.\n"
                 "4. Do not use input() or plotting (matplotlib). Output is text-based."
             ),
@@ -209,7 +209,7 @@ class ResearchAgentMixin(RAGAgentMixin):
         query: str,
         *args,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a search using an internal RAG agent."""
         # Create a copy of the current configuration for the RAG agent
         config_copy = copy(self.config)
@@ -273,7 +273,7 @@ class ResearchAgentMixin(RAGAgentMixin):
         query: str,
         *args,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute a reasoning query using a specialized reasoning LLM."""
         msg_list = await self.conversation.get_messages()
 
@@ -298,13 +298,14 @@ class ResearchAgentMixin(RAGAgentMixin):
     async def _critique(
         self,
         query: str,
-        focus_areas: list = None,
+        focus_areas: Optional[list] = None,
         *args,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Critique the conversation history."""
         msg_list = await self.conversation.get_messages()
-
+        if not focus_areas:
+            focus_areas = []
         # Build the critique prompt
         critique_prompt = (
             "You are a critical reasoning expert. Your task is to analyze the following conversation "
@@ -346,7 +347,7 @@ class ResearchAgentMixin(RAGAgentMixin):
 
     async def _execute_python_with_process_timeout(
         self, code: str, timeout: int = 10, *args, **kwargs
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Executes Python code in a separate subprocess with a timeout.
         This provides isolation and prevents re-importing the current agent module.
@@ -356,7 +357,7 @@ class ResearchAgentMixin(RAGAgentMixin):
           timeout (int): Timeout in seconds (default: 10).
 
         Returns:
-          Dict[str, Any]: Dictionary containing stdout, stderr, return code, etc.
+          dict[str, Any]: Dictionary containing stdout, stderr, return code, etc.
         """
         # Write user code to a temporary file
         with tempfile.NamedTemporaryFile(
@@ -412,7 +413,7 @@ class ResearchAgentMixin(RAGAgentMixin):
             if os.path.exists(script_path):
                 os.remove(script_path)
 
-    def _format_python_results(self, results: Dict[str, Any]) -> str:
+    def _format_python_results(self, results: dict[str, Any]) -> str:
         """Format Python execution results for display."""
         output = []
 

@@ -500,7 +500,7 @@ class SearchResultsCollector:
 
         return f"SearchResultsCollector with {len(self._results_in_order)} results: {type_counts}"
 
-    def get_all_results(self) -> list[Tuple[str, Any, int]]:
+    def get_all_results(self) -> list[Tuple[str, Any]]:
         """
         Return list of (source_type, result_obj, aggregator_index),
         in the order appended.
@@ -535,7 +535,6 @@ def convert_nonserializable_objects(obj):
         return obj.isoformat()  # Convert datetime to ISO formatted string
     else:
         return obj
-
 
 
 def dump_obj(obj) -> list[dict[str, Any]]:

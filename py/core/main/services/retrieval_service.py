@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import json
 import logging
@@ -40,8 +41,8 @@ from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import (
     SearchResultsCollector,
     SSEFormatter,
-    dump_obj,
     dump_collector,
+    dump_obj,
     extract_citations,
     num_tokens_from_messages,
 )
@@ -360,10 +361,10 @@ class RetrievalService(Service):
         # 3) Fuse the chunk results and fuse the graph results.
         #    We'll use a simple RRF approach: each sub-query's result list
         #    is a ranking from best to worst.
-        fused_chunk_results = self._reciprocal_rank_fusion_chunks(
-            chunk_results_list
+        fused_chunk_results = self._reciprocal_rank_fusion_chunks(  # type: ignore
+            chunk_results_list  # type: ignore
         )
-        fused_graph_results = self._reciprocal_rank_fusion_graphs(
+        fused_graph_results = self._reciprocal_rank_fusion_graphs(  # type: ignore
             graph_results_list
         )
 
@@ -453,11 +454,11 @@ class RetrievalService(Service):
             return []
 
         # Build a map of chunk_id => final_rff_score
-        score_map = {}
+        score_map: dict[str, float] = {}
 
         # We also need to store a reference to the chunk object
         # (the "first" or "best" instance), so we can reconstruct them later
-        chunk_map = {}
+        chunk_map: dict[str, Any] = {}
 
         for ranking_list in list_of_rankings:
             for rank, chunk_result in enumerate(ranking_list, start=1):
@@ -740,13 +741,15 @@ class RetrievalService(Service):
 
         # Entity search
         entity_limit = graph_limits.get("entities", base_limit)
-        entity_cursor = await self.providers.database.graphs_handler.graph_search(
-            query_text,
-            search_type="entities",
-            limit=entity_limit,
-            query_embedding=query_embedding,
-            property_names=["name", "description", "id"],
-            filters=search_settings.filters,
+        entity_cursor = (
+            await self.providers.database.graphs_handler.graph_search(
+                query_text,
+                search_type="entities",
+                limit=entity_limit,
+                query_embedding=query_embedding,
+                property_names=["name", "description", "id"],
+                filters=search_settings.filters,
+            )
         )
         for ent in entity_cursor:
             score = ent.get("similarity_score")
@@ -832,17 +835,19 @@ class RetrievalService(Service):
 
         # Community search
         comm_limit = graph_limits.get("communities", base_limit)
-        comm_cursor = await self.providers.database.graphs_handler.graph_search(
-            query_text,
-            search_type="communities",
-            limit=comm_limit,
-            query_embedding=query_embedding,
-            property_names=[
-                "id",
-                "name",
-                "summary",
-            ],
-            filters=search_settings.filters,
+        comm_cursor = (
+            await self.providers.database.graphs_handler.graph_search(
+                query_text,
+                search_type="communities",
+                limit=comm_limit,
+                query_embedding=query_embedding,
+                property_names=[
+                    "id",
+                    "name",
+                    "summary",
+                ],
+                filters=search_settings.filters,
+            )
         )
         for comm in comm_cursor:
             score = comm.get("similarity_score")
@@ -1043,9 +1048,9 @@ class RetrievalService(Service):
                         {
                             "id": f"{sid}",
                             "object": "citation",
-                            "payload": dump_obj(self._find_item_by_shortid(
-                                sid, collector
-                            )),
+                            "payload": dump_obj(
+                                self._find_item_by_shortid(sid, collector)
+                            ),
                         }
                         for sid in raw_sids
                     ],
@@ -1128,7 +1133,9 @@ class RetrievalService(Service):
                                         citation_payload = {
                                             "id": f"{sid}",
                                             "object": "citation",
-                                            "payload": dump_obj(payload),  # Will be populated in RAG agents
+                                            "payload": dump_obj(
+                                                payload
+                                            ),  # Will be populated in RAG agents
                                         }
 
                                         # Emit citation
@@ -1538,7 +1545,9 @@ class RetrievalService(Service):
                             "id": sid,
                             "object": "citation",
                             "short_id": sid,
-                            "payload": dump_obj(collector.find_by_short_id(sid)),
+                            "payload": dump_obj(
+                                collector.find_by_short_id(sid)
+                            ),
                         }
                     )
 

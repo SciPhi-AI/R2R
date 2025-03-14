@@ -29,7 +29,9 @@ def resize_base64_image(
     max_megapixels: float = 0.25,
 ) -> str:
     """Aggressively resize images with better error handling and debug output"""
-    print(f"RESIZING NOW!!! Original length: {len(base64_string)} chars")
+    logger.debug(
+        f"RESIZING NOW!!! Original length: {len(base64_string)} chars"
+    )
 
     if not PILLOW_AVAILABLE:
         logger.warning("PIL/Pillow not available, skipping image resize")
@@ -41,9 +43,9 @@ def resize_base64_image(
     try:
         image_data = base64.b64decode(base64_string)
         image = Image.open(io.BytesIO(image_data))
-        print(f"Image opened successfully: {image.format} {image.size}")
+        logger.debug(f"Image opened successfully: {image.format} {image.size}")
     except Exception as e:
-        print(f"Failed to decode/open image: {e}")
+        logger.debug(f"Failed to decode/open image: {e}")
         # Emergency fallback - truncate the base64 string to reduce tokens
         if len(base64_string) > 50000:
             return base64_string[:50000]
@@ -52,7 +54,7 @@ def resize_base64_image(
     try:
         width, height = image.size
         current_megapixels = (width * height) / 1_000_000
-        print(
+        logger.debug(
             f"Original dimensions: {width}x{height} ({current_megapixels:.2f} MP)"
         )
 
@@ -60,7 +62,7 @@ def resize_base64_image(
         if current_megapixels > 0.5:
             max_size = (384, 384)
             max_megapixels = 0.15
-            print("Large image detected! Using more aggressive limits")
+            logger.debug("Large image detected! Using more aggressive limits")
 
         # Calculate new dimensions with strict enforcement
         # Always resize if the image is larger than we want
@@ -79,8 +81,8 @@ def resize_base64_image(
             new_height = max(int(height * scale_factor), 64)  # Min height
 
         # Always resize/recompress the image
-        print(f"Resizing to: {new_width}x{new_height}")
-        resized_image = image.resize((new_width, new_height), Image.LANCZOS)
+        logger.debug(f"Resizing to: {new_width}x{new_height}")
+        resized_image = image.resize((new_width, new_height), Image.LANCZOS)  # type: ignore
 
         # Convert back to base64 with strong compression
         buffer = io.BytesIO()
@@ -98,13 +100,13 @@ def resize_base64_image(
 
         resized_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
-        print(
+        logger.debug(
             f"Resized base64 length: {len(resized_base64)} chars (reduction: {100 * (1 - len(resized_base64) / len(base64_string)):.1f}%)"
         )
         return resized_base64
 
     except Exception as e:
-        print(f"Error during resize: {e}")
+        logger.debug(f"Error during resize: {e}")
         # If anything goes wrong, truncate the base64 to a reasonable size
         if len(base64_string) > 50000:
             return base64_string[:50000]
@@ -511,7 +513,7 @@ class OpenAICompletionProvider(CompletionProvider):
 
     def _get_base_args(self, generation_config: GenerationConfig) -> dict:
         # Keep existing implementation...
-        args = {
+        args: dict[str, Any] = {
             "model": generation_config.model,
             "stream": generation_config.stream,
         }

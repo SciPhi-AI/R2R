@@ -12,8 +12,8 @@ from core.utils import (
     SearchResultsCollector,
     SSEFormatter,
     convert_nonserializable_objects,
+    dump_obj,
     extract_citations,
-    dump_obj
 )
 
 logger = logging.getLogger()

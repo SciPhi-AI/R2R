@@ -42,5 +42,5 @@ __all__ = [
     "_get_vector_column_str",
     "yield_sse_event",
     "dump_collector",
-    "dump_obj"
+    "dump_obj",
 ]
