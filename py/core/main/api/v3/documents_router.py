@@ -2171,11 +2171,10 @@ class DocumentsRouter(BaseRouterV3):
         import base64
 
         content = await file.read()
-        content_length = len(content)
 
         return {
             "filename": file.filename,
             "content": base64.b64encode(content).decode("utf-8"),
             "content_type": file.content_type,
-            "content_length": content_length,
+            "content_length": len(content),
         }
