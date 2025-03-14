@@ -751,14 +751,6 @@ class UsersRouter(BaseRouterV3):
         )
         @self.base_endpoint
         async def list_users(
-            # TODO - Implement the following parameters
-            #     offset: int = Query(0, ge=0, example=0),
-            #     limit: int = Query(100, ge=1, le=1000, example=100),
-            #     username: Optional[str] = Query(None, example="john"),
-            #     email: Optional[str] = Query(None, example="john@example.com"),
-            #     is_active: Optional[bool] = Query(None, example=True),
-            #     is_superuser: Optional[bool] = Query(None, example=False),
-            #     auth_user=Depends(self.providers.auth.auth_wrapper()),
             ids: list[str] = Query(
                 [], description="List of user IDs to filter by"
             ),
