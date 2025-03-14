@@ -9,8 +9,8 @@ from .database import PostgresDatabaseProvider
 from .email import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
-    SendGridEmailProvider,
     MailerSendEmailProvider,
+    SendGridEmailProvider,
 )
 from .embeddings import (
     LiteLLMEmbeddingProvider,

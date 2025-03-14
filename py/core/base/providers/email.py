@@ -39,7 +39,7 @@ class EmailConfig(ProviderConfig):
             raise ValueError(
                 "SendGrid API key is required when using SendGrid provider"
             )
-        
+
         if (
             self.provider == "mailersend"
             and not self.mailersend_api_key

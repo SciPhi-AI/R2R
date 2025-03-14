@@ -14,7 +14,9 @@ class MailerSendEmailProvider(EmailProvider):
 
     def __init__(self, config: EmailConfig):
         super().__init__(config)
-        self.api_key = config.mailersend_api_key or os.getenv("MAILERSEND_API_KEY")
+        self.api_key = config.mailersend_api_key or os.getenv(
+            "MAILERSEND_API_KEY"
+        )
         if not self.api_key or not isinstance(self.api_key, str):
             raise ValueError("A valid MailerSend API key is required.")
 
@@ -22,7 +24,9 @@ class MailerSendEmailProvider(EmailProvider):
         if not self.from_email or not isinstance(self.from_email, str):
             raise ValueError("A valid from email is required.")
 
-        self.frontend_url = config.frontend_url or os.getenv("R2R_FRONTEND_URL")
+        self.frontend_url = config.frontend_url or os.getenv(
+            "R2R_FRONTEND_URL"
+        )
         if not self.frontend_url or not isinstance(self.frontend_url, str):
             raise ValueError("A valid frontend URL is required.")
 
@@ -72,7 +76,7 @@ class MailerSendEmailProvider(EmailProvider):
                 },
                 "to": [{"email": to_email}],
             }
-  
+
             if template_id:
                 # Transform the template data to MailerSend's expected format
                 if dynamic_template_data:
@@ -80,24 +84,27 @@ class MailerSendEmailProvider(EmailProvider):
                     for key, value in dynamic_template_data.items():
                         formatted_substitutions[key] = {
                             "var": key,
-                            "value": value
+                            "value": value,
                         }
                     mail_body["variables"] = [
                         {
                             "email": to_email,
-                            "substitutions": formatted_substitutions
+                            "substitutions": formatted_substitutions,
                         }
                     ]
-                
+
                 mail_body["template_id"] = template_id
             else:
-                mail_body.update({
-                    "subject": subject or "",
-                    "text": body or "",
-                    "html": html_body or "",
-                })
+                mail_body.update(
+                    {
+                        "subject": subject or "",
+                        "text": body or "",
+                        "html": html_body or "",
+                    }
+                )
 
             import asyncio
+
             response = await asyncio.to_thread(self.client.send, mail_body)
 
             # Handle different response formats
@@ -105,15 +112,23 @@ class MailerSendEmailProvider(EmailProvider):
                 # Clean the string response by stripping whitespace
                 response_clean = response.strip()
                 if response_clean in ["202", "200"]:
-                    logger.info(f"Email accepted for delivery with status code {response_clean}")
+                    logger.info(
+                        f"Email accepted for delivery with status code {response_clean}"
+                    )
                     return
             elif isinstance(response, int) and response in [200, 202]:
-                logger.info(f"Email accepted for delivery with status code {response}")
+                logger.info(
+                    f"Email accepted for delivery with status code {response}"
+                )
                 return
-            elif isinstance(response, dict) and response.get("status_code") in [200, 202]:
-                logger.info(f"Email accepted for delivery with status code {response.get('status_code')}")
+            elif isinstance(response, dict) and response.get(
+                "status_code"
+            ) in [200, 202]:
+                logger.info(
+                    f"Email accepted for delivery with status code {response.get('status_code')}"
+                )
                 return
-            
+
             # If we get here, it's an error
             error_msg = f"MailerSend error: {response}"
             logger.error(error_msg)
