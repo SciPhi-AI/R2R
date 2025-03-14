@@ -72,23 +72,24 @@ class MailerSendEmailProvider(EmailProvider):
                 },
                 "to": [{"email": to_email}],
             }
-
+            logger.info("Template ID: %s", template_id)
             if template_id:
                 # Transform the template data to MailerSend's expected format
-                formatted_substitutions = {}
-                for key, value in (dynamic_template_data or {}).items():
-                    formatted_substitutions[key] = {
-                        "var": key,
-                        "value": value
-                    }
+                if dynamic_template_data:
+                    formatted_substitutions = {}
+                    for key, value in dynamic_template_data.items():
+                        formatted_substitutions[key] = {
+                            "var": key,
+                            "value": value
+                        }
+                    mail_body["variables"] = [
+                        {
+                            "email": to_email,
+                            "substitutions": formatted_substitutions
+                        }
+                    ]
                 
                 mail_body["template_id"] = template_id
-                mail_body["variables"] = [
-                    {
-                        "email": to_email,
-                        "substitutions": formatted_substitutions
-                    }
-                ]
             else:
                 mail_body.update({
                     "subject": subject or "",
@@ -96,6 +97,7 @@ class MailerSendEmailProvider(EmailProvider):
                     "html": html_body or "",
                 })
 
+            logger.info(f"MailerSend message: {mail_body!r}, type: {type(mail_body)}")
             import asyncio
             response = await asyncio.to_thread(self.client.send, mail_body)
 
@@ -257,7 +259,6 @@ class MailerSendEmailProvider(EmailProvider):
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h1>Password Changed Successfully</h1>
                     <p>Your password has been successfully changed.</p>
-                    <p>If you did not make this change, please contact support immediately and secure your account.</p>
                 </div>
                 """
                 await self.send_email(
