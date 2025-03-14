@@ -3007,6 +3007,8 @@ core = [
     { name = "vecs" },
     { name = "xlrd" },
 ]
+
+[package.dev-dependencies]
 dev = [
     { name = "colorama" },
     { name = "mypy" },
@@ -3037,7 +3039,6 @@ requires-dist = [
     { name = "bcrypt", marker = "extra == 'core'", specifier = ">=4.1.3,<5.0.0" },
     { name = "beautifulsoup4", marker = "extra == 'core'", specifier = ">=4.12.3,<5.0.0" },
     { name = "boto3", marker = "extra == 'core'", specifier = ">=1.35.17,<2.0.0" },
-    { name = "colorama", marker = "extra == 'dev'", specifier = ">=0.4.6,<0.5.0" },
     { name = "colorlog", marker = "extra == 'core'", specifier = ">=6.9.0,<7.0.0" },
     { name = "docutils", marker = "extra == 'core'", specifier = ">=0.21.2,<0.22.0" },
     { name = "epub", marker = "extra == 'core'", specifier = ">=0.5.2,<0.6.0" },
@@ -3055,7 +3056,6 @@ requires-dist = [
     { name = "mailersend", marker = "extra == 'core'", specifier = ">=0.5.6,<0.6.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
     { name = "msg-parser", marker = "extra == 'core'", specifier = ">=1.2.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.1,<2.0.0" },
     { name = "networkx", marker = "extra == 'core'", specifier = ">=3.3,<4.0" },
     { name = "numpy", marker = "extra == 'core'", specifier = ">=1.22.4,<1.29.0" },
     { name = "olefile", marker = "extra == 'core'", specifier = ">=0.47,<0.48" },
@@ -3067,7 +3067,6 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'core'", specifier = ">=11.1.0,<12.0.0" },
     { name = "pillow-heif", marker = "extra == 'core'", specifier = ">=0.21.0,<0.22.0" },
     { name = "posthog", specifier = ">=3.5.0,<4.0.0" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.9,<3.0" },
     { name = "psutil", marker = "extra == 'core'", specifier = ">=6.0.0,<7.0.0" },
     { name = "psycopg-binary", specifier = ">=3.2.3,<4.0.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
@@ -3076,13 +3075,6 @@ requires-dist = [
     { name = "pynacl", marker = "extra == 'core'", specifier = ">=1.5.0,<2.0.0" },
     { name = "pypdf", marker = "extra == 'core'", specifier = ">=4.2.0,<5.0.0" },
     { name = "pypdf2", marker = "extra == 'core'", specifier = ">=3.0.1,<4.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2.0,<9.0.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.6,<0.24.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0,<6.0.0" },
-    { name = "pytest-dependency", marker = "extra == 'dev'", specifier = ">=0.6.0,<0.7.0" },
-    { name = "pytest-html", marker = "extra == 'dev'", specifier = ">=4.1.1,<5.0.0" },
-    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0,<4.0.0" },
-    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.1,<4.0.0" },
     { name = "python-docx", marker = "extra == 'core'", specifier = ">=1.1.0,<2.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
     { name = "python-json-logger", specifier = ">=3.2.1" },
@@ -3090,7 +3082,6 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'core'", specifier = ">=1.0.1,<2.0.0" },
     { name = "pyyaml", marker = "extra == 'core'", specifier = ">=6.0.1,<7.0.0" },
     { name = "requests", specifier = ">=2.31.0,<3.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.6,<0.10.0" },
     { name = "sendgrid", marker = "extra == 'core'", specifier = ">=6.11.0,<7.0.0" },
     { name = "sentry-sdk", marker = "extra == 'core'", specifier = ">=2.20.0,<3.0.0" },
     { name = "sqlalchemy", marker = "extra == 'core'", specifier = ">=2.0.30,<3.0.0" },
@@ -3101,14 +3092,29 @@ requires-dist = [
     { name = "toml", specifier = ">=0.10.2,<0.11.0" },
     { name = "types-aiofiles", specifier = ">=24.1.0.20240626,<25.0.0" },
     { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
-    { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8,<0.11.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
     { name = "unstructured-client", marker = "extra == 'core'", specifier = "==0.25.5" },
     { name = "uvicorn", marker = "extra == 'core'", specifier = ">=0.27.0.post1,<0.28.0" },
     { name = "vecs", marker = "extra == 'core'", specifier = ">=0.4.0,<0.5.0" },
     { name = "xlrd", marker = "extra == 'core'", specifier = ">=2.0.1,<3.0.0" },
 ]
-provides-extras = ["core", "dev"]
+provides-extras = ["core"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "colorama", specifier = ">=0.4.6,<0.5.0" },
+    { name = "mypy", specifier = ">=1.5.1,<2.0.0" },
+    { name = "pre-commit", specifier = ">=2.9,<3.0" },
+    { name = "pytest", specifier = ">=8.2.0,<9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.6,<0.24.0" },
+    { name = "pytest-cov", specifier = ">=5.0.0,<6.0.0" },
+    { name = "pytest-dependency", specifier = ">=0.6.0,<0.7.0" },
+    { name = "pytest-html", specifier = ">=4.1.1,<5.0.0" },
+    { name = "pytest-mock", specifier = ">=3.14.0,<4.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
+    { name = "ruff", specifier = ">=0.9.6,<0.10.0" },
+    { name = "types-toml", specifier = ">=0.10.8,<0.11.0" },
+]
 
 [[package]]
 name = "realtime"
