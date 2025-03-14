@@ -19,6 +19,7 @@ from core.providers import (
     R2RCompletionProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
+    MailerSendEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
     UnstructuredIngestionProvider,
@@ -57,6 +58,7 @@ class R2RProviders(BaseModel):
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider
         | SendGridEmailProvider
+        | MailerSendEmailProvider
     )
 
     class Config:
