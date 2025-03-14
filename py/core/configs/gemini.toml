@@ -1,0 +1,21 @@
+[app]
+fast_llm = "gemini/gemini-2.0-flash-lite"
+quality_llm = "gemini/gemini-2.0-flash"
+vlm = "gemini/gemini-2.0-flash"
+audio_lm = "gemini/gemini-2.0-flash-lite"
+
+[embedding]
+provider = "litellm"
+base_model = "gemini/text-embedding-004"
+base_dimension = nan
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2
+
+[completion_embedding]
+provider = "litellm"
+base_model = "gemini/text-embedding-004"
+base_dimension = nan
+batch_size = 128
+add_title_as_prefix = true
+concurrent_request_limit = 2

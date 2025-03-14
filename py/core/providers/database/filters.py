@@ -168,9 +168,10 @@ class SQLFilterBuilder:
 
     @staticmethod
     def _psql_quote_literal(value: str) -> str:
-        """
-        Simple quoting for demonstration. In production, use parameterized queries or
-        your DB driver's quoting function instead.
+        """Simple quoting for demonstration.
+
+        In production, use parameterized queries or your DB driver's quoting
+        function instead.
         """
         return "'" + value.replace("'", "''") + "'"
 
@@ -195,8 +196,8 @@ class SQLFilterBuilder:
             return self._build_column_condition(key, op, val)
 
     def _build_parent_id_condition(self, op: str, val: Any) -> str:
-        """
-        For 'graphs' tables, parent_id is a single UUID (not an array).
+        """For 'graphs' tables, parent_id is a single UUID (not an array).
+
         We handle the same ops but in a simpler, single-UUID manner.
         """
         param_idx = len(self.params) + 1
@@ -240,8 +241,8 @@ class SQLFilterBuilder:
             raise FilterError(f"Unsupported operator {op} for parent_id")
 
     def _build_collection_id_condition(self, op: str, val: Any) -> str:
-        """
-        For the 'chunks' table, collection_ids is an array of UUIDs.
+        """For the 'chunks' table, collection_ids is an array of UUIDs.
+
         This logic stays exactly as you had it.
         """
         param_idx = len(self.params) + 1
@@ -441,9 +442,7 @@ class SQLFilterBuilder:
 def apply_filters(
     filters: dict, params: list[Any], mode: str = "where_clause"
 ) -> tuple[str, list[Any]]:
-    """
-    Apply filters with consistent WHERE clause handling
-    """
+    """Apply filters with consistent WHERE clause handling."""
     if not filters:
         return "", params
 

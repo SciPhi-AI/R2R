@@ -6,7 +6,7 @@ import os
 import time
 from copy import copy
 from io import BytesIO
-from typing import Any, AsyncGenerator, Optional
+from typing import Any, AsyncGenerator
 
 import httpx
 from unstructured_client import UnstructuredClient
@@ -46,30 +46,30 @@ class UnstructuredIngestionConfig(IngestionConfig):
     new_after_n_chars: int = 1500
     overlap: int = 64
 
-    coordinates: Optional[bool] = None
-    encoding: Optional[str] = None  # utf-8
-    extract_image_block_types: Optional[list[str]] = None
-    gz_uncompressed_content_type: Optional[str] = None
-    hi_res_model_name: Optional[str] = None
-    include_orig_elements: Optional[bool] = None
-    include_page_breaks: Optional[bool] = None
+    coordinates: bool | None = None
+    encoding: str | None = None  # utf-8
+    extract_image_block_types: list[str] | None = None
+    gz_uncompressed_content_type: str | None = None
+    hi_res_model_name: str | None = None
+    include_orig_elements: bool | None = None
+    include_page_breaks: bool | None = None
 
-    languages: Optional[list[str]] = None
-    multipage_sections: Optional[bool] = None
-    ocr_languages: Optional[list[str]] = None
+    languages: list[str] | None = None
+    multipage_sections: bool | None = None
+    ocr_languages: list[str] | None = None
     # output_format: Optional[str] = "application/json"
-    overlap_all: Optional[bool] = None
-    pdf_infer_table_structure: Optional[bool] = None
+    overlap_all: bool | None = None
+    pdf_infer_table_structure: bool | None = None
 
-    similarity_threshold: Optional[float] = None
-    skip_infer_table_types: Optional[list[str]] = None
-    split_pdf_concurrency_level: Optional[int] = None
-    split_pdf_page: Optional[bool] = None
-    starting_page_number: Optional[int] = None
-    strategy: Optional[str] = None
-    chunking_strategy: Optional[str | ChunkingStrategy] = None
-    unique_element_ids: Optional[bool] = None
-    xml_keep_tags: Optional[bool] = None
+    similarity_threshold: float | None = None
+    skip_infer_table_types: list[str] | None = None
+    split_pdf_concurrency_level: int | None = None
+    split_pdf_page: bool | None = None
+    starting_page_number: int | None = None
+    strategy: str | None = None
+    chunking_strategy: str | ChunkingStrategy | None = None  # type: ignore
+    unique_element_ids: bool | None = None
+    xml_keep_tags: bool | None = None
 
     def to_ingestion_request(self):
         import json
@@ -187,14 +187,14 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     )
         # TODO - Reduce code duplication between Unstructured & R2R
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[
-                f"{doc_parser_name}_{str(doc_type)}"
-            ] = UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
-                doc_parser_name
-            ](
-                config=self.config,
-                database_provider=self.database_provider,
-                llm_provider=self.llm_provider,
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                UnstructuredIngestionProvider.EXTRA_PARSERS[doc_type][
+                    doc_parser_name
+                ](
+                    config=self.config,
+                    database_provider=self.database_provider,
+                    llm_provider=self.llm_provider,
+                )
             )
 
     async def parse_fallback(
@@ -203,33 +203,47 @@ class UnstructuredIngestionProvider(IngestionProvider):
         ingestion_config: dict,
         parser_name: str,
     ) -> AsyncGenerator[FallbackElement, None]:
-        context = ""
-        async for text in self.parsers[parser_name].ingest(file_content, **ingestion_config):  # type: ignore
-            if text is not None:
-                context += text + "\n\n"
-        logging.info(f"Fallback ingestion with config = {ingestion_config}")
+        contents = []
+        async for chunk in self.parsers[parser_name].ingest(  # type: ignore
+            file_content, **ingestion_config
+        ):  # type: ignore
+            if isinstance(chunk, dict) and chunk.get("content"):
+                contents.append(chunk)
+            elif chunk:  # Handle string output for backward compatibility
+                contents.append({"content": chunk})
 
-        if not context.strip():
+        if not contents:
             logging.warning(
                 "No valid text content was extracted during parsing"
             )
             return
 
-        loop = asyncio.get_event_loop()
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=ingestion_config["new_after_n_chars"],
-            chunk_overlap=ingestion_config["overlap"],
-        )
-        chunks = await loop.run_in_executor(
-            None, splitter.create_documents, [context]
-        )
+        logging.info(f"Fallback ingestion with config = {ingestion_config}")
 
-        for chunk_id, text_chunk in enumerate(chunks):
-            yield FallbackElement(
-                text=text_chunk.page_content,
-                metadata={"chunk_id": chunk_id},
+        iteration = 0
+        for content_item in contents:
+            text = content_item["content"]
+
+            loop = asyncio.get_event_loop()
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=ingestion_config["new_after_n_chars"],
+                chunk_overlap=ingestion_config["overlap"],
             )
-            await asyncio.sleep(0)
+            chunks = await loop.run_in_executor(
+                None, splitter.create_documents, [text]
+            )
+
+            for text_chunk in chunks:
+                metadata = {"chunk_id": iteration}
+                if "page_number" in content_item:
+                    metadata["page_number"] = content_item["page_number"]
+
+                yield FallbackElement(
+                    text=text_chunk.page_content,
+                    metadata=metadata,
+                )
+                iteration += 1
+                await asyncio.sleep(0)
 
     async def parse(
         self,

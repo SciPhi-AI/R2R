@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class SendGridEmailProvider(EmailProvider):
-    """Email provider implementation using SendGrid API"""
+    """Email provider implementation using SendGrid API."""
 
     def __init__(self, config: EmailConfig):
         super().__init__(config)
@@ -48,7 +48,7 @@ class SendGridEmailProvider(EmailProvider):
         self.docs_base_url = f"{self.frontend_url}/documentation"
 
     def _get_base_template_data(self, to_email: str) -> dict:
-        """Get base template data used across all email templates"""
+        """Get base template data used across all email templates."""
         return {
             "user_email": to_email,
             "docs_url": self.docs_base_url,

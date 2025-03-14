@@ -23,6 +23,8 @@ from core.base.api.models import (
     ToolResultEvent,
     UnknownEvent,
     WrappedAgentResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -58,7 +60,7 @@ def parse_retrieval_event(raw: dict) -> Optional[AgentEvent]:
         data_obj = json.loads(data_str)
     except json.JSONDecodeError as e:
         # You can decide whether to raise or return UnknownEvent
-        raise ValueError(f"Could not parse JSON in SSE event data: {e}")
+        raise ValueError(f"Could not parse JSON in SSE event data: {e}") from e
 
     # Now branch on event_type to build the right Pydantic model
     if event_type == "search_results":
@@ -283,9 +285,7 @@ def agent_arg_parser(
 
 
 class RetrievalSDK:
-    """
-    SDK for interacting with documents in the v3 API.
-    """
+    """SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -296,8 +296,7 @@ class RetrievalSDK:
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
-        """
-        Conduct a vector and/or graph search.
+        """Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.
@@ -324,24 +323,40 @@ class RetrievalSDK:
         self,
         messages: list[dict | Message],
         generation_config: Optional[dict | GenerationConfig] = None,
-    ):
-        return self.client._make_request(
+    ) -> WrappedLLMChatCompletion:
+        cast_messages: list[Message] = [
+            Message(**msg) if isinstance(msg, dict) else msg
+            for msg in messages
+        ]
+
+        if generation_config and not isinstance(generation_config, dict):
+            generation_config = generation_config.model_dump()
+
+        data: dict[str, Any] = {
+            "messages": [msg.model_dump() for msg in cast_messages],
+            "generation_config": generation_config,
+        }
+        response_dict = self.client._make_request(
             "POST",
             "retrieval/completion",
             json=completion_arg_parser(messages, generation_config),
             version="v3",
         )
 
+        return WrappedLLMChatCompletion(**response_dict)
+
     def embedding(
         self,
         text: str,
-    ):
-        return self.client._make_request(
+    ) -> WrappedEmbeddingResponse:
+        response_dict = self.client._make_request(
             "POST",
             "retrieval/embedding",
             data=embedding_arg_parser(text),
             version="v3",
         )
+
+        return WrappedEmbeddingResponse(**response_dict)
 
     def rag(
         self,
@@ -353,8 +368,8 @@ class RetrievalSDK:
         include_title_if_available: Optional[bool] = False,
         include_web_search: Optional[bool] = False,
     ) -> WrappedRAGResponse | AsyncGenerator[RAGResponse, None]:
-        """
-        Conducts a Retrieval Augmented Generation (RAG) search with the given query.
+        """Conducts a Retrieval Augmented Generation (RAG) search with the
+        given query.
 
         Args:
             query (str): The query to search for.
@@ -413,9 +428,10 @@ class RetrievalSDK:
         research_tools: Optional[list[str]] = None,
         tools: Optional[list[str]] = None,  # For backward compatibility
         mode: Optional[str] = "rag",
-    ) -> WrappedAgentResponse | AsyncGenerator[AgentEvent, None]:
-        """
-        Performs a single turn in a conversation with an agent.
+    ) -> (
+        WrappedAgentResponse | AsyncGenerator[Union[AgentEvent, Message], None]
+    ):
+        """Performs a single turn in a conversation with a RAG agent.
 
         Args:
             message (Optional[dict | Message]): The message to send to the agent.
@@ -458,7 +474,32 @@ class RetrievalSDK:
 
         # Determine if streaming is enabled
         is_stream = False
-        if rag_generation_config and rag_generation_config.get(
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
+            "stream", False
+        ):
+            is_stream = True
+
+        data: dict[str, Any] = {
+            "rag_generation_config": rag_generation_config or {},
+            "search_settings": search_settings,
+            "task_prompt": task_prompt,
+            "include_title_if_available": include_title_if_available,
+            "conversation_id": (
+                str(conversation_id) if conversation_id else None
+            ),
+            "tools": tools,
+            "max_tool_context_length": max_tool_context_length,
+            "use_system_context": use_system_context,
+        }
+        if search_mode:
+            data["search_mode"] = search_mode
+
+        if message:
+            cast_message: Message = (
+                Message(**message) if isinstance(message, dict) else message
+            )
+            data["message"] = cast_message.model_dump()
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
             is_stream = True

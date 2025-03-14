@@ -38,8 +38,7 @@ class IndicesRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -78,13 +77,11 @@ class IndicesRouter(BaseRouterV3):
                                     "concurrently": True
                                 }
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -109,13 +106,11 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             # Create HNSW Index
                             curl -X POST "https://api.example.com/indices" \\
                                 -H "Content-Type: application/json" \\
@@ -155,8 +150,7 @@ class IndicesRouter(BaseRouterV3):
                                     "concurrently": true
                                 }
                                 }'
-                                """
-                        ),
+                                """),
                     },
                 ]
             },
@@ -170,9 +164,12 @@ class IndicesRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Create a new vector similarity search index in over the target table. Allowed tables include 'vectors', 'entity', 'document_collections'.
-            Vectors correspond to the chunks of text that are indexed for similarity search, whereas entity and document_collections are created during knowledge graph construction.
+            """Create a new vector similarity search index in over the target
+            table. Allowed tables include 'vectors', 'entity',
+            'document_collections'. Vectors correspond to the chunks of text
+            that are indexed for similarity search, whereas entity and
+            document_collections are created during knowledge graph
+            construction.
 
             This endpoint creates a database index optimized for efficient similarity search over vector embeddings.
             It supports two main indexing methods:
@@ -238,8 +235,7 @@ class IndicesRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -249,13 +245,11 @@ class IndicesRouter(BaseRouterV3):
                                 offset=0,
                                 limit=10
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -268,13 +262,11 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/indices?offset=0&limit=10" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json"
@@ -283,8 +275,7 @@ class IndicesRouter(BaseRouterV3):
                             curl -X GET "https://api.example.com/indices?offset=0&limit=10&filters={\"table_name\":\"vectors\"}" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -305,8 +296,8 @@ class IndicesRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedVectorIndicesResponse:
-            """
-            List existing vector similarity search indices with pagination support.
+            """List existing vector similarity search indices with pagination
+            support.
 
             Returns details about each index including:
             - Name and table name
@@ -345,21 +336,18 @@ class IndicesRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
 
                             # Get detailed information about a specific index
                             index = client.indices.retrieve("index_1")
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -374,17 +362,14 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/indices/vectors/index_1" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -400,8 +385,7 @@ class IndicesRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedVectorIndexResponse:
-            """
-            Get detailed information about a specific vector index.
+            """Get detailed information about a specific vector index.
 
             Returns comprehensive information about the index including:
             - Configuration details (method, measure, parameters)
@@ -432,7 +416,7 @@ class IndicesRouter(BaseRouterV3):
                 raise R2RException(
                     f"Index '{index_name}' not found", status_code=404
                 )
-            return {"index": indices["indices"][0]}
+            return {"index": indices["indices"][0]}  # type: ignore
 
         # TODO - Implement update index
         #         @self.router.post(
@@ -501,8 +485,7 @@ class IndicesRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -513,13 +496,11 @@ class IndicesRouter(BaseRouterV3):
                                 table_name="vectors",
                                 run_with_orchestration=True
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -534,18 +515,15 @@ class IndicesRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/indices/index_1" \\
                                 -H "Content-Type: application/json" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -566,8 +544,7 @@ class IndicesRouter(BaseRouterV3):
             # run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Delete an existing vector similarity search index.
+            """Delete an existing vector similarity search index.
 
             This endpoint removes the specified index from the database. Important considerations:
 

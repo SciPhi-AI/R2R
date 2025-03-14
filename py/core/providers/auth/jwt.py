@@ -74,15 +74,15 @@ class JwtAuthProvider(AuthProvider):
             logger.info(f"JWT verification failed: {e}")
             raise R2RException(
                 status_code=401, message="Invalid JWT token", detail=e
-            )
+            ) from e
         if user:
             # Create user in database if not exists
             try:
-                existingUser = await self.database_provider.users_handler.get_user_by_email(
+                await self.database_provider.users_handler.get_user_by_email(
                     user.get("email")
                 )
                 # TODO do we want to update user info here based on what's in the token?
-            except Exception as e:
+            except Exception:
                 # user doesn't exist, create in db
                 logger.debug(f"Creating new user: {user.get('email')}")
                 try:
@@ -95,7 +95,7 @@ class JwtAuthProvider(AuthProvider):
                     logger.error(f"Error creating user: {e}")
                     raise R2RException(
                         status_code=500, message="Failed to create user"
-                    )
+                    ) from e
             return TokenData(
                 email=user.get("email"),
                 token_type="bearer",

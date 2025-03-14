@@ -41,7 +41,7 @@ class BcryptCryptoConfig(CryptoConfig):
         try:
             # First try to decode as base64 (new format)
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
-        except:
+        except Exception:
             # If that fails, treat as raw bcrypt hash (old format)
             stored_hash = hashed_password.encode("utf-8")
 
@@ -86,7 +86,7 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             stored_hash = base64.b64decode(hashed_password.encode("utf-8"))
             if not stored_hash.startswith(b"$2b$"):  # Valid bcrypt hash prefix
                 stored_hash = hashed_password.encode("utf-8")
-        except:
+        except Exception:
             # Otherwise raw bcrypt hash (old format)
             stored_hash = hashed_password.encode("utf-8")
 
@@ -131,7 +131,9 @@ class BCryptCryptoProvider(CryptoProvider, ABC):
             signature = signing_key.sign(data.encode())
             return base64.b64encode(signature.signature).decode()
         except Exception as e:
-            raise ValueError(f"Invalid private key or signing error: {str(e)}")
+            raise ValueError(
+                f"Invalid private key or signing error: {str(e)}"
+            ) from e
 
     def verify_request_signature(
         self, public_key: str, signature: str, data: str

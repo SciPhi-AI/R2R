@@ -3,7 +3,7 @@
 from copy import copy
 from enum import Enum
 from typing import Any, Optional
-from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field
 
@@ -52,16 +52,18 @@ class ChunkSearchResult(R2RSerializable):
     class Config:
         populate_by_name = True
         json_schema_extra = {
-            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-            "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-            "collection_ids": [],
-            "score": 0.23943702876567796,
-            "text": "Example text from the document",
-            "metadata": {
-                "title": "example_document.pdf",
-                "associated_query": "What is the capital of France?",
-            },
+            "example": {
+                "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                "collection_ids": [],
+                "score": 0.23943702876567796,
+                "text": "Example text from the document",
+                "metadata": {
+                    "title": "example_document.pdf",
+                    "associated_query": "What is the capital of France?",
+                },
+            }
         }
 
 
@@ -79,9 +81,11 @@ class GraphEntityResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "name": "Entity Name",
-            "description": "Entity Description",
-            "metadata": {},
+            "example": {
+                "name": "Entity Name",
+                "description": "Entity Description",
+                "metadata": {},
+            }
         }
 
 
@@ -98,9 +102,11 @@ class GraphRelationshipResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "name": "Relationship Name",
-            "description": "Relationship Description",
-            "metadata": {},
+            "example": {
+                "name": "Relationship Name",
+                "description": "Relationship Description",
+                "metadata": {},
+            }
         }
 
     def __str__(self) -> str:
@@ -115,11 +121,13 @@ class GraphCommunityResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "name": "Community Name",
-            "summary": "Community Summary",
-            "rating": 9,
-            "rating_explanation": "Rating Explanation",
-            "metadata": {},
+            "example": {
+                "name": "Community Name",
+                "summary": "Community Summary",
+                "rating": 9,
+                "rating_explanation": "Rating Explanation",
+                "metadata": {},
+            }
         }
 
     def __str__(self) -> str:
@@ -136,16 +144,26 @@ class GraphSearchResult(R2RSerializable):
     score: Optional[float] = None
     id: UUID
 
-    class Config:
-        json_schema_extra = {
-            "content": GraphEntityResult.Config.json_schema_extra,
-            "result_type": "entity",
-            "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
-            "metadata": {"associated_query": "What is the capital of France?"},
-        }
-
     def __str__(self) -> str:
         return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
+
+    class Config:
+        populate_by_name = True
+        json_schema_extra = {
+            "example": {
+                "content": {
+                    "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                    "name": "Entity Name",
+                    "description": "Entity Description",
+                    "metadata": {},
+                },
+                "result_type": "entity",
+                "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+                "metadata": {
+                    "associated_query": "What is the capital of France?"
+                },
+            }
+        }
 
 
 class WebPageSearchResult(R2RSerializable):
@@ -160,17 +178,19 @@ class WebPageSearchResult(R2RSerializable):
 
     class Config:
         json_schema_extra = {
-            "title": "Page Title",
-            "link": "https://example.com/page",
-            "snippet": "Page snippet",
-            "position": 1,
-            "date": "2021-01-01",
-            "sitelinks": [
-                {
-                    "title": "Sitelink Title",
-                    "link": "https://example.com/sitelink",
-                }
-            ],
+            "example": {
+                "title": "Page Title",
+                "link": "https://example.com/page",
+                "snippet": "Page snippet",
+                "position": 1,
+                "date": "2021-01-01",
+                "sitelinks": [
+                    {
+                        "title": "Sitelink Title",
+                        "link": "https://example.com/sitelink",
+                    }
+                ],
+            }
         }
 
     def __str__(self) -> str:
@@ -232,16 +252,27 @@ class WebSearchResult(R2RSerializable):
 
 
 class ContextDocumentResult(R2RSerializable):
-    """
-    Holds a single 'document' plus its 'chunks', exactly as your
-    content_method returns them, or tidied up a bit.
-    """
+    """Holds a single 'document' plus its 'chunks', exactly as your
+    content_method returns them, or tidied up a bit."""
 
     document: dict[str, Any]  # or create a formal Document model
     chunks: list[ChunkSearchResult] = Field(default_factory=list)
 
     def __str__(self) -> str:
         return f"ContextDocumentResult(document={self.document}, chunks={self.chunks})"
+
+    class Config:
+        populate_by_name = True
+        json_schema_extra = {
+            "example": {
+                "document": {
+                    "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                    "title": "Document Title",
+                    "metadata": {},
+                },
+                "chunks": ["Chunk 1", "Chunk 2"],
+            }
+        }
 
 
 class AggregateSearchResult(R2RSerializable):
@@ -280,6 +311,67 @@ class AggregateSearchResult(R2RSerializable):
                 if self.context_document_results
                 else []
             ),
+        }
+
+    class Config:
+        populate_by_name = True
+        json_schema_extra = {
+            "example": {
+                "chunk_search_results": [
+                    {
+                        "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                        "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
+                        "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
+                        "collection_ids": [],
+                        "score": 0.23943702876567796,
+                        "text": "Example text from the document",
+                        "metadata": {
+                            "title": "example_document.pdf",
+                            "associated_query": "What is the capital of France?",
+                        },
+                    }
+                ],
+                "graph_search_results": [
+                    {
+                        "content": {
+                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                            "name": "Entity Name",
+                            "description": "Entity Description",
+                            "metadata": {},
+                        },
+                        "result_type": "entity",
+                        "chunk_ids": ["c68dc72e-fc23-5452-8f49-d7bd46088a96"],
+                        "metadata": {
+                            "associated_query": "What is the capital of France?"
+                        },
+                    }
+                ],
+                "web_search_results": [
+                    {
+                        "title": "Page Title",
+                        "link": "https://example.com/page",
+                        "snippet": "Page snippet",
+                        "position": 1,
+                        "date": "2021-01-01",
+                        "sitelinks": [
+                            {
+                                "title": "Sitelink Title",
+                                "link": "https://example.com/sitelink",
+                            }
+                        ],
+                    }
+                ],
+                "context_document_results": [
+                    {
+                        "document": {
+                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
+                            "title": "Document Title",
+                            "chunks": ["Chunk 1", "Chunk 2"],
+                            "metadata": {},
+                        },
+                    }
+                ],
+            }
         }
 
 
@@ -345,7 +437,8 @@ class GraphSearchSettings(R2RSerializable):
 
 
 class SearchSettings(R2RSerializable):
-    """Main search settings class that combines shared settings with specialized settings for chunks and graph."""
+    """Main search settings class that combines shared settings with
+    specialized settings for chunks and graph."""
 
     # Search type flags
     use_hybrid_search: bool = Field(
@@ -393,17 +486,20 @@ class SearchSettings(R2RSerializable):
     )
     include_scores: bool = Field(
         default=True,
-        description="Whether to include search score values in the search results",
+        description="""Whether to include search score values in the
+        search results""",
     )
 
     # Search strategy and settings
     search_strategy: str = Field(
         default="vanilla",
-        description="Search strategy to use (e.g., 'vanilla', 'query_fusion', 'hyde')",
+        description="""Search strategy to use
+        (e.g., 'vanilla', 'query_fusion', 'hyde')""",
     )
     hybrid_settings: HybridSearchSettings = Field(
         default_factory=HybridSearchSettings,
-        description="Settings for hybrid search (only used if `use_semantic_search` and `use_fulltext_search` are both true)",
+        description="""Settings for hybrid search (only used if
+        `use_semantic_search` and `use_fulltext_search` are both true)""",
     )
 
     # Specialized settings
@@ -426,37 +522,39 @@ class SearchSettings(R2RSerializable):
         populate_by_name = True
         json_encoders = {UUID: str}
         json_schema_extra = {
-            "use_semantic_search": True,
-            "use_fulltext_search": False,
-            "use_hybrid_search": False,
-            "filters": {"category": "technology"},
-            "limit": 20,
-            "offset": 0,
-            "search_strategy": "vanilla",
-            "hybrid_settings": {
-                "full_text_weight": 1.0,
-                "semantic_weight": 5.0,
-                "full_text_limit": 200,
-                "rrf_k": 50,
-            },
-            "chunk_settings": {
-                "enabled": True,
-                "index_measure": "cosine_distance",
-                "include_metadata": True,
-                "probes": 10,
-                "ef_search": 40,
-            },
-            "graph_settings": {
-                "enabled": True,
-                "generation_config": GenerationConfig.Config.json_schema_extra,
-                "max_community_description_length": 65536,
-                "max_llm_queries_for_global_search": 250,
-                "limits": {
-                    "entity": 20,
-                    "relationship": 20,
-                    "community": 20,
+            "example": {
+                "use_semantic_search": True,
+                "use_fulltext_search": False,
+                "use_hybrid_search": False,
+                "filters": {"category": "technology"},
+                "limit": 20,
+                "offset": 0,
+                "search_strategy": "vanilla",
+                "hybrid_settings": {
+                    "full_text_weight": 1.0,
+                    "semantic_weight": 5.0,
+                    "full_text_limit": 200,
+                    "rrf_k": 50,
                 },
-            },
+                "chunk_settings": {
+                    "enabled": True,
+                    "index_measure": "cosine_distance",
+                    "include_metadata": True,
+                    "probes": 10,
+                    "ef_search": 40,
+                },
+                "graph_settings": {
+                    "enabled": True,
+                    "generation_config": GenerationConfig.Config.json_schema_extra,
+                    "max_community_description_length": 65536,
+                    "max_llm_queries_for_global_search": 250,
+                    "limits": {
+                        "entity": 20,
+                        "relationship": 20,
+                        "community": 20,
+                    },
+                },
+            }
         }
 
     def __init__(self, **data):

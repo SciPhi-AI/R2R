@@ -24,7 +24,7 @@ from core.base.providers import (
     DatabaseProvider,
     IngestionConfig,
 )
-from shared.abstractions import PDFParsingError, PopperNotFoundError
+from shared.abstractions import PDFParsingError, PopplerNotFoundError
 
 logger = logging.getLogger()
 
@@ -46,9 +46,8 @@ class VLMPDFParser(AsyncParser[str | bytes]):
     async def convert_pdf_to_images(
         self, data: str | bytes
     ) -> list[Image.Image]:
-        """
-        Convert PDF pages to images asynchronously using in-memory conversion.
-        """
+        """Convert PDF pages to images asynchronously using in-memory
+        conversion."""
         logger.info("Starting PDF conversion to images.")
         start_time = time.perf_counter()
         options = {
@@ -71,16 +70,18 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 f"PDF conversion completed in {elapsed:.2f} seconds, total pages: {len(images)}"
             )
             return images
-        except PDFInfoNotInstalledError:
+        except PDFInfoNotInstalledError as e:
             logger.error(
                 "PDFInfoNotInstalledError encountered during PDF conversion."
             )
-            raise PopperNotFoundError()
+            raise PopplerNotFoundError() from e
         except Exception as err:
             logger.error(
                 f"Error converting PDF to images: {err} type: {type(err)}"
             )
-            raise PDFParsingError(f"Failed to process PDF: {str(err)}", err)
+            raise PDFParsingError(
+                f"Failed to process PDF: {str(err)}", err
+            ) from err
 
     async def process_page(
         self, image: Image.Image, page_num: int
@@ -130,7 +131,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content
                 page_elapsed = time.perf_counter() - page_start
-                logger.info(
+                logger.debug(
                     f"Processed page {page_num} in {page_elapsed:.2f} seconds."
                 )
                 return {"page": str(page_num), "content": content}
@@ -146,9 +147,10 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
     async def ingest(
         self, data: str | bytes, maintain_order: bool = True, **kwargs
-    ) -> AsyncGenerator[str, None]:
-        """
-        Ingest PDF data and yield the text description for each page using the vision model.
+    ) -> AsyncGenerator[dict[str, str | int], None]:
+        """Ingest PDF data and yield the text description for each page using
+        the vision model.
+
         (This version yields a string per page rather than a dictionary.)
         """
         ingest_start = time.perf_counter()
@@ -185,16 +187,21 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                         result = await task
                         page_num = int(result["page"])
                         results[page_num] = result
-                        # **Fix:** Yield only the content string instead of the whole dictionary.
                         while next_page in results:
-                            yield results.pop(next_page)["content"]
+                            yield {
+                                "content": results[next_page]["content"],
+                                "page_number": next_page,
+                            }
+                            results.pop(next_page)
                             next_page += 1
             else:
                 # Yield results as tasks complete
                 for coro in asyncio.as_completed(tasks.keys()):
                     result = await coro
-                    # **Fix:** Yield only the content string.
-                    yield result["content"]
+                    yield {
+                        "content": result["content"],
+                        "page_number": int(result["page"]),
+                    }
             total_elapsed = time.perf_counter() - ingest_start
             logger.info(
                 f"Completed PDF ingestion in {total_elapsed:.2f} seconds using VLMPDFParser."
@@ -241,13 +248,13 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                                 "Nl",
                                 "No",
                             ]  # Keep letters and numbers
-                            or "\u4E00" <= x <= "\u9FFF"  # Chinese characters
-                            or "\u0600" <= x <= "\u06FF"  # Arabic characters
-                            or "\u0400" <= x <= "\u04FF"  # Cyrillic letters
-                            or "\u0370" <= x <= "\u03FF"  # Greek letters
-                            or "\u0E00" <= x <= "\u0E7F"  # Thai
-                            or "\u3040" <= x <= "\u309F"  # Japanese Hiragana
-                            or "\u30A0" <= x <= "\u30FF"  # Katakana
+                            or "\u4e00" <= x <= "\u9fff"  # Chinese characters
+                            or "\u0600" <= x <= "\u06ff"  # Arabic characters
+                            or "\u0400" <= x <= "\u04ff"  # Cyrillic letters
+                            or "\u0370" <= x <= "\u03ff"  # Greek letters
+                            or "\u0e00" <= x <= "\u0e7f"  # Thai
+                            or "\u3040" <= x <= "\u309f"  # Japanese Hiragana
+                            or "\u30a0" <= x <= "\u30ff"  # Katakana
                             or x in string.printable
                         ),
                         page_text,

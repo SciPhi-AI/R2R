@@ -29,7 +29,6 @@ from core.base.api.models import (
     WrappedUserResponse,
     WrappedUsersResponse,
 )
-from core.base.providers.database import LimitSettings
 
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
@@ -61,21 +60,18 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             new_user = client.users.create(
                                 email="jane.doe@example.com",
                                 password="secure_password123"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -88,20 +84,17 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{
                                     "email": "jane.doe@example.com",
                                     "password": "secure_password123"
-                                }'"""
-                        ),
+                                }'"""),
                     },
                 ]
             },
@@ -161,8 +154,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -173,13 +165,11 @@ class UsersRouter(BaseRouterV3):
                                 columns=["id", "name", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -193,21 +183,18 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/users/export" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "name", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -226,9 +213,7 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export users as a CSV file.
-            """
+            """Export users as a CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -236,12 +221,13 @@ class UsersRouter(BaseRouterV3):
                     message="Only a superuser can export data.",
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_users(
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_users(
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -260,21 +246,18 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             tokens = client.users.verify_email(
                                 email="jane.doe@example.com",
                                 verification_code="1lklwal!awdclm"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -287,18 +270,15 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/login" \\
                                 -H "Content-Type: application/x-www-form-urlencoded" \\
                                 -d "email=jane.doe@example.com&verification_code=1lklwal!awdclm"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -337,20 +317,17 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             tokens = client.users.send_verification_email(
                                 email="jane.doe@example.com",
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -362,18 +339,15 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/send-verification-email" \\
                                 -H "Content-Type: application/x-www-form-urlencoded" \\
                                 -d "email=jane.doe@example.com"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -395,7 +369,9 @@ class UsersRouter(BaseRouterV3):
                 )
 
             await self.services.auth.send_verification_email(email=email)
-            return GenericMessageResponse(message="A verification email has been sent.")  # type: ignore
+            return GenericMessageResponse(
+                message="A verification email has been sent."
+            )  # type: ignore
 
         @self.router.post(
             "/users/login",
@@ -405,8 +381,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -414,13 +389,11 @@ class UsersRouter(BaseRouterV3):
                                 email="jane.doe@example.com",
                                 password="secure_password123"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -433,18 +406,15 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/login" \\
                                 -H "Content-Type: application/x-www-form-urlencoded" \\
                                 -d "username=jane.doe@example.com&password=secure_password123"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -465,20 +435,17 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # client.login(...)
                             result = client.users.logout()
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -488,17 +455,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/logout" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -519,21 +483,18 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # client.login(...)
 
                             new_tokens = client.users.refresh_token()
-                            # New tokens are automatically stored in the client"""
-                        ),
+                            # New tokens are automatically stored in the client"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -543,26 +504,23 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/refresh-token" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{
                                     "refresh_token": "YOUR_REFRESH_TOKEN"
-                                }'"""
-                        ),
+                                }'"""),
                     },
                 ]
             },
         )
         @self.base_endpoint
         async def refresh_token(
-            refresh_token: str = Body(..., description="Refresh token")
+            refresh_token: str = Body(..., description="Refresh token"),
         ) -> WrappedTokenResponse:
             """Refresh the access token using a refresh token."""
             result = await self.services.auth.refresh_access_token(
@@ -578,8 +536,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -588,13 +545,11 @@ class UsersRouter(BaseRouterV3):
                             result = client.users.change_password(
                                 current_password="old_password123",
                                 new_password="new_secure_password456"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -607,21 +562,18 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/change-password" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{
                                     "current_password": "old_password123",
                                     "new_password": "new_secure_password456"
-                                }'"""
-                        ),
+                                }'"""),
                     },
                 ]
             },
@@ -631,7 +583,7 @@ class UsersRouter(BaseRouterV3):
             current_password: str = Body(..., description="Current password"),
             new_password: str = Body(..., description="New password"),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> GenericMessageResponse:
+        ) -> WrappedGenericMessageResponse:
             """Change the authenticated user's password."""
             result = await self.services.auth.change_password(
                 auth_user, current_password, new_password
@@ -648,20 +600,17 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             result = client.users.request_password_reset(
                                 email="jane.doe@example.com"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -673,19 +622,16 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/request-password-reset" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{
                                     "email": "jane.doe@example.com"
-                                }'"""
-                        ),
+                                }'"""),
                     },
                 ]
             },
@@ -708,21 +654,18 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             result = client.users.reset_password(
                                 reset_token="reset_token_received_via_email",
                                 new_password="new_secure_password789"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -735,20 +678,17 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/users/reset-password" \\
                                 -H "Content-Type: application/json" \\
                                 -d '{
                                     "reset_token": "reset_token_received_via_email",
                                     "new_password": "new_secure_password789"
-                                }'"""
-                        ),
+                                }'"""),
                     },
                 ]
             },
@@ -772,8 +712,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -784,13 +723,11 @@ class UsersRouter(BaseRouterV3):
                                 offset=0,
                                 limit=100,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -800,31 +737,20 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/users?offset=0&limit=100&username=john&email=john@example.com&is_active=true&is_superuser=false" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
         )
         @self.base_endpoint
         async def list_users(
-            # TODO - Implement the following parameters
-            #     offset: int = Query(0, ge=0, example=0),
-            #     limit: int = Query(100, ge=1, le=1000, example=100),
-            #     username: Optional[str] = Query(None, example="john"),
-            #     email: Optional[str] = Query(None, example="john@example.com"),
-            #     is_active: Optional[bool] = Query(None, example=True),
-            #     is_superuser: Optional[bool] = Query(None, example=False),
-            #     auth_user=Depends(self.providers.auth.auth_wrapper()),
             ids: list[str] = Query(
                 [], description="List of user IDs to filter by"
             ),
@@ -841,8 +767,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUsersResponse:
-            """
-            List all users with pagination and filtering options.
+            """List all users with pagination and filtering options.
+
             Only accessible by superusers.
             """
 
@@ -871,8 +797,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -880,13 +805,11 @@ class UsersRouter(BaseRouterV3):
 
                             # Get user details
                             users = client.users.me()
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -896,17 +819,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/users/me" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -915,9 +835,8 @@ class UsersRouter(BaseRouterV3):
         async def get_current_user(
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
-            """
-            Get detailed information about the currently authenticated user.
-            """
+            """Get detailed information about the currently authenticated
+            user."""
             return auth_user
 
         @self.router.get(
@@ -928,8 +847,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -939,13 +857,11 @@ class UsersRouter(BaseRouterV3):
                             users = client.users.retrieve(
                                 id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -957,17 +873,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -979,9 +892,10 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
-            """
-            Get detailed information about a specific user.
-            Users can only access their own information unless they are superusers.
+            """Get detailed information about a specific user.
+
+            Users can only access their own information unless they are
+            superusers.
             """
             if not auth_user.is_superuser and auth_user.id != id:
                 raise R2RException(
@@ -1007,8 +921,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                         from r2r import R2RClient
 
                         client = R2RClient()
@@ -1016,13 +929,11 @@ class UsersRouter(BaseRouterV3):
 
                         # Delete user
                         client.users.delete(id="550e8400-e29b-41d4-a716-446655440000", password="secure_password123")
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                         const { r2rClient } = require("r2r-js");
 
                         const client = new r2rClient();
@@ -1035,8 +946,7 @@ class UsersRouter(BaseRouterV3):
                         }
 
                         main();
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -1055,8 +965,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Delete a specific user.
+            """Delete a specific user.
+
             Users can only delete their own account unless they are superusers.
             """
             if not auth_user.is_superuser and auth_user.id != id:
@@ -1081,8 +991,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1094,13 +1003,11 @@ class UsersRouter(BaseRouterV3):
                                 offset=0,
                                 limit=100
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1114,17 +1021,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections?offset=0&limit=100" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1147,9 +1051,10 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
-            """
-            Get all collections associated with a specific user.
-            Users can only access their own collections unless they are superusers.
+            """Get all collections associated with a specific user.
+
+            Users can only access their own collections unless they are
+            superusers.
             """
             if auth_user.id != id and not auth_user.is_superuser:
                 raise R2RException(
@@ -1176,8 +1081,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1188,13 +1092,11 @@ class UsersRouter(BaseRouterV3):
                                 id="550e8400-e29b-41d4-a716-446655440000",
                                 collection_id="750e8400-e29b-41d4-a716-446655440000"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1207,17 +1109,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1252,8 +1151,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1264,13 +1162,11 @@ class UsersRouter(BaseRouterV3):
                                 id="550e8400-e29b-41d4-a716-446655440000",
                                 collection_id="750e8400-e29b-41d4-a716-446655440000"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1283,17 +1179,14 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/collections/750e8400-e29b-41d4-a716-446655440000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1308,8 +1201,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Remove a user from a collection.
+            """Remove a user from a collection.
+
             Requires either superuser status or access to the collection.
             """
             if auth_user.id != id and not auth_user.is_superuser:
@@ -1332,8 +1225,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1344,13 +1236,11 @@ class UsersRouter(BaseRouterV3):
                                 "550e8400-e29b-41d4-a716-446655440000",
                                 name="John Doe"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1363,13 +1253,11 @@ class UsersRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "Shell",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000" \\
                                 -H "Authorization: Bearer YOUR_API_KEY" \\
                                 -H "Content-Type: application/json" \\
@@ -1377,8 +1265,7 @@ class UsersRouter(BaseRouterV3):
                                     "id": "550e8400-e29b-41d4-a716-446655440000",
                                     "name": "John Doe",
                                 }'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1405,10 +1292,11 @@ class UsersRouter(BaseRouterV3):
             metadata: dict[str, str | None] | None = None,
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
-            """
-            Update user information.
-            Users can only update their own information unless they are superusers.
-            Superuser status can only be modified by existing superusers.
+            """Update user information.
+
+            Users can only update their own information unless they are
+            superusers. Superuser status can only be modified by existing
+            superusers.
             """
 
             if is_superuser is not None and not auth_user.is_superuser:
@@ -1451,8 +1339,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1464,18 +1351,15 @@ class UsersRouter(BaseRouterV3):
                                 description="API key for accessing the app",
                             )
                             # result["api_key"] contains the newly created API key
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys" \\
                                 -H "Authorization: Bearer YOUR_API_TOKEN" \\
                                 -d '{"name": "My API Key", "description": "API key for accessing the app"}'
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1493,8 +1377,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAPIKeyResponse:
-            """
-            Create a new API key for the specified user.
+            """Create a new API key for the specified user.
+
             Only superusers or the user themselves may create an API key.
             """
             if auth_user.id != id and not auth_user.is_superuser:
@@ -1516,8 +1400,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1526,17 +1409,14 @@ class UsersRouter(BaseRouterV3):
                             keys = client.users.list_api_keys(
                                 id="550e8400-e29b-41d4-a716-446655440000"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys" \\
                                 -H "Authorization: Bearer YOUR_API_TOKEN"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1548,8 +1428,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAPIKeysResponse:
-            """
-            List all API keys for the specified user.
+            """List all API keys for the specified user.
+
             Only superusers or the user themselves may list the API keys.
             """
             if auth_user.id != id and not auth_user.is_superuser:
@@ -1573,8 +1453,7 @@ class UsersRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
                             from uuid import UUID
 
@@ -1585,17 +1464,14 @@ class UsersRouter(BaseRouterV3):
                                 id="550e8400-e29b-41d4-a716-446655440000",
                                 key_id="d9c562d4-3aef-43e8-8f08-0cf7cd5e0a25"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X DELETE "https://api.example.com/users/550e8400-e29b-41d4-a716-446655440000/api-keys/d9c562d4-3aef-43e8-8f08-0cf7cd5e0a25" \\
                                 -H "Authorization: Bearer YOUR_API_TOKEN"
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1608,8 +1484,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Delete a specific API key for the specified user.
+            """Delete a specific API key for the specified user.
+
             Only superusers or the user themselves may delete the API key.
             """
             if auth_user.id != id and not auth_user.is_superuser:
@@ -1689,9 +1565,8 @@ class UsersRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedLimitsResponse:
-            """
-            Return the system default limits, user-level overrides, and final "effective" limit settings
-            for the specified user.
+            """Return the system default limits, user-level overrides, and
+            final "effective" limit settings for the specified user.
 
             Only superusers or the user themself may fetch these values.
             """
@@ -1708,10 +1583,9 @@ class UsersRouter(BaseRouterV3):
             return limits_info  # type: ignore
 
         @self.router.get("/users/oauth/google/authorize")
+        @self.base_endpoint
         async def google_authorize() -> WrappedGenericMessageResponse:
-            """
-            Redirect user to Google's OAuth 2.0 consent screen.
-            """
+            """Redirect user to Google's OAuth 2.0 consent screen."""
             state = "some_random_string_or_csrf_token"  # Usually you store a random state in session/Redis
             scope = "openid email profile"
 
@@ -1729,11 +1603,12 @@ class UsersRouter(BaseRouterV3):
             return GenericMessageResponse(message=google_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/google/callback")
+        @self.base_endpoint
         async def google_callback(
             code: str = Query(...), state: str = Query(...)
         ) -> WrappedLoginResponse:
-            """
-            Google's callback that will receive the `code` and `state`.
+            """Google's callback that will receive the `code` and `state`.
+
             We then exchange code for tokens, verify, and log the user in.
             """
             # 1. Exchange `code` for tokens
@@ -1766,7 +1641,7 @@ class UsersRouter(BaseRouterV3):
                 raise HTTPException(
                     status_code=400,
                     detail=f"Token verification failed: {str(e)}",
-                )
+                ) from e
 
             # id_info will contain "sub", "email", etc.
             google_id = id_info["sub"]
@@ -1780,14 +1655,12 @@ class UsersRouter(BaseRouterV3):
                 email=email,
             )
 
-        # =============== GITHUB OAUTH ===============
         @self.router.get("/users/oauth/github/authorize")
+        @self.base_endpoint
         async def github_authorize() -> WrappedGenericMessageResponse:
-            """
-            Redirect user to GitHub's OAuth consent screen.
-            """
+            """Redirect user to GitHub's OAuth consent screen."""
             state = "some_random_string_or_csrf_token"
-            scope = "read:user user:email"  # whatever scopes you need
+            scope = "read:user user:email"
 
             params = {
                 "client_id": self.github_client_id,
@@ -1799,14 +1672,13 @@ class UsersRouter(BaseRouterV3):
             return GenericMessageResponse(message=github_auth_url)  # type: ignore
 
         @self.router.get("/users/oauth/github/callback")
+        @self.base_endpoint
         async def github_callback(
             code: str = Query(...), state: str = Query(...)
         ) -> WrappedLoginResponse:
-            """
-            GitHub callback route to exchange code for an access_token,
-            then fetch user info from GitHub's API,
-            then do the same 'oauth-based' login or registration.
-            """
+            """GitHub callback route to exchange code for an access_token, then
+            fetch user info from GitHub's API, then do the same 'oauth-based'
+            login or registration."""
             # 1. Exchange code for access_token
             token_resp = requests.post(
                 "https://github.com/login/oauth/access_token",

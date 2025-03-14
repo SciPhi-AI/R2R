@@ -14,6 +14,7 @@ from core.base import (
     GenerationConfig,
     GraphConstructionStatus,
     Message,
+    MessageResponse,
     Prompt,
     R2RException,
     StoreType,
@@ -73,9 +74,8 @@ class ManagementService(Service):
         self,
         filters: dict[str, Any],
     ):
-        """
-        Delete chunks matching the given filters. If any documents are now empty
-        (i.e., have no remaining chunks), delete those documents as well.
+        """Delete chunks matching the given filters. If any documents are now
+        empty (i.e., have no remaining chunks), delete those documents as well.
 
         Args:
             filters (dict[str, Any]): Filters specifying which chunks to delete.
@@ -88,10 +88,11 @@ class ManagementService(Service):
         """
 
         def transform_chunk_id_to_id(
-            filters: dict[str, Any]
+            filters: dict[str, Any],
         ) -> dict[str, Any]:
-            """
-            Example transformation function if your filters use `chunk_id` instead of `id`.
+            """Example transformation function if your filters use `chunk_id`
+            instead of `id`.
+
             Recursively transform `chunk_id` to `id`.
             """
             if isinstance(filters, dict):
@@ -562,7 +563,7 @@ class ManagementService(Service):
             name=name,
             description=description,
         )
-        graph_result = await self.providers.database.graphs_handler.create(
+        await self.providers.database.graphs_handler.create(
             collection_id=result.id,
             name=name,
             description=description,
@@ -706,7 +707,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' added successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=400, message=str(e))
+            raise R2RException(status_code=400, message=str(e)) from e
 
     @telemetry_event("GetPrompt")
     async def get_cached_prompt(
@@ -726,7 +727,7 @@ class ManagementService(Service):
                 )
             }
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetPrompt")
     async def get_prompt(
@@ -742,7 +743,7 @@ class ManagementService(Service):
                 prompt_override=prompt_override,
             )
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
@@ -761,7 +762,7 @@ class ManagementService(Service):
             )
             return f"Prompt '{name}' updated successfully."  # type: ignore
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
@@ -769,14 +770,14 @@ class ManagementService(Service):
             await self.providers.database.prompts_handler.delete_prompt(name)
             return {"message": f"Prompt '{name}' deleted successfully."}
         except ValueError as e:
-            raise R2RException(status_code=404, message=str(e))
+            raise R2RException(status_code=404, message=str(e)) from e
 
     @telemetry_event("GetConversation")
     async def get_conversation(
         self,
         conversation_id: UUID,
         user_ids: Optional[list[UUID]] = None,
-    ) -> Tuple[str, list[Message], list[dict]]:
+    ) -> list[MessageResponse]:
         return await self.providers.database.conversations_handler.get_conversation(
             conversation_id=conversation_id,
             filter_user_ids=user_ids,
@@ -815,7 +816,7 @@ class ManagementService(Service):
         content: Message,
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
-    ) -> str:
+    ) -> MessageResponse:
         return await self.providers.database.conversations_handler.add_message(
             conversation_id=conversation_id,
             content=content,
@@ -852,9 +853,11 @@ class ManagementService(Service):
         conversation_id: UUID,
         user_ids: Optional[list[UUID]] = None,
     ) -> None:
-        await self.providers.database.conversations_handler.delete_conversation(
-            conversation_id=conversation_id,
-            filter_user_ids=user_ids,
+        await (
+            self.providers.database.conversations_handler.delete_conversation(
+                conversation_id=conversation_id,
+                filter_user_ids=user_ids,
+            )
         )
 
     async def get_user_max_documents(self, user_id: UUID) -> int | None:
@@ -888,9 +891,9 @@ class ManagementService(Service):
     async def get_max_upload_size_by_type(
         self, user_id: UUID, file_type_or_ext: str
     ) -> int:
-        """
-        Return the maximum allowed upload size (in bytes) for the given user's file type/extension.
-        Respects user-level overrides if present, falling back to the system config.
+        """Return the maximum allowed upload size (in bytes) for the given
+        user's file type/extension. Respects user-level overrides if present,
+        falling back to the system config.
 
         ```json
         {
@@ -905,7 +908,6 @@ class ManagementService(Service):
             }
         }
         ```
-
         """
         # 1. Normalize extension
         ext = file_type_or_ext.lower().lstrip(".")
@@ -1062,7 +1064,7 @@ class ManagementService(Service):
         )["total_entries"]
 
         max_collections = await self.get_user_max_collections(user_id)
-        used_collections = (
+        used_collections: int = (  # type: ignore
             await self.providers.database.collections_handler.get_collections_overview(
                 limit=1, offset=0, filter_user_ids=[user_id]
             )
@@ -1072,21 +1074,33 @@ class ManagementService(Service):
             "chunks": {
                 "limit": max_chunks,
                 "used": used_chunks,
-                "remaining": max_chunks - used_chunks,
+                "remaining": (
+                    max_chunks - used_chunks
+                    if max_chunks is not None
+                    else None
+                ),
             },
             "documents": {
                 "limit": max_documents,
                 "used": used_documents,
-                "remaining": max_documents - used_documents,
+                "remaining": (
+                    max_documents - used_documents
+                    if max_documents is not None
+                    else None
+                ),
             },
             "collections": {
                 "limit": max_collections,
                 "used": used_collections,
-                "remaining": max_collections - used_collections,
+                "remaining": (
+                    max_collections - used_collections
+                    if max_collections is not None
+                    else None
+                ),
             },
         }
         # 5) Return a structured response
-        result = {
+        return {
             "storage_limits": storage_limits,
             "system_defaults": system_defaults,
             "user_overrides": user_overrides,
@@ -1097,4 +1111,3 @@ class ManagementService(Service):
             },
             "usage": usage,
         }
-        return result

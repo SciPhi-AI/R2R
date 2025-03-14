@@ -68,6 +68,7 @@ __all__ = [
     "ChunkSearchResult",
     "SearchSettings",
     "select_search_filters",
+    "IngestionMode",
     "SearchMode",
     # "RAGResponse",
     "Citation",

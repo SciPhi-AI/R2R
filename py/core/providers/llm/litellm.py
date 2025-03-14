@@ -23,8 +23,10 @@ class LiteLLMCompletionProvider(CompletionProvider):
         #         "LiteLLMCompletionProvider must be initialized with config with `litellm` provider."
         #     )
 
-    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
-        args = {
+    def _get_base_args(
+        self, generation_config: GenerationConfig
+    ) -> dict[str, Any]:
+        args: dict[str, Any] = {
             "model": generation_config.model,
             "temperature": generation_config.temperature,
             "top_p": generation_config.top_p,
@@ -32,12 +34,15 @@ class LiteLLMCompletionProvider(CompletionProvider):
             "max_tokens": generation_config.max_tokens_to_sample,
             "api_base": generation_config.api_base,
         }
+
+        # Fix the type errors by properly typing these assignments
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:
             args["tools"] = generation_config.tools
         if generation_config.response_format is not None:
             args["response_format"] = generation_config.response_format
+
         return args
 
     async def _execute_task(self, task: dict[str, Any]):

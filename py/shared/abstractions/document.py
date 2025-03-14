@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import Field
 
 from .base import R2RSerializable
+from .llm import GenerationConfig
 
 logger = logging.getLogger()
 
@@ -194,7 +195,8 @@ class DocumentResponse(R2RSerializable):
     total_tokens: Optional[int] = None
 
     def convert_to_db_entry(self):
-        """Prepare the document info for database entry, extracting certain fields from metadata."""
+        """Prepare the document info for database entry, extracting certain
+        fields from metadata."""
         now = datetime.now()
 
         # Format the embedding properly for Postgres vector type
@@ -219,6 +221,28 @@ class DocumentResponse(R2RSerializable):
             "summary": self.summary,
             "summary_embedding": embedding,
             "total_tokens": self.total_tokens or 0,  # ensure we pass 0 if None
+        }
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "id": "123e4567-e89b-12d3-a456-426614174000",
+                "collection_ids": ["123e4567-e89b-12d3-a456-426614174000"],
+                "owner_id": "123e4567-e89b-12d3-a456-426614174000",
+                "document_type": "pdf",
+                "metadata": {"title": "Sample Document"},
+                "title": "Sample Document",
+                "version": "1.0",
+                "size_in_bytes": 123456,
+                "ingestion_status": "pending",
+                "extraction_status": "pending",
+                "created_at": "2021-01-01T00:00:00",
+                "updated_at": "2021-01-01T00:00:00",
+                "ingestion_attempt_number": 0,
+                "summary": "A summary of the document",
+                "summary_embedding": [0.1, 0.2, 0.3],
+                "total_tokens": 1000,
+            }
         }
 
 
@@ -261,13 +285,8 @@ class IngestionMode(str, Enum):
     custom = "custom"
 
 
-from .llm import GenerationConfig
-
-
 class ChunkEnrichmentSettings(R2RSerializable):
-    """
-    Settings for chunk enrichment.
-    """
+    """Settings for chunk enrichment."""
 
     enable_chunk_enrichment: bool = Field(
         default=False,

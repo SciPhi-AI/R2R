@@ -12,6 +12,7 @@ from sdk.models import (
     ToolResultEvent,
 )
 from sdk.sync_client import R2RClient
+from shared import *
 
 __version__ = metadata.version("r2r")
 

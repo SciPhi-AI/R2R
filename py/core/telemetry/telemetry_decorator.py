@@ -30,7 +30,7 @@ class ProductTelemetryClient:
                 )
                 with open(pyproject_path) as f:
                     pyproject_data = toml.load(f)
-                    self._version = pyproject_data["tool"]["poetry"]["version"]
+                    self._version = pyproject_data["project"]["version"]
             except Exception as e:
                 logger.error(
                     f"Error reading version from pyproject.toml: {str(e)}"

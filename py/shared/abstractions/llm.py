@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 # LLMChatCompletion = ChatCompletion
 
-from typing import List, Optional
+from typing import List
 
 from typing_extensions import Literal
 
@@ -264,15 +264,17 @@ class GenerationConfig(R2RSerializable):
     class Config:
         populate_by_name = True
         json_schema_extra = {
-            "model": "openai/gpt-4o",
-            "temperature": 0.1,
-            "top_p": 1.0,
-            "max_tokens_to_sample": 1024,
-            "stream": False,
-            "functions": None,
-            "tools": None,
-            "add_generation_kwargs": None,
-            "api_base": None,
+            "example": {
+                "model": "openai/gpt-4o",
+                "temperature": 0.1,
+                "top_p": 1.0,
+                "max_tokens_to_sample": 1024,
+                "stream": False,
+                "functions": None,
+                "tools": None,
+                "add_generation_kwargs": None,
+                "api_base": None,
+            }
         }
 
 
@@ -304,9 +306,11 @@ class Message(R2RSerializable):
     class Config:
         populate_by_name = True
         json_schema_extra = {
-            "role": "user",
-            "content": "This is a test message.",
-            "name": None,
-            "function_call": None,
-            "tool_calls": None,
+            "example": {
+                "role": "user",
+                "content": "This is a test message.",
+                "name": None,
+                "function_call": None,
+                "tool_calls": None,
+            }
         }

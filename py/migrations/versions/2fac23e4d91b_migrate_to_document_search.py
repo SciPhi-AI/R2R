@@ -1,9 +1,8 @@
-"""migrate_to_document_search
+"""migrate_to_document_search.
 
 Revision ID: 2fac23e4d91b
 Revises:
 Create Date: 2024-11-11 11:55:49.461015
-
 """
 
 import asyncio
@@ -14,7 +13,6 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
-from openai import AsyncOpenAI
 from sqlalchemy import inspect
 from sqlalchemy.types import UserDefinedType
 
@@ -45,13 +43,13 @@ class Vector(UserDefinedType):
 
 
 def run_async(coroutine):
-    """Helper function to run async code synchronously"""
+    """Helper function to run async code synchronously."""
     with ThreadPoolExecutor() as pool:
         return pool.submit(asyncio.run, coroutine).result()
 
 
 async def async_generate_all_summaries():
-    """Asynchronous function to generate summaries"""
+    """Asynchronous function to generate summaries."""
 
     base_url = os.getenv("R2R_BASE_URL")
     if not base_url:
@@ -183,12 +181,12 @@ async def async_generate_all_summaries():
 
 
 def generate_all_summaries():
-    """Synchronous wrapper for async_generate_all_summaries"""
+    """Synchronous wrapper for async_generate_all_summaries."""
     return run_async(async_generate_all_summaries())
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     # Get database connection
     connection = op.get_bind()
     inspector = inspect(connection)
@@ -203,7 +201,7 @@ def check_if_upgrade_needed():
     # Then check if the columns exist
     existing_columns = [
         col["name"]
-        for col in inspector.get_columns(f"document_info", schema=project_name)
+        for col in inspector.get_columns("document_info", schema=project_name)
     ]
 
     needs_upgrade = "summary" not in existing_columns
@@ -235,7 +233,7 @@ def upgrade() -> None:
             )
             pass
         except json.JSONDecodeError:
-            raise ValueError("Invalid document_summaries.json file")
+            raise ValueError("Invalid document_summaries.json file") from None
 
         # Create the vector extension if it doesn't exist
         op.execute("CREATE EXTENSION IF NOT EXISTS vector")
@@ -254,8 +252,7 @@ def upgrade() -> None:
         )
 
         # Add generated column for full text search
-        op.execute(
-            f"""
+        op.execute(f"""
         ALTER TABLE {project_name}.document_info
         ADD COLUMN doc_search_vector tsvector
         GENERATED ALWAYS AS (
@@ -263,17 +260,14 @@ def upgrade() -> None:
             setweight(to_tsvector('english', COALESCE(summary, '')), 'B') ||
             setweight(to_tsvector('english', COALESCE((metadata->>'description')::text, '')), 'C')
         ) STORED;
-        """
-        )
+        """)
 
         # Create index for full text search
-        op.execute(
-            f"""
+        op.execute(f"""
         CREATE INDEX idx_doc_search_{project_name}
         ON {project_name}.document_info
         USING GIN (doc_search_vector);
-        """
-        )
+        """)
 
         if document_summaries:
             # Update existing documents with summaries and embeddings
@@ -284,15 +278,13 @@ def upgrade() -> None:
                 )
 
                 # Use plain SQL with proper escaping for PostgreSQL
-                op.execute(
-                    f"""
+                op.execute(f"""
                     UPDATE {project_name}.document_info
                     SET
-                        summary = '{doc_data['summary'].replace("'", "''")}',
+                        summary = '{doc_data["summary"].replace("'", "''")}',
                         summary_embedding = '{embedding_str}'::vector({dimension})
                     WHERE document_id = '{doc_id}'::uuid;
-                    """
-                )
+                    """)
         else:
             print(
                 "No document summaries found, skipping update of existing documents"
@@ -301,16 +293,14 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # First drop any dependencies on the columns we want to remove
-    op.execute(
-        f"""
+    op.execute(f"""
         -- Drop the full text search index first
         DROP INDEX IF EXISTS {project_name}.idx_doc_search_{project_name};
 
         -- Drop the generated column that depends on the summary column
         ALTER TABLE {project_name}.document_info
         DROP COLUMN IF EXISTS doc_search_vector;
-        """
-    )
+        """)
 
     # Now we can safely drop the summary and embedding columns
     op.drop_column("document_info", "summary_embedding", schema=project_name)

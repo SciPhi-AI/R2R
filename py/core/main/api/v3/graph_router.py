@@ -1,6 +1,6 @@
 import logging
 import textwrap
-from typing import Optional
+from typing import Optional, cast
 from uuid import UUID
 
 from fastapi import Body, Depends, Path, Query
@@ -8,7 +8,7 @@ from fastapi.background import BackgroundTasks
 from fastapi.responses import FileResponse
 
 from core.base import GraphConstructionStatus, R2RException, Workflow
-from core.base.abstractions import StoreType
+from core.base.abstractions import DocumentResponse, StoreType
 from core.base.api.models import (
     GenericBooleanResponse,
     GenericMessageResponse,
@@ -78,7 +78,8 @@ class GraphRouter(BaseRouterV3):
     async def _get_collection_id(
         self, collection_id: Optional[UUID], auth_user
     ) -> UUID:
-        """Helper method to get collection ID, using default if none provided"""
+        """Helper method to get collection ID, using default if none
+        provided."""
         if collection_id is None:
             return generate_default_user_collection_id(auth_user.id)
         return collection_id
@@ -141,13 +142,15 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphsResponse:
-            """
-            Returns a paginated list of graphs the authenticated user has access to.
+            """Returns a paginated list of graphs the authenticated user has
+            access to.
 
-            Results can be filtered by providing specific graph IDs. Regular users will only see
-            graphs they own or have access to. Superusers can see all graphs.
+            Results can be filtered by providing specific graph IDs. Regular
+            users will only see graphs they own or have access to. Superusers
+            can see all graphs.
 
-            The graphs are returned in order of last modification, with most recent first.
+            The graphs are returned in order of last modification, with most
+            recent first.
             """
             requesting_user_id = (
                 None if auth_user.is_superuser else [auth_user.id]
@@ -175,8 +178,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -184,13 +186,11 @@ class GraphRouter(BaseRouterV3):
 
                             response = client.graphs.get(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -202,16 +202,13 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X GET "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
+                                -H "Authorization: Bearer YOUR_API_KEY" """),
                     },
                 ]
             },
@@ -221,13 +218,10 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGraphResponse:
-            """
-            Retrieves detailed information about a specific graph by ID.
-            """
+            """Retrieves detailed information about a specific graph by ID."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the specified collection associated with the given graph.",
@@ -258,8 +252,8 @@ class GraphRouter(BaseRouterV3):
             run_with_orchestration: Optional[bool] = Body(True),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedGenericMessageResponse:
-            """
-            Creates communities in the graph by analyzing entity relationships and similarities.
+            """Creates communities in the graph by analyzing entity
+            relationships and similarities.
 
             Communities are created through the following process:
             1. Analyzes entity relationships and metadata to build a similarity graph
@@ -321,11 +315,11 @@ class GraphRouter(BaseRouterV3):
                     return await self.providers.orchestration.run_workflow(  # type: ignore
                         "graph-clustering", {"request": workflow_input}, {}
                     )
-                    return GenericMessageResponse(message="Graph communities created successfully.")  # type: ignore
+                    return GenericMessageResponse(
+                        message="Graph communities created successfully."
+                    )  # type: ignore
 
-                except (
-                    Exception
-                ) as e:  # TODO: Need to find specific error (gRPC most likely?)
+                except Exception as e:  # TODO: Need to find specific error (gRPC most likely?)
                     logger.error(
                         f"Error running orchestrated community building: {e} \n\nAttempting to run without orchestration."
                     )
@@ -340,7 +334,7 @@ class GraphRouter(BaseRouterV3):
             await simple_graph_search_results["graph-clustering"](
                 workflow_input
             )
-            return {
+            return {  # type: ignore
                 "message": "Graph communities created successfully.",
                 "task_id": None,
             }
@@ -353,8 +347,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -362,13 +355,11 @@ class GraphRouter(BaseRouterV3):
 
                             response = client.graphs.reset(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -380,16 +371,13 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/graphs/d09dedb1-b2ab-48a5-b950-6e1f464d83e7/reset" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" """
-                        ),
+                                -H "Authorization: Bearer YOUR_API_KEY" """),
                     },
                 ]
             },
@@ -399,21 +387,20 @@ class GraphRouter(BaseRouterV3):
             collection_id: UUID = Path(...),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Deletes a graph and all its associated data.
+            """Deletes a graph and all its associated data.
 
-            This endpoint permanently removes the specified graph along with all
-            entities and relationships that belong to only this graph.
-            The original source entities and relationships extracted from underlying documents are not deleted
-            and are managed through the document lifecycle.
+            This endpoint permanently removes the specified graph along with
+            all entities and relationships that belong to only this graph. The
+            original source entities and relationships extracted from
+            underlying documents are not deleted and are managed through the
+            document lifecycle.
             """
             if not auth_user.is_superuser:
                 raise R2RException("Only superusers can reset a graph", 403)
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -433,8 +420,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -446,13 +432,11 @@ class GraphRouter(BaseRouterV3):
                                     "name": "New Name",
                                     "description": "New Description"
                                 }
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -466,8 +450,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -485,12 +468,12 @@ class GraphRouter(BaseRouterV3):
                 None, description="An optional description of the graph"
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            """
-            Update an existing graphs's configuration.
+        ) -> WrappedGraphResponse:
+            """Update an existing graphs's configuration.
 
-            This endpoint allows updating the name and description of an existing collection.
-            The user must have appropriate permissions to modify the collection.
+            This endpoint allows updating the name and description of an
+            existing collection. The user must have appropriate permissions to
+            modify the collection.
             """
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -519,21 +502,18 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_entities(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -545,8 +525,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -573,8 +552,7 @@ class GraphRouter(BaseRouterV3):
             """Lists all entities in the graph with pagination support."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -599,8 +577,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -612,13 +589,11 @@ class GraphRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -633,21 +608,18 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/graphs/export_entities" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -670,9 +642,7 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -680,13 +650,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_graph_entities(
-                    id=collection_id,
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_graph_entities(
+                id=collection_id,
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -724,8 +695,7 @@ class GraphRouter(BaseRouterV3):
             """Creates a new entity in the graph."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -787,8 +757,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -814,8 +783,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -827,13 +795,11 @@ class GraphRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -848,21 +814,18 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/graphs/export_relationships" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -885,9 +848,7 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -895,13 +856,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_graph_relationships(
-                    id=collection_id,
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_graph_relationships(
+                id=collection_id,
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -919,8 +881,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -930,13 +891,11 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -949,8 +908,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -969,8 +927,7 @@ class GraphRouter(BaseRouterV3):
             """Retrieves a specific entity by its ID."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1022,8 +979,7 @@ class GraphRouter(BaseRouterV3):
                 )
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1046,8 +1002,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1057,13 +1012,11 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 entity_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1076,8 +1029,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1102,8 +1054,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1125,21 +1076,18 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_relationships(collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7")
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1151,8 +1099,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1176,13 +1123,10 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRelationshipsResponse:
-            """
-            Lists all relationships in the graph with pagination support.
-            """
+            """Lists all relationships in the graph with pagination support."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1207,8 +1151,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1218,13 +1161,11 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1237,8 +1178,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1257,8 +1197,7 @@ class GraphRouter(BaseRouterV3):
             """Retrieves a specific relationship by its ID."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1326,8 +1265,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1354,8 +1292,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1365,13 +1302,11 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 relationship_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1384,8 +1319,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ],
             },
@@ -1432,8 +1366,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1447,13 +1380,11 @@ class GraphRouter(BaseRouterV3):
                                 rating=5,
                                 rating_explanation="This is a rating explanation",
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1470,8 +1401,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1495,8 +1425,7 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
-            """
-            Creates a new community in the graph.
+            """Creates a new community in the graph.
 
             While communities are typically built automatically via the /graphs/{id}/communities/build endpoint,
             this endpoint allows you to manually create your own communities.
@@ -1541,21 +1470,18 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.list_communities(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1567,8 +1493,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1592,13 +1517,10 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunitiesResponse:
-            """
-            Lists all communities in the graph with pagination support.
-            """
+            """Lists all communities in the graph with pagination support."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1623,21 +1545,18 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             response = client.graphs.get_community(collection_id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1")
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1649,8 +1568,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1667,13 +1585,10 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
-            """
-            Retrieves a specific community by its ID.
-            """
+            """Retrieves a specific community by its ID."""
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1701,8 +1616,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1712,13 +1626,11 @@ class GraphRouter(BaseRouterV3):
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7",
                                 community_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1731,8 +1643,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1748,7 +1659,7 @@ class GraphRouter(BaseRouterV3):
                 description="The ID of the community to delete.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
+        ) -> WrappedBooleanResponse:
             if (
                 not auth_user.is_superuser
                 and collection_id not in auth_user.graph_ids
@@ -1759,8 +1670,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1781,8 +1691,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient("http://localhost:7272")
@@ -1794,13 +1703,11 @@ class GraphRouter(BaseRouterV3):
                                 columns=["id", "title", "created_at"],
                                 include_header=True,
                             )
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient("http://localhost:7272");
@@ -1815,27 +1722,24 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "http://127.0.0.1:7272/v3/graphs/export_communities" \
                             -H "Authorization: Bearer YOUR_API_KEY" \
                             -H "Content-Type: application/json" \
                             -H "Accept: text/csv" \
                             -d '{ "columns": ["id", "title", "created_at"], "include_header": true }' \
                             --output export.csv
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
         )
         @self.base_endpoint
-        async def export_relationships(
+        async def export_communities(
             background_tasks: BackgroundTasks,
             collection_id: UUID = Path(
                 ...,
@@ -1852,9 +1756,7 @@ class GraphRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> FileResponse:
-            """
-            Export documents as a downloadable CSV file.
-            """
+            """Export documents as a downloadable CSV file."""
 
             if not auth_user.is_superuser:
                 raise R2RException(
@@ -1862,13 +1764,14 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            csv_file_path, temp_file = (
-                await self.services.management.export_graph_communities(
-                    id=collection_id,
-                    columns=columns,
-                    filters=filters,
-                    include_header=include_header,
-                )
+            (
+                csv_file_path,
+                temp_file,
+            ) = await self.services.management.export_graph_communities(
+                id=collection_id,
+                columns=columns,
+                filters=filters,
+                include_header=include_header,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -1887,8 +1790,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1902,13 +1804,11 @@ class GraphRouter(BaseRouterV3):
                                         "description": "Tech companies and products"
                                     }
                                 }
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -1927,8 +1827,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -1944,9 +1843,7 @@ class GraphRouter(BaseRouterV3):
             rating_explanation: Optional[str] = Body(None),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCommunityResponse:
-            """
-            Updates an existing community in the graph.
-            """
+            """Updates an existing community in the graph."""
             if (
                 not auth_user.is_superuser
                 and collection_id not in auth_user.graph_ids
@@ -1957,8 +1854,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -1982,8 +1878,7 @@ class GraphRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
@@ -1991,13 +1886,11 @@ class GraphRouter(BaseRouterV3):
 
                             response = client.graphs.pull(
                                 collection_id="d09dedb1-b2ab-48a5-b950-6e1f464d83e7"
-                            )"""
-                        ),
+                            )"""),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -2009,8 +1902,7 @@ class GraphRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                 ]
             },
@@ -2029,8 +1921,8 @@ class GraphRouter(BaseRouterV3):
             # ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedBooleanResponse:
-            """
-            Adds documents to a graph by copying their entities and relationships.
+            """Adds documents to a graph by copying their entities and
+            relationships.
 
             This endpoint:
             1. Copies document entities to the graphs_entities table
@@ -2070,8 +1962,7 @@ class GraphRouter(BaseRouterV3):
 
             if (
                 # not auth_user.is_superuser
-                collection_id
-                not in auth_user.collection_ids
+                collection_id not in auth_user.collection_ids
             ):
                 raise R2RException(
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
@@ -2087,20 +1978,19 @@ class GraphRouter(BaseRouterV3):
             if len(list_graphs_response["results"]) == 0:
                 raise R2RException("Graph not found", 404)
             collection_id = list_graphs_response["results"][0].collection_id
-            documents = []
-            document_req = (
-                await self.providers.database.collections_handler.documents_in_collection(
-                    collection_id, offset=0, limit=100
+            documents: list[DocumentResponse] = []
+            document_req = await self.providers.database.collections_handler.documents_in_collection(
+                collection_id, offset=0, limit=100
+            )
+            results = cast(list[DocumentResponse], document_req["results"])
+            documents.extend(results)
+
+            while len(results) == 100:
+                document_req = await self.providers.database.collections_handler.documents_in_collection(
+                    collection_id, offset=len(documents), limit=100
                 )
-            )["results"]
-            documents.extend(document_req)
-            while len(document_req) == 100:
-                document_req = (
-                    await self.providers.database.collections_handler.documents_in_collection(
-                        collection_id, offset=len(documents), limit=100
-                    )
-                )["results"]
-                documents.extend(document_req)
+                results = cast(list[DocumentResponse], document_req["results"])
+                documents.extend(results)
 
             success = False
 

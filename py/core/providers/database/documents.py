@@ -29,9 +29,8 @@ logger = logging.getLogger()
 
 
 def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
-    """
-    Recursively transform filter field names by replacing 'document_id' with 'id'.
-    Handles nested logical operators like $and, $or, etc.
+    """Recursively transform filter field names by replacing 'document_id' with
+    'id'. Handles nested logical operators like $and, $or, etc.
 
     Args:
         filters (dict[str, Any]): The original filters dictionary
@@ -52,7 +51,7 @@ def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
                     transform_filter_fields(item) for item in value
                 ]
             else:
-                transformed[key] = transform_filter_fields(value)
+                transformed[key] = transform_filter_fields(value)  # type: ignore
             continue
 
         # Replace 'document_id' with 'id'
@@ -60,7 +59,7 @@ def transform_filter_fields(filters: dict[str, Any]) -> dict[str, Any]:
 
         # Handle nested dictionary cases (e.g., for operators like $eq, $gt, etc.)
         if isinstance(value, dict):
-            transformed[new_key] = transform_filter_fields(value)
+            transformed[new_key] = transform_filter_fields(value)  # type: ignore
         else:
             transformed[new_key] = value
 
@@ -75,7 +74,7 @@ class PostgresDocumentsHandler(Handler):
         self,
         project_name: str,
         connection_manager: PostgresConnectionManager,
-        dimension: int,
+        dimension: int | float,
     ):
         self.dimension = dimension
         super().__init__(project_name, connection_manager)
@@ -208,7 +207,9 @@ class PostgresDocumentsHandler(Handler):
             retries = 0
             while retries < max_retries:
                 try:
-                    async with self.connection_manager.pool.get_connection() as conn:  # type: ignore
+                    async with (
+                        self.connection_manager.pool.get_connection() as conn  # type: ignore
+                    ):
                         async with conn.transaction():
                             # Lock the row for update
                             check_query = f"""
@@ -349,8 +350,7 @@ class PostgresDocumentsHandler(Handler):
         status_type: str,
         column_name: str,
     ):
-        """
-        Get the workflow status for a given document or list of documents.
+        """Get the workflow status for a given document or list of documents.
 
         Args:
             ids (list[UUID]): The document IDs.
@@ -376,8 +376,7 @@ class PostgresDocumentsHandler(Handler):
         status_type: str,
         collection_id: Optional[UUID] = None,
     ):
-        """
-        Get the IDs from a given table.
+        """Get the IDs from a given table.
 
         Args:
             status (str | list[str]): The status or list of statuses to retrieve.
@@ -401,8 +400,7 @@ class PostgresDocumentsHandler(Handler):
         status_type: str,
         column_name: str,
     ):
-        """
-        Set the workflow status for a given document or list of documents.
+        """Set the workflow status for a given document or list of documents.
 
         Args:
             ids (list[UUID]): The document IDs.
@@ -419,8 +417,7 @@ class PostgresDocumentsHandler(Handler):
         await self.connection_manager.execute_query(query, [status, ids])
 
     def _get_status_model(self, status_type: str):
-        """
-        Get the status model for a given status type.
+        """Get the status model for a given status type.
 
         Args:
             status_type (str): The type of status to retrieve.
@@ -442,8 +439,7 @@ class PostgresDocumentsHandler(Handler):
     async def get_workflow_status(
         self, id: UUID | list[UUID], status_type: str
     ):
-        """
-        Get the workflow status for a given document or list of documents.
+        """Get the workflow status for a given document or list of documents.
 
         Args:
             id (UUID | list[UUID]): The document ID or list of document IDs.
@@ -468,8 +464,7 @@ class PostgresDocumentsHandler(Handler):
     async def set_workflow_status(
         self, id: UUID | list[UUID], status_type: str, status: str
     ):
-        """
-        Set the workflow status for a given document or list of documents.
+        """Set the workflow status for a given document or list of documents.
 
         Args:
             id (UUID | list[UUID]): The document ID or list of document IDs.
@@ -493,8 +488,7 @@ class PostgresDocumentsHandler(Handler):
         status: str | list[str],
         collection_id: Optional[UUID] = None,
     ):
-        """
-        Get the IDs for a given status.
+        """Get the IDs for a given status.
 
         Args:
             ids_key (str): The key to retrieve the IDs.
@@ -521,8 +515,7 @@ class PostgresDocumentsHandler(Handler):
         filters: Optional[dict[str, Any]] = None,
         sort_order: str = "DESC",  # Add this parameter with a default of DESC
     ) -> dict[str, Any]:
-        """
-        Fetch overviews of documents with optional offset/limit pagination.
+        """Fetch overviews of documents with optional offset/limit pagination.
 
         You can use either:
           - Traditional filters: `filter_user_ids`, `filter_document_ids`, `filter_collection_ids`
@@ -533,7 +526,7 @@ class PostgresDocumentsHandler(Handler):
         """
 
         filters = copy.deepcopy(filters)
-        filters = transform_filter_fields(filters)
+        filters = transform_filter_fields(filters)  # type: ignore
 
         # Safety check: We do not allow mixing the old filter arguments with the new `filters` dict.
         # This keeps the query logic unambiguous.
@@ -705,7 +698,8 @@ class PostgresDocumentsHandler(Handler):
     async def semantic_document_search(
         self, query_embedding: list[float], search_settings: SearchSettings
     ) -> list[DocumentResponse]:
-        """Search documents using semantic similarity with their summary embeddings."""
+        """Search documents using semantic similarity with their summary
+        embeddings."""
 
         where_clauses = ["summary_embedding IS NOT NULL"]
         params: list[str | int | bytes] = [str(query_embedding)]
@@ -887,7 +881,8 @@ class PostgresDocumentsHandler(Handler):
         query_embedding: list[float],
         search_settings: SearchSettings,
     ) -> list[DocumentResponse]:
-        """Search documents using both semantic and full-text search with RRF fusion."""
+        """Search documents using both semantic and full-text search with RRF
+        fusion."""
 
         # Get more results than needed for better fusion
         extended_settings = copy.deepcopy(search_settings)
@@ -978,9 +973,8 @@ class PostgresDocumentsHandler(Handler):
         query_embedding: Optional[list[float]] = None,
         settings: Optional[SearchSettings] = None,
     ) -> list[DocumentResponse]:
-        """
-        Main search method that delegates to the appropriate search method based on settings.
-        """
+        """Main search method that delegates to the appropriate search method
+        based on settings."""
         if settings is None:
             settings = SearchSettings()
 
@@ -1011,9 +1005,8 @@ class PostgresDocumentsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "collection_ids",
@@ -1031,7 +1024,7 @@ class PostgresDocumentsHandler(Handler):
             "total_tokens",
         }
         filters = copy.deepcopy(filters)
-        filters = transform_filter_fields(filters)
+        filters = transform_filter_fields(filters)  # type: ignore
 
         if not columns:
             columns = list(valid_columns)

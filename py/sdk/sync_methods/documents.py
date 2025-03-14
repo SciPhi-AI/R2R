@@ -28,9 +28,7 @@ from ..models import IngestionMode, SearchMode, SearchSettings
 
 
 class DocumentsSDK:
-    """
-    SDK for interacting with documents in the v3 API.
-    """
+    """SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -47,8 +45,7 @@ class DocumentsSDK:
         ingestion_config: Optional[dict | IngestionMode] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedIngestionResponse:
-        """
-        Create a new document from either a file or content.
+        """Create a new document from either a file or content.
 
         Args:
             file_path (Optional[str]): The file to upload, if any
@@ -94,7 +91,9 @@ class DocumentsSDK:
             ingestion_config["app"] = app_config
             data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
-            collection_ids = [str(collection_id) for collection_id in collection_ids]  # type: ignore
+            collection_ids = [
+                str(collection_id) for collection_id in collection_ids
+            ]  # type: ignore
             data["collection_ids"] = json.dumps(collection_ids)
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
@@ -143,8 +142,7 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> WrappedDocumentResponse:
-        """
-        Get a specific document by ID.
+        """Get a specific document by ID.
 
         Args:
             id (str | UUID): ID of document to retrieve
@@ -180,9 +178,7 @@ class DocumentsSDK:
         end_date: Optional[datetime] = None,
         output_path: Optional[str | Path] = None,
     ) -> BytesIO | None:
-        """
-        Download multiple documents as a zip file.
-        """
+        """Download multiple documents as a zip file."""
         params: dict[str, Any] = {}
         if document_ids:
             params["document_ids"] = [str(doc_id) for doc_id in document_ids]
@@ -220,8 +216,8 @@ class DocumentsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """
-        Export documents to a CSV file, streaming the results directly to disk.
+        """Export documents to a CSV file, streaming the results directly to
+        disk.
 
         Args:
             output_path (str | Path): Local path where the CSV file should be saved
@@ -271,8 +267,8 @@ class DocumentsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """
-        Export documents to a CSV file, streaming the results directly to disk.
+        """Export documents to a CSV file, streaming the results directly to
+        disk.
 
         Args:
             output_path (str | Path): Local path where the CSV file should be saved
@@ -323,8 +319,8 @@ class DocumentsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """
-        Export document relationships to a CSV file, streaming the results directly to disk.
+        """Export document relationships to a CSV file, streaming the results
+        directly to disk.
 
         Args:
             output_path (str | Path): Local path where the CSV file should be saved
@@ -371,8 +367,7 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Delete a specific document.
+        """Delete a specific document.
 
         Args:
             id (str | UUID): ID of document to delete
@@ -395,8 +390,7 @@ class DocumentsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedChunksResponse:
-        """
-        Get chunks for a specific document.
+        """Get chunks for a specific document.
 
         Args:
             id (str | UUID): ID of document to retrieve chunks for
@@ -428,8 +422,7 @@ class DocumentsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
-        """
-        List collections for a specific document.
+        """List collections for a specific document.
 
         Args:
             id (str | UUID): ID of document to retrieve collections for
@@ -457,8 +450,7 @@ class DocumentsSDK:
         self,
         filters: dict,
     ) -> WrappedBooleanResponse:
-        """
-        Delete documents based on filters.
+        """Delete documents based on filters.
 
         Args:
             filters (dict): Filters to apply when selecting documents to delete
@@ -482,8 +474,7 @@ class DocumentsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """
-        Extract entities and relationships from a document.
+        """Extract entities and relationships from a document.
 
         Args:
             id (str, UUID): ID of document to extract from
@@ -514,8 +505,7 @@ class DocumentsSDK:
         limit: Optional[int] = 100,
         include_embeddings: Optional[bool] = False,
     ) -> WrappedEntitiesResponse:
-        """
-        List entities extracted from a document.
+        """List entities extracted from a document.
 
         Args:
             id (str | UUID): ID of document to get entities from
@@ -548,8 +538,7 @@ class DocumentsSDK:
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
     ) -> WrappedRelationshipsResponse:
-        """
-        List relationships extracted from a document.
+        """List relationships extracted from a document.
 
         Args:
             id (str | UUID): ID of document to get relationships from
@@ -585,8 +574,7 @@ class DocumentsSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedDocumentsResponse:
-        """
-        List documents with pagination.
+        """List documents with pagination.
 
         Args:
             ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by
@@ -618,8 +606,7 @@ class DocumentsSDK:
         search_mode: Optional[str | SearchMode] = "custom",
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedDocumentSearchResponse:
-        """
-        Conduct a vector and/or graph search.
+        """Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.
@@ -652,8 +639,7 @@ class DocumentsSDK:
         settings: Optional[dict] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """
-        Deduplicate entities and relationships from a document.
+        """Deduplicate entities and relationships from a document.
 
         Args:
             id (str, UUID): ID of document to extract from
@@ -679,8 +665,7 @@ class DocumentsSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     def create_sample(self, hi_res: bool = False) -> WrappedIngestionResponse:
-        """
-        Ingest a sample document into R2R.
+        """Ingest a sample document into R2R.
 
         This method downloads a sample file from a predefined URL, saves it
         as a temporary file, and ingests it using the `create` method. The

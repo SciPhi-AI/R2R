@@ -1,7 +1,13 @@
 js/sdk/**/*.js
 js/tests/*
 **/.DS_Store
-.env
+
+*.env
+!docker/env/postgres.env
+!docker/env/r2r.env
+!docker/env/r2r-full.env
+!docker/env/r2r-dashboard.env
+
 .DS_Store
 *.gguf
 logs/
@@ -38,3 +44,6 @@ go.work.sum
 
 .vscode/
 .python-version
+.ruff_cache/
+*.egg-info
+.venv

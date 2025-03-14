@@ -16,8 +16,8 @@ class PromptsSDK:
     async def create(
         self, name: str, template: str, input_types: dict
     ) -> WrappedGenericMessageResponse:
-        """
-        Create a new prompt.
+        """Create a new prompt.
+
         Args:
             name (str): The name of the prompt
             template (str): The template string for the prompt
@@ -40,8 +40,8 @@ class PromptsSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def list(self) -> WrappedPromptsResponse:
-        """
-        List all available prompts.
+        """List all available prompts.
+
         Returns:
             dict: List of all available prompts
         """
@@ -59,8 +59,8 @@ class PromptsSDK:
         inputs: Optional[dict] = None,
         prompt_override: Optional[str] = None,
     ) -> WrappedPromptResponse:
-        """
-        Get a specific prompt by name, optionally with inputs and override.
+        """Get a specific prompt by name, optionally with inputs and override.
+
         Args:
             name (str): The name of the prompt to retrieve
             inputs (Optional[dict]): JSON-encoded inputs for the prompt
@@ -88,8 +88,8 @@ class PromptsSDK:
         template: Optional[str] = None,
         input_types: Optional[dict] = None,
     ) -> WrappedGenericMessageResponse:
-        """
-        Update an existing prompt's template and/or input types.
+        """Update an existing prompt's template and/or input types.
+
         Args:
             name (str): The name of the prompt to update
             template (Optional[str]): The updated template string for the prompt
@@ -112,8 +112,8 @@ class PromptsSDK:
         return WrappedGenericMessageResponse(**response_dict)
 
     async def delete(self, name: str) -> WrappedBooleanResponse:
-        """
-        Delete a prompt by name.
+        """Delete a prompt by name.
+
         Args:
             name (str): The name of the prompt to delete
         Returns:

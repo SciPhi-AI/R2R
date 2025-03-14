@@ -125,7 +125,7 @@ class P7SParser(AsyncParser[str | bytes]):
                     except Exception as e:
                         raise ValueError(
                             f"Failed to decode base64 PKCS#7 signature: {str(e)}"
-                        )
+                        ) from e
             # If we reach here, no PKCS#7 part was found
             raise ValueError(
                 "No application/x-pkcs7-signature part found in the MIME message."
@@ -144,7 +144,8 @@ class P7SParser(AsyncParser[str | bytes]):
     async def ingest(
         self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
-        """Ingest an S/MIME message and extract the PKCS#7 signature information."""
+        """Ingest an S/MIME message and extract the PKCS#7 signature
+        information."""
         # If data is a string, it might be base64 encoded, or it might be the raw MIME text.
         # We should assume it's raw MIME text here because the input includes MIME headers.
         if isinstance(data, str):
@@ -174,4 +175,4 @@ class P7SParser(AsyncParser[str | bytes]):
                     yield f"Certificate {i}: No detailed information extracted."
 
         except Exception as e:
-            raise ValueError(f"Error processing P7S file: {str(e)}")
+            raise ValueError(f"Error processing P7S file: {str(e)}") from e

@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import json
 import logging
@@ -12,8 +13,6 @@ from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     Message,
-    MessageType,
-    R2RException,
 )
 from core.base.providers import CompletionProvider, DatabaseProvider
 
@@ -139,7 +138,7 @@ class Agent(ABC):
             last_message["role"] in ["tool", "function"]
             and last_message["content"] != ""
             and "ollama" in self.rag_generation_config.model
-            or self.config.include_tools == False
+            or not self.config.include_tools
         ):
             return GenerationConfig(
                 **self.rag_generation_config.model_dump(

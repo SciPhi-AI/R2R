@@ -45,6 +45,7 @@ class Metrics:
 
 
 class LoadTester:
+
     def __init__(self, base_url: str):
         self.base_url = base_url
         self.metrics: list[Metrics] = []
@@ -54,7 +55,8 @@ class LoadTester:
         self.client = R2RAsyncClient(base_url)
 
     async def safe_call(self, coro, timeout, operation_desc="operation"):
-        """Safely call an async function with a timeout and handle exceptions."""
+        """Safely call an async function with a timeout and handle
+        exceptions."""
         try:
             return await asyncio.wait_for(coro, timeout=timeout)
         except asyncio.TimeoutError:
@@ -84,11 +86,10 @@ class LoadTester:
             timeout=LOGIN_TIMEOUT,
             operation_desc=f"login user {user_email}",
         )
-        user = (
-            {"email": user_email, "password": password}
-            if login_result
-            else None
-        )
+        user = ({
+            "email": user_email,
+            "password": password
+        } if login_result else None)
 
         # Ingest documents for user
         files = glob("core/examples/data/*")
@@ -108,7 +109,7 @@ class LoadTester:
         return user
 
     async def setup_users(self):
-        """Initialize users and their documents"""
+        """Initialize users and their documents."""
         print("Setting up users...")
         setup_tasks = []
 
@@ -167,18 +168,16 @@ class LoadTester:
                     end_time=end_time,
                     status=status,
                     duration_ms=duration_ms,
-                )
-            )
+                ))
 
             # Wait according to queries per second rate
             await asyncio.sleep(max(0, 1 / QUERIES_PER_SECOND))
 
     def calculate_statistics(self):
-        """Calculate and print test statistics"""
+        """Calculate and print test statistics."""
         durations = [m.duration_ms for m in self.metrics]
         successful_requests = len(
-            [m for m in self.metrics if m.status == "success"]
-        )
+            [m for m in self.metrics if m.status == "success"])
         failed_requests = len([m for m in self.metrics if m.status == "error"])
 
         print("\nTest Results:")
@@ -187,14 +186,14 @@ class LoadTester:
         print(f"Failed Requests: {failed_requests}")
 
         if durations:
-            print(f"\nLatency Statistics (ms):")
-            print(f"Min: {min(durations)/1000.:.2f}")
-            print(f"Max: {max(durations)/1000.:.2f}")
-            print(f"Mean: {statistics.mean(durations)/1000.:.2f}")
-            print(f"Median: {statistics.median(durations)/1000.:.2f}")
+            print("\nLatency Statistics (ms):")
+            print(f"Min: {min(durations) / 1000.0:.2f}")
+            print(f"Max: {max(durations) / 1000.0:.2f}")
+            print(f"Mean: {statistics.mean(durations) / 1000.0:.2f}")
+            print(f"Median: {statistics.median(durations) / 1000.0:.2f}")
             try:
                 print(
-                    f"95th Percentile: {statistics.quantiles(durations, n=20)[-1]/1000.:.2f}"
+                    f"95th Percentile: {statistics.quantiles(durations, n=20)[-1] / 1000.0:.2f}"
                 )
             except Exception:
                 pass
@@ -204,7 +203,7 @@ class LoadTester:
         )
 
     async def run_load_test(self):
-        """Main load test execution"""
+        """Main load test execution."""
         await self.setup_users()
 
         if not self.users:

@@ -369,8 +369,7 @@ class PostgresUserHandler(Handler):
         merge_limits: bool = False,
         new_metadata: dict[str, Optional[str]] | None = None,
     ) -> User:
-        """
-        Update user information including limits_overrides.
+        """Update user information including limits_overrides.
 
         Args:
             user: User object containing updated information
@@ -386,7 +385,9 @@ class PostgresUserHandler(Handler):
         try:
             current_user = await self.get_user_by_id(user.id)
         except R2RException:
-            raise R2RException(status_code=404, message="User not found")
+            raise R2RException(
+                status_code=404, message="User not found"
+            ) from None
 
         # If the new user.google_id != current_user.google_id, check for duplicates
         if user.email and (user.email != current_user.email):
@@ -719,7 +720,7 @@ class PostgresUserHandler(Handler):
             )
 
         update_collection_query = f"""
-            UPDATE {self._get_table_name('collections')}
+            UPDATE {self._get_table_name("collections")}
             SET user_count = user_count + 1
             WHERE id = $1
         """
@@ -865,16 +866,14 @@ class PostgresUserHandler(Handler):
         limit: int,
         user_ids: Optional[list[UUID]] = None,
     ) -> dict[str, list[User] | int]:
-        """
-        Return users with document usage and total entries.
-        """
+        """Return users with document usage and total entries."""
         query = f"""
             WITH user_document_ids AS (
                 SELECT
                     u.id as user_id,
                     ARRAY_AGG(d.id) FILTER (WHERE d.id IS NOT NULL) AS doc_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN {self._get_table_name("documents")} d ON u.id = d.owner_id
                 GROUP BY u.id
             ),
             user_docs AS (
@@ -894,9 +893,9 @@ class PostgresUserHandler(Handler):
                     COALESCE(SUM(d.size_in_bytes), 0) AS total_size_in_bytes,
                     ud.doc_ids as document_ids
                 FROM {self._get_table_name(PostgresUserHandler.TABLE_NAME)} u
-                LEFT JOIN {self._get_table_name('documents')} d ON u.id = d.owner_id
+                LEFT JOIN {self._get_table_name("documents")} d ON u.id = d.owner_id
                 LEFT JOIN user_document_ids ud ON u.id = ud.user_id
-                {' WHERE u.id = ANY($3::uuid[])' if user_ids else ''}
+                {" WHERE u.id = ANY($3::uuid[])" if user_ids else ""}
                 GROUP BY u.id, u.email, u.is_superuser, u.is_active, u.is_verified,
                          u.created_at, u.updated_at, u.collection_ids, ud.doc_ids
             )
@@ -964,9 +963,10 @@ class PostgresUserHandler(Handler):
         self,
         user_id: UUID,
     ) -> dict:
-        """
-        Get verification data for a specific user.
-        This method should be called after superuser authorization has been verified.
+        """Get verification data for a specific user.
+
+        This method should be called after superuser authorization has been
+        verified.
         """
         query = f"""
             SELECT
@@ -1008,9 +1008,8 @@ class PostgresUserHandler(Handler):
         name: Optional[str] = None,
         description: Optional[str] = None,
     ) -> UUID:
-        """
-        Store a new API key for a user with optional name and description.
-        """
+        """Store a new API key for a user with optional name and
+        description."""
         query = f"""
             INSERT INTO {self._get_table_name(PostgresUserHandler.API_KEYS_TABLE_NAME)}
             (user_id, public_key, hashed_key, name, description)
@@ -1027,8 +1026,8 @@ class PostgresUserHandler(Handler):
         return result["id"]
 
     async def get_api_key_record(self, key_id: str) -> Optional[dict]:
-        """
-        Get API key record by 'public_key' and update 'updated_at' to now.
+        """Get API key record by 'public_key' and update 'updated_at' to now.
+
         Returns { "user_id", "hashed_key" } or None if not found.
         """
         query = f"""
@@ -1103,9 +1102,8 @@ class PostgresUserHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "email",
@@ -1216,7 +1214,7 @@ class PostgresUserHandler(Handler):
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to export data: {str(e)}",
-            )
+            ) from e
 
     async def get_user_by_google_id(self, google_id: str) -> Optional[User]:
         """Return a User if the google_id is found; otherwise None."""

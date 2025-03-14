@@ -84,7 +84,7 @@ export class CollectionsClient {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
-      ...(options.generateDescription && {
+      ...(options.generateDescription !== undefined && {
         generate_description: options.generateDescription,
       }),
     };
@@ -243,7 +243,7 @@ export class CollectionsClient {
   }): Promise<WrappedBooleanResponse> {
     const data = {
       ...(options.settings && { settings: options.settings }),
-      ...(options.runWithOrchestration && {
+      ...(options.runWithOrchestration !== undefined && {
         run_with_orchestration: options.runWithOrchestration,
       }),
     };
@@ -328,11 +328,16 @@ export class CollectionsClient {
    * @param name The name of the collection to retrieve.
    * @returns A promise that resolves with the collection details.
    */
-  async retrieveByName(options: { name: string; ownerId?: string }): Promise<WrappedCollectionResponse> {
+  async retrieveByName(options: {
+    name: string;
+    ownerId?: string;
+  }): Promise<WrappedCollectionResponse> {
     const queryParams: Record<string, any> = {};
     if (options.ownerId) {
       queryParams.owner_id = options.ownerId;
     }
-    return this.client.makeRequest("GET", `collections/name/${options.name}`, { params: queryParams });
+    return this.client.makeRequest("GET", `collections/name/${options.name}`, {
+      params: queryParams,
+    });
   }
 }

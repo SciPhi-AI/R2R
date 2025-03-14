@@ -1,5 +1,4 @@
 import logging
-import textwrap
 from typing import Any, Literal, Optional
 from uuid import UUID
 
@@ -17,6 +16,8 @@ from core.base import (
 from core.base.api.models import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
@@ -45,11 +46,11 @@ def merge_search_settings(
     return SearchSettings(**base_dict)
 
 
-class RetrievalRouterV3(BaseRouterV3):
+class RetrievalRouter(BaseRouterV3):
     def __init__(
         self, providers: R2RProviders, services: R2RServices, config: R2RConfig
     ):
-        logging.info("Initializing RetrievalRouterV3")
+        logging.info("Initializing RetrievalRouter")
         super().__init__(providers, services, config)
 
     def _register_workflows(self):
@@ -61,10 +62,9 @@ class RetrievalRouterV3(BaseRouterV3):
         search_mode: SearchMode,
         search_settings: Optional[SearchSettings],
     ) -> SearchSettings:
-        """
-        Prepare the effective search settings based on the provided search_mode,
-        optional user-overrides in search_settings, and applied filters.
-        """
+        """Prepare the effective search settings based on the provided
+        search_mode, optional user-overrides in search_settings, and applied
+        filters."""
         if search_mode != SearchMode.custom:
             # Start from mode defaults
             effective_settings = SearchSettings.get_default(search_mode.value)
@@ -118,8 +118,8 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedSearchResponse:
-            """
-            Perform a search query against vector and/or graph-based databases.
+            """Perform a search query against vector and/or graph-based
+            databases.
 
             **Search Modes:**
             - `basic`: Defaults to semantic search. Simple and easy to use.
@@ -238,8 +238,7 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
-            """
-            Execute a RAG (Retrieval-Augmented Generation) query.
+            """Execute a RAG (Retrieval-Augmented Generation) query.
 
             This endpoint combines search results with language model generation to produce accurate,
             contextually-relevant responses based on your document corpus.
@@ -553,7 +552,7 @@ class RetrievalRouterV3(BaseRouterV3):
                     return response
             except Exception as e:
                 logger.error(f"Error in agent_app: {e}")
-                raise R2RException(str(e), 500)
+                raise R2RException(str(e), 500) from e
 
         @self.router.post(
             "/retrieval/completion",
@@ -594,16 +593,16 @@ class RetrievalRouterV3(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
             response_model=WrappedCompletionResponse,
-        ):
-            # FIXME: Needs a proper return type
-            """
-            Generate completions for a list of messages.
+        ) -> WrappedLLMChatCompletion:
+            """Generate completions for a list of messages.
 
-            This endpoint uses the language model to generate completions for the provided messages.
-            The generation process can be customized using the generation_config parameter.
+            This endpoint uses the language model to generate completions for
+            the provided messages. The generation process can be customized
+            using the generation_config parameter.
 
-            The messages list should contain alternating user and assistant messages, with an optional
-            system message at the start. Each message should have a 'role' and 'content'.
+            The messages list should contain alternating user and assistant
+            messages, with an optional system message at the start. Each
+            message should have a 'role' and 'content'.
             """
 
             return await self.services.retrieval.completion(
@@ -624,13 +623,13 @@ class RetrievalRouterV3(BaseRouterV3):
                 description="Text to generate embeddings for",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ):
-            # FIXME: Needs a proper return type
-            """
-            Generate embeddings for the provided text using the specified model.
+        ) -> WrappedEmbeddingResponse:
+            """Generate embeddings for the provided text using the specified
+            model.
 
-            This endpoint uses the language model to generate embeddings for the provided text.
-            The model parameter specifies the model to use for generating embeddings.
+            This endpoint uses the language model to generate embeddings for
+            the provided text. The model parameter specifies the model to use
+            for generating embeddings.
             """
 
             return await self.services.retrieval.embedding(

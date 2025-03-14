@@ -202,7 +202,7 @@ async agent(options: {
     ...(options.taskPrompt && {
       task_prompt: options.taskPrompt,
     }),
-    ...(typeof options.includeTitleIfAvailable !== "undefined" && {
+    ...(typeof options.includeTitleIfAvailable && {
       include_title_if_available: options.includeTitleIfAvailable,
     }),
     ...(options.conversationId && {
@@ -220,7 +220,7 @@ async agent(options: {
     ...(options.researchTools && {
       research_tools: options.researchTools,
     }),
-    ...(typeof options.useSystemContext !== "undefined" && {
+    ...(typeof options.useSystemContext !== undefined && {
       use_system_context: options.useSystemContext,
     }),
     ...(options.mode && {
@@ -263,68 +263,6 @@ private async streamAgent(
     },
   );
 }
-
-// private async *streamAgent(
-//   agentData: Record<string, any>,
-// ): AsyncGenerator<any, void, unknown> {
-//   // 1) Make a streaming request to your "retrieval/agent" endpoint
-//   //    We'll get back a browser `ReadableStream<Uint8Array>` or a Node stream (depending on environment).
-//   const responseStream = await this.client.makeRequest<ReadableStream<Uint8Array>>(
-//     "POST",
-//     "retrieval/agent",
-//     {
-//       data: agentData,
-//       headers: { "Content-Type": "application/json" },
-//       responseType: "stream",
-//     },
-//   );
-
-//   if (!responseStream) {
-//     throw new Error("No response stream received from agent endpoint");
-//   }
-
-//   // 2) Prepare to read the SSE stream line-by-line
-//   const reader = responseStream.getReader();
-//   const textDecoder = new TextDecoder("utf-8");
-
-//   let buffer = "";
-//   let currentEventType = "unknown";
-
-//   // 3) Read chunks until the stream closes
-//   while (true) {
-//     const { value, done } = await reader.read();
-//     if (done) {
-//       break; // end of stream
-//     }
-//     // Convert bytes to text
-//     const chunkStr = textDecoder.decode(value, { stream: true });
-//     buffer += chunkStr;
-
-//     // SSE messages are separated by newlines
-//     const lines = buffer.split("\n");
-//     // The last element might be a partial line, so re-buffer it
-//     buffer = lines.pop() || "";
-
-//     for (const line of lines) {
-//       const trimmed = line.trim();
-//       // Ignore empty lines or lines starting with ":"
-//       if (!trimmed || trimmed.startsWith(":")) {
-//         continue;
-//       }
-//       if (trimmed.startsWith("event:")) {
-//         // e.g. "event: message"
-//         currentEventType = trimmed.slice("event:".length).trim();
-//       } else if (trimmed.startsWith("data:")) {
-//         // e.g. "data: {...}"
-//         const dataStr = trimmed.slice("data:".length).trim();
-//         const parsed = parseSseEvent({ event: currentEventType, data: dataStr });
-//         if (parsed !== null) {
-//           yield parsed;
-//         }
-//       }
-//     }
-//   }
-// }
 
 
   /**

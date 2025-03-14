@@ -11,6 +11,7 @@ from core.providers import (
     JwtAuthProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    MailerSendEmailProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
@@ -57,6 +58,7 @@ class R2RProviders(BaseModel):
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider
         | SendGridEmailProvider
+        | MailerSendEmailProvider
     )
 
     class Config:

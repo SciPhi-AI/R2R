@@ -100,6 +100,7 @@ __all__ = [
     "R2RException",
     # Graph abstractions
     "Entity",
+    "Graph",
     "Community",
     "StoreType",
     "GraphExtraction",

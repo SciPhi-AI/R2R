@@ -1,7 +1,6 @@
 import json
 import logging
 import math
-import re
 import uuid
 from abc import ABCMeta
 from copy import deepcopy
@@ -21,7 +20,7 @@ from ..abstractions import (
 from ..abstractions.vector import VectorQuantizationType
 
 if TYPE_CHECKING:
-    from ..api.models.retrieval.responses import Citation
+    pass
 
 
 logger = logging.getLogger()
@@ -111,16 +110,14 @@ def _generate_id_from_label(label) -> UUID:
 
 
 def generate_id(label: Optional[str] = None) -> UUID:
-    """
-    Generates a unique run id
-    """
-    return _generate_id_from_label(label if label != None else str(uuid4()))
+    """Generates a unique run id."""
+    return _generate_id_from_label(
+        label if label is not None else str(uuid4())
+    )
 
 
 def generate_document_id(filename: str, user_id: UUID) -> UUID:
-    """
-    Generates a unique document id from a given filename and user id
-    """
+    """Generates a unique document id from a given filename and user id."""
     safe_filename = filename.replace("/", "_")
     return _generate_id_from_label(f"{safe_filename}-{str(user_id)}")
 
@@ -128,37 +125,28 @@ def generate_document_id(filename: str, user_id: UUID) -> UUID:
 def generate_extraction_id(
     document_id: UUID, iteration: int = 0, version: str = "0"
 ) -> UUID:
-    """
-    Generates a unique extraction id from a given document id and iteration
-    """
+    """Generates a unique extraction id from a given document id and
+    iteration."""
     return _generate_id_from_label(f"{str(document_id)}-{iteration}-{version}")
 
 
 def generate_default_user_collection_id(user_id: UUID) -> UUID:
-    """
-    Generates a unique collection id from a given user id
-    """
+    """Generates a unique collection id from a given user id."""
     return _generate_id_from_label(str(user_id))
 
 
 def generate_user_id(email: str) -> UUID:
-    """
-    Generates a unique user id from a given email
-    """
+    """Generates a unique user id from a given email."""
     return _generate_id_from_label(email)
 
 
 def generate_default_prompt_id(prompt_name: str) -> UUID:
-    """
-    Generates a unique prompt id
-    """
+    """Generates a unique prompt id."""
     return _generate_id_from_label(prompt_name)
 
 
 def generate_entity_document_id() -> UUID:
-    """
-    Generates a unique document id inserting entities into a graph
-    """
+    """Generates a unique document id inserting entities into a graph."""
     generation_time = datetime.now().isoformat()
     return _generate_id_from_label(f"entity-{generation_time}")
 
@@ -180,9 +168,7 @@ def validate_uuid(uuid_str: str) -> UUID:
 
 
 def update_settings_from_dict(server_settings, settings_dict: dict):
-    """
-    Updates a settings object with values from a dictionary.
-    """
+    """Updates a settings object with values from a dictionary."""
     settings = deepcopy(server_settings)
     for key, value in settings_dict.items():
         if value is not None:
@@ -208,12 +194,10 @@ def _decorate_vector_type(
 def _get_vector_column_str(
     dimension: int | float, quantization_type: VectorQuantizationType
 ) -> str:
-    """
-    Returns a string representation of a vector column type.
+    """Returns a string representation of a vector column type.
 
-    Explicitly handles the case where the dimension is not a valid number
-    meant to support embedding models that do not allow for specifying
-    the dimension.
+    Explicitly handles the case where the dimension is not a valid number meant
+    to support embedding models that do not allow for specifying the dimension.
     """
     if math.isnan(dimension) or dimension <= 0:
         vector_dim = ""  # Allows for Postgres to handle any dimension
@@ -279,8 +263,8 @@ def num_tokens_from_messages(messages, model="gpt-4o"):
         encoding = tiktoken.get_encoding("cl100k_base")
 
     tokens = 0
-    for i, message in enumerate(messages):
-        tokens += tokens_count_for_message(messages[i], encoding)
+    for message_ in messages:
+        tokens += tokens_count_for_message(message_, encoding)
 
         tokens += 3  # every reply is primed with assistant
     return tokens
@@ -462,16 +446,12 @@ class SearchResultsCollector:
         # Default when type can't be determined
         return "unknown"
 
-    def get_all_results(self):
-        """Return all results as a list of (source_type, result_obj) tuples"""
-        return self._results_in_order
-
     def find_by_short_id(self, short_id):
         """Find a result by its short ID prefix"""
         if not short_id:
             return None
 
-        for i, (source_type, result_obj) in enumerate(self._results_in_order):
+        for source_type, result_obj in self._results_in_order:
             # Check dictionary objects
             if isinstance(result_obj, dict) and "id" in result_obj:
                 result_id = str(result_obj["id"])

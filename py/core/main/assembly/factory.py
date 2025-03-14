@@ -15,11 +15,6 @@ from core.base import (
     IngestionConfig,
     OrchestrationConfig,
 )
-
-from ..abstractions import R2RProviders
-from ..config import R2RConfig
-
-logger = logging.getLogger()
 from core.providers import (
     AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
@@ -30,6 +25,7 @@ from core.providers import (
     JwtAuthProvider,
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
+    MailerSendEmailProvider,
     NaClCryptoConfig,
     NaClCryptoProvider,
     OllamaEmbeddingProvider,
@@ -47,6 +43,11 @@ from core.providers import (
     UnstructuredIngestionProvider,
 )
 
+from ..abstractions import R2RProviders
+from ..config import R2RConfig
+
+logger = logging.getLogger()
+
 
 class R2RProviderFactory:
     def __init__(self, config: R2RConfig):
@@ -61,6 +62,7 @@ class R2RProviderFactory:
             AsyncSMTPEmailProvider
             | ConsoleMockEmailProvider
             | SendGridEmailProvider
+            | MailerSendEmailProvider
         ),
         *args,
         **kwargs,
@@ -261,6 +263,7 @@ class R2RProviderFactory:
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider
         | SendGridEmailProvider
+        | MailerSendEmailProvider
     ):
         """Creates an email provider based on configuration."""
         if not email_config:
@@ -274,6 +277,8 @@ class R2RProviderFactory:
             return ConsoleMockEmailProvider(email_config)
         elif email_config.provider == "sendgrid":
             return SendGridEmailProvider(email_config)
+        elif email_config.provider == "mailersend":
+            return MailerSendEmailProvider(email_config)
         else:
             raise ValueError(
                 f"Email provider {email_config.provider} not supported."
@@ -292,6 +297,7 @@ class R2RProviderFactory:
             AsyncSMTPEmailProvider
             | ConsoleMockEmailProvider
             | SendGridEmailProvider
+            | MailerSendEmailProvider
         ] = None,
         embedding_provider_override: Optional[
             LiteLLMEmbeddingProvider

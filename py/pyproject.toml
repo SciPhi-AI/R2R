@@ -1,218 +1,133 @@
 [build-system]
-requires = ["poetry-core", "setuptools", "wheel"]
-build-backend = "poetry.core.masonry.api"
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.poetry]
+[project]
 name = "r2r"
-readme = "README.md"
-version = "3.4.1"
-
+version = "3.5.0"
 description = "SciPhi R2R"
-authors = ["Owen Colegrove <owen@sciphi.ai>"]
-license = "MIT"
-
-packages = [
-    { include = "r2r", from = "." },
-    { include = "sdk", from = "." },
-    { include = "shared", from = "." },
-    { include = "core", from = "." },
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Owen Colegrove", email = "owen@sciphi.ai"},
 ]
-include = [
-    { path = "migrations/**/*", format = ["sdist", "wheel"] },
-    { path = "pyproject.toml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.yaml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.toml", format = ["sdist", "wheel"] },
-    { path = "r2r/**/*.sh", format = ["sdist", "wheel"] }
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "aiofiles >=24.1.0,<25.0.0",
+    "alembic >=1.13.3,<2.0.0",
+    "fastapi >=0.115.11,<0.116.0",
+    "httpx >=0.27.0,<0.28.0",
+    "openai >=1.11.1,<2.0.0",
+    "posthog >=3.5.0,<4.0.0",
+    "python-dotenv >=1.0.1,<2.0.0",
+    "requests >=2.31.0,<3.0.0",
+    "toml >=0.10.2,<0.11.0",
+    "types-requests >=2.31.0,<3.0.0",
+    "psycopg-binary >=3.2.3,<4.0.0",
+    "types-aiofiles >=24.1.0.20240626,<25.0.0",
+    "typing-extensions >=4.12.2,<5.0.0",
+    "pydantic>=2.10.6",
+    "python-json-logger>=3.2.1",
 ]
 
-[tool.poetry.dependencies]
-# Python Versions
-python = ">=3.10,<3.14"
-
-aiofiles = "^24.1.0"
-alembic = "^1.13.3"
-fastapi = "^0.114.0"
-httpx = "^0.27.0"
-openai =  "^1.11.1"
-posthog = "^3.5.0"
-python-dotenv = "^1.0.1"
-requests = "^2.31.0"
-toml = "^0.10.2"
-types-requests = "^2.31.0"
-psycopg-binary = "^3.2.3"
-types-aiofiles = "^24.1.0.20240626"
-typing-extensions = "^4.12.2"
-
-# Shared dependencies (optional)
-aiohttp = { version = "^3.10.10", optional = true }
-aioshutil = { version = "^1.5", optional = true }
-aiosqlite = { version = "^0.20.0", optional = true }
-anthropic = { version = "^0.49.0", optional = true }
-apscheduler = { version = "^3.10.4", optional = true }
-asyncpg = { version = "^0.29.0", optional = true }
-azure-ai-inference = { version = "^1.0.0b8", optional = true }
-azure-ai-ml = { version = "^1.24.0", optional = true }
-bcrypt = { version = "^4.1.3", optional = true }
-beautifulsoup4 = { version = "^4.12.3", optional = true }
-boto3 = { version = "^1.35.17", optional = true } # for AWS bedrock support
-colorlog = { version = "^6.9.0", optional = true }
-docutils = { version = "^0.21.2", optional = true }
-epub = { version = "^0.5.2", optional = true }
-extract-msg = { version = "^0.52.0", optional = true }
-fsspec = { version = "^2024.6.0", optional = true }
-future = { version = "^1.0.0", optional = true }
-google-auth = { version = "^2.37.0", optional = true }
-google-auth-oauthlib = { version = "^1.2.1", optional = true }
-google-genai = { version = "^0.6.0", optional = true }
-gunicorn = { version = "^21.2.0", optional = true }
-hatchet-sdk = { version = "^0.44.2", optional = true }
-litellm = { version = "^1.58.2", optional = true }
-markdown = { version = "^3.6", optional = true }
-networkx = { version = "^3.3", optional = true }
-numpy = { version = ">=1.22.4,<1.29.0", optional = true }
-olefile = { version = "^0.47", optional = true }
-ollama = { version = "^0.3.1", optional = true }
-openpyxl = { version = "^3.1.2", optional = true }
-orgparse = { version = "^0.4.20231004", optional = true }
-pdf2image = { version = "^1.17.0", optional = true }
-pillow = { version = "^11.1.0", optional = true }
-pillow-heif = { version = "^0.21.0", optional = true }
-psutil = { version = "^6.0.0", optional = true }
-pydantic = { extras = ["email"], version = "^2.8.2", optional = true }
-pyjwt = { version = "^2.8.0", optional = true }
-pynacl = { version = "^1.5.0", optional = true }
-pypdf = { version = "^4.2.0", optional = true }
-pypdf2 = { version = "^3.0.1", optional = true }
-python-docx = { version = "^1.1.0", optional = true }
-python-multipart = { version = ">=0.0.9,<0.0.19", optional = true }
-python-pptx = { version = "^1.0.1", optional = true }
-pyyaml = { version = "^6.0.1", optional = true }
-sendgrid = { version = "^6.11.0", optional = true }
-sentry-sdk = { version = "^2.20.0", optional = true }
-sqlalchemy = { version = "^2.0.30", optional = true }
-striprtf = { version = "^0.0.28", optional = true }
-supabase = { version = "^2.7.4", optional = true }
-tiktoken = { version =  "^0.8.0", optional = true }
-tokenizers = { version = "0.19", optional = true }
-unstructured-client = { version = "0.25.5", optional = true }
-uvicorn = { version = "^0.27.0.post1", optional = true }
-vecs = { version = "^0.4.0", optional = true }
-xlrd = { version = "^2.0.1", optional = true }
-lark = { version = "^1.1.8", optional = true }
-deprecated = { version = "^1.2.18", optional = true }
-sympy = "^1.13.3"
-firecrawl-py = "^1.13.5"
-scipy = "^1.15.2"
-statsmodels = "^0.14.4"
-biopython = "^1.85"
-
-[tool.poetry.extras]
+[project.optional-dependencies]
 core = [
-    "aiohttp",
-    "aioshutil",
-    "aiosqlite",
-    "anthropic",
-    "apscheduler",
-    "asyncpg",
-    "azure-ai-inference",
-    "azure-ai-ml",
-    "bcrypt",
-    "beautifulsoup4",
-    "boto3",
-    "colorlog",
-    "docutils",
-    "epub",
-    "extract-msg",
-    "fsspec",
-    "future",
-    "google-auth",
-    "google-auth-oauthlib",
-    "google-genai",
-    "gunicorn",
-    "hatchet-sdk",
-    "litellm",
-    "markdown",
-    "networkx",
-    "numpy",
-    "olefile",
-    "ollama",
-    "openpyxl",
-    "orgparse",
-    "pdf2image",
-    "pillow",
-    "pillow-heif",
-    "psutil",
-    "pydantic",
-    "pyjwt",
-    "pynacl",
-    "pypdf",
-    "pypdf2",
-    "python-docx",
-    "python-multipart",
-    "python-pptx",
-    "pyyaml",
-    "sendgrid",
-    "sentry-sdk",
-    "striprtf",
-    "sqlalchemy",
-    "supabase",
-    "tiktoken",
-    "tokenizers",
-    "unstructured-client",
-    "uvicorn",
-    "vecs",
-    "xlrd",
-    "lark",
-    "deprecated"
+    "aiohttp >=3.10.10,<4.0.0",
+    "aioshutil >=1.5,<2.0",
+    "aiosqlite >=0.20.0,<0.21.0",
+    "anthropic >=0.45.1,<0.46.0",
+    "apscheduler >=3.10.4,<4.0.0",
+    "asyncpg >=0.29.0,<0.30.0",
+    "azure-ai-inference >=1.0.0b8,<2.0.0",
+    "azure-ai-ml >=1.24.0,<2.0.0",
+    "bcrypt >=4.1.3,<5.0.0",
+    "beautifulsoup4 >=4.12.3,<5.0.0",
+    "boto3 >=1.35.17,<2.0.0",
+    "colorlog >=6.9.0,<7.0.0",
+    "docutils >=0.21.2,<0.22.0",
+    "epub >=0.5.2,<0.6.0",
+    "firecrawl-py >=1.13.5",
+    "fsspec >=2024.6.0,<2025.0.0",
+    "future >=1.0.0,<2.0.0",
+    "google-auth >=2.37.0,<3.0.0",
+    "google-auth-oauthlib >=1.2.1,<2.0.0",
+    "google-genai >=0.6.0,<0.7.0",
+    "gunicorn >=21.2.0,<22.0.0",
+    "hatchet-sdk ==0.47.0",
+    "litellm >=1.58.2,<2.0.0",
+    "markdown >=3.6,<4.0",
+    "msg-parser>=1.2.0",
+    "networkx >=3.3,<4.0",
+    "numpy >=1.22.4,<1.29.0",
+    "olefile >=0.47,<0.48",
+    "ollama >=0.3.1,<0.4.0",
+    "openpyxl >=3.1.2,<4.0.0",
+    "orgparse >=0.4.20231004,<0.5.0",
+    "pdf2image >=1.17.0,<2.0.0",
+    "pillow >=11.1.0,<12.0.0",
+    "pillow-heif >=0.21.0,<0.22.0",
+    "psutil >=6.0.0,<7.0.0",
+    "pydantic[email] >=2.8.2,<3.0.0",
+    "pyjwt >=2.8.0,<3.0.0",
+    "pynacl >=1.5.0,<2.0.0",
+    "pypdf >=4.2.0,<5.0.0",
+    "pypdf2 >=3.0.1,<4.0.0",
+    "python-docx >=1.1.0,<2.0.0",
+    "python-multipart >=0.0.9,<0.0.19",
+    "python-pptx >=1.0.1,<2.0.0",
+    "pyyaml >=6.0.1,<7.0.0",
+    "sendgrid >=6.11.0,<7.0.0",
+    "mailersend >=0.5.6,<0.6.0",
+    "sentry-sdk >=2.20.0,<3.0.0",
+    "sqlalchemy >=2.0.30,<3.0.0",
+    "striprtf >=0.0.28,<0.0.29",
+    "supabase >=2.7.4,<3.0.0",
+    "tiktoken >=0.8.0,<0.9.0",
+    "tokenizers ==0.19",
+    "unstructured-client ==0.25.5",
+    "uvicorn >=0.27.0.post1,<0.28.0",
+    "vecs >=0.4.0,<0.5.0",
+    "xlrd >=2.0.1,<3.0.0",
 ]
 
-[tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
-colorama = "^0.4.6"
-isort = "5.12.0"
-mypy = "^1.5.1"
-pre-commit = "^2.9"
-pytest = "^8.2.0"
-pytest-asyncio = "^0.23.6"
-pytest-dependency = "^0.6.0"
-pytest-mock = "^3.14.0"
-pytest-cov = "^5.0.0"
-pytest-html = "^4.1.1"
-types-toml = "^0.10.8"
-pytest-xdist = "^3.6.1"
+[dependency-groups]
+dev = [
+    "colorama >=0.4.6,<0.5.0",
+    "mypy >=1.5.1,<2.0.0",
+    "pre-commit >=2.9,<3.0",
+    "pytest >=8.2.0,<9.0.0",
+    "pytest-asyncio >=0.23.6,<0.24.0",
+    "pytest-dependency >=0.6.0,<0.7.0",
+    "pytest-mock >=3.14.0,<4.0.0",
+    "pytest-cov >=5.0.0,<6.0.0",
+    "pytest-html >=4.1.1,<5.0.0",
+    "types-toml >=0.10.8,<0.11.0",
+    "pytest-xdist >=3.6.1,<4.0.0",
+    "ruff >=0.9.6,<0.10.0",
+]
 
-[tool.black]
+[project.scripts]
+r2r-serve = "r2r.serve:run_server"
+
+[tool.ruff]
+exclude = ["py/tests/*"]
 line-length = 79
-target-version = ['py39']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
+target-version = "py310"
+select = ["E", "F", "I", "B"]
+ignore = ["B008", "B024", "B026", "E501", "F402", "F403", "F405", "F841"]
 
-[tool.isort]
-line_length = 79
-profile = "black"
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"
 ignore_missing_imports = true
-
-[tool.poetry.scripts]
-r2r-serve = "r2r.serve:run_server"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -224,3 +139,11 @@ filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::pytest.PytestUnraisableExceptionWarning",
 ]
+
+[tool.setuptools]
+packages = { find = { where = [ "." ], include = [ "r2r*", "sdk*", "shared*", "core*" ] } }
+include-package-data = true
+
+[tool.setuptools.package-data]
+core = ["configs/*.toml", "providers/database/prompts/*.yaml"]
+r2r = ["r2r.toml"]

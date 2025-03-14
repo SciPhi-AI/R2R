@@ -9,17 +9,16 @@ from r2r import R2RAsyncClient, R2RException
 
 
 class AsyncR2RTestClient:
-    """Wrapper to ensure async operations use the correct event loop"""
+    """Wrapper to ensure async operations use the correct event loop."""
 
     def __init__(self, base_url: str = "http://localhost:7272"):
         self.client = R2RAsyncClient(base_url)
 
-    async def create_document(
-        self, chunks: list[str], run_with_orchestration: bool = False
-    ):
+    async def create_document(self,
+                              chunks: list[str],
+                              run_with_orchestration: bool = False):
         response = await self.client.documents.create(
-            chunks=chunks, run_with_orchestration=run_with_orchestration
-        )
+            chunks=chunks, run_with_orchestration=run_with_orchestration)
         return response.results.document_id, []
 
     async def delete_document(self, doc_id: str) -> None:
@@ -33,12 +32,15 @@ class AsyncR2RTestClient:
         response = await self.client.chunks.retrieve(id=chunk_id)
         return response.results
 
-    async def update_chunk(
-        self, chunk_id: str, text: str, metadata: Optional[dict] = None
-    ):
-        response = await self.client.chunks.update(
-            {"id": chunk_id, "text": text, "metadata": metadata or {}}
-        )
+    async def update_chunk(self,
+                           chunk_id: str,
+                           text: str,
+                           metadata: Optional[dict] = None):
+        response = await self.client.chunks.update({
+            "id": chunk_id,
+            "text": text,
+            "metadata": metadata or {}
+        })
         return response.results
 
     async def delete_chunk(self, chunk_id: str):
@@ -47,8 +49,7 @@ class AsyncR2RTestClient:
 
     async def search_chunks(self, query: str, limit: int = 5):
         response = await self.client.chunks.search(
-            query=query, search_settings={"limit": limit}
-        )
+            query=query, search_settings={"limit": limit})
 
         return response.results
 
@@ -76,8 +77,7 @@ async def test_document(
     uuid_1 = uuid.uuid4()
     uuid_2 = uuid.uuid4()
     doc_id, _ = await test_client.create_document(
-        [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"]
-    )
+        [f"Test chunk 1_{uuid_1}", f"Test chunk 2_{uuid_2}"])
     await asyncio.sleep(5)  # Wait for ingestion
     chunks = await test_client.list_chunks(str(doc_id))
     yield doc_id, chunks
@@ -86,14 +86,13 @@ async def test_document(
 
 
 class TestChunks:
+
     @pytest.mark.asyncio
-    async def test_create_and_list_chunks(
-        self, test_client: AsyncR2RTestClient
-    ):
+    async def test_create_and_list_chunks(self,
+                                          test_client: AsyncR2RTestClient):
         # Create document with chunks
         doc_id, _ = await test_client.create_document(
-            ["Hello chunk", "World chunk"]
-        )
+            ["Hello chunk", "World chunk"])
         await asyncio.sleep(1)  # Wait for ingestion
 
         # List and verify chunks
@@ -104,36 +103,31 @@ class TestChunks:
         await test_client.delete_document(doc_id)
 
     @pytest.mark.asyncio
-    async def test_retrieve_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
-    ):
+    async def test_retrieve_chunk(self, test_client: AsyncR2RTestClient,
+                                  test_document):
         doc_id, chunks = test_document
         chunk_id = chunks[0].id
 
         retrieved = await test_client.retrieve_chunk(chunk_id)
         assert str(retrieved.id) == str(chunk_id), "Retrieved wrong chunk ID"
-        assert (
-            retrieved.text.split("_")[0] == "Test chunk 1"
-        ), "Chunk text mismatch"
+        assert retrieved.text.split("_")[0] == "Test chunk 1", (
+            "Chunk text mismatch")
 
     @pytest.mark.asyncio
-    async def test_update_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
-    ):
+    async def test_update_chunk(self, test_client: AsyncR2RTestClient,
+                                test_document):
         doc_id, chunks = test_document
         chunk_id = chunks[0].id
 
         # Update chunk
-        updated = await test_client.update_chunk(
-            str(chunk_id), "Updated text", {"version": 2}
-        )
+        updated = await test_client.update_chunk(str(chunk_id), "Updated text",
+                                                 {"version": 2})
         assert updated.text == "Updated text", "Chunk text not updated"
         assert updated.metadata["version"] == 2, "Metadata not updated"
 
     @pytest.mark.asyncio
-    async def test_delete_chunk(
-        self, test_client: AsyncR2RTestClient, test_document
-    ):
+    async def test_delete_chunk(self, test_client: AsyncR2RTestClient,
+                                test_document):
         doc_id, chunks = test_document
         chunk_id = chunks[0].id
 
@@ -151,12 +145,10 @@ class TestChunks:
         random_1 = uuid.uuid4()
         random_2 = uuid.uuid4()
         # Create searchable document
-        doc_id, _ = await test_client.create_document(
-            [
-                f"Aristotle reference {random_1}",
-                f"Another piece of text {random_2}",
-            ]
-        )
+        doc_id, _ = await test_client.create_document([
+            f"Aristotle reference {random_1}",
+            f"Another piece of text {random_2}",
+        ])
         await asyncio.sleep(1)  # Wait for indexing
 
         # Search
@@ -167,9 +159,9 @@ class TestChunks:
         await test_client.delete_document(doc_id)
 
     @pytest.mark.asyncio
-    async def test_unauthorized_chunk_access(
-        self, test_client: AsyncR2RTestClient, test_document
-    ):
+    async def test_unauthorized_chunk_access(self,
+                                             test_client: AsyncR2RTestClient,
+                                             test_document):
         doc_id, chunks = test_document
         chunk_id = chunks[0].id
 
@@ -185,9 +177,8 @@ class TestChunks:
         assert exc_info.value.status_code == 403
 
     @pytest.mark.asyncio
-    async def test_list_chunks_with_filters(
-        self, test_client: AsyncR2RTestClient
-    ):
+    async def test_list_chunks_with_filters(self,
+                                            test_client: AsyncR2RTestClient):
         """Test listing chunks with owner_id filter."""
         # Create and login as temporary user
         temp_email = f"{uuid.uuid4()}@example.com"
@@ -197,8 +188,7 @@ class TestChunks:
         try:
             # Create a document with chunks
             doc_id, _ = await test_client.create_document(
-                ["Test chunk 1", "Test chunk 2"]
-            )
+                ["Test chunk 1", "Test chunk 2"])
             await asyncio.sleep(1)  # Wait for ingestion
 
             # Test listing chunks (filters automatically applied on server)
@@ -226,9 +216,8 @@ class TestChunks:
             await test_client.logout_user()
 
     @pytest.mark.asyncio
-    async def test_list_chunks_pagination(
-        self, test_client: AsyncR2RTestClient
-    ):
+    async def test_list_chunks_pagination(self,
+                                          test_client: AsyncR2RTestClient):
         """Test chunk listing with pagination."""
         # Create and login as temporary user
         temp_email = f"{uuid.uuid4()}@example.com"
@@ -245,23 +234,20 @@ class TestChunks:
             # Test first page
             response1 = await test_client.client.chunks.list(offset=0, limit=2)
 
-            assert (
-                len(response1.results) == 2
-            ), "Expected 2 results on first page"
+            assert len(
+                response1.results) == 2, ("Expected 2 results on first page")
 
             # Test second page
             response2 = await test_client.client.chunks.list(offset=2, limit=2)
 
-            assert (
-                len(response2.results) == 2
-            ), "Expected 2 results on second page"
+            assert len(
+                response2.results) == 2, ("Expected 2 results on second page")
 
             # Verify no duplicate results
             ids_page1 = {str(chunk.id) for chunk in response1.results}
             ids_page2 = {str(chunk.id) for chunk in response2.results}
-            assert not ids_page1.intersection(
-                ids_page2
-            ), "Found duplicate chunks across pages"
+            assert not ids_page1.intersection(ids_page2), (
+                "Found duplicate chunks across pages")
 
         finally:
             # Cleanup
@@ -274,8 +260,7 @@ class TestChunks:
 
     @pytest.mark.asyncio
     async def test_list_chunks_with_multiple_documents(
-        self, test_client: AsyncR2RTestClient
-    ):
+            self, test_client: AsyncR2RTestClient):
         """Test listing chunks across multiple documents."""
         # Create and login as temporary user
         temp_email = f"{uuid.uuid4()}@example.com"
@@ -287,8 +272,7 @@ class TestChunks:
             # Create multiple documents
             for i in range(2):
                 doc_id, _ = await test_client.create_document(
-                    [f"Doc {i} chunk 1", f"Doc {i} chunk 2"]
-                )
+                    [f"Doc {i} chunk 1", f"Doc {i} chunk 2"])
                 doc_ids.append(doc_id)
 
             await asyncio.sleep(5)  # Wait for ingestion
@@ -299,11 +283,12 @@ class TestChunks:
             assert len(response.results) == 4, "Expected 4 total chunks"
 
             chunk_doc_ids = {
-                str(chunk.document_id) for chunk in response.results
+                str(chunk.document_id)
+                for chunk in response.results
             }
             assert all(
-                str(doc_id) in chunk_doc_ids for doc_id in doc_ids
-            ), "Got chunks from wrong documents"
+                str(doc_id) in chunk_doc_ids
+                for doc_id in doc_ids), ("Got chunks from wrong documents")
 
         finally:
             # Cleanup

@@ -5,7 +5,9 @@ from pydantic import BaseModel
 
 
 class InnerConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
+
+    extra_fields: dict[str, Any] = {}
 
     class Config:
         populate_by_name = True
@@ -13,7 +15,7 @@ class InnerConfig(BaseModel, ABC):
         ignore_extra = True
 
     @classmethod
-    def create(cls: Type["ProviderConfig"], **kwargs: Any) -> "ProviderConfig":
+    def create(cls: Type["InnerConfig"], **kwargs: Any) -> "InnerConfig":
         base_args = cls.model_fields.keys()
         filtered_kwargs = {
             k: v if v != "None" else None
@@ -81,7 +83,7 @@ class AppConfig(InnerConfig):
 
 
 class ProviderConfig(BaseModel, ABC):
-    """A base provider configuration class"""
+    """A base provider configuration class."""
 
     app: AppConfig  # Add an app_config field
     extra_fields: dict[str, Any] = {}
@@ -125,7 +127,8 @@ class ProviderConfig(BaseModel, ABC):
 
 
 class Provider(ABC):
-    """A base provider class to provide a common interface for all providers."""
+    """A base provider class to provide a common interface for all
+    providers."""
 
     def __init__(self, config: ProviderConfig, *args, **kwargs):
         if config:

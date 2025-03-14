@@ -1,3 +1,4 @@
+# FIXME: Once the agent is properly type annotated, remove the type: ignore comments
 import logging
 import os
 from enum import Enum
@@ -104,22 +105,29 @@ class R2RConfig:
 
         self.app = AppConfig.create(**self.app)  # type: ignore
         self.auth = AuthConfig.create(**self.auth, app=self.app)  # type: ignore
-        self.completion = CompletionConfig.create(**self.completion, app=self.app)  # type: ignore
+        self.completion = CompletionConfig.create(
+            **self.completion, app=self.app
+        )  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
         self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
-        self.completion_embedding = EmbeddingConfig.create(**self.completion_embedding, app=self.app)  # type: ignore
+        self.completion_embedding = EmbeddingConfig.create(
+            **self.completion_embedding, app=self.app
+        )  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.agent = RAGAgentConfig.create(**self.agent, app=self.app)  # type: ignore
-        self.orchestration = OrchestrationConfig.create(**self.orchestration, app=self.app)  # type: ignore
+        self.orchestration = OrchestrationConfig.create(
+            **self.orchestration, app=self.app
+        )  # type: ignore
 
         IngestionConfig.set_default(**self.ingestion.dict())
 
         # override GenerationConfig defaults
-        GenerationConfig.set_default(
-            **self.completion.generation_config.dict()
-        )
+        if self.completion.generation_config:
+            GenerationConfig.set_default(
+                **self.completion.generation_config.dict()
+            )
 
     def _validate_config_section(
         self, config_data: dict[str, Any], section: str, keys: list
@@ -139,7 +147,7 @@ class R2RConfig:
             config_path = R2RConfig.default_config_path
 
         # Load configuration from TOML file
-        with open(config_path) as f:
+        with open(config_path, encoding="utf-8") as f:
             config_data = toml.load(f)
 
         return cls(config_data)
@@ -156,12 +164,12 @@ class R2RConfig:
 
     @classmethod
     def load_default_config(cls) -> dict:
-        with open(R2RConfig.default_config_path) as f:
+        with open(R2RConfig.default_config_path, encoding="utf-8") as f:
             return toml.load(f)
 
     @staticmethod
-    def _serialize_config(config_section: Any) -> dict:
-        """Serialize config section while excluding internal state"""
+    def _serialize_config(config_section: Any):
+        """Serialize config section while excluding internal state."""
         if isinstance(config_section, dict):
             return {
                 R2RConfig._serialize_key(k): R2RConfig._serialize_config(v)

@@ -55,4 +55,4 @@ class RSTParser(AsyncParser[str | bytes]):
                     yield paragraph.strip()
 
         except Exception as e:
-            raise ValueError(f"Error processing RST file: {str(e)}")
+            raise ValueError(f"Error processing RST file: {str(e)}") from e

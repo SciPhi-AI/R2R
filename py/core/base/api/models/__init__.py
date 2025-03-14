@@ -36,16 +36,14 @@ from shared.api.models.ingestion.responses import (
     WrappedVectorIndicesResponse,
 )
 from shared.api.models.management.responses import (  # Document Responses; Prompt Responses; Chunk Responses; Conversation Responses; User Responses; TODO: anything below this hasn't been reviewed
-    AnalyticsResponse,
     ChunkResponse,
     CollectionResponse,
     ConversationResponse,
-    LogResponse,
+    MessageResponse,
     PromptResponse,
     ServerStats,
     SettingsResponse,
     User,
-    WrappedAnalyticsResponse,
     WrappedAPIKeyResponse,
     WrappedAPIKeysResponse,
     WrappedChunkResponse,
@@ -59,7 +57,6 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     WrappedDocumentsResponse,
     WrappedLimitsResponse,
     WrappedLoginResponse,
-    WrappedLogsResponse,
     WrappedMessageResponse,
     WrappedMessagesResponse,
     WrappedPromptResponse,
@@ -68,7 +65,6 @@ from shared.api.models.management.responses import (  # Document Responses; Prom
     WrappedSettingsResponse,
     WrappedUserResponse,
     WrappedUsersResponse,
-    WrappedVerificationResult,
 )
 from shared.api.models.retrieval.responses import (
     AgentEvent,
@@ -98,6 +94,8 @@ from shared.api.models.retrieval.responses import (
     WrappedAgentResponse,
     WrappedCompletionResponse,
     WrappedDocumentSearchResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
     WrappedVectorSearchResponse,
@@ -107,7 +105,6 @@ __all__ = [
     # Auth Responses
     "TokenResponse",
     "WrappedTokenResponse",
-    "WrappedVerificationResult",
     "WrappedGenericMessageResponse",
     # Ingestion Responses
     "IngestionResponse",
@@ -136,14 +133,10 @@ __all__ = [
     # Management Responses
     "PromptResponse",
     "ServerStats",
-    "LogResponse",
-    "AnalyticsResponse",
     "SettingsResponse",
     "ChunkResponse",
     "CollectionResponse",
     "WrappedServerStatsResponse",
-    "WrappedLogsResponse",
-    "WrappedAnalyticsResponse",
     "WrappedSettingsResponse",
     "WrappedDocumentResponse",
     "WrappedDocumentsResponse",
@@ -158,6 +151,7 @@ __all__ = [
     "WrappedPromptResponse",
     "WrappedPromptsResponse",
     # Conversation Responses
+    "MessageResponse",
     "WrappedMessageResponse",
     "WrappedMessagesResponse",
     # Chunk Responses
@@ -209,4 +203,6 @@ __all__ = [
     "WrappedCompletionResponse",
     "WrappedRAGResponse",
     "WrappedAgentResponse",
+    "WrappedLLMChatCompletion",
+    "WrappedEmbeddingResponse",
 ]

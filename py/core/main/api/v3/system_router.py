@@ -36,21 +36,18 @@ class SystemRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.health()
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -60,18 +57,15 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/health"\\
                                  -H "Content-Type: application/json" \\
                                  -H "Authorization: Bearer YOUR_API_KEY" \\
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -87,21 +81,18 @@ class SystemRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.settings()
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -111,18 +102,15 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/system/settings" \\
                                  -H "Content-Type: application/json" \\
                                  -H "Authorization: Bearer YOUR_API_KEY" \\
-                        """
-                        ),
+                        """),
                     },
                 ]
             },
@@ -145,21 +133,18 @@ class SystemRouter(BaseRouterV3):
                 "x-codeSamples": [
                     {
                         "lang": "Python",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             from r2r import R2RClient
 
                             client = R2RClient()
                             # when using auth, do client.login(...)
 
                             result = client.system.status()
-                        """
-                        ),
+                        """),
                     },
                     {
                         "lang": "JavaScript",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             const { r2rClient } = require("r2r-js");
 
                             const client = new r2rClient();
@@ -169,18 +154,15 @@ class SystemRouter(BaseRouterV3):
                             }
 
                             main();
-                            """
-                        ),
+                            """),
                     },
                     {
                         "lang": "cURL",
-                        "source": textwrap.dedent(
-                            """
+                        "source": textwrap.dedent("""
                             curl -X POST "https://api.example.com/v3/system/status" \\
                                  -H "Content-Type: application/json" \\
                                  -H "Authorization: Bearer YOUR_API_KEY" \\
-                            """
-                        ),
+                            """),
                     },
                 ]
             },

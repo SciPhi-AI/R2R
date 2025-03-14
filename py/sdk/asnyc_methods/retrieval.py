@@ -1,5 +1,4 @@
-import uuid
-from typing import Any, AsyncGenerator, Literal, Optional, Union
+from typing import AsyncGenerator
 
 from shared.api.models import (
     AgentEvent,
@@ -9,11 +8,8 @@ from shared.api.models import (
 )
 
 from ..models import (
-    GenerationConfig,
     Message,
     RAGResponse,
-    SearchMode,
-    SearchSettings,
 )
 from ..sync_methods.retrieval import parse_retrieval_event
 

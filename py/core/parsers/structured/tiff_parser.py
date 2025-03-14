@@ -48,7 +48,7 @@ class TIFFParser(AsyncParser[str | bytes]):
                 tiff_image.save(output_buffer, format="JPEG", quality=95)
                 return output_buffer.getvalue()
         except Exception as e:
-            raise ValueError(f"Error converting TIFF to JPEG: {str(e)}")
+            raise ValueError(f"Error converting TIFF to JPEG: {str(e)}") from e
 
     async def ingest(
         self, data: str | bytes, **kwargs
@@ -102,4 +102,4 @@ class TIFFParser(AsyncParser[str | bytes]):
                 raise ValueError("No response content")
 
         except Exception as e:
-            raise ValueError(f"Error processing TIFF file: {str(e)}")
+            raise ValueError(f"Error processing TIFF file: {str(e)}") from e

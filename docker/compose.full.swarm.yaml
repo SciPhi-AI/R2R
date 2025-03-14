@@ -1,8 +1,3 @@
-networks:
-  r2r-network:
-    external: true
-    name: ${DOCKER_NETWORK_NAME:-r2r_r2r-network}
-
 volumes:
   hatchet_certs:
     name: ${VOLUME_HATCHET_CERTS:-hatchet_certs}
@@ -31,8 +26,6 @@ services:
       - PGPORT=${R2R_POSTGRES_PORT:-5432}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - r2r-network
     ports:
       - "${R2R_POSTGRES_PORT:-5432}:${R2R_POSTGRES_PORT:-5432}"
     healthcheck:
@@ -56,8 +49,6 @@ services:
       POSTGRES_PASSWORD: ${HATCHET_POSTGRES_PASSWORD:-hatchet_password}
     volumes:
       - hatchet_postgres_data:/var/lib/postgresql/data
-    networks:
-      - r2r-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${HATCHET_POSTGRES_USER:-hatchet_user} -d ${HATCHET_POSTGRES_DBNAME:-hatchet}"]
       interval: 10s
@@ -67,7 +58,6 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-
 
   hatchet-rabbitmq:
     image: "rabbitmq:3-management"
@@ -86,8 +76,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
-    networks:
-      - r2r-network
     deploy:
       replicas: 1
       restart_policy:
@@ -112,8 +100,6 @@ services:
       "
     environment:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
-    networks:
-      - r2r-network
     deploy:
       replicas: 1
       restart_policy:
@@ -125,8 +111,6 @@ services:
       DATABASE_URL: "postgres://${HATCHET_POSTGRES_USER:-hatchet_user}:${HATCHET_POSTGRES_PASSWORD:-hatchet_password}@hatchet-postgres:5432/${HATCHET_POSTGRES_DBNAME:-hatchet}?sslmode=disable"
     depends_on:
       - hatchet-create-db
-    networks:
-      - r2r-network
     deploy:
       replicas: 1
       restart_policy:
@@ -161,8 +145,6 @@ services:
     depends_on:
       - hatchet-migration
       - hatchet-rabbitmq
-    networks:
-      - r2r-network
     deploy:
       replicas: 1
       restart_policy:
@@ -185,8 +167,6 @@ services:
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
-    networks:
-      - r2r-network
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8733/live"]
       interval: 10s
@@ -207,8 +187,6 @@ services:
     volumes:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
-    networks:
-      - r2r-network
     ports:
       - "${R2R_HATCHET_DASHBOARD_PORT:-7274}:80"
     deploy:
@@ -224,8 +202,6 @@ services:
       - hatchet_certs:/hatchet/certs
       - hatchet_config:/hatchet/config
       - hatchet_api_key:/hatchet_api_key
-    networks:
-      - r2r-network
     depends_on:
       - hatchet-setup-config
     deploy:
@@ -235,8 +211,6 @@ services:
 
   unstructured:
     image: ${UNSTRUCTURED_IMAGE:-ragtoriches/unst-prod}
-    networks:
-      - r2r-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
       interval: 10s
@@ -251,8 +225,6 @@ services:
     image: ${GRAPH_CLUSTERING_IMAGE:-ragtoriches/cluster-prod}
     ports:
       - "${R2R_GRAPH_CLUSTERING_PORT:-7276}:7276"
-    networks:
-      - r2r-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
       interval: 10s
@@ -264,7 +236,7 @@ services:
         condition: on-failure
 
   r2r:
-    image: ${R2R_IMAGE:-ragtoriches/prod:latest}
+    image: sciphiai/r2r:latest
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:
@@ -274,6 +246,7 @@ services:
 
       # R2R
       - R2R_LOG_LEVEL=${R2R_LOG_LEVEL:-INFO}
+      - R2R_LOG_CONSOLE_FORMATTER=${R2R_LOG_CONSOLE_FORMATTER:-json}
       - R2R_CONFIG_NAME=${R2R_CONFIG_NAME:-}
       - R2R_CONFIG_PATH=${R2R_CONFIG_PATH:-}
       - R2R_PROJECT_NAME=${R2R_PROJECT_NAME:-r2r_default}
@@ -379,8 +352,6 @@ services:
         fi
         exec uvicorn core.main.app_entry:app --host $${R2R_HOST} --port $${R2R_PORT}
       '
-    networks:
-      - r2r-network
     volumes:
       - ${R2R_CONFIG_PATH:-/}:${R2R_CONFIG_PATH:-/app/config}
       - hatchet_api_key:/hatchet_api_key:ro
@@ -407,17 +378,47 @@ services:
       rollback_config:
         parallelism: 1
         delay: 30s
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: host.docker.internal:24224
+        fluentd-sub-second-precision: "true"
+        tag: backend
 
   r2r-dashboard:
-    image: ${R2R_DASHBOARD_IMAGE:-emrgntcmplxty/r2r-dashboard:latest}
+    image: sciphiai/r2r-dashboard:1.0.2
     environment:
       - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
       - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${R2R_HATCHET_DASHBOARD_PORT:-7274}}
-    networks:
-      - r2r-network
     ports:
       - "${R2R_DASHBOARD_PORT:-7273}:3000"
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    volumes:
+    - ./docker/fluent-bit:/fluent-bit/etc:ro
+    ports:
+    - "24224:24224"
+    depends_on:
+    - victoria-logs
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - "3001:3000"
+    env_file:
+    - .env
+    volumes:
+    - ./.data/grafana:/var/lib/grafana
+
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.10.1-victorialogs
+    ports:
+    - "9428:9428"
+    volumes:
+    - ./.data/victoria-logs:/data
+    command: -storageDataPath=/data -retentionPeriod=60d

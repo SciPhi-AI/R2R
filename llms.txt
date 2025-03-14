@@ -11042,7 +11042,6 @@ default_collection_description = "Your default collection."
 batch_size = 256
 
   [database.graph_creation_settings]
-    clustering_mode = "local"
     graph_entity_description_prompt = "graph_entity_description"
     entity_types = []
     relation_types = []

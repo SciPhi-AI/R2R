@@ -28,7 +28,6 @@ from core.base.abstractions import (
 from core.base.api.models import GraphResponse
 from core.base.providers.database import Handler
 from core.base.utils import (
-    _decorate_vector_type,
     _get_vector_column_str,
     generate_entity_document_id,
 )
@@ -42,9 +41,13 @@ logger = logging.getLogger()
 class PostgresEntitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
         self.relationships_handler: PostgresRelationshipsHandler = (
             PostgresRelationshipsHandler(*args, **kwargs)
         )
@@ -197,7 +200,7 @@ class PostgresEntitiesHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
 
         count_params = params[: param_index - 1]
@@ -210,7 +213,7 @@ class PostgresEntitiesHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -292,7 +295,7 @@ class PostgresEntitiesHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}\
             RETURNING id, name, category, description, parent_id, chunk_ids, metadata
         """
@@ -323,9 +326,8 @@ class PostgresEntitiesHandler(Handler):
         entity_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPHS,
     ) -> None:
-        """
-        Delete entities from the specified store.
-        If entity_ids is not provided, deletes all entities for the given parent_id.
+        """Delete entities from the specified store. If entity_ids is not
+        provided, deletes all entities for the given parent_id.
 
         Args:
             parent_id (UUID): Parent ID (collection_id or document_id)
@@ -375,10 +377,12 @@ class PostgresEntitiesHandler(Handler):
         parent_id: UUID,
         store_type: StoreType,
     ) -> list[list[Entity]]:
-        """
-        Find all groups of entities that share identical names within the same parent.
-        Returns a list of entity groups, where each group contains entities with the same name.
-        For each group, includes the n most dissimilar descriptions based on cosine similarity.
+        """Find all groups of entities that share identical names within the
+        same parent.
+
+        Returns a list of entity groups, where each group contains entities
+        with the same name. For each group, includes the n most dissimilar
+        descriptions based on cosine similarity.
         """
         table_name = self._get_entity_table_for_store(store_type)
 
@@ -422,8 +426,8 @@ class PostgresEntitiesHandler(Handler):
         parent_id: UUID,
         store_type: StoreType,
     ) -> list[tuple[list[Entity], Entity]]:
-        """
-        Merge entities that share identical names.
+        """Merge entities that share identical names.
+
         Returns list of tuples: (original_entities, merged_entity)
         """
         duplicate_blocks = await self.get_duplicate_name_blocks(
@@ -512,8 +516,8 @@ class PostgresEntitiesHandler(Handler):
         return result[0]["id"]
 
     async def _create_merged_entity(self, entities: list[Entity]) -> Entity:
-        """
-        Create a merged entity from a list of duplicate entities.
+        """Create a merged entity from a list of duplicate entities.
+
         Uses various strategies to combine fields.
         """
         if not entities:
@@ -538,7 +542,7 @@ class PostgresEntitiesHandler(Handler):
         )
 
         # Merge metadata dictionaries
-        merged_metadata = {}
+        merged_metadata: dict[str, Any] = {}
         for entity in entities:
             if entity.metadata:
                 merged_metadata |= entity.metadata
@@ -564,9 +568,8 @@ class PostgresEntitiesHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "name",
@@ -680,9 +683,13 @@ class PostgresEntitiesHandler(Handler):
 class PostgresRelationshipsHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
 
     def _get_table_name(self, table: str) -> str:
         """Get the fully qualified table name."""
@@ -829,8 +836,7 @@ class PostgresRelationshipsHandler(Handler):
         relationship_types: Optional[list[str]] = None,
         include_metadata: bool = False,
     ):
-        """
-        Get relationships from the specified store.
+        """Get relationships from the specified store.
 
         Args:
             parent_id: UUID of the parent (collection_id or document_id)
@@ -880,7 +886,7 @@ class PostgresRelationshipsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count_params = params[: param_index - 1]
         count = (
@@ -893,7 +899,7 @@ class PostgresRelationshipsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -994,7 +1000,7 @@ class PostgresRelationshipsHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(table_name)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, subject, predicate, object, description, subject_id, object_id, weight, chunk_ids, parent_id, metadata
         """
@@ -1030,9 +1036,8 @@ class PostgresRelationshipsHandler(Handler):
         relationship_ids: Optional[list[UUID]] = None,
         store_type: StoreType = StoreType.GRAPHS,
     ) -> None:
-        """
-        Delete relationships from the specified store.
-        If relationship_ids is not provided, deletes all relationships for the given parent_id.
+        """Delete relationships from the specified store. If relationship_ids
+        is not provided, deletes all relationships for the given parent_id.
 
         Args:
             parent_id: UUID of the parent (collection_id or document_id)
@@ -1081,9 +1086,8 @@ class PostgresRelationshipsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "subject",
@@ -1194,9 +1198,13 @@ class PostgresRelationshipsHandler(Handler):
 class PostgresCommunitiesHandler(Handler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
 
     async def create_tables(self) -> None:
         vector_column_str = _get_vector_column_str(
@@ -1442,7 +1450,7 @@ class PostgresCommunitiesHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
 
         count = (
@@ -1454,7 +1462,7 @@ class PostgresCommunitiesHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name(table_name)}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -1483,9 +1491,8 @@ class PostgresCommunitiesHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "collection_id",
@@ -1604,10 +1611,16 @@ class PostgresGraphsHandler(Handler):
         **kwargs: Any,
     ) -> None:
         self.project_name: str = kwargs.get("project_name")  # type: ignore
-        self.connection_manager: PostgresConnectionManager = kwargs.get("connection_manager")  # type: ignore
+        self.connection_manager: PostgresConnectionManager = kwargs.get(
+            "connection_manager"
+        )  # type: ignore
         self.dimension: int = kwargs.get("dimension")  # type: ignore
-        self.quantization_type: VectorQuantizationType = kwargs.get("quantization_type")  # type: ignore
-        self.collections_handler: PostgresCollectionsHandler = kwargs.get("collections_handler")  # type: ignore
+        self.quantization_type: VectorQuantizationType = kwargs.get(
+            "quantization_type"
+        )  # type: ignore
+        self.collections_handler: PostgresCollectionsHandler = kwargs.get(
+            "collections_handler"
+        )  # type: ignore
 
         self.entities = PostgresEntitiesHandler(*args, **kwargs)
         self.relationships = PostgresRelationshipsHandler(*args, **kwargs)
@@ -1618,10 +1631,6 @@ class PostgresGraphsHandler(Handler):
             self.relationships,
             self.communities,
         ]
-
-        import networkx as nx
-
-        self.nx = nx
 
     async def create_tables(self) -> None:
         """Create the graph tables with mandatory collection_id support."""
@@ -1693,12 +1702,10 @@ class PostgresGraphsHandler(Handler):
             raise R2RException(
                 message="Graph with this ID already exists",
                 status_code=409,
-            )
+            ) from None
 
     async def reset(self, parent_id: UUID) -> None:
-        """
-        Completely reset a graph and all associated data.
-        """
+        """Completely reset a graph and all associated data."""
 
         await self.entities.delete(
             parent_id=parent_id, store_type=StoreType.GRAPHS
@@ -1836,9 +1843,8 @@ class PostgresGraphsHandler(Handler):
             }
 
     async def add_documents(self, id: UUID, document_ids: list[UUID]) -> bool:
-        """
-        Add documents to the graph by copying their entities and relationships.
-        """
+        """Add documents to the graph by copying their entities and
+        relationships."""
         # Copy entities from document_entity to graphs_entities
         ENTITY_COPY_QUERY = f"""
             INSERT INTO {self._get_table_name("graphs_entities")} (
@@ -1918,7 +1924,7 @@ class PostgresGraphsHandler(Handler):
 
         query = f"""
             UPDATE {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
-            SET {', '.join(update_fields)}
+            SET {", ".join(update_fields)}
             WHERE id = ${param_index}
             RETURNING id, name, description, status, created_at, updated_at, collection_id, document_ids
         """
@@ -1956,8 +1962,7 @@ class PostgresGraphsHandler(Handler):
         entity_names: Optional[list[str]] = None,
         include_embeddings: bool = False,
     ) -> tuple[list[Entity], int]:
-        """
-        Get entities for a graph.
+        """Get entities for a graph.
 
         Args:
             offset: Number of records to skip
@@ -1988,7 +1993,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_entities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2006,7 +2011,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_entities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2041,8 +2046,7 @@ class PostgresGraphsHandler(Handler):
         relationship_types: Optional[list[str]] = None,
         include_embeddings: bool = False,
     ) -> tuple[list[Relationship], int]:
-        """
-        Get relationships for a graph.
+        """Get relationships for a graph.
 
         Args:
             parent_id: UUID of the graph
@@ -2073,7 +2077,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_relationships")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2090,7 +2094,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_relationships")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2120,10 +2124,10 @@ class PostgresGraphsHandler(Handler):
         self,
         entities: list[Entity],
         table_name: str,
-        conflict_columns: list[str] = [],
+        conflict_columns: list[str] | None = None,
     ) -> asyncpg.Record:
-        """
-        Upsert entities into the entities_raw table. These are raw entities extracted from the document.
+        """Upsert entities into the entities_raw table. These are raw entities
+        extracted from the document.
 
         Args:
             entities: list[Entity]: list of entities to upsert
@@ -2132,6 +2136,8 @@ class PostgresGraphsHandler(Handler):
         Returns:
             result: asyncpg.Record: result of the upsert operation
         """
+        if not conflict_columns:
+            conflict_columns = []
         cleaned_entities = []
         for entity in entities:
             entity_dict = entity.to_dict()
@@ -2170,8 +2176,7 @@ class PostgresGraphsHandler(Handler):
         return [Relationship(**relationship) for relationship in relationships]
 
     async def has_document(self, graph_id: UUID, document_id: UUID) -> bool:
-        """
-        Check if a document exists in the graph's document_ids array.
+        """Check if a document exists in the graph's document_ids array.
 
         Args:
             graph_id (UUID): ID of the graph to check
@@ -2210,8 +2215,7 @@ class PostgresGraphsHandler(Handler):
         community_ids: Optional[list[UUID]] = None,
         include_embeddings: bool = False,
     ) -> tuple[list[Community], int]:
-        """
-        Get communities for a graph.
+        """Get communities for a graph.
 
         Args:
             collection_id: UUID of the collection
@@ -2241,7 +2245,7 @@ class PostgresGraphsHandler(Handler):
         COUNT_QUERY = f"""
             SELECT COUNT(*)
             FROM {self._get_table_name("graphs_communities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
         """
         count = (
             await self.connection_manager.fetch_query(COUNT_QUERY, params)
@@ -2250,7 +2254,7 @@ class PostgresGraphsHandler(Handler):
         QUERY = f"""
             SELECT {select_fields}
             FROM {self._get_table_name("graphs_communities")}
-            WHERE {' AND '.join(conditions)}
+            WHERE {" AND ".join(conditions)}
             ORDER BY created_at
             OFFSET ${param_index}
         """
@@ -2279,7 +2283,9 @@ class PostgresGraphsHandler(Handler):
             k: v for k, v in community.__dict__.items() if v is not None
         }
         columns = ", ".join(non_null_attrs.keys())
-        placeholders = ", ".join(f"${i+1}" for i in range(len(non_null_attrs)))
+        placeholders = ", ".join(
+            f"${i + 1}" for i in range(len(non_null_attrs))
+        )
 
         conflict_columns = ", ".join(
             [f"{k} = EXCLUDED.{k}" for k in non_null_attrs]
@@ -2328,11 +2334,8 @@ class PostgresGraphsHandler(Handler):
         self,
         collection_id: UUID,
         leiden_params: dict[str, Any],
-        clustering_mode: str,
     ) -> Tuple[int, Any]:
-        """
-        Calls the external clustering service to cluster the graph.
-        """
+        """Calls the external clustering service to cluster the graph."""
 
         offset = 0
         page_size = 1000
@@ -2367,14 +2370,14 @@ class PostgresGraphsHandler(Handler):
             relationships=all_relationships,
             leiden_params=leiden_params,
             collection_id=collection_id,
-            clustering_mode=clustering_mode,
         )
 
     async def _call_clustering_service(
         self, relationships: list[Relationship], leiden_params: dict[str, Any]
     ) -> list[dict]:
-        """
-        Calls the external Graspologic clustering service, sending relationships and parameters.
+        """Calls the external Graspologic clustering service, sending
+        relationships and parameters.
+
         Expects a response with 'communities' field.
         """
         # Convert relationships to a JSON-friendly format
@@ -2408,42 +2411,18 @@ class PostgresGraphsHandler(Handler):
         self,
         relationships: list[Relationship],
         leiden_params: dict[str, Any],
-        clustering_mode: str = "remote",
     ) -> Any:
-        """
-        Create a graph and cluster it. If clustering_mode='local', use hierarchical_leiden locally.
-        If clustering_mode='remote', call the external service.
-        """
+        """Create a graph and cluster it."""
 
-        if clustering_mode == "remote":
-            logger.info("Sending request to external clustering service...")
-            communities = await self._call_clustering_service(
-                relationships, leiden_params
-            )
-            logger.info("Received communities from clustering service.")
-            return communities
-        else:
-            # Local mode: run hierarchical_leiden directly
-            G = self.nx.Graph()
-            for relationship in relationships:
-                G.add_edge(
-                    relationship.subject,
-                    relationship.object,
-                    weight=relationship.weight,
-                    id=relationship.id,
-                )
-
-            logger.info(
-                f"Graph has {len(G.nodes)} nodes and {len(G.edges)} edges"
-            )
-            return await self._compute_leiden_communities(G, leiden_params)
+        return await self._call_clustering_service(
+            relationships, leiden_params
+        )
 
     async def _cluster_and_add_community_info(
         self,
         relationships: list[Relationship],
         leiden_params: dict[str, Any],
         collection_id: UUID,
-        clustering_mode: str = "local",
     ) -> Tuple[int, Any]:
         logger.info(f"Creating graph and clustering for {collection_id}")
 
@@ -2453,7 +2432,6 @@ class PostgresGraphsHandler(Handler):
         hierarchical_communities = await self._create_graph_and_cluster(
             relationships=relationships,
             leiden_params=leiden_params,
-            clustering_mode=clustering_mode,
         )
 
         logger.info(
@@ -2463,17 +2441,9 @@ class PostgresGraphsHandler(Handler):
         if not hierarchical_communities:
             num_communities = 0
         else:
-            if (
-                clustering_mode == "remote"
-            ):  # Remote clustering: hierarchical_communities is a list of dicts
-                num_communities = (
-                    max(item["cluster"] for item in hierarchical_communities)
-                    + 1
-                )
-            else:  # Local clustering: hierarchical_communities is returned by hierarchical_leiden
-                num_communities = (
-                    max(item.cluster for item in hierarchical_communities) + 1
-                )
+            num_communities = (
+                max(item["cluster"] for item in hierarchical_communities) + 1
+            )
 
         logger.info(
             f"Generated {num_communities} communities, time {time.time() - start_time:.2f} seconds."
@@ -2550,9 +2520,8 @@ class PostgresGraphsHandler(Handler):
     async def graph_search(
         self, query: str, **kwargs: Any
     ) -> AsyncGenerator[Any, None]:
-        """
-        Perform semantic search with similarity scores while maintaining exact same structure.
-        """
+        """Perform semantic search with similarity scores while maintaining
+        exact same structure."""
 
         query_embedding = kwargs.get("query_embedding", None)
         if query_embedding is None:
@@ -2624,8 +2593,8 @@ class PostgresGraphsHandler(Handler):
     def _build_filters(
         self, filter_dict: dict, parameters: list[Any], search_type: str
     ) -> str:
-        """
-        Build a WHERE clause from a nested filter dictionary for the graph search.
+        """Build a WHERE clause from a nested filter dictionary for the graph
+        search.
 
         - If search_type == "communities", we normally filter by `collection_id`.
         - Otherwise (entities/relationships), we normally filter by `parent_id`.
@@ -2752,35 +2721,6 @@ class PostgresGraphsHandler(Handler):
 
         return parse_filter(filter_dict)
 
-    async def _compute_leiden_communities(
-        self,
-        graph: Any,
-        leiden_params: dict[str, Any],
-    ) -> Any:
-        """Compute Leiden communities."""
-        try:
-            from graspologic.partition import hierarchical_leiden
-
-            if "random_seed" not in leiden_params:
-                leiden_params["random_seed"] = (
-                    7272  # add seed to control randomness
-                )
-
-            start_time = time.time()
-            logger.info(
-                f"Running Leiden clustering with params: {leiden_params}"
-            )
-
-            community_mapping = hierarchical_leiden(graph, **leiden_params)
-
-            logger.info(
-                f"Leiden clustering completed in {time.time() - start_time:.2f} seconds."
-            )
-            return community_mapping
-
-        except ImportError as e:
-            raise ImportError("Please install the graspologic package.") from e
-
     async def get_existing_document_entity_chunk_ids(
         self, document_id: UUID
     ) -> list[str]:
@@ -2852,12 +2792,16 @@ async def _add_objects(
     objects: list[dict],
     full_table_name: str,
     connection_manager: PostgresConnectionManager,
-    conflict_columns: list[str] = [],
-    exclude_metadata: list[str] = [],
+    conflict_columns: list[str] | None = None,
+    exclude_metadata: list[str] | None = None,
 ) -> list[UUID]:
-    """
-    Bulk insert objects into the specified table using jsonb_to_recordset.
-    """
+    """Bulk insert objects into the specified table using
+    jsonb_to_recordset."""
+
+    if conflict_columns is None:
+        conflict_columns = []
+    if exclude_metadata is None:
+        exclude_metadata = []
 
     # Exclude specified metadata and prepare data
     cleaned_objects = []

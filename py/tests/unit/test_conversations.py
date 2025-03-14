@@ -1,6 +1,4 @@
-import json
 import uuid
-from uuid import UUID
 
 import pytest
 
@@ -22,9 +20,8 @@ async def test_create_conversation(conversations_handler):
 @pytest.mark.asyncio
 async def test_create_conversation_with_user_and_name(conversations_handler):
     user_id = uuid.uuid4()
-    resp = await conversations_handler.create_conversation(
-        user_id=user_id, name="Test Conv"
-    )
+    resp = await conversations_handler.create_conversation(user_id=user_id,
+                                                           name="Test Conv")
     assert resp.id is not None
     assert resp.created_at is not None
     # There's no direct field for user_id in ConversationResponse,
@@ -54,9 +51,9 @@ async def test_add_message_with_parent(conversations_handler):
     parent_id = parent_resp.id
 
     child_msg = Message(role="assistant", content="Child reply")
-    child_resp = await conversations_handler.add_message(
-        conv_id, child_msg, parent_id=parent_id
-    )
+    child_resp = await conversations_handler.add_message(conv_id,
+                                                         child_msg,
+                                                         parent_id=parent_id)
     assert child_resp.id is not None
     assert child_resp.message.content == "Child reply"
 
@@ -70,9 +67,8 @@ async def test_edit_message(conversations_handler):
     resp = await conversations_handler.add_message(conv_id, original_msg)
     msg_id = resp.id
 
-    updated = await conversations_handler.edit_message(
-        msg_id, "Edited content"
-    )
+    updated = await conversations_handler.edit_message(msg_id,
+                                                       "Edited content")
     assert updated["message"].content == "Edited content"
     assert updated["metadata"]["edited"] is True
 
@@ -87,8 +83,7 @@ async def test_update_message_metadata(conversations_handler):
     msg_id = resp.id
 
     await conversations_handler.update_message_metadata(
-        msg_id, {"test_key": "test_value"}
-    )
+        msg_id, {"test_key": "test_value"})
 
     # Verify metadata updated
     full_conversation = await conversations_handler.get_conversation(conv_id)
@@ -127,6 +122,5 @@ async def test_delete_conversation(conversations_handler):
 
     with pytest.raises(R2RException) as exc:
         await conversations_handler.get_conversation(conv_id)
-    assert (
-        exc.value.status_code == 404
-    ), "Conversation should be deleted and not found"
+    assert exc.value.status_code == 404, (
+        "Conversation should be deleted and not found")

@@ -430,7 +430,7 @@ class RetrievalService(Service):
         raw_text = response.choices[0].message.content.strip()
 
         # Suppose each line is a sub-query
-        lines = [l.strip() for l in raw_text.split("\n") if l.strip()]
+        lines = [line.strip() for line in raw_text.split("\n") if line.strip()]
         return lines[:num_sub_queries]
 
     def _reciprocal_rank_fusion_chunks(
@@ -753,7 +753,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception as e:
                     pass
 
             results.append(
@@ -801,7 +801,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception as e:
                     pass
 
             results.append(
@@ -849,7 +849,7 @@ class RetrievalService(Service):
             if isinstance(metadata, str):
                 try:
                     metadata = json.loads(metadata)
-                except:
+                except Exception as e:
                     pass
 
             results.append(
@@ -1174,23 +1174,11 @@ class RetrievalService(Service):
                 raise HTTPException(
                     status_code=502,
                     detail="Server not reachable or returned an invalid response",
-                )
+                ) from e
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal RAG Error - {str(e)}",
-            )
-
-        except Exception as e:
-            logger.exception(f"Error in RAG pipeline: {e}")
-            if "NoneType" in str(e):
-                raise HTTPException(
-                    status_code=502,
-                    detail="Server not reachable or returned an invalid response",
-                )
-            raise HTTPException(
-                status_code=500,
-                detail=f"Internal RAG Error - {str(e)}",
-            )
+            ) from e
 
     def _find_item_by_shortid(
         self, sid: str, collector: SearchResultsCollector
@@ -1355,9 +1343,7 @@ class RetrievalService(Service):
                             )
                     messages = messages_from_conversation + messages
             else:  # Create new conversation
-                conversation_response = (
-                    await self.providers.database.conversations_handler.create_conversation()
-                )
+                conversation_response = await self.providers.database.conversations_handler.create_conversation()
                 conversation_id = conversation_response.id
                 needs_conversation_name = True
 
@@ -1560,16 +1546,18 @@ class RetrievalService(Service):
                     )
 
                 # Persist in conversation DB
-                await self.providers.database.conversations_handler.add_message(
-                    conversation_id=str(conversation_id),
-                    content=assistant_message,
-                    parent_id=message_id,
-                    metadata={
-                        "citations": final_citations,
-                        "aggregated_search_result": json.dumps(
-                            dump_collector(collector)
-                        ),
-                    },
+                await (
+                    self.providers.database.conversations_handler.add_message(
+                        conversation_id=str(conversation_id),
+                        content=assistant_message,
+                        parent_id=message_id,
+                        metadata={
+                            "citations": final_citations,
+                            "aggregated_search_result": json.dumps(
+                                dump_collector(collector)
+                            ),
+                        },
+                    )
                 )
 
                 # Generate conversation name if needed
@@ -1623,11 +1611,11 @@ class RetrievalService(Service):
                 raise HTTPException(
                     status_code=502,
                     detail="Server not reachable or returned an invalid response",
-                )
+                ) from e
             raise HTTPException(
                 status_code=500,
                 detail=f"Internal Server Error - {str(e)}",
-            )
+            ) from e
 
     async def get_context(
         self,
@@ -1769,7 +1757,7 @@ class RetrievalService(Service):
             # Build a line referencing the doc
             title = doc.title or "(Untitled Document)"
             lines.append(
-                f"[{i}] Title: {title}, Summary: {doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
+                f"[{i}] Title: {title}, Summary: {(doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
         return "\n".join(lines)
 
@@ -1898,8 +1886,10 @@ class RetrievalServiceAdapter:
         if isinstance(user_data, str):
             try:
                 user_data = json.loads(user_data)
-            except json.JSONDecodeError:
-                raise ValueError(f"Invalid user data format: {user_data}")
+            except json.JSONDecodeError as e:
+                raise ValueError(
+                    f"Invalid user data format: {user_data}"
+                ) from e
         return User.from_dict(user_data)
 
     @staticmethod

@@ -14,9 +14,9 @@ from shared.api.models.management.responses import (
     MessageResponse,
 )
 
-logger = logging.getLogger(__name__)
-
 from .base import PostgresConnectionManager
+
+logger = logging.getLogger(__name__)
 
 
 def _validate_image_size(
@@ -46,12 +46,13 @@ def _validate_image_size(
         if estimated_size_bytes > max_size_bytes:
             raise R2RException(
                 status_code=413,  # Payload Too Large
-                message=f"Image too large: {estimated_size_bytes/1024/1024:.2f}MB exceeds the maximum allowed size of {max_size_bytes/1024/1024:.2f}MB",
+                message=f"Image too large: {estimated_size_bytes / 1024 / 1024:.2f}MB exceeds the maximum allowed size of {max_size_bytes / 1024 / 1024:.2f}MB",
             )
 
 
 def _json_default(obj: Any) -> str:
-    """Default handler for objects not serializable by the standard json encoder."""
+    """Default handler for objects not serializable by the standard json
+    encoder."""
     if isinstance(obj, datetime):
         # Return ISO8601 string
         return obj.isoformat()
@@ -141,15 +142,13 @@ class PostgresConversationsHandler(Handler):
         param_index = 1
 
         if filter_user_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
             param_index += 1
 
@@ -213,7 +212,6 @@ class PostgresConversationsHandler(Handler):
         metadata: Optional[dict] = None,
         max_image_size_bytes: int = 5 * 1024 * 1024,  # 5MB default
     ) -> MessageResponse:
-
         # Validate image size
         try:
             _validate_image_size(content, max_image_size_bytes)
@@ -225,7 +223,7 @@ class PostgresConversationsHandler(Handler):
             logger.error(f"Error validating image: {str(e)}")
             raise R2RException(
                 status_code=400, message=f"Invalid image data: {str(e)}"
-            )
+            ) from e
 
         # 1) Validate that conversation and parent exist (existing code)
         conv_check_query = f"""
@@ -415,21 +413,19 @@ class PostgresConversationsHandler(Handler):
 
         if filter_user_ids:
             param_index = 2
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
 
         query = f"""
             SELECT c.id, extract(epoch from c.created_at) AS created_at_epoch
-            FROM {self._get_table_name('conversations')} c
-            WHERE {' AND '.join(conditions)}
+            FROM {self._get_table_name("conversations")} c
+            WHERE {" AND ".join(conditions)}
         """
 
         conv_row = await self.connection_manager.fetchrow_query(query, params)
@@ -506,7 +502,7 @@ class PostgresConversationsHandler(Handler):
                 )
 
             update_query = f"""
-            UPDATE {self._get_table_name('conversations')}
+            UPDATE {self._get_table_name("conversations")}
             SET name = $1 WHERE id = $2
             RETURNING user_id, extract(epoch from created_at) as created_at_epoch
             """
@@ -535,21 +531,19 @@ class PostgresConversationsHandler(Handler):
 
         if filter_user_ids:
             param_index = 2
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.user_id IN (
                     SELECT id
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
 
         conv_query = f"""
             SELECT 1
-            FROM {self._get_table_name('conversations')} c
-            WHERE {' AND '.join(conditions)}
+            FROM {self._get_table_name("conversations")} c
+            WHERE {" AND ".join(conditions)}
         """
         conv_row = await self.connection_manager.fetchrow_query(
             conv_query, params
@@ -578,9 +572,8 @@ class PostgresConversationsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "user_id",
@@ -728,7 +721,7 @@ class PostgresConversationsHandler(Handler):
                 content::text,
                 metadata::text,
                 to_char(created_at, 'YYYY-MM-DD HH24:MI:SS') AS created_at
-                {', ' + ', '.join(virtual_columns) if virtual_columns else ''}
+                {", " + ", ".join(virtual_columns) if virtual_columns else ""}
             FROM {self._get_table_name("messages")}
         """
 

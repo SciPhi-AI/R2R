@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import contextlib
 import json
@@ -5,6 +6,7 @@ import logging
 import math
 import time
 import uuid
+from typing import TYPE_CHECKING
 
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 
@@ -12,26 +14,24 @@ from core import GenerationConfig
 from core.base import OrchestrationProvider, R2RException
 from core.base.abstractions import (
     GraphConstructionStatus,
-    GraphExtraction,
     GraphExtractionStatus,
 )
 
 from ...services import GraphService
 
-logger = logging.getLogger()
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
+
+logger = logging.getLogger()
 
 
 def hatchet_graph_search_results_factory(
     orchestration_provider: OrchestrationProvider, service: GraphService
 ) -> dict[str, "Hatchet.Workflow"]:
     def convert_to_dict(input_data):
-        """
-        Converts input data back to a plain dictionary format, handling special cases like UUID and GenerationConfig.
-        This is the inverse of get_input_data_dict.
+        """Converts input data back to a plain dictionary format, handling
+        special cases like UUID and GenerationConfig. This is the inverse of
+        get_input_data_dict.
 
         Args:
             input_data: Dictionary containing the input data with potentially special types
@@ -115,9 +115,9 @@ def hatchet_graph_search_results_factory(
                         )
                     # If it's not already a GenerationConfig, default it
                     elif not isinstance(gen_cfg, GenerationConfig):
-                        input_data[key][
-                            "generation_config"
-                        ] = GenerationConfig()
+                        input_data[key]["generation_config"] = (
+                            GenerationConfig()
+                        )
 
                     input_data[key]["generation_config"].model = (
                         input_data[key]["generation_config"].model
@@ -193,9 +193,7 @@ def hatchet_graph_search_results_factory(
             else:
                 # Extract relationships and store them
                 extractions = []
-                async for (
-                    extraction
-                ) in self.graph_search_results_service.graph_search_results_extraction(
+                async for extraction in self.graph_search_results_service.graph_search_results_extraction(
                     document_id=document_id,
                     **input_data["graph_creation_settings"],
                 ):
@@ -225,7 +223,6 @@ def hatchet_graph_search_results_factory(
         async def graph_search_results_entity_description(
             self, context: Context
         ) -> dict:
-
             input_data = get_input_data_dict(
                 context.workflow_input()["request"]
             )
@@ -241,9 +238,7 @@ def hatchet_graph_search_results_factory(
                 f"Successfully ran graph_search_results entity description for document {document_id}"
             )
 
-            if (
-                service.providers.database.config.graph_creation_settings.automatic_deduplication
-            ):
+            if service.providers.database.config.graph_creation_settings.automatic_deduplication:
                 extract_input = {
                     "document_id": str(document_id),
                 }
@@ -458,7 +453,7 @@ def hatchet_graph_search_results_factory(
                 return str(
                     context.workflow_input()["request"]["collection_id"]
                 )
-            except Exception as e:
+            except Exception:
                 return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=1, timeout="360m")
@@ -509,7 +504,7 @@ def hatchet_graph_search_results_factory(
             # TODO: Possible bug in hatchet, the job can't find context.workflow_input() when rerun
             try:
                 return str(context.workflow_input()["request"]["document_id"])
-            except Exception as e:
+            except Exception:
                 return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=1, timeout="360m")

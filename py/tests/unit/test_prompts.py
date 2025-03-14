@@ -1,5 +1,4 @@
 import uuid
-from datetime import datetime, timezone
 
 import pytest
 
@@ -8,9 +7,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_add_prompt_basic(prompt_handler):
-    """
-    Test basic addition of a new prompt.
-    """
+    """Test basic addition of a new prompt."""
     prompt_name = f"test_prompt_{uuid.uuid4()}"
     template = "Hello, {name}!"
     input_types = {"name": "str"}
@@ -36,9 +33,8 @@ async def test_add_prompt_basic(prompt_handler):
 
 @pytest.mark.asyncio
 async def test_add_prompt_preserve_existing(prompt_handler):
-    """
-    If preserve_existing is True, we skip overwriting even if we supply new data.
-    """
+    """If preserve_existing is True, we skip overwriting even if we supply new
+    data."""
     prompt_name = f"test_preserve_{uuid.uuid4()}"
     template_original = "Original template"
     input_types_original = {"param": "str"}
@@ -68,10 +64,8 @@ async def test_add_prompt_preserve_existing(prompt_handler):
 
 @pytest.mark.asyncio
 async def test_add_prompt_overwrite_on_diff_false(prompt_handler, caplog):
-    """
-    If overwrite_on_diff=False but there is a diff, skip updating
-    and log an info message.
-    """
+    """If overwrite_on_diff=False but there is a diff, skip updating and log an
+    info message."""
     prompt_name = f"test_diff_false_{uuid.uuid4()}"
     template_original = "Original template: {key}"
     input_types_original = {"key": "str"}
@@ -100,16 +94,14 @@ async def test_add_prompt_overwrite_on_diff_false(prompt_handler, caplog):
 
     # Check logs for the skipping message
     assert any(
-        "Skipping update" in record.message for record in caplog.records
-    ), "Expected a skip update log message."
+        "Skipping update" in record.message
+        for record in caplog.records), "Expected a skip update log message."
 
 
 @pytest.mark.asyncio
 async def test_add_prompt_overwrite_on_diff_true(prompt_handler, caplog):
-    """
-    If overwrite_on_diff=True and there's a diff, we overwrite existing prompt
-    and log a warning.
-    """
+    """If overwrite_on_diff=True and there's a diff, we overwrite existing
+    prompt and log a warning."""
     prompt_name = f"test_diff_true_{uuid.uuid4()}"
     template_original = "Original template: {key}"
     input_types_original = {"key": "str"}
@@ -139,15 +131,12 @@ async def test_add_prompt_overwrite_on_diff_true(prompt_handler, caplog):
     # Check logs for the overwriting warning
     assert any(
         "Overwriting existing prompt" in record.message
-        for record in caplog.records
-    ), "Expected an overwrite warning message."
+        for record in caplog.records), "Expected an overwrite warning message."
 
 
 @pytest.mark.asyncio
 async def test_get_cached_prompt(prompt_handler):
-    """
-    Test that get_cached_prompt uses caching properly.
-    """
+    """Test that get_cached_prompt uses caching properly."""
     prompt_name = f"test_cached_{uuid.uuid4()}"
     template = "Cached template: {key}"
     input_types = {"key": "str"}
@@ -159,9 +148,8 @@ async def test_get_cached_prompt(prompt_handler):
     )
 
     # First retrieval should set the cache
-    content_1 = await prompt_handler.get_cached_prompt(
-        prompt_name, {"key": "Bob"}
-    )
+    content_1 = await prompt_handler.get_cached_prompt(prompt_name,
+                                                       {"key": "Bob"})
     assert "Bob" in content_1
 
     # Modify in DB behind the scenes (simulate a change not going through add_prompt)
@@ -173,23 +161,19 @@ async def test_get_cached_prompt(prompt_handler):
         WHERE name=$2
     """
     await prompt_handler.connection_manager.execute_query(
-        query, [new_template, prompt_name]
-    )
+        query, [new_template, prompt_name])
 
     # Second retrieval should still reflect the old template if the cache is not bypassed
-    content_2 = await prompt_handler.get_cached_prompt(
-        prompt_name, {"key": "Alice"}
-    )
+    content_2 = await prompt_handler.get_cached_prompt(prompt_name,
+                                                       {"key": "Alice"})
     assert "Bob" not in content_2  # Just to ensure we see the difference
-    assert (
-        "Updated in DB" not in content_2
-    ), "Should not see updated text if cache is used."
+    assert "Updated in DB" not in content_2, (
+        "Should not see updated text if cache is used.")
     assert "Cached template" in content_2
 
     # Bypass cache
-    content_3 = await prompt_handler.get_cached_prompt(
-        prompt_name, {"key": "Alice"}, bypass_cache=True
-    )
-    assert (
-        "Updated in DB" in content_3
-    ), "Now we should see the new DB changes after bypassing cache."
+    content_3 = await prompt_handler.get_cached_prompt(prompt_name,
+                                                       {"key": "Alice"},
+                                                       bypass_cache=True)
+    assert "Updated in DB" in content_3, (
+        "Now we should see the new DB changes after bypassing cache.")

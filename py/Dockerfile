@@ -7,54 +7,41 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
-RUN pip install --no-cache-dir poetry
-
-
 # Add Rust to PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+# Create the /app/py directory
 RUN mkdir -p /app/py
 WORKDIR /app/py
-COPY pyproject.toml poetry.lock /app/py/
+COPY pyproject.toml ./
+RUN pip install -e ".[core]" && \
+    pip install gunicorn uvicorn pydantic
 
-# Install dependencies
-RUN poetry config virtualenvs.create false \
-    && poetry install --extras "core" --no-root \
-    && pip install --no-cache-dir gunicorn uvicorn
+# Optionally, if you want gunicorn and uvicorn explicitly installed, you can
+# either list them under [project] in `pyproject.toml` or install them here:
+RUN pip install --no-cache-dir gunicorn uvicorn
 
 # Create the final image
 FROM python:3.12-slim
 
-# Install runtime dependencies
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl poppler-utils \
+# Minimal runtime deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl poppler-utils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Add poppler to PATH
-ENV PATH="/usr/bin:${PATH}"
-
-# Debugging steps
-RUN echo "PATH: $PATH"
-RUN which pdfinfo
-RUN pdfinfo -v
+# Copy the built environment from builder to final image
+# (If you want a fully self-contained environment, copy /usr/local)
+COPY --from=builder /usr/local /usr/local
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy the rest of your source code
+COPY . /app
 
-# Expose the port and set environment variables
+# Expose environment variables and port
 ARG R2R_PORT=8000 R2R_HOST=0.0.0.0
 ENV R2R_PORT=$R2R_PORT R2R_HOST=$R2R_HOST
 EXPOSE $R2R_PORT
 
-COPY . /app
-# Copy the application and config
-COPY core /app/core
-COPY r2r /app/r2r
-COPY shared /app/shared
-COPY r2r/r2r.toml /app/r2r.toml
-COPY pyproject.toml /app/pyproject.toml
-
-# Run the application
+# Launch the app
 CMD ["sh", "-c", "uvicorn core.main.app_entry:app --host $R2R_HOST --port $R2R_PORT"]

@@ -28,8 +28,7 @@ class JSONParser(AsyncParser[str | bytes]):
     async def ingest(
         self, data: str | bytes, *args, **kwargs
     ) -> AsyncGenerator[str, None]:
-        """
-        Ingest JSON data and yield a formatted text representation.
+        """Ingest JSON data and yield a formatted text representation.
 
         :param data: The JSON data to parse.
         :param kwargs: Additional keyword arguments.
@@ -48,7 +47,7 @@ class JSONParser(AsyncParser[str | bytes]):
             raise R2RException(
                 message=f"Failed to parse JSON data, likely due to invalid JSON: {str(e)}",
                 status_code=400,
-            )
+            ) from e
 
         chunk_size = kwargs.get("chunk_size")
         if chunk_size and isinstance(chunk_size, int):

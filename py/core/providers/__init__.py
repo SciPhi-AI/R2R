@@ -9,6 +9,7 @@ from .database import PostgresDatabaseProvider
 from .email import (
     AsyncSMTPEmailProvider,
     ConsoleMockEmailProvider,
+    MailerSendEmailProvider,
     SendGridEmailProvider,
 )
 from .embeddings import (
@@ -58,6 +59,7 @@ __all__ = [
     "AsyncSMTPEmailProvider",
     "ConsoleMockEmailProvider",
     "SendGridEmailProvider",
+    "MailerSendEmailProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

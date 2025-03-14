@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import json
 import logging
@@ -141,8 +142,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
         for message_2 in all_messages:
             if (
                 # message_2.get("content")
-                message_2.get("content")
-                != messages[-1].content
+                message_2.get("content") != messages[-1].content
             ):
                 output_messages.append(message_2)
             else:
@@ -404,9 +404,7 @@ class R2RStreamingAgent(R2RAgent):
                     )
 
                     accumulated_thinking = ""
-                    thinking_signatures = (
-                        {}
-                    )  # Map thinking content to signatures
+                    thinking_signatures = {}  # Map thinking content to signatures
 
                     # 2) Start streaming from LLM
                     llm_stream = self.llm_provider.aget_completion_stream(
@@ -485,9 +483,9 @@ class R2RStreamingAgent(R2RAgent):
                                 else:
                                     # Accumulate partial name/arguments
                                     if tc.function.name:
-                                        pending_tool_calls[idx][
-                                            "name"
-                                        ] = tc.function.name
+                                        pending_tool_calls[idx]["name"] = (
+                                            tc.function.name
+                                        )
                                     if tc.function.arguments:
                                         pending_tool_calls[idx][
                                             "arguments"
@@ -986,10 +984,10 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                                 tool_params
                                             ),
                                         }
-                                        async for (
-                                            line
-                                        ) in SSEFormatter.yield_tool_call_event(
-                                            call_evt_data
+                                        async for line in (
+                                            SSEFormatter.yield_tool_call_event(
+                                                call_evt_data
+                                            )
                                         ):
                                             yield line
 
@@ -1000,9 +998,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                                 tool_id=tool_call_id,
                                                 save_messages=False,
                                             )
-                                            result_content = (
-                                                tool_result.llm_formatted_result
-                                            )
+                                            result_content = tool_result.llm_formatted_result
                                         except Exception as e:
                                             result_content = f"Error in tool '{tool_name}': {str(e)}"
 
@@ -1024,9 +1020,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                                 )
                                             ),
                                         }
-                                        async for (
-                                            line
-                                        ) in SSEFormatter.yield_tool_result_event(
+                                        async for line in SSEFormatter.yield_tool_result_event(
                                             result_data
                                         ):
                                             yield line
@@ -1088,7 +1082,8 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
 
                     # Create and emit a final answer payload with the summary
                     final_evt_payload = self._create_final_answer_payload(
-                        summary, []  # TODO - propagate citations here
+                        summary,
+                        [],  # TODO - propagate citations here
                     )
                     async for line in SSEFormatter.yield_final_answer_event(
                         final_evt_payload

@@ -23,7 +23,6 @@ from ..database import PostgresDatabaseProvider
 
 logger = logging.getLogger()
 
-
 logger = logging.getLogger()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -83,7 +82,7 @@ class SupabaseAuthProvider(AuthProvider):
     ) -> User:  # type: ignore
         # Use Supabase client to create a new user
 
-        if user := self.supabase.auth.sign_up(email=email, password=password):
+        if self.supabase.auth.sign_up(email=email, password=password):
             raise R2RException(
                 status_code=400,
                 message="Supabase provider implementation is still under construction",
@@ -104,9 +103,7 @@ class SupabaseAuthProvider(AuthProvider):
         self, email: str, verification_code: str
     ) -> dict[str, str]:
         # Use Supabase client to verify email
-        if response := self.supabase.auth.verify_email(
-            email, verification_code
-        ):
+        if self.supabase.auth.verify_email(email, verification_code):
             return {"message": "Email verified successfully"}
         else:
             raise R2RException(
@@ -181,9 +178,7 @@ class SupabaseAuthProvider(AuthProvider):
         self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to update user password
-        if response := self.supabase.auth.update(
-            user.id, {"password": new_password}
-        ):
+        if self.supabase.auth.update(user.id, {"password": new_password}):
             return {"message": "Password changed successfully"}
         else:
             raise R2RException(
@@ -192,7 +187,7 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
         # Use Supabase client to send password reset email
-        if response := self.supabase.auth.send_password_reset_email(email):
+        if self.supabase.auth.send_password_reset_email(email):
             return {
                 "message": "If the email exists, a reset link has been sent"
             }
@@ -205,7 +200,7 @@ class SupabaseAuthProvider(AuthProvider):
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to reset password with token
-        if response := self.supabase.auth.reset_password_for_email(
+        if self.supabase.auth.reset_password_for_email(
             reset_token, new_password
         ):
             return {"message": "Password reset successfully"}

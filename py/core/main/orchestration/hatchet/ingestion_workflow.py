@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 import logging
 import uuid
@@ -15,7 +16,6 @@ from core.base import (
     IngestionStatus,
     OrchestrationProvider,
     generate_extraction_id,
-    increment_version,
 )
 from core.base.abstractions import DocumentResponse, R2RException
 from core.utils import (
@@ -64,7 +64,7 @@ def hatchet_ingestion_factory(
                     input_data
                 )
                 return str(parsed_data["user"].id)
-            except Exception as e:
+            except Exception:
                 return str(uuid.uuid4())
 
         @orchestration_provider.step(retries=0, timeout="60m")
@@ -198,11 +198,13 @@ def hatchet_ingestion_factory(
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            await self.providers.database.graphs_handler.create(
-                                collection_id=collection_id,
-                                name=name,
-                                description=description,
-                                graph_id=collection_id,
+                            await (
+                                self.providers.database.graphs_handler.create(
+                                    collection_id=collection_id,
+                                    name=name,
+                                    description=description,
+                                    graph_id=collection_id,
+                                )
                             )
 
                         except Exception as e:
@@ -291,16 +293,16 @@ def hatchet_ingestion_factory(
                     "document_info": document_info.to_dict(),
                 }
 
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise R2RException(
                     status_code=401,
                     message="Authentication error: Invalid API key or credentials.",
-                )
+                ) from None
             except Exception as e:
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during ingestion: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
@@ -475,11 +477,13 @@ def hatchet_ingestion_factory(
                                 description=description,
                                 collection_id=collection_id,
                             )
-                            await self.providers.database.graphs_handler.create(
-                                collection_id=collection_id,
-                                name=name,
-                                description=description,
-                                graph_id=collection_id,
+                            await (
+                                self.providers.database.graphs_handler.create(
+                                    collection_id=collection_id,
+                                    name=name,
+                                    description=description,
+                                    graph_id=collection_id,
+                                )
                             )
 
                         except Exception as e:
@@ -602,7 +606,7 @@ def hatchet_ingestion_factory(
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during chunk update: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:
@@ -689,7 +693,7 @@ def hatchet_ingestion_factory(
                 raise HTTPException(
                     status_code=500,
                     detail=f"Error during document metadata update: {str(e)}",
-                )
+                ) from e
 
         @orchestration_provider.failure()
         async def on_failure(self, context: Context) -> None:

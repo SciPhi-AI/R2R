@@ -89,8 +89,8 @@ class PostgresFilesHandler(Handler):
         """Store a new file in the database."""
         size = file_content.getbuffer().nbytes
 
-        async with (  # type: ignore
-            self.connection_manager.pool.get_connection() as conn
+        async with (
+            self.connection_manager.pool.get_connection() as conn  # type: ignore
         ):
             async with conn.transaction():
                 oid = await conn.fetchval("SELECT lo_create(0)")
@@ -217,7 +217,7 @@ class PostgresFilesHandler(Handler):
         async with conn.transaction():
             try:
                 lo_exists = await conn.fetchval(
-                    "SELECT EXISTS(SELECT 1 FROM pg_largeobject WHERE loid = $1)",
+                    "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_largeobject_metadata WHERE oid = $1);",
                     oid,
                 )
                 if not lo_exists:
@@ -243,11 +243,11 @@ class PostgresFilesHandler(Handler):
                     if not chunk:
                         break
                     file_data.write(chunk)
-            except asyncpg.exceptions.UndefinedObjectError as e:
+            except asyncpg.exceptions.UndefinedObjectError:
                 raise R2RException(
                     status_code=404,
-                    message=f"Failed to read large object {oid}: {e}",
-                )
+                    message=f"Failed to read large object {oid}",
+                ) from None
             finally:
                 await conn.execute("SELECT lo_close($1)", lobject)
 

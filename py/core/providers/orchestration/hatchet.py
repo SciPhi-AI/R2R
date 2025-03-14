@@ -1,3 +1,4 @@
+# FIXME: Once the Hatchet workflows are type annotated, remove the type: ignore comments
 import asyncio
 import logging
 from typing import Any, Callable, Optional
@@ -15,7 +16,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         except ImportError:
             raise ImportError(
                 "Hatchet SDK not installed. Please install it using `pip install hatchet-sdk`."
-            )
+            ) from None
         root_logger = logging.getLogger()
 
         self.orchestrator = Hatchet(
@@ -39,7 +40,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
     def get_worker(self, name: str, max_runs: Optional[int] = None) -> Any:
         if not max_runs:
             max_runs = self.config.max_runs
-        self.worker = self.orchestrator.worker(name, max_runs)
+        self.worker = self.orchestrator.worker(name, max_runs)  # type: ignore
         return self.worker
 
     def concurrency(self, *args, **kwargs) -> Callable:
@@ -61,10 +62,10 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
         *args,
         **kwargs,
     ) -> Any:
-        task_id = self.orchestrator.admin.run_workflow(
+        task_id = self.orchestrator.admin.run_workflow(  # type: ignore
             workflow_name,
             parameters,
-            options=options,
+            options=options,  # type: ignore
             *args,
             **kwargs,
         )
@@ -84,7 +85,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
             f"Registering workflows for {workflow} with messages {messages}."
         )
         if workflow == Workflow.INGESTION:
-            from core.main.orchestration.hatchet.ingestion_workflow import (
+            from core.main.orchestration.hatchet.ingestion_workflow import (  # type: ignore
                 hatchet_ingestion_factory,
             )
 
@@ -94,7 +95,7 @@ class HatchetOrchestrationProvider(OrchestrationProvider):
                     self.worker.register_workflow(workflow)
 
         elif workflow == Workflow.GRAPH:
-            from core.main.orchestration.hatchet.graph_workflow import (
+            from core.main.orchestration.hatchet.graph_workflow import (  # type: ignore
                 hatchet_graph_search_results_factory,
             )
 

@@ -1,7 +1,6 @@
-# azure_foundry.py
 import logging
 import os
-from typing import Any
+from typing import Any, Optional
 
 from azure.ai.inference import (
     ChatCompletionsClient as AzureChatCompletionsClient,
@@ -20,41 +19,43 @@ logger = logging.getLogger(__name__)
 class AzureFoundryCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
-        self.azure_foundry_client = None
-        self.async_azure_foundry_client = None
+        self.azure_foundry_client: Optional[AzureChatCompletionsClient] = None
+        self.async_azure_foundry_client: Optional[
+            AsyncAzureChatCompletionsClient
+        ] = None
 
         # Initialize Azure Foundry clients if credentials exist.
-        if os.getenv("AZURE_FOUNDRY_API_KEY") and os.getenv(
-            "AZURE_FOUNDRY_API_ENDPOINT"
-        ):
+        azure_foundry_api_key = os.getenv("AZURE_FOUNDRY_API_KEY")
+        azure_foundry_api_endpoint = os.getenv("AZURE_FOUNDRY_API_ENDPOINT")
+
+        if azure_foundry_api_key and azure_foundry_api_endpoint:
             self.azure_foundry_client = AzureChatCompletionsClient(
-                endpoint=os.getenv("AZURE_FOUNDRY_API_ENDPOINT"),
-                credential=AzureKeyCredential(
-                    os.getenv("AZURE_FOUNDRY_API_KEY")
-                ),
+                endpoint=azure_foundry_api_endpoint,
+                credential=AzureKeyCredential(azure_foundry_api_key),
                 api_version=os.getenv(
                     "AZURE_FOUNDRY_API_VERSION", "2024-05-01-preview"
                 ),
             )
             self.async_azure_foundry_client = AsyncAzureChatCompletionsClient(
-                endpoint=os.getenv("AZURE_FOUNDRY_API_ENDPOINT"),
-                credential=AzureKeyCredential(
-                    os.getenv("AZURE_FOUNDRY_API_KEY")
-                ),
+                endpoint=azure_foundry_api_endpoint,
+                credential=AzureKeyCredential(azure_foundry_api_key),
                 api_version=os.getenv(
                     "AZURE_FOUNDRY_API_VERSION", "2024-05-01-preview"
                 ),
             )
             logger.debug("Azure Foundry clients initialized successfully")
 
-    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
+    def _get_base_args(
+        self, generation_config: GenerationConfig
+    ) -> dict[str, Any]:
         # Construct arguments similar to the other providers.
-        args = {
+        args: dict[str, Any] = {
             "top_p": generation_config.top_p,
             "stream": generation_config.stream,
             "max_tokens": generation_config.max_tokens_to_sample,
             "temperature": generation_config.temperature,
         }
+
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:
@@ -75,6 +76,9 @@ class AzureFoundryCompletionProvider(CompletionProvider):
         logger.debug(f"Executing async Azure Foundry task with args: {args}")
 
         try:
+            if self.async_azure_foundry_client is None:
+                raise ValueError("Azure Foundry client is not initialized")
+
             response = await self.async_azure_foundry_client.complete(**args)
             logger.debug("Async Azure Foundry task executed successfully")
             return response
@@ -95,6 +99,9 @@ class AzureFoundryCompletionProvider(CompletionProvider):
         logger.debug(f"Executing sync Azure Foundry task with args: {args}")
 
         try:
+            if self.azure_foundry_client is None:
+                raise ValueError("Azure Foundry client is not initialized")
+
             response = self.azure_foundry_client.complete(**args)
             logger.debug("Sync Azure Foundry task executed successfully")
             return response

@@ -1,9 +1,8 @@
-"""add_limits_overrides_to_users
+"""add_limits_overrides_to_users.
 
 Revision ID: 7eb70560f406
 Revises: c45a9cf6a8a4
 Create Date: 2025-01-03 20:27:16.139511
-
 """
 
 import os
@@ -23,7 +22,7 @@ project_name = os.getenv("R2R_PROJECT_NAME", "r2r_default")
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied"""
+    """Check if the upgrade has already been applied."""
     connection = op.get_bind()
     inspector = inspect(connection)
 

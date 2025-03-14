@@ -54,9 +54,7 @@ class QueryBuilder:
     def __init__(self, table_name: str):
         self.table_name = table_name
         self.conditions: list[str] = []
-        self.params: list = (
-            []
-        )  # Changed from dict to list for PostgreSQL $1, $2 style
+        self.params: list = []
         self.select_fields = "*"
         self.operation = "SELECT"
         self.limit_value: Optional[int] = None
@@ -65,7 +63,7 @@ class QueryBuilder:
         self.returning_fields: Optional[list[str]] = None
         self.insert_data: Optional[dict] = None
         self.update_data: Optional[dict] = None
-        self.param_counter = 1  # For generating $1, $2, etc.
+        self.param_counter = 1
 
     def select(self, fields: list[str]):
         self.select_fields = ", ".join(fields)
@@ -89,11 +87,11 @@ class QueryBuilder:
         self.conditions.append(condition)
         return self
 
-    def limit(self, value: Optional[str]):
+    def limit(self, value: Optional[int]):
         self.limit_value = value
         return self
 
-    def offset(self, value: str):
+    def offset(self, value: int):
         self.offset_value = value
         return self
 
@@ -200,8 +198,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
                         else await conn.fetch(query)
                     )
         except asyncpg.exceptions.DuplicatePreparedStatementError:
-            error_msg = textwrap.dedent(
-                """
+            error_msg = textwrap.dedent("""
                 Database Configuration Error
 
                 Your database provider does not support statement caching.
@@ -215,8 +212,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
 
                 This is required when using connection poolers like PgBouncer or
                 managed database services like Supabase.
-            """
-            ).strip()
+            """).strip()
             raise ValueError(error_msg) from None
 
     async def fetchrow_query(self, query, params=None):
@@ -231,8 +227,7 @@ class PostgresConnectionManager(DatabaseConnectionManager):
 
     @asynccontextmanager
     async def transaction(self, isolation_level=None):
-        """
-        Async context manager for database transactions.
+        """Async context manager for database transactions.
 
         Args:
             isolation_level: Optional isolation level for the transaction

@@ -1,18 +1,14 @@
-import asyncio
-import json
+# type: ignore
 import logging
-from typing import Any, AsyncGenerator, Callable, Optional
+from typing import Any, Callable, Optional
 
 from core.base import (
-    ToolCallData,
-    ToolCallEvent,
     format_search_results_for_llm,
 )
 from core.base.abstractions import (
     AggregateSearchResult,
     ContextDocumentResult,
     GenerationConfig,
-    Message,
     SearchSettings,
     WebPageSearchResult,
     WebSearchResult,
@@ -27,9 +23,6 @@ from core.providers import (
 )
 from core.utils import (
     SearchResultsCollector,
-    SSEFormatter,
-    convert_nonserializable_objects,
-    extract_citations,
     generate_id,
     num_tokens,
 )
@@ -162,9 +155,10 @@ class RAGAgentMixin:
 
     # 2) Local Context
     def content(self) -> Tool:
-        """
-        Tool to fetch entire documents from the local database. Typically used if the agent needs
-        deeper or more structured context from documents, not just chunk-level hits.
+        """Tool to fetch entire documents from the local database.
+
+        Typically used if the agent needs deeper or more structured context
+        from documents, not just chunk-level hits.
         """
         if "gemini" in self.rag_generation_config.model:
             tool = Tool(
@@ -226,9 +220,10 @@ class RAGAgentMixin:
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
-        """
-        Calls the passed-in `content_method(filters, options)` to fetch
-        doc+chunk structures. Typically returns a list of dicts:
+        """Calls the passed-in `content_method(filters, options)` to fetch
+        doc+chunk structures.
+
+        Typically returns a list of dicts:
         [
             { 'document': {...}, 'chunks': [ {...}, {...}, ... ] },
             ...

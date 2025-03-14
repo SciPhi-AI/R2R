@@ -22,17 +22,17 @@ from core.base import (
     VectorQuantizationType,
     VectorTableName,
 )
+from core.base.utils import _decorate_vector_type
 
 from .base import PostgresConnectionManager
 from .filters import apply_filters
 
 logger = logging.getLogger()
-from core.base.utils import _decorate_vector_type
 
 
 def psql_quote_literal(value: str) -> str:
-    """
-    Safely quote a string literal for PostgreSQL to prevent SQL injection.
+    """Safely quote a string literal for PostgreSQL to prevent SQL injection.
+
     This is a simple implementation - in production, you should use proper parameterization
     or your database driver's quoting functions.
     """
@@ -50,9 +50,8 @@ def quantize_vector_to_binary(
     vector: list[float] | np.ndarray,
     threshold: float = 0.0,
 ) -> bytes:
-    """
-    Quantizes a float vector to a binary vector string for PostgreSQL bit type.
-    Used when quantization_type is INT1.
+    """Quantizes a float vector to a binary vector string for PostgreSQL bit
+    type. Used when quantization_type is INT1.
 
     Args:
         vector (List[float] | np.ndarray): Input vector of floats
@@ -88,7 +87,7 @@ class PostgresChunksHandler(Handler):
         self,
         project_name: str,
         connection_manager: PostgresConnectionManager,
-        dimension: int,
+        dimension: int | float,
         quantization_type: VectorQuantizationType,
     ):
         super().__init__(project_name, connection_manager)
@@ -148,9 +147,11 @@ class PostgresChunksHandler(Handler):
         await self.connection_manager.execute_query(query)
 
     async def upsert(self, entry: VectorEntry) -> None:
-        """
-        Upsert function that handles vector quantization only when quantization_type is INT1.
-        Matches the table schema where vec_binary column only exists for INT1 quantization.
+        """Upsert function that handles vector quantization only when
+        quantization_type is INT1.
+
+        Matches the table schema where vec_binary column only exists for INT1
+        quantization.
         """
         # Check the quantization type to determine which columns to use
         if self.quantization_type == VectorQuantizationType.INT1:
@@ -216,9 +217,11 @@ class PostgresChunksHandler(Handler):
             )
 
     async def upsert_entries(self, entries: list[VectorEntry]) -> None:
-        """
-        Batch upsert function that handles vector quantization only when quantization_type is INT1.
-        Matches the table schema where vec_binary column only exists for INT1 quantization.
+        """Batch upsert function that handles vector quantization only when
+        quantization_type is INT1.
+
+        Matches the table schema where vec_binary column only exists for INT1
+        quantization.
         """
         if self.quantization_type == VectorQuantizationType.INT1:
             bit_dim = (
@@ -293,7 +296,7 @@ class PostgresChunksHandler(Handler):
                 search_settings.chunk_settings.index_measure
             )
         except ValueError:
-            raise ValueError("Invalid index measure")
+            raise ValueError("Invalid index measure") from None
 
         table_name = self._get_table_name(PostgresChunksHandler.TABLE_NAME)
         cols = [
@@ -472,8 +475,8 @@ class PostgresChunksHandler(Handler):
             FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
             {where_clause}
             ORDER BY rank DESC
-            OFFSET ${len(params)+1}
-            LIMIT ${len(params)+2}
+            OFFSET ${len(params) + 1}
+            LIMIT ${len(params) + 2}
         """
 
         params.extend(
@@ -528,9 +531,9 @@ class PostgresChunksHandler(Handler):
         semantic_results: list[ChunkSearchResult] = await self.semantic_search(
             query_vector, semantic_settings
         )
-        full_text_results: list[ChunkSearchResult] = (
-            await self.full_text_search(query_text, full_text_settings)
-        )
+        full_text_results: list[
+            ChunkSearchResult
+        ] = await self.full_text_search(query_text, full_text_settings)
 
         semantic_limit = search_settings.limit
         full_text_limit = search_settings.hybrid_settings.full_text_limit
@@ -664,9 +667,7 @@ class PostgresChunksHandler(Handler):
          WHERE $1 = ANY(collection_ids)
          RETURNING collection_ids
          """
-        results = await self.connection_manager.fetchrow_query(
-            query, (collection_id,)
-        )
+        await self.connection_manager.fetchrow_query(query, (collection_id,))
         return None
 
     async def list_document_chunks(
@@ -745,8 +746,7 @@ class PostgresChunksHandler(Handler):
         index_column: Optional[str] = None,
         concurrently: bool = True,
     ) -> None:
-        """
-        Creates an index for the collection.
+        """Creates an index for the collection.
 
         Note:
             When `vecs` creates an index on a pgvector column in PostgreSQL, it uses a multi-step
@@ -873,7 +873,7 @@ class PostgresChunksHandler(Handler):
                 # Non-concurrent index creation can use normal query execution
                 await self.connection_manager.execute_query(create_index_sql)
         except Exception as e:
-            raise Exception(f"Failed to create index: {e}")
+            raise Exception(f"Failed to create index: {e}") from e
         return None
 
     async def list_indices(
@@ -967,8 +967,7 @@ class PostgresChunksHandler(Handler):
         table_name: Optional[VectorTableName] = None,
         concurrently: bool = True,
     ) -> None:
-        """
-        Deletes a vector index.
+        """Deletes a vector index.
 
         Args:
             index_name (str): Name of the index to delete
@@ -1042,7 +1041,7 @@ class PostgresChunksHandler(Handler):
             else:
                 await self.connection_manager.execute_query(drop_query)
         except Exception as e:
-            raise Exception(f"Failed to delete index: {e}")
+            raise Exception(f"Failed to delete index: {e}") from e
 
     async def list_chunks(
         self,
@@ -1051,8 +1050,7 @@ class PostgresChunksHandler(Handler):
         filters: Optional[dict[str, Any]] = None,
         include_vectors: bool = False,
     ) -> dict[str, Any]:
-        """
-        List chunks with pagination support.
+        """List chunks with pagination support.
 
         Args:
             offset (int, optional): Number of records to skip. Defaults to 0.
@@ -1118,9 +1116,8 @@ class PostgresChunksHandler(Handler):
         query_text: str,
         settings: SearchSettings,
     ) -> list[dict[str, Any]]:
-        """
-        Search for documents based on their metadata fields and/or body text.
-        Joins with documents table to get complete document metadata.
+        """Search for documents based on their metadata fields and/or body
+        text. Joins with documents table to get complete document metadata.
 
         Args:
             query_text (str): The search query text
@@ -1132,11 +1129,19 @@ class PostgresChunksHandler(Handler):
         where_clauses = []
         params: list[str | int | bytes] = [query_text]
 
+        search_over_body = getattr(settings, "search_over_body", True)
+        search_over_metadata = getattr(settings, "search_over_metadata", True)
+        metadata_weight = getattr(settings, "metadata_weight", 3.0)
+        title_weight = getattr(settings, "title_weight", 1.0)
+        metadata_keys = getattr(
+            settings, "metadata_keys", ["title", "description"]
+        )
+
         # Build the dynamic metadata field search expression
         metadata_fields_expr = " || ' ' || ".join(
             [
                 f"COALESCE(v.metadata->>{psql_quote_literal(key)}, '')"
-                for key in settings.metadata_keys  # type: ignore
+                for key in metadata_keys  # type: ignore
             ]
         )
 
@@ -1156,7 +1161,7 @@ class PostgresChunksHandler(Handler):
                         )
                     END as metadata_rank
                 FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)} v
-                LEFT JOIN {self._get_table_name('documents')} d ON v.document_id = d.id
+                LEFT JOIN {self._get_table_name("documents")} d ON v.document_id = d.id
                 WHERE v.metadata IS NOT NULL
             ),
             -- Body search scores
@@ -1172,7 +1177,7 @@ class PostgresChunksHandler(Handler):
                     ) as body_rank
                 FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
                 WHERE $1 != ''
-                {"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if settings.search_over_body else ""}
+                {"AND to_tsvector('english', text) @@ websearch_to_tsquery('english', $1)" if search_over_body else ""}
                 GROUP BY document_id
             ),
             -- Combined scores with document metadata
@@ -1183,11 +1188,11 @@ class PostgresChunksHandler(Handler):
                     COALESCE(m.metadata_rank, 0) as debug_metadata_rank,
                     COALESCE(b.body_rank, 0) as debug_body_rank,
                     CASE
-                        WHEN {str(settings.search_over_metadata).lower()} AND {str(settings.search_over_body).lower()} THEN
-                            COALESCE(m.metadata_rank, 0) * {settings.metadata_weight} + COALESCE(b.body_rank, 0) * {settings.title_weight}
-                        WHEN {str(settings.search_over_metadata).lower()} THEN
+                        WHEN {str(search_over_metadata).lower()} AND {str(search_over_body).lower()} THEN
+                            COALESCE(m.metadata_rank, 0) * {metadata_weight} + COALESCE(b.body_rank, 0) * {title_weight}
+                        WHEN {str(search_over_metadata).lower()} THEN
                             COALESCE(m.metadata_rank, 0)
-                        WHEN {str(settings.search_over_body).lower()} THEN
+                        WHEN {str(search_over_body).lower()} THEN
                             COALESCE(b.body_rank, 0)
                         ELSE 0
                     END as rank
@@ -1195,8 +1200,8 @@ class PostgresChunksHandler(Handler):
                 FULL OUTER JOIN body_scores b ON m.document_id = b.document_id
                 WHERE (
                     ($1 = '') OR
-                    ({str(settings.search_over_metadata).lower()} AND m.metadata_rank > 0) OR
-                    ({str(settings.search_over_body).lower()} AND b.body_rank > 0)
+                    ({str(search_over_metadata).lower()} AND m.metadata_rank > 0) OR
+                    ({str(search_over_body).lower()} AND b.body_rank > 0)
                 )
         """
 

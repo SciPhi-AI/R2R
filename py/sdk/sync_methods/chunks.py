@@ -13,9 +13,7 @@ from ..models import SearchSettings
 
 
 class ChunksSDK:
-    """
-    SDK for interacting with chunks in the v3 API.
-    """
+    """SDK for interacting with chunks in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -24,8 +22,7 @@ class ChunksSDK:
         self,
         chunk: dict[str, str],
     ) -> WrappedChunkResponse:
-        """
-        Update an existing chunk.
+        """Update an existing chunk.
 
         Args:
             chunk (dict[str, str]): Chunk to update. Should contain:
@@ -47,8 +44,7 @@ class ChunksSDK:
         self,
         id: str | UUID,
     ) -> WrappedChunkResponse:
-        """
-        Get a specific chunk.
+        """Get a specific chunk.
 
         Args:
             id (str | UUID): Chunk ID to retrieve
@@ -73,8 +69,7 @@ class ChunksSDK:
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedChunksResponse:
-        """
-        List chunks for a specific document.
+        """List chunks for a specific document.
 
         Args:
             document_id (str | UUID): Document ID to get chunks for
@@ -105,8 +100,7 @@ class ChunksSDK:
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """
-        Delete a specific chunk.
+        """Delete a specific chunk.
 
         Args:
             id (str | UUID): ID of chunk to delete
@@ -130,8 +124,7 @@ class ChunksSDK:
         limit: Optional[int] = 100,
         filters: Optional[dict] = None,
     ) -> WrappedChunksResponse:
-        """
-        List chunks with pagination support.
+        """List chunks with pagination support.
 
         Args:
             include_vectors (bool, optional): Include vector data in response. Defaults to False.
@@ -167,8 +160,7 @@ class ChunksSDK:
         query: str,
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedVectorSearchResponse:
-        """
-        Conduct a vector and/or graph search.
+        """Conduct a vector and/or graph search.
 
         Args:
             query (str): The query to search for.

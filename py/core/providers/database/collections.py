@@ -21,7 +21,6 @@ from core.base.abstractions import (
     IngestionStatus,
 )
 from core.base.api.models import CollectionResponse
-from core.utils import generate_default_user_collection_id
 
 from .base import PostgresConnectionManager
 
@@ -169,7 +168,7 @@ class PostgresCollectionsHandler(Handler):
             raise R2RException(
                 message="Collection with this ID already exists",
                 status_code=409,
-            )
+            ) from None
         except Exception as e:
             raise HTTPException(
                 status_code=500,
@@ -209,7 +208,7 @@ class PostgresCollectionsHandler(Handler):
         query = f"""
             WITH updated_collection AS (
                 UPDATE {self._get_table_name(PostgresCollectionsHandler.TABLE_NAME)}
-                SET {', '.join(update_fields)}
+                SET {", ".join(update_fields)}
                 WHERE id = ${param_index}
                 RETURNING id, owner_id, name, description, graph_sync_status, graph_cluster_status, created_at, updated_at
             )
@@ -218,8 +217,8 @@ class PostgresCollectionsHandler(Handler):
                 COUNT(DISTINCT u.id) FILTER (WHERE u.id IS NOT NULL) as user_count,
                 COUNT(DISTINCT d.id) FILTER (WHERE d.id IS NOT NULL) as document_count
             FROM updated_collection uc
-            LEFT JOIN {self._get_table_name('users')} u ON uc.id = ANY(u.collection_ids)
-            LEFT JOIN {self._get_table_name('documents')} d ON uc.id = ANY(d.collection_ids)
+            LEFT JOIN {self._get_table_name("users")} u ON uc.id = ANY(u.collection_ids)
+            LEFT JOIN {self._get_table_name("documents")} d ON uc.id = ANY(d.collection_ids)
             GROUP BY uc.id, uc.owner_id, uc.name, uc.description, uc.graph_sync_status, uc.graph_cluster_status, uc.created_at, uc.updated_at
         """
         try:
@@ -252,7 +251,7 @@ class PostgresCollectionsHandler(Handler):
     async def delete_collection_relational(self, collection_id: UUID) -> None:
         # Remove collection_id from users
         user_update_query = f"""
-            UPDATE {self._get_table_name('users')}
+            UPDATE {self._get_table_name("users")}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE $1 = ANY(collection_ids)
         """
@@ -263,7 +262,7 @@ class PostgresCollectionsHandler(Handler):
         # Remove collection_id from documents
         document_update_query = f"""
             WITH updated AS (
-                UPDATE {self._get_table_name('documents')}
+                UPDATE {self._get_table_name("documents")}
                 SET collection_ids = array_remove(collection_ids, $1)
                 WHERE $1 = ANY(collection_ids)
                 RETURNING 1
@@ -290,8 +289,8 @@ class PostgresCollectionsHandler(Handler):
     async def documents_in_collection(
         self, collection_id: UUID, offset: int, limit: int
     ) -> dict[str, list[DocumentResponse] | int]:
-        """
-        Get all documents in a specific collection with pagination.
+        """Get all documents in a specific collection with pagination.
+
         Args:
             collection_id (UUID): The ID of the collection to get documents from.
             offset (int): The number of documents to skip.
@@ -307,7 +306,7 @@ class PostgresCollectionsHandler(Handler):
             SELECT d.id, d.owner_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at, d.summary,
                 COUNT(*) OVER() AS total_entries
-            FROM {self._get_table_name('documents')} d
+            FROM {self._get_table_name("documents")} d
             WHERE $1 = ANY(d.collection_ids)
             ORDER BY d.created_at DESC
             OFFSET $2
@@ -356,28 +355,24 @@ class PostgresCollectionsHandler(Handler):
         param_index = 1
 
         if filter_user_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
                     FROM {self.project_name}.users
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_user_ids)
             param_index += 1
 
         if filter_document_ids:
-            conditions.append(
-                f"""
+            conditions.append(f"""
                 c.id IN (
                     SELECT unnest(collection_ids)
                     FROM {self.project_name}.documents
                     WHERE id = ANY(${param_index})
                 )
-            """
-            )
+            """)
             params.append(filter_document_ids)
             param_index += 1
 
@@ -428,8 +423,7 @@ class PostgresCollectionsHandler(Handler):
         document_id: UUID,
         collection_id: UUID,
     ) -> UUID:
-        """
-        Assign a document to a collection.
+        """Assign a document to a collection.
 
         Args:
             document_id (UUID): The ID of the document to assign.
@@ -447,7 +441,7 @@ class PostgresCollectionsHandler(Handler):
 
             # First, check if the document exists
             document_check_query = f"""
-                SELECT 1 FROM {self._get_table_name('documents')}
+                SELECT 1 FROM {self._get_table_name("documents")}
                 WHERE id = $1
             """
             document_exists = await self.connection_manager.fetchrow_query(
@@ -461,7 +455,7 @@ class PostgresCollectionsHandler(Handler):
 
             # If document exists, proceed with the assignment
             assign_query = f"""
-                UPDATE {self._get_table_name('documents')}
+                UPDATE {self._get_table_name("documents")}
                 SET collection_ids = array_append(collection_ids, $1)
                 WHERE id = $2 AND NOT ($1 = ANY(collection_ids))
                 RETURNING id
@@ -478,7 +472,7 @@ class PostgresCollectionsHandler(Handler):
                 )
 
             update_collection_query = f"""
-                UPDATE {self._get_table_name('collections')}
+                UPDATE {self._get_table_name("collections")}
                 SET document_count = document_count + 1
                 WHERE id = $1
             """
@@ -500,8 +494,7 @@ class PostgresCollectionsHandler(Handler):
     async def remove_document_from_collection_relational(
         self, document_id: UUID, collection_id: UUID
     ) -> None:
-        """
-        Remove a document from a collection.
+        """Remove a document from a collection.
 
         Args:
             document_id (UUID): The ID of the document to remove.
@@ -514,7 +507,7 @@ class PostgresCollectionsHandler(Handler):
             raise R2RException(status_code=404, message="Collection not found")
 
         query = f"""
-            UPDATE {self._get_table_name('documents')}
+            UPDATE {self._get_table_name("documents")}
             SET collection_ids = array_remove(collection_ids, $1)
             WHERE id = $2 AND $1 = ANY(collection_ids)
             RETURNING id
@@ -536,15 +529,14 @@ class PostgresCollectionsHandler(Handler):
     async def decrement_collection_document_count(
         self, collection_id: UUID, decrement_by: int = 1
     ) -> None:
-        """
-        Decrement the document count for a collection.
+        """Decrement the document count for a collection.
 
         Args:
             collection_id (UUID): The ID of the collection to update
             decrement_by (int): Number to decrease the count by (default: 1)
         """
         collection_query = f"""
-            UPDATE {self._get_table_name('collections')}
+            UPDATE {self._get_table_name("collections")}
             SET document_count = document_count - $1
             WHERE id = $2
         """
@@ -558,9 +550,8 @@ class PostgresCollectionsHandler(Handler):
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> tuple[str, IO]:
-        """
-        Creates a CSV file from the PostgreSQL data and returns the path to the temp file.
-        """
+        """Creates a CSV file from the PostgreSQL data and returns the path to
+        the temp file."""
         valid_columns = {
             "id",
             "owner_id",
@@ -676,8 +667,8 @@ class PostgresCollectionsHandler(Handler):
     async def get_collection_by_name(
         self, owner_id: UUID, name: str
     ) -> Optional[CollectionResponse]:
-        """
-        Fetch a collection by owner_id + name combination.
+        """Fetch a collection by owner_id + name combination.
+
         Return None if not found.
         """
         query = f"""

@@ -27,7 +27,7 @@ from .tokens import PostgresTokensHandler
 from .users import PostgresUserHandler
 
 if TYPE_CHECKING:
-    from ..providers.crypto import BCryptCryptoProvider, NaClCryptoProvider
+    from ..crypto import BCryptCryptoProvider, NaClCryptoProvider
 
     CryptoProviderType = BCryptCryptoProvider | NaClCryptoProvider
 
@@ -134,7 +134,9 @@ class PostgresDatabaseProvider(DatabaseProvider):
             PostgresConnectionManager()
         )
         self.documents_handler = PostgresDocumentsHandler(
-            self.project_name, self.connection_manager, self.dimension
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            dimension=self.dimension,
         )
         self.token_handler = PostgresTokensHandler(
             self.project_name, self.connection_manager
@@ -146,10 +148,10 @@ class PostgresDatabaseProvider(DatabaseProvider):
             self.project_name, self.connection_manager, self.crypto_provider
         )
         self.chunks_handler = PostgresChunksHandler(
-            self.project_name,
-            self.connection_manager,
-            self.dimension,
-            self.quantization_type,
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+            dimension=self.dimension,
+            quantization_type=(self.quantization_type),
         )
         self.conversations_handler = PostgresConversationsHandler(
             self.project_name, self.connection_manager

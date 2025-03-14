@@ -22,9 +22,7 @@ from .base.base_client import BaseClient
 
 
 class R2RAsyncClient(BaseClient):
-    """
-    Asynchronous client for interacting with the R2R API.
-    """
+    """Asynchronous client for interacting with the R2R API."""
 
     def __init__(
         self,

@@ -16,7 +16,6 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.base.abstractions import DocumentChunk
 from core.utils import generate_extraction_id
 
 from ...database import PostgresDatabaseProvider
@@ -126,12 +125,12 @@ class R2RIngestionProvider(IngestionProvider):
                     llm_provider=self.llm_provider,
                 )
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[
-                f"{doc_parser_name}_{str(doc_type)}"
-            ] = R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
-                config=self.config,
-                database_provider=self.database_provider,
-                llm_provider=self.llm_provider,
+            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
+                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
+                    config=self.config,
+                    database_provider=self.database_provider,
+                    llm_provider=self.llm_provider,
+                )
             )
 
     def _build_text_splitter(
@@ -228,7 +227,7 @@ class R2RIngestionProvider(IngestionProvider):
             )
         else:
             t0 = time.time()
-            contents = ""
+            contents = []
             parser_overrides = ingestion_config_override.get(
                 "parser_overrides", {}
             )
@@ -244,37 +243,48 @@ class R2RIngestionProvider(IngestionProvider):
                     raise ValueError(
                         "Only Zerox PDF parser override is available."
                     )
-                async for text in self.parsers[
+                async for chunk in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
-                    if text is not None:
-                        contents += text + "\n"
+                    if isinstance(chunk, dict) and chunk.get("content"):
+                        contents.append(chunk)
+                    elif (
+                        chunk
+                    ):  # Handle string output for backward compatibility
+                        contents.append({"content": chunk})
             else:
                 async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
                 ):
                     if text is not None:
-                        contents += text + "\n"
+                        contents.append({"content": text})
 
-            if not contents.strip():
+            if not contents:
                 logging.warning(
                     "No valid text content was extracted during parsing"
                 )
                 return
 
             iteration = 0
-            chunks = self.chunk(contents, ingestion_config_override)
-            for chunk in chunks:
-                extraction = DocumentChunk(
-                    id=generate_extraction_id(document.id, iteration),
-                    document_id=document.id,
-                    owner_id=document.owner_id,
-                    collection_ids=document.collection_ids,
-                    data=chunk,
-                    metadata={**document.metadata, "chunk_order": iteration},
-                )
-                iteration += 1
-                yield extraction
+            for content_item in contents:
+                chunk_text = content_item["content"]
+                chunks = self.chunk(chunk_text, ingestion_config_override)
+
+                for chunk in chunks:
+                    metadata = {**document.metadata, "chunk_order": iteration}
+                    if "page_number" in content_item:
+                        metadata["page_number"] = content_item["page_number"]
+
+                    extraction = DocumentChunk(
+                        id=generate_extraction_id(document.id, iteration),
+                        document_id=document.id,
+                        owner_id=document.owner_id,
+                        collection_ids=document.collection_ids,
+                        data=chunk,
+                        metadata=metadata,
+                    )
+                    iteration += 1
+                    yield extraction
 
             logger.debug(
                 f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

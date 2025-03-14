@@ -1,0 +1,224 @@
+volumes:
+  hatchet_certs:
+    name: hatchet_certs
+  hatchet_config:
+    name: hatchet_config
+  hatchet_api_key:
+    name: hatchet_api_key
+  postgres_data:
+    name: postgres_data
+  hatchet_rabbitmq_data:
+    name: hatchet_rabbitmq_data
+  hatchet_rabbitmq_conf:
+    name: hatchet_rabbitmq_conf
+  hatchet_postgres_data:
+    name: hatchet_postgres_data
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [postgres]
+    env_file:
+      - ./env/postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=1024
+
+  hatchet-postgres:
+    image: postgres:latest
+    env_file:
+      - ./env/hatchet.env
+    volumes:
+      - hatchet_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hatchet_user -d hatchet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  hatchet-rabbitmq:
+    image: "rabbitmq:3-management"
+    hostname: "hatchet-rabbitmq"
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    env_file:
+      - ./env/hatchet.env
+    volumes:
+      - hatchet_rabbitmq_data:/var/lib/rabbitmq
+      - hatchet_rabbitmq_conf:/etc/rabbitmq/rabbitmq.conf
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  hatchet-create-db:
+    image: postgres:latest
+    command: sh /scripts/create-hatchet-db.sh
+    volumes:
+      - ./scripts:/scripts
+    env_file:
+      - ./env/hatchet.env
+
+  hatchet-migration:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.53.15
+    env_file:
+      - ./env/hatchet.env
+    depends_on:
+      hatchet-create-db:
+        condition: service_completed_successfully
+
+  hatchet-setup-config:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
+    command: /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=false
+    env_file:
+      - ./env/hatchet.env
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    depends_on:
+      hatchet-migration:
+        condition: service_completed_successfully
+      hatchet-rabbitmq:
+        condition: service_healthy
+
+  hatchet-engine:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.53.15
+    command: /hatchet/hatchet-engine --config /hatchet/config
+    restart: on-failure
+    depends_on:
+      hatchet-setup-config:
+        condition: service_completed_successfully
+    ports:
+      - "7077:7077"
+    env_file:
+      - ./env/hatchet.env
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8733/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hatchet-dashboard:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard:v0.53.15
+    command: sh ./entrypoint.sh --config /hatchet/config
+    restart: on-failure
+    depends_on:
+      hatchet-setup-config:
+        condition: service_completed_successfully
+    env_file:
+      - ./env/hatchet.env
+    volumes:
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+    ports:
+      - "7274:80"
+
+  setup-token:
+    image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.53.15
+    command: sh /scripts/setup-token.sh
+    volumes:
+      - ./scripts:/scripts
+      - hatchet_certs:/hatchet/certs
+      - hatchet_config:/hatchet/config
+      - hatchet_api_key:/hatchet_api_key
+    depends_on:
+      hatchet-setup-config:
+        condition: service_completed_successfully
+
+  unstructured:
+    image: ragtoriches/unst-prod
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7275/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  graph_clustering:
+    image: ragtoriches/cluster-prod
+    ports:
+      - "7276:7276"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  r2r:
+    image: sciphiai/r2r:latest
+    ports:
+      - "7272:7272"
+    env_file:
+      - ./env/r2r-full.env
+    command: sh /scripts/start-r2r.sh
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    volumes:
+      - ./user_configs:/app/user_configs
+      - hatchet_api_key:/hatchet_api_key:ro
+      - ./scripts:/scripts
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      setup-token:
+        condition: service_completed_successfully
+      unstructured:
+        condition: service_healthy
+      graph_clustering:
+        condition: service_healthy
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: host.docker.internal:24224
+        fluentd-sub-second-precision: "true"
+        tag: backend
+
+  r2r-dashboard:
+    image: sciphiai/r2r-dashboard:1.0.2
+    env_file:
+      - ./env/r2r-dashboard.env
+    ports:
+      - "7273:3000"
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    volumes:
+    - ./fluent-bit:/fluent-bit/etc:ro
+    ports:
+    - "24224:24224"
+    depends_on:
+    - victoria-logs
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - "3001:3000"
+    volumes:
+    - ./.data/grafana:/var/lib/grafana
+
+  victoria-logs:
+    image: victoriametrics/victoria-logs:v1.10.1-victorialogs
+    ports:
+    - "9428:9428"
+    volumes:
+    - ./.data/victoria-logs:/data
+    command: -storageDataPath=/data -retentionPeriod=60d

@@ -1,7 +1,9 @@
 # type: ignore
+import os
+import tempfile
 from typing import AsyncGenerator
 
-import extract_msg
+from msg_parser import MsOxMessage
 
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -12,7 +14,7 @@ from core.base.providers import (
 
 
 class MSGParser(AsyncParser[str | bytes]):
-    """Parser for MSG (Outlook Message) files."""
+    """Parser for MSG (Outlook Message) files using msg_parser."""
 
     def __init__(
         self,
@@ -23,7 +25,6 @@ class MSGParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
-        self.extract_msg = extract_msg
 
     async def ingest(
         self, data: str | bytes, **kwargs
@@ -32,37 +33,33 @@ class MSGParser(AsyncParser[str | bytes]):
         if isinstance(data, str):
             raise ValueError("MSG data must be in bytes format.")
 
-        from io import BytesIO
-
-        file_obj = BytesIO(data)
-
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".msg")
         try:
-            msg = self.extract_msg.Message(file_obj)
+            tmp_file.write(data)
+            tmp_file.close()
 
-            # Extract metadata
+            msg = MsOxMessage(tmp_file.name)
+
             metadata = []
+
             if msg.subject:
                 metadata.append(f"Subject: {msg.subject}")
             if msg.sender:
                 metadata.append(f"From: {msg.sender}")
             if msg.to:
-                metadata.append(f"To: {msg.to}")
-            if msg.date:
-                metadata.append(f"Date: {msg.date}")
-
+                metadata.append(f"To: {', '.join(msg.to)}")
+            if msg.sent_date:
+                metadata.append(f"Date: {msg.sent_date}")
             if metadata:
                 yield "\n".join(metadata)
-
-            # Extract body
             if msg.body:
                 yield msg.body.strip()
 
-            # Extract attachments (optional)
             for attachment in msg.attachments:
-                if hasattr(attachment, "name"):
-                    yield f"\nAttachment: {attachment.name}"
+                if attachment.Filename:
+                    yield f"\nAttachment: {attachment.Filename}"
 
         except Exception as e:
-            raise ValueError(f"Error processing MSG file: {str(e)}")
+            raise ValueError(f"Error processing MSG file: {str(e)}") from e
         finally:
-            file_obj.close()
+            os.remove(tmp_file.name)

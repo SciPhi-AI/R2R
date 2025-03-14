@@ -23,7 +23,6 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
     concurrent_request_limit: int = 256
-    fast_llm: str = "openai/gpt-4o"
     max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
@@ -60,7 +59,7 @@ class CompletionProvider(Provider):
             try:
                 async with self.semaphore:
                     return await self._execute_task(task)
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(
@@ -83,7 +82,7 @@ class CompletionProvider(Provider):
                     async for chunk in await self._execute_task(task):
                         yield chunk
                 return  # Successful completion of the stream
-            except AuthenticationError as e:
+            except AuthenticationError:
                 raise
             except Exception as e:
                 logger.warning(

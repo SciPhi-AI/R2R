@@ -1,9 +1,8 @@
-"""v3_api_database_revision
+"""v3_api_database_revision.
 
 Revision ID: 8077140e1e99
 Revises:
 Create Date: 2024-12-03 12:10:10.878485
-
 """
 
 import os
@@ -27,7 +26,7 @@ if not project_name:
 
 
 def check_if_upgrade_needed():
-    """Check if the upgrade has already been applied or is needed"""
+    """Check if the upgrade has already been applied or is needed."""
     connection = op.get_bind()
     inspector = inspect(connection)
 

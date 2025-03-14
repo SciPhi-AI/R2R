@@ -51,7 +51,8 @@ class ImageParser(AsyncParser[str | bytes]):
         try:
             header = data[:32]  # Get first 32 bytes
             return any(pattern in header for pattern in heic_patterns)
-        except:
+        except Exception as e:
+            logger.error(f"Error checking for HEIC format: {str(e)}")
             return False
 
     async def _convert_heic_to_jpeg(self, data: bytes) -> bytes:

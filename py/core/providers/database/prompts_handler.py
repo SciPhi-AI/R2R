@@ -20,7 +20,7 @@ T = TypeVar("T")
 
 @dataclass
 class CacheEntry(Generic[T]):
-    """Represents a cached item with metadata"""
+    """Represents a cached item with metadata."""
 
     value: T
     created_at: datetime
@@ -29,7 +29,7 @@ class CacheEntry(Generic[T]):
 
 
 class Cache(Generic[T]):
-    """A generic cache implementation with TTL and LRU-like features"""
+    """A generic cache implementation with TTL and LRU-like features."""
 
     def __init__(
         self,
@@ -44,7 +44,7 @@ class Cache(Generic[T]):
         self._last_cleanup = datetime.now()
 
     def get(self, key: str) -> Optional[T]:
-        """Retrieve an item from cache"""
+        """Retrieve an item from cache."""
         self._maybe_cleanup()
 
         if key not in self._cache:
@@ -61,7 +61,7 @@ class Cache(Generic[T]):
         return entry.value
 
     def set(self, key: str, value: T) -> None:
-        """Store an item in cache"""
+        """Store an item in cache."""
         self._maybe_cleanup()
 
         now = datetime.now()
@@ -73,22 +73,22 @@ class Cache(Generic[T]):
             self._evict_lru()
 
     def invalidate(self, key: str) -> None:
-        """Remove an item from cache"""
+        """Remove an item from cache."""
         self._cache.pop(key, None)
 
     def clear(self) -> None:
-        """Clear all cached items"""
+        """Clear all cached items."""
         self._cache.clear()
 
     def _maybe_cleanup(self) -> None:
-        """Periodically clean up expired entries"""
+        """Periodically clean up expired entries."""
         now = datetime.now()
         if now - self._last_cleanup > self._cleanup_interval:
             self._cleanup()
             self._last_cleanup = now
 
     def _cleanup(self) -> None:
-        """Remove expired entries"""
+        """Remove expired entries."""
         if not self._ttl:
             return
 
@@ -100,7 +100,7 @@ class Cache(Generic[T]):
             del self._cache[k]
 
     def _evict_lru(self) -> None:
-        """Remove least recently used item"""
+        """Remove least recently used item."""
         if not self._cache:
             return
 
@@ -111,7 +111,8 @@ class Cache(Generic[T]):
 
 
 class CacheablePromptHandler(Handler):
-    """Abstract base class that adds caching capabilities to prompt handlers"""
+    """Abstract base class that adds caching capabilities to prompt
+    handlers."""
 
     def __init__(
         self,
@@ -126,7 +127,7 @@ class CacheablePromptHandler(Handler):
     def _cache_key(
         self, prompt_name: str, inputs: Optional[dict] = None
     ) -> str:
-        """Generate a cache key for a prompt request"""
+        """Generate a cache key for a prompt request."""
         if inputs:
             # Sort dict items for consistent keys
             sorted_inputs = sorted(inputs.items())
@@ -159,7 +160,7 @@ class CacheablePromptHandler(Handler):
                 return cached
 
         logger.debug(
-            f"Prompt cache miss or bypass. Retrieving from DB or template cache."
+            "Prompt cache miss or bypass. Retrieving from DB or template cache."
         )
         # Notice the new parameter `bypass_template_cache` below
         result = await self._get_prompt_impl(
@@ -205,7 +206,7 @@ class CacheablePromptHandler(Handler):
     ) -> str:
         if inputs:
             # optional input validation if needed
-            for k, v in inputs.items():
+            for k, _v in inputs.items():
                 if k not in input_types:
                     raise ValueError(
                         f"Unexpected input '{k}' for prompt with input types {input_types}"
@@ -219,7 +220,7 @@ class CacheablePromptHandler(Handler):
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
-        """Public method to update a prompt with proper cache invalidation"""
+        """Public method to update a prompt with proper cache invalidation."""
         # First invalidate all caches for this prompt
         self._template_cache.invalidate(name)
         cache_keys_to_invalidate = [
@@ -245,12 +246,22 @@ class CacheablePromptHandler(Handler):
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
-        """Implementation of prompt update logic"""
+        """Implementation of prompt update logic."""
         pass
 
     @abstractmethod
     async def _get_template_info(self, prompt_name: str) -> Optional[dict]:
-        """Get template info with caching"""
+        """Get template info with caching."""
+        pass
+
+    @abstractmethod
+    async def _get_prompt_impl(
+        self,
+        prompt_name: str,
+        inputs: Optional[dict[str, Any]] = None,
+        bypass_template_cache: bool = False,
+    ) -> str:
+        """Implementation of prompt retrieval logic."""
         pass
 
 
@@ -320,11 +331,10 @@ class PostgresPromptsHandler(CacheablePromptHandler):
     async def _load_prompts_from_yaml_directory(
         self, default_overwrite_on_diff: bool = False
     ) -> None:
-        """
-        Load prompts from YAML files in the specified directory.
+        """Load prompts from YAML files in the specified directory.
 
         :param default_overwrite_on_diff: If a YAML prompt does not specify
-                                        'overwrite_on_diff', we use this default.
+            'overwrite_on_diff', we use this default.
         """
         if not self.prompt_directory.is_dir():
             logger.warning(
@@ -393,7 +403,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         inputs: Optional[dict[str, Any]] = None,
         bypass_template_cache: bool = False,
     ) -> str:
-        """Implementation of database prompt retrieval"""
+        """Implementation of database prompt retrieval."""
         # If we're bypassing the template cache, skip the cache lookup
         if not bypass_template_cache:
             template_info = self._template_cache.get(prompt_name)
@@ -433,7 +443,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         return self._format_prompt(template, inputs, input_types)
 
     async def _get_template_info(self, prompt_name: str) -> Optional[dict]:  # type: ignore
-        """Get template info with caching"""
+        """Get template info with caching."""
         cached = self._template_cache.get(prompt_name)
         if cached is not None:
             return cached
@@ -469,7 +479,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         template: Optional[str] = None,
         input_types: Optional[dict[str, str]] = None,
     ) -> None:
-        """Implementation of database prompt update with proper connection handling"""
+        """Implementation of database prompt update with proper connection
+        handling."""
         if not template and not input_types:
             return
 
@@ -498,7 +509,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
 
         query = f"""
         UPDATE {self._get_table_name("prompts")}
-        SET {', '.join(set_clauses)}
+        SET {", ".join(set_clauses)}
         WHERE name = $1
         RETURNING id, template, input_types;
         """
@@ -563,8 +574,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         preserve_existing: bool = False,
         overwrite_on_diff: bool = False,  # <-- new param
     ) -> None:
-        """
-        Add or update a prompt.
+        """Add or update a prompt.
 
         If `preserve_existing` is True and prompt already exists, we skip updating.
 
@@ -699,14 +709,18 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         self,
         system_prompt_name: Optional[str] = None,
         system_role: str = "system",
-        system_inputs: dict = {},
+        system_inputs: dict | None = None,
         system_prompt_override: Optional[str] = None,
         task_prompt_name: Optional[str] = None,
         task_role: str = "user",
-        task_inputs: dict = {},
+        task_inputs: Optional[dict] = None,
         task_prompt: Optional[str] = None,
     ) -> list[dict]:
         """Create a message payload from system and task prompts."""
+        if system_inputs is None:
+            system_inputs = {}
+        if task_inputs is None:
+            task_inputs = {}
         if system_prompt_override:
             system_prompt = system_prompt_override
         else:

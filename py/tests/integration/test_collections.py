@@ -22,9 +22,8 @@ def test_document_2(client: R2RClient):
 
 
 def test_create_collection(client: R2RClient):
-    collection_id = client.collections.create(
-        name="Test Collection Creation", description="Desc"
-    ).results.id
+    collection_id = client.collections.create(name="Test Collection Creation",
+                                              description="Desc").results.id
     assert collection_id is not None, "No collection_id returned"
 
     # Cleanup
@@ -39,11 +38,9 @@ def test_list_collections(client: R2RClient, test_collection):
 def test_retrieve_collection(client: R2RClient, test_collection):
     # Retrieve the collection just created
     retrieved = client.collections.retrieve(
-        test_collection["collection_id"]
-    ).results
-    assert (
-        retrieved.id == test_collection["collection_id"]
-    ), "Retrieved wrong collection ID"
+        test_collection["collection_id"]).results
+    assert retrieved.id == test_collection["collection_id"], (
+        "Retrieved wrong collection ID")
 
 
 def test_update_collection(client: R2RClient, test_collection):
@@ -55,49 +52,38 @@ def test_update_collection(client: R2RClient, test_collection):
         description=updated_desc,
     ).results
     assert updated.name == updated_name, "Collection name not updated"
-    assert (
-        updated.description == updated_desc
-    ), "Collection description not updated"
+    assert updated.description == updated_desc, (
+        "Collection description not updated")
 
 
-def test_add_document_to_collection(
-    client: R2RClient, test_collection, test_document_2
-):
-    client.collections.add_document(
-        test_collection["collection_id"], str(test_document_2)
-    )
+def test_add_document_to_collection(client: R2RClient, test_collection,
+                                    test_document_2):
+    client.collections.add_document(test_collection["collection_id"],
+                                    str(test_document_2))
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    ).results
+        test_collection["collection_id"]).results
     found = any(
-        str(doc.id) == str(test_document_2) for doc in docs_in_collection
-    )
+        str(doc.id) == str(test_document_2) for doc in docs_in_collection)
     assert found, "Added document not found in collection"
 
 
-def test_list_documents_in_collection(
-    client: R2RClient, test_collection, test_document
-):
+def test_list_documents_in_collection(client: R2RClient, test_collection,
+                                      test_document):
     # Document should be in the collection already from previous test
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    ).results
+        test_collection["collection_id"]).results
     found = any(
-        str(doc.id) == str(test_document) for doc in docs_in_collection
-    )
+        str(doc.id) == str(test_document) for doc in docs_in_collection)
     assert found, "Expected document not found in collection"
 
 
-def test_remove_document_from_collection(
-    client: R2RClient, test_collection, test_document
-):
+def test_remove_document_from_collection(client: R2RClient, test_collection,
+                                         test_document):
     # Remove the document from the collection
-    client.collections.remove_document(
-        test_collection["collection_id"], test_document
-    )
+    client.collections.remove_document(test_collection["collection_id"],
+                                       test_document)
     docs_in_collection = client.collections.list_documents(
-        test_collection["collection_id"]
-    ).results
+        test_collection["collection_id"]).results
     found = any(str(doc.id) == test_document for doc in docs_in_collection)
     assert not found, "Document still present in collection after removal"
 
@@ -111,8 +97,7 @@ def test_remove_non_member_user_from_collection(mutable_client: R2RClient):
 
     # Create a collection by the same user
     collection_id = mutable_client.collections.create(
-        name="User Owned Collection"
-    ).results.id
+        name="User Owned Collection").results.id
     mutable_client.users.logout()
 
     # Create another user who will not be added to the collection
@@ -146,9 +131,8 @@ def test_delete_collection(client: R2RClient):
     # Verify retrieval fails
     with pytest.raises(R2RException) as exc_info:
         client.collections.retrieve(coll_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code retrieving deleted collection"
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code retrieving deleted collection")
 
 
 def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
@@ -164,12 +148,10 @@ def test_add_user_to_non_existent_collection(mutable_client: R2RClient):
     # (Assumes superuser credentials are already in the client fixture)
     fake_collection_id = str(uuid.uuid4())  # Non-existent collection ID
     with pytest.raises(R2RException) as exc_info:
-        result = mutable_client.collections.add_user(
-            fake_collection_id, user_id
-        )
-    assert (
-        exc_info.value.status_code == 404
-    ), "Wrong error code for non-existent collection"
+        result = mutable_client.collections.add_user(fake_collection_id,
+                                                     user_id)
+    assert exc_info.value.status_code == 404, (
+        "Wrong error code for non-existent collection")
 
 
 def test_create_collection_without_name(client: R2RClient):
@@ -188,16 +170,14 @@ def test_filter_collections_by_non_existent_id(client: R2RClient):
     # Filter collections by an ID that does not exist
     random_id = str(uuid.uuid4())
     resp = client.collections.list(ids=[random_id])
-    assert (
-        len(resp.results) == 0
-    ), "Expected no collections for a non-existent ID"
+    assert len(
+        resp.results) == 0, ("Expected no collections for a non-existent ID")
 
 
 def test_list_documents_in_empty_collection(client: R2RClient):
     # Create a new collection with no documents
     empty_coll_id = client.collections.create(
-        name="Empty Collection"
-    ).results.id
+        name="Empty Collection").results.id
 
     docs = client.collections.list_documents(empty_coll_id).results
     assert len(docs) == 0, "Expected no documents in a new empty collection"
@@ -239,9 +219,8 @@ def test_delete_non_existent_collection(client: R2RClient):
     fake_collection_id = str(uuid.uuid4())
     with pytest.raises(R2RException) as exc_info:
         client.collections.delete(fake_collection_id)
-    assert (
-        exc_info.value.status_code == 404
-    ), "Expected 404 when deleting non-existent collection"
+    assert exc_info.value.status_code == 404, (
+        "Expected 404 when deleting non-existent collection")
 
 
 def test_retrieve_collection_by_name(client: R2RClient):
@@ -250,19 +229,16 @@ def test_retrieve_collection_by_name(client: R2RClient):
 
     # Create a collection with the unique name
     created_resp = client.collections.create(
-        name=unique_name, description="Collection for retrieval by name test"
-    )
+        name=unique_name, description="Collection for retrieval by name test")
     created = created_resp.results
-    assert (
-        created.id is not None
-    ), "Creation did not return a valid collection ID"
+    assert created.id is not None, (
+        "Creation did not return a valid collection ID")
 
     # Retrieve the collection by its name
     retrieved_resp = client.collections.retrieve_by_name(unique_name)
     retrieved = retrieved_resp.results
-    assert (
-        retrieved.id == created.id
-    ), "Retrieved collection does not match the created collection"
+    assert retrieved.id == created.id, (
+        "Retrieved collection does not match the created collection")
 
     # Cleanup: Delete the created collection
     client.collections.delete(created.id)
