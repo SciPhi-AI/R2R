@@ -923,16 +923,16 @@ wheels = [
 
 [[package]]
 name = "fastapi"
-version = "0.114.2"
+version = "0.115.11"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "starlette" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d6/c7/cf41c991257e9babc429ae0c2c48f5315154e8b94c8ba475dc0247718741/fastapi-0.114.2.tar.gz", hash = "sha256:0adb148b62edb09e8c6eeefa3ea934e8f276dabc038c5a82989ea6346050c3da", size = 295481 }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/28/c5d26e5860df807241909a961a37d45e10533acef95fc368066c7dd186cd/fastapi-0.115.11.tar.gz", hash = "sha256:cc81f03f688678b92600a65a5e618b93592c65005db37157147204d8924bf94f", size = 294441 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b6/2b/15ac29e524bf0dc8fcf8e90364c05709b3d4fa810a86421c6924ea18cccd/fastapi-0.114.2-py3-none-any.whl", hash = "sha256:44474a22913057b1acb973ab90f4b671ba5200482e7622816d79105dcece1ac5", size = 94049 },
+    { url = "https://files.pythonhosted.org/packages/b3/5d/4d8bbb94f0dbc22732350c06965e40740f4a92ca560e90bb566f4f73af41/fastapi-0.115.11-py3-none-any.whl", hash = "sha256:32e1541b7b74602e4ef4a0260ecaf3aadf9d4f19590bba3e1bf2ac4666aa2c64", size = 94926 },
 ]
 
 [[package]]
@@ -942,6 +942,22 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/dc/9c/0b15fb47b464e1b663b1acd1253a062aa5feecb07d4e597daea542ebd2b5/filelock-3.17.0.tar.gz", hash = "sha256:ee4e77401ef576ebb38cd7f13b9b28893194acc20a8e68e18730ba9c0e54660e", size = 18027 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/89/ec/00d68c4ddfedfe64159999e5f8a98fb8442729a63e2077eb9dcd89623d27/filelock-3.17.0-py3-none-any.whl", hash = "sha256:533dc2f7ba78dc2f0f531fc6c4940addf7b70a481e269a5a3b93be94ffbe8338", size = 16164 },
+]
+
+[[package]]
+name = "firecrawl-py"
+version = "1.13.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "nest-asyncio" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "requests" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b9/cd/c834f5dc51e82beba8ca752446446a097bd68fc5765f9e697581b5238d54/firecrawl_py-1.13.5.tar.gz", hash = "sha256:dd57d5270801222fcdeb019ac7a35dfef16f9a8eb19de446a9666b008473a6c2", size = 20915 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/b9/08d730e7a844ee723acbfb14430f8dfa4386b18c086b7d23fcbe7a451568/firecrawl_py-1.13.5-py3-none-any.whl", hash = "sha256:dfb69644da1542d24d90e34a36e3b5733764121f2c992245c869513e2e184547", size = 19837 },
 ]
 
 [[package]]
@@ -1573,6 +1589,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/18/5b/14f93b359b3c29673d5d282bc3a6edb3a629879854a77541841aba37607f/lxml-5.3.1-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:422c179022ecdedbe58b0e242607198580804253da220e9454ffe848daa1cfd2", size = 4236731 },
     { url = "https://files.pythonhosted.org/packages/f6/08/8471de65f3dee70a3a50e7082fd7409f0ac7a1ace777c13fca4aea1a5759/lxml-5.3.1-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:524ccfded8989a6595dbdda80d779fb977dbc9a7bc458864fc9a0c2fc15dc877", size = 4373119 },
     { url = "https://files.pythonhosted.org/packages/83/29/00b9b0322a473aee6cda87473401c9abb19506cd650cc69a8aa38277ea74/lxml-5.3.1-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:48fd46bf7155def2e15287c6f2b133a2f78e2d22cdf55647269977b873c65499", size = 3487718 },
+]
+
+[[package]]
+name = "mailersend"
+version = "0.5.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d5/df/279929bfa8239799b16cdf39045d0ff5598cedcc4ff81d420b71cec4f069/mailersend-0.5.8.tar.gz", hash = "sha256:c96d196278d5771346563d56b54b83b9290ca32768a451aed8f3dabd6b0ae1b8", size = 22214 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/e9/2f1b8da6049569aa3b1fe4a0e1c4f250d197c9c55aba45adb641684ff087/mailersend-0.5.8-py3-none-any.whl", hash = "sha256:24292c10ad180570ed76e90b4e7daede5d9cd98713860206a540f1ff900258fe", size = 26370 },
 ]
 
 [[package]]
@@ -2900,7 +2928,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.4.2"
+version = "3.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -2936,6 +2964,7 @@ core = [
     { name = "colorlog" },
     { name = "docutils" },
     { name = "epub" },
+    { name = "firecrawl-py" },
     { name = "fsspec" },
     { name = "future" },
     { name = "google-auth" },
@@ -2944,6 +2973,7 @@ core = [
     { name = "gunicorn" },
     { name = "hatchet-sdk" },
     { name = "litellm" },
+    { name = "mailersend" },
     { name = "markdown" },
     { name = "msg-parser" },
     { name = "networkx" },
@@ -2977,8 +3007,6 @@ core = [
     { name = "vecs" },
     { name = "xlrd" },
 ]
-
-[package.dev-dependencies]
 dev = [
     { name = "colorama" },
     { name = "mypy" },
@@ -3009,10 +3037,12 @@ requires-dist = [
     { name = "bcrypt", marker = "extra == 'core'", specifier = ">=4.1.3,<5.0.0" },
     { name = "beautifulsoup4", marker = "extra == 'core'", specifier = ">=4.12.3,<5.0.0" },
     { name = "boto3", marker = "extra == 'core'", specifier = ">=1.35.17,<2.0.0" },
+    { name = "colorama", marker = "extra == 'dev'", specifier = ">=0.4.6,<0.5.0" },
     { name = "colorlog", marker = "extra == 'core'", specifier = ">=6.9.0,<7.0.0" },
     { name = "docutils", marker = "extra == 'core'", specifier = ">=0.21.2,<0.22.0" },
     { name = "epub", marker = "extra == 'core'", specifier = ">=0.5.2,<0.6.0" },
-    { name = "fastapi", specifier = ">=0.114.0,<0.115.0" },
+    { name = "fastapi", specifier = ">=0.115.11,<0.116.0" },
+    { name = "firecrawl-py", marker = "extra == 'core'", specifier = ">=1.13.5" },
     { name = "fsspec", marker = "extra == 'core'", specifier = ">=2024.6.0,<2025.0.0" },
     { name = "future", marker = "extra == 'core'", specifier = ">=1.0.0,<2.0.0" },
     { name = "google-auth", marker = "extra == 'core'", specifier = ">=2.37.0,<3.0.0" },
@@ -3022,8 +3052,10 @@ requires-dist = [
     { name = "hatchet-sdk", marker = "extra == 'core'", specifier = "==0.47.0" },
     { name = "httpx", specifier = ">=0.27.0,<0.28.0" },
     { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<2.0.0" },
+    { name = "mailersend", marker = "extra == 'core'", specifier = ">=0.5.6,<0.6.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
     { name = "msg-parser", marker = "extra == 'core'", specifier = ">=1.2.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.5.1,<2.0.0" },
     { name = "networkx", marker = "extra == 'core'", specifier = ">=3.3,<4.0" },
     { name = "numpy", marker = "extra == 'core'", specifier = ">=1.22.4,<1.29.0" },
     { name = "olefile", marker = "extra == 'core'", specifier = ">=0.47,<0.48" },
@@ -3035,6 +3067,7 @@ requires-dist = [
     { name = "pillow", marker = "extra == 'core'", specifier = ">=11.1.0,<12.0.0" },
     { name = "pillow-heif", marker = "extra == 'core'", specifier = ">=0.21.0,<0.22.0" },
     { name = "posthog", specifier = ">=3.5.0,<4.0.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=2.9,<3.0" },
     { name = "psutil", marker = "extra == 'core'", specifier = ">=6.0.0,<7.0.0" },
     { name = "psycopg-binary", specifier = ">=3.2.3,<4.0.0" },
     { name = "pydantic", specifier = ">=2.10.6" },
@@ -3043,6 +3076,13 @@ requires-dist = [
     { name = "pynacl", marker = "extra == 'core'", specifier = ">=1.5.0,<2.0.0" },
     { name = "pypdf", marker = "extra == 'core'", specifier = ">=4.2.0,<5.0.0" },
     { name = "pypdf2", marker = "extra == 'core'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2.0,<9.0.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23.6,<0.24.0" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0,<6.0.0" },
+    { name = "pytest-dependency", marker = "extra == 'dev'", specifier = ">=0.6.0,<0.7.0" },
+    { name = "pytest-html", marker = "extra == 'dev'", specifier = ">=4.1.1,<5.0.0" },
+    { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0,<4.0.0" },
+    { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.6.1,<4.0.0" },
     { name = "python-docx", marker = "extra == 'core'", specifier = ">=1.1.0,<2.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.1,<2.0.0" },
     { name = "python-json-logger", specifier = ">=3.2.1" },
@@ -3050,6 +3090,7 @@ requires-dist = [
     { name = "python-pptx", marker = "extra == 'core'", specifier = ">=1.0.1,<2.0.0" },
     { name = "pyyaml", marker = "extra == 'core'", specifier = ">=6.0.1,<7.0.0" },
     { name = "requests", specifier = ">=2.31.0,<3.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9.6,<0.10.0" },
     { name = "sendgrid", marker = "extra == 'core'", specifier = ">=6.11.0,<7.0.0" },
     { name = "sentry-sdk", marker = "extra == 'core'", specifier = ">=2.20.0,<3.0.0" },
     { name = "sqlalchemy", marker = "extra == 'core'", specifier = ">=2.0.30,<3.0.0" },
@@ -3060,29 +3101,14 @@ requires-dist = [
     { name = "toml", specifier = ">=0.10.2,<0.11.0" },
     { name = "types-aiofiles", specifier = ">=24.1.0.20240626,<25.0.0" },
     { name = "types-requests", specifier = ">=2.31.0,<3.0.0" },
+    { name = "types-toml", marker = "extra == 'dev'", specifier = ">=0.10.8,<0.11.0" },
     { name = "typing-extensions", specifier = ">=4.12.2,<5.0.0" },
     { name = "unstructured-client", marker = "extra == 'core'", specifier = "==0.25.5" },
     { name = "uvicorn", marker = "extra == 'core'", specifier = ">=0.27.0.post1,<0.28.0" },
     { name = "vecs", marker = "extra == 'core'", specifier = ">=0.4.0,<0.5.0" },
     { name = "xlrd", marker = "extra == 'core'", specifier = ">=2.0.1,<3.0.0" },
 ]
-provides-extras = ["core"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "colorama", specifier = ">=0.4.6,<0.5.0" },
-    { name = "mypy", specifier = ">=1.5.1,<2.0.0" },
-    { name = "pre-commit", specifier = ">=2.9,<3.0" },
-    { name = "pytest", specifier = ">=8.2.0,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23.6,<0.24.0" },
-    { name = "pytest-cov", specifier = ">=5.0.0,<6.0.0" },
-    { name = "pytest-dependency", specifier = ">=0.6.0,<0.7.0" },
-    { name = "pytest-html", specifier = ">=4.1.1,<5.0.0" },
-    { name = "pytest-mock", specifier = ">=3.14.0,<4.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "ruff", specifier = ">=0.9.6,<0.10.0" },
-    { name = "types-toml", specifier = ">=0.10.8,<0.11.0" },
-]
+provides-extras = ["core", "dev"]
 
 [[package]]
 name = "realtime"
@@ -3422,14 +3448,14 @@ sdist = { url = "https://files.pythonhosted.org/packages/a3/f8/a6091be6a60ed4df9
 
 [[package]]
 name = "starlette"
-version = "0.38.6"
+version = "0.46.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/42/b4/e25c3b688ef703d85e55017c6edd0cbf38e5770ab748234363d54ff0251a/starlette-0.38.6.tar.gz", hash = "sha256:863a1588f5574e70a821dadefb41e4881ea451a47a3cd1b4df359d4ffefe5ead", size = 2569491 }
+sdist = { url = "https://files.pythonhosted.org/packages/04/1b/52b27f2e13ceedc79a908e29eac426a63465a1a01248e5f24aa36a62aeb3/starlette-0.46.1.tar.gz", hash = "sha256:3c88d58ee4bd1bb807c0d1acb381838afc7752f9ddaec81bbe4383611d833230", size = 2580102 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/9c/93f7bc03ff03199074e81974cc148908ead60dcf189f68ba1761a0ee35cf/starlette-0.38.6-py3-none-any.whl", hash = "sha256:4517a1409e2e73ee4951214ba012052b9e16f60e90d73cfb06192c19203bbb05", size = 71451 },
+    { url = "https://files.pythonhosted.org/packages/a0/4b/528ccf7a982216885a1ff4908e886b8fb5f19862d1962f56a3fce2435a70/starlette-0.46.1-py3-none-any.whl", hash = "sha256:77c74ed9d2720138b25875133f3a2dae6d854af2ec37dceb56aef370c1d8a227", size = 71995 },
 ]
 
 [[package]]
