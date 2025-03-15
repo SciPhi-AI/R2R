@@ -166,7 +166,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 if message.tool_calls:
                     assistant_msg = Message(
                         role="assistant",
-                        content=None,
+                        content="",
                         tool_calls=[msg.dict() for msg in message.tool_calls],
                     )
                     await self.conversation.add_message(assistant_msg)
