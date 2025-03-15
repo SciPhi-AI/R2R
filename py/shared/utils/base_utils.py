@@ -89,11 +89,12 @@ def format_search_results_for_llm(
             doc_id = doc_result.id
             summary = doc_result.summary
 
-            lines.append(f"Document ID: {id_to_shorthand(doc_id)}")
+            lines.append(f"Full Document ID: {doc_id}")
+            lines.append(f"Shortened Document ID: {id_to_shorthand(doc_id)}")
             lines.append(f"Document Title: {doc_title}")
             if summary:
                 lines.append(f"Summary: {summary}")
-            
+
             if doc_result.chunks:
                 # Then each chunk inside:
                 for chunk in doc_result.chunks:

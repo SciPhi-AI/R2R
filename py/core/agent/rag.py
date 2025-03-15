@@ -167,6 +167,7 @@ class RAGAgentMixin:
                     "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
                     "For instance, a single document can be returned with a filter like so:"
                     "{'document_id': {'$eq': '...'}}."
+                    "Be sure to use the full 32 character hexidecimal document ID, and not the shortened 8 character ID."
                 ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,

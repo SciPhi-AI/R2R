@@ -7,8 +7,8 @@ from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field
 
-from .document import DocumentResponse
 from .base import R2RSerializable
+from .document import DocumentResponse
 from .llm import GenerationConfig
 from .vector import IndexMeasure
 
@@ -250,6 +250,7 @@ class WebSearchResult(R2RSerializable):
             related_searches=related,
             people_also_ask=paa,
         )
+
 
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""

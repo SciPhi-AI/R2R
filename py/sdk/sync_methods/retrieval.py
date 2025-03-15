@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any, Generator, Optional, Union
+from typing import Any, Generator, Optional
 
 from core.base.api.models import (
     AgentEvent,
@@ -231,7 +231,7 @@ def agent_arg_parser(
     search_settings: Optional[dict | SearchSettings] = None,
     task_prompt: Optional[str] = None,
     include_title_if_available: Optional[bool] = True,
-    conversation_id: Optional[Union[str, uuid.UUID]] = None,
+    conversation_id: Optional[str | uuid.UUID] = None,
     max_tool_context_length: Optional[int] = None,
     use_system_context: Optional[bool] = True,
     rag_tools: Optional[list[str]] = None,
@@ -433,7 +433,7 @@ class RetrievalSDK:
         search_settings: Optional[dict | SearchSettings] = None,
         task_prompt: Optional[str] = None,
         include_title_if_available: Optional[bool] = True,
-        conversation_id: Optional[Union[str, uuid.UUID]] = None,
+        conversation_id: Optional[str | uuid.UUID] = None,
         max_tool_context_length: Optional[int] = None,
         use_system_context: Optional[bool] = True,
         # Tool configurations

@@ -927,18 +927,19 @@ class RetrievalService(Service):
         settings: SearchSettings,
         query_embedding: Optional[list[float]] = None,
     ) -> list[DocumentResponse]:
-
         if query_embedding is None:
             query_embedding = (
                 await self.providers.completion_embedding.async_get_embedding(
                     query
                 )
             )
-        result =             await self.providers.database.documents_handler.search_documents(
+        result = (
+            await self.providers.database.documents_handler.search_documents(
                 query_text=query,
                 settings=settings,
                 query_embedding=query_embedding,
             )
+        )
         return result
 
     @telemetry_event("Completion")
