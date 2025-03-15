@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
-    ContextDocumentResult,
     GraphSearchResult,
     LLMChatCompletion,
     Message,
@@ -35,7 +34,6 @@ class Citation(R2RSerializable):
             ChunkSearchResult,
             GraphSearchResult,
             WebPageSearchResult,
-            ContextDocumentResult,
         ]
     ] = Field(
         ..., description="The object payload and it's corresponding type"
@@ -120,7 +118,7 @@ class RAGResponse(R2RSerializable):
                             ],
                         }
                     ],
-                    "context_document_results": [
+                    "document_search_results": [
                         {
                             "document": {
                                 "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
@@ -300,7 +298,7 @@ class AgentResponse(R2RSerializable):
                                         ],
                                     }
                                 ],
-                                "context_document_results": [
+                                "document_search_results": [
                                     {
                                         "document": {
                                             "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",

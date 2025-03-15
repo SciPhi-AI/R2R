@@ -12,7 +12,7 @@ default_max_upload_size = 214748364800
 fast_llm = "openai/gpt-4o-mini"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "openai/gpt-4o"
+quality_llm = "anthropic/claude-3-7-sonnet-20250219"
 
 # LLM used for ingesting visual inputs
 vlm = "openai/gpt-4o"

@@ -36,7 +36,7 @@ def format_search_results_for_llm(
 ) -> str:
     """
     Instead of resetting 'source_counter' to 1, we:
-     - For each chunk / graph / web / context_doc in `results`,
+     - For each chunk / graph / web / doc in `results`,
      - Find the aggregator index from the collector,
      - Print 'Source [X]:' with that aggregator index.
     """
@@ -82,24 +82,24 @@ def format_search_results_for_llm(
             lines.append(f"Snippet: {w.snippet}")
 
     # 4) Local context docs
-    if results.context_document_results:
+    if results.document_search_results:
         lines.append("Local Context Documents:")
-        for doc_result in results.context_document_results:
-            doc_data = doc_result.document
-            doc_title = doc_data.get("title", "Untitled Document")
-            doc_id = doc_data.get("id", "N/A")
-            summary = doc_data.get("summary", "")
+        for doc_result in results.document_search_results:
+            doc_title = doc_result.title or "Untitled Document"
+            doc_id = doc_result.id
+            summary = doc_result.summary
 
             lines.append(f"Document ID: {id_to_shorthand(doc_id)}")
             lines.append(f"Document Title: {doc_title}")
             if summary:
                 lines.append(f"Summary: {summary}")
-
-            # Then each chunk inside:
-            for chunk in doc_result.chunks:
-                lines.append(
-                    f"\nChunk ID {id_to_shorthand(chunk.id)}:\n{chunk.text}"
-                )
+            
+            if doc_result.chunks:
+                # Then each chunk inside:
+                for chunk in doc_result.chunks:
+                    lines.append(
+                        f"\nChunk ID {id_to_shorthand(chunk['id'])}:\n{chunk['text']}"
+                    )
 
     result = "\n".join(lines)
     return result
@@ -318,7 +318,7 @@ class SearchResultsCollector:
     def add_aggregate_result(self, agg):
         """
         Flatten the chunk_search_results, graph_search_results, web_search_results,
-        and context_document_results into the collector.
+        and document_search_results into the collector.
         """
         if hasattr(agg, "chunk_search_results") and agg.chunk_search_results:
             for c in agg.chunk_search_results:
@@ -333,11 +333,11 @@ class SearchResultsCollector:
                 self._results_in_order.append(("web", w))
 
         if (
-            hasattr(agg, "context_document_results")
-            and agg.context_document_results
+            hasattr(agg, "document_search_results")
+            and agg.document_search_results
         ):
-            for cd in agg.context_document_results:
-                self._results_in_order.append(("context_doc", cd))
+            for cd in agg.document_search_results:
+                self._results_in_order.append(("doc", cd))
 
     def add_result(self, result_obj, source_type=None):
         """
@@ -385,7 +385,7 @@ class SearchResultsCollector:
 
             # Context document pattern
             if "document" in obj and "chunks" in obj:
-                return "context_doc"
+                return "doc"
 
             # Check for explicit type indicator
             if "type" in obj:
@@ -397,7 +397,7 @@ class SearchResultsCollector:
                 if "chunk" in type_val:
                     return "chunk"
                 if "document" in type_val:
-                    return "context_doc"
+                    return "doc"
 
         # Handle object attributes for OOP-style results
         if hasattr(obj, "result_type"):
@@ -414,7 +414,7 @@ class SearchResultsCollector:
         if "Web" in class_name:
             return "web"
         if "Document" in class_name:
-            return "context_doc"
+            return "doc"
 
         # Check for object attribute patterns
         if hasattr(obj, "content"):
@@ -441,7 +441,7 @@ class SearchResultsCollector:
             return "web"
 
         if hasattr(obj, "document") and hasattr(obj, "chunks"):
-            return "context_doc"
+            return "doc"
 
         # Default when type can't be determined
         return "unknown"
@@ -460,8 +460,8 @@ class SearchResultsCollector:
                 if does_match:
                     return result_obj
 
-            # Special handling for context_doc with chunks
-            elif source_type == "context_doc":
+            # Special handling for doc with chunks
+            elif source_type == "doc":
                 chunks = getattr(result_obj, "chunks", [])
                 for chunk in chunks:
                     chunk_id = getattr(chunk, "id", None)
