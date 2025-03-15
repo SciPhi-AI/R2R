@@ -673,7 +673,7 @@ class R2RStreamingAgent(R2RAgent):
         """Add a message with tool calls to the conversation"""
         assistant_msg = Message(
             role="assistant",
-            content=partial_text_buffer or None,
+            content=partial_text_buffer or "",
             tool_calls=[
                 {
                     "id": c["tool_call_id"],
