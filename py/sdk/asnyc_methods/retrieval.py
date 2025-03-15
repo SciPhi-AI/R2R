@@ -280,7 +280,7 @@ class RetrievalSDK:
             search_settings (Optional[dict | SearchSettings]): The search configuration object.
             task_prompt (Optional[str]): Optional custom prompt to override default.
             include_title_if_available (Optional[bool]): Include document titles from search results.
-            conversation_id (Optional[Union[str, uuid.UUID]]): ID of the conversation.
+            conversation_id (Optional[str | uuid.UUID]): ID of the conversation.
             tools (Optional[list[str]]): List of tools to execute (deprecated).
             rag_tools (Optional[list[str]]): List of tools to enable for RAG mode.
             research_tools (Optional[list[str]]): List of tools to enable for Research mode.

@@ -341,6 +341,11 @@ class RAGAgentMixin:
             )
 
         # call the doc-level search
+        """
+        FIXME: This is going to fail, as it requires an embedding NOT a query.
+        I've moved 'search_settings' to 'settings' which had been causing a silent failure
+        causing null content in the Message object.
+        """
         doc_results = await self.file_search_method(
             query=query,
             settings=self.search_settings,

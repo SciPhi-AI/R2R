@@ -467,7 +467,7 @@ class RetrievalSDK:
             search_settings (Optional[dict | SearchSettings]): Vector search settings.
             task_prompt (Optional[str]): Task prompt override.
             include_title_if_available (Optional[bool]): Include the title if available.
-            conversation_id (Optional[Union[str, uuid.UUID]]): ID of the conversation for maintaining context.
+            conversation_id (Optional[str | uuid.UUID]): ID of the conversation for maintaining context.
             max_tool_context_length (Optional[int]): Maximum context length for tool replies.
             use_system_context (Optional[bool]): Whether to use system context in the prompt.
             rag_tools (Optional[list[str]]): List of tools to enable for RAG mode.

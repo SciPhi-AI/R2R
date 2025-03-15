@@ -30,7 +30,11 @@ class Citation(R2RSerializable):
         description="The type of object, e.g. `citation`",
     )
     payload: (
-        ChunkSearchResult | GraphSearchResult | WebPageSearchResult | None
+        ChunkSearchResult
+        | GraphSearchResult
+        | WebPageSearchResult
+        | DocumentResponse
+        | None
     ) = Field(
         ..., description="The object payload and it's corresponding type"
     )

@@ -1,4 +1,3 @@
-# type: ignore
 import asyncio
 import json
 import logging
@@ -83,10 +82,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 generation_config,
             )
 
-            # Extract the summary text
-            summary = response.choices[0].message.content
-
-            return summary
+            return response.choices[0].message.content
         except Exception as e:
             logger.error(f"Error generating LLM summary: {str(e)}")
             # Fall back to basic summary if LLM generation fails
@@ -170,7 +166,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 if message.tool_calls:
                     assistant_msg = Message(
                         role="assistant",
-                        content=None,
+                        content="",
                         tool_calls=[msg.dict() for msg in message.tool_calls],
                     )
                     await self.conversation.add_message(assistant_msg)
@@ -246,6 +242,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                                 Message(
                                     role="assistant",
                                     structured_content=tool_uses,
+                                    content="",
                                 )
                             )
                     else:
@@ -383,7 +380,7 @@ class R2RStreamingAgent(R2RAgent):
                 await self.conversation.add_message(m)
 
         # Track all citations emitted during streaming for final persistence
-        self.streaming_citations = []
+        self.streaming_citations: list[dict] = []
 
         async def sse_generator() -> AsyncGenerator[str, None]:
             announced_short_ids = set()
@@ -677,7 +674,7 @@ class R2RStreamingAgent(R2RAgent):
         """Add a message with tool calls to the conversation"""
         assistant_msg = Message(
             role="assistant",
-            content=partial_text_buffer or None,
+            content=partial_text_buffer or "",
             tool_calls=[
                 {
                     "id": c["tool_call_id"],

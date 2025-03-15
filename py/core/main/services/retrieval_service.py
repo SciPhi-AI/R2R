@@ -1,4 +1,3 @@
-# type: ignore
 import asyncio
 import json
 import logging
@@ -10,6 +9,7 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from core import (
+    Citation,
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RStreamingResearchAgent,
@@ -364,8 +364,11 @@ class RetrievalService(Service):
         fused_chunk_results = self._reciprocal_rank_fusion_chunks(  # type: ignore
             chunk_results_list  # type: ignore
         )
-        fused_graph_results = self._reciprocal_rank_fusion_graphs(  # type: ignore
-            graph_results_list
+        filtered_graph_results = [
+            results for results in graph_results_list if results is not None
+        ]
+        fused_graph_results = self._reciprocal_rank_fusion_graphs(
+            filtered_graph_results
         )
 
         # Optionally, after the RRF, you may want to do a final semantic re-rank
@@ -429,7 +432,11 @@ class RetrievalService(Service):
             messages=[{"role": "system", "content": prompt}],
             generation_config=gen_config,
         )
-        raw_text = response.choices[0].message.content.strip()
+        raw_text = (
+            response.choices[0].message.content.strip()
+            if response.choices[0].message.content is not None
+            else ""
+        )
 
         # Suppose each line is a sub-query
         lines = [line.strip() for line in raw_text.split("\n") if line.strip()]
@@ -470,13 +477,13 @@ class RetrievalService(Service):
                 # RRF scoring
                 # score = sum(1 / (k + rank)) for each sub-query ranking
                 # We'll accumulate it.
-                existing_score = score_map.get(c_id, 0.0)
+                existing_score = score_map.get(str(c_id), 0.0)
                 new_score = existing_score + 1.0 / (k + rank)
-                score_map[c_id] = new_score
+                score_map[str(c_id)] = new_score
 
                 # Keep a reference to chunk
                 if c_id not in chunk_map:
-                    chunk_map[c_id] = chunk_result
+                    chunk_map[str(c_id)] = chunk_result
 
         # Now sort by final score
         fused_items = sorted(
@@ -485,9 +492,9 @@ class RetrievalService(Service):
 
         # Rebuild the final list of chunk results with new 'score'
         fused_chunks = []
-        for c_id, agg_score in fused_items:
+        for c_id, agg_score in fused_items:  # type: ignore
             # copy the chunk
-            c = chunk_map[c_id]
+            c = chunk_map[str(c_id)]
             # Optionally store the RRF score if you want
             c.score = agg_score
             fused_chunks.append(c)
@@ -503,7 +510,7 @@ class RetrievalService(Service):
         if not list_of_rankings:
             return []
 
-        score_map = {}
+        score_map: dict[str, float] = {}
         graph_map = {}
 
         for ranking_list in list_of_rankings:
@@ -668,6 +675,8 @@ class RetrievalService(Service):
             search_settings.use_fulltext_search
             and search_settings.use_semantic_search
         ) or search_settings.use_hybrid_search:
+            if query_vector is None:
+                raise ValueError("Hybrid search requires a precomputed vector")
             raw_results = (
                 await self.providers.database.chunks_handler.hybrid_search(
                     query_vector=query_vector,
@@ -683,6 +692,10 @@ class RetrievalService(Service):
                 )
             )
         elif search_settings.use_semantic_search:
+            if query_vector is None:
+                raise ValueError(
+                    "Semantic search requires a precomputed vector"
+                )
             raw_results = (
                 await self.providers.database.chunks_handler.semantic_search(
                     query_vector=query_vector,
@@ -723,7 +736,8 @@ class RetrievalService(Service):
         • search entities, relationships, communities
         • return results
         """
-        results = []
+        results: list[GraphSearchResult] = []
+
         if not search_settings.graph_settings.enabled:
             return results
 
@@ -774,7 +788,7 @@ class RetrievalService(Service):
                             "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -826,7 +840,7 @@ class RetrievalService(Service):
                             "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -870,7 +884,7 @@ class RetrievalService(Service):
                             "associated_query": query_text,
                         }
                         if search_settings.include_metadatas
-                        else None
+                        else {}
                     ),
                 )
             )
@@ -914,11 +928,11 @@ class RetrievalService(Service):
         #
         # So we split by double-newline or some pattern:
         raw_text = response.choices[0].message.content
-        hypothetical_docs = [
-            chunk.strip() for chunk in raw_text.split("\n\n") if chunk.strip()
+        return [
+            chunk.strip()
+            for chunk in (raw_text or "").split("\n\n")
+            if chunk.strip()
         ]
-
-        return hypothetical_docs
 
     @telemetry_event("SearchDocuments")
     async def search_documents(
@@ -951,7 +965,7 @@ class RetrievalService(Service):
         **kwargs,
     ):
         return await self.providers.llm.aget_completion(
-            [message.to_dict() for message in messages],
+            [message.to_dict() for message in messages],  # type: ignore
             generation_config,
             *args,
             **kwargs,
@@ -1036,7 +1050,7 @@ class RetrievalService(Service):
                 llm_text = response.choices[0].message.content
 
                 # (a) Extract short-ID references from final text
-                raw_sids = extract_citations(llm_text)
+                raw_sids = extract_citations(llm_text or "")
 
                 # (b) Possibly prune large content out of metadata
                 metadata = response.dict()
@@ -1045,20 +1059,20 @@ class RetrievalService(Service):
 
                 # (c) Build final RAGResponse
                 rag_resp = RAGResponse(
-                    generated_answer=llm_text,
+                    generated_answer=llm_text or "",
                     search_results=aggregated_results,
                     citations=[
-                        {
-                            "id": f"{sid}",
-                            "object": "citation",
-                            "payload": dump_obj(
+                        Citation(
+                            id=f"{sid}",
+                            object="citation",
+                            payload=dump_obj(  # type: ignore
                                 self._find_item_by_shortid(sid, collector)
                             ),
-                        }
+                        )
                         for sid in raw_sids
                     ],
                     metadata=metadata,
-                    completion=llm_text,
+                    completion=llm_text or "",
                 )
                 return rag_resp
 
@@ -1075,7 +1089,7 @@ class RetrievalService(Service):
                         set()
                     )  # keep track of which short IDs we’ve announced
                     partial_text_buffer = ""
-                    citations = []
+                    citations: list[dict] = []
 
                     # Begin streaming from the LLM
                     msg_stream = self.providers.llm.aget_completion_stream(
@@ -1126,11 +1140,17 @@ class RetrievalService(Service):
                                         """Create citation payload for a short ID"""
                                         # This will be overridden in RAG subclasses
                                         # check if as_dict is on payload
-                                        if hasattr(payload, "as_dict"):
+                                        if isinstance(
+                                            payload, dict
+                                        ) and hasattr(payload, "as_dict"):
                                             payload = payload.as_dict()
-                                        if hasattr(payload, "dict"):
+                                        if isinstance(
+                                            payload, dict
+                                        ) and hasattr(payload, "dict"):
                                             payload = payload.dict
-                                        if hasattr(payload, "to_dict"):
+                                        if isinstance(
+                                            payload, dict
+                                        ) and hasattr(payload, "to_dict"):
                                             payload = payload.to_dict()
 
                                         citation_payload = {
@@ -1424,6 +1444,12 @@ class RetrievalService(Service):
                 )
 
             # Create the agent using our factory
+            mode = mode or "rag"
+
+            for msg in messages:
+                if msg.content is None:
+                    msg.content = ""
+
             agent = AgentFactory.create_agent(
                 mode=mode,
                 database_provider=self.providers.database,
@@ -1505,6 +1531,16 @@ class RetrievalService(Service):
 
                 return stream_response()
             else:
+                for idx, msg in enumerate(messages):
+                    if msg.content is None:
+                        if (
+                            hasattr(msg, "structured_content")
+                            and msg.structured_content
+                        ):
+                            messages[idx].content = ""
+                        else:
+                            messages[idx].content = ""
+
                 # Non-streaming path
                 results = await agent.arun(
                     messages=messages,
@@ -1514,9 +1550,13 @@ class RetrievalService(Service):
 
                 # Process the agent results
                 if isinstance(results[-1], dict):
+                    if results[-1].get("content") is None:
+                        results[-1]["content"] = ""
                     assistant_message = Message(**results[-1])
                 elif isinstance(results[-1], Message):
                     assistant_message = results[-1]
+                    if assistant_message.content is None:
+                        assistant_message.content = ""
                 else:
                     assistant_message = Message(
                         role="assistant", content=str(results[-1])
@@ -1540,7 +1580,7 @@ class RetrievalService(Service):
                 )
 
                 # Process citations
-                short_ids = extract_citations(raw_text)
+                short_ids = extract_citations(raw_text or "")
                 final_citations = []
                 for sid in short_ids:
                     final_citations.append(
@@ -1557,7 +1597,7 @@ class RetrievalService(Service):
                 # Persist in conversation DB
                 await (
                     self.providers.database.conversations_handler.add_message(
-                        conversation_id=str(conversation_id),
+                        conversation_id=conversation_id,
                         content=assistant_message,
                         parent_id=message_id,
                         metadata={
@@ -1573,7 +1613,7 @@ class RetrievalService(Service):
                 if needs_conversation_name:
                     conversation_name = None
                     try:
-                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
+                        prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict() if message else {})}"
                         conversation_name = (
                             (
                                 await self.providers.llm.aget_completion(
@@ -1687,8 +1727,8 @@ class RetrievalService(Service):
         filters: dict[str, Any],
     ):
         ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and", None)
-        filter_starts_with_or = filters.get("$or", None)
+        filter_starts_with_and = filters.get("$and")
+        filter_starts_with_or = filters.get("$or")
         if filter_starts_with_and:
             try:
                 filter_starts_with_and_then_or = filter_starts_with_and[0][
@@ -1791,17 +1831,16 @@ class RetrievalService(Service):
             )
         else:
             prompt_name = "static_research_agent"
-            system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+            return await self.providers.database.prompts_handler.get_cached_prompt(
                 # We use custom tooling and a custom agent to handle gemini models
                 prompt_name,
                 inputs={
                     "date": date_str,
                 },
             )
-            return system_prompt
 
-        if "deepseek" in model or "gemini" in model:
-            prompt_name = prompt_name + "_xml_tooling"
+        if model is not None and ("deepseek" in model or "gemini" in model):
+            prompt_name = f"{prompt_name}_xml_tooling"
 
         if use_system_context:
             doc_context_str = await self._build_documents_context(
