@@ -1,7 +1,7 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
-const baseUrl = "http://0.0.0.0:7272";
+const baseUrl = "http://localhost:7272";
 
 const message = {
   role: "user" as const,
