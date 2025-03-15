@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -31,12 +31,10 @@ class Citation(R2RSerializable):
         description="The type of object, e.g. `citation`",
     )
     payload: Optional[
-        Union[
-            ChunkSearchResult,
-            GraphSearchResult,
-            WebPageSearchResult,
-            ContextDocumentResult,
-        ]
+        ChunkSearchResult
+        | GraphSearchResult
+        | WebPageSearchResult
+        | ContextDocumentResult
     ] = Field(
         ..., description="The object payload and it's corresponding type"
     )
@@ -445,28 +443,27 @@ class ThinkingEvent(SSEEventBase):
 
 
 # Create a union type for all RAG events
-RAGEvent = Union[
-    SearchResultsEvent,
-    MessageEvent,
-    CitationEvent,
-    FinalAnswerEvent,
-    UnknownEvent,
-    ToolCallEvent,
-    ToolResultEvent,
-    ToolResultData,
-    ToolResultEvent,
-]
+RAGEvent = (
+    SearchResultsEvent
+    | MessageEvent
+    | CitationEvent
+    | FinalAnswerEvent
+    | ToolCallEvent
+    | ToolResultEvent
+    | ToolResultData
+    | UnknownEvent
+)
 
-AgentEvent = Union[
-    ThinkingEvent,
-    SearchResultsEvent,
-    MessageEvent,
-    CitationEvent,
-    FinalAnswerEvent,
-    ToolCallEvent,
-    ToolResultEvent,
-    UnknownEvent,
-]
+AgentEvent = (
+    ThinkingEvent
+    | SearchResultsEvent
+    | MessageEvent
+    | CitationEvent
+    | FinalAnswerEvent
+    | ToolCallEvent
+    | ToolResultEvent
+    | UnknownEvent
+)
 
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses

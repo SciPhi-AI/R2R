@@ -12,7 +12,7 @@ repos:
     hooks:
       - id: check-typing-imports
         name: Check for Dict, List, or Union usage
-        entry: bash -c 'echo "Checking for typing imports..." && find . -name "*.py" | grep -v "/migrations/" | grep -v "/.venv/" | xargs grep -n "from typing.*import.*[^d]Dict\\|from typing.*import.*List" || exit 0 && echo "⚠️  Please import dict instead of Dict, list instead of List, and the logical OR operator" && exit 1'
+        entry: bash -c 'echo "Checking for typing imports..." && find . -name "*.py" | grep -v "/migrations/" | grep -v "/.venv/" | xargs grep -n "from typing.*import.*[^d]Dict\\|from typing.*import.*List\\|from typing.*import.*Union" || exit 0 && echo "⚠️  Please import dict instead of Dict, list instead of List, and the logical OR operator" && exit 1'
         language: system
         types: [python]
         pass_filenames: false
