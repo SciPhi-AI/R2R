@@ -265,7 +265,7 @@ class RAGAgentConfig(AgentConfig):
     rag_tools: list[str] = [
         "search_file_descriptions",
         "search_file_knowledge",
-        "content",
+        "get_file_content",
     ]
 
     # Default Research tools

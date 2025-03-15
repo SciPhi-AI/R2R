@@ -463,11 +463,14 @@ class SearchResultsCollector:
 
             # Special handling for doc with chunks
             elif source_type == "doc":
+                if str(result_obj.id).startswith(short_id):
+                    return result_obj
                 chunks = getattr(result_obj, "chunks", [])
-                for chunk in chunks:
-                    chunk_id = getattr(chunk, "id", None)
-                    if chunk_id and str(chunk_id).startswith(short_id):
-                        return chunk
+                if chunks:
+                    for chunk in chunks:
+                        chunk_id = getattr(chunk, "id", None)
+                        if chunk_id and str(chunk_id).startswith(short_id):
+                            return chunk
 
             # Handle object with id attribute
             else:
