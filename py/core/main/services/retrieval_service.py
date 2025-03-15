@@ -1507,8 +1507,12 @@ class RetrievalService(Service):
 
                 # Process the agent results
                 if isinstance(results[-1], dict):
+                    if results[-1].get("content") is None:
+                        results[-1]["content"] = ""
                     assistant_message = Message(**results[-1])
                 elif isinstance(results[-1], Message):
+                    if assistant_message.content is None:
+                        assistant_message.content = ""
                     assistant_message = results[-1]
                 else:
                     assistant_message = Message(
