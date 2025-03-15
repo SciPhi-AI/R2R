@@ -1,6 +1,5 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
-import exp from "constants";
 import fs from "fs";
 import path from "path";
 
@@ -166,7 +165,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
     const response = await superUserClient.users.list({
       ids: [userId],
     });
-    console.log(response);
+
     expect(response.results).toBeDefined();
     expect(Array.isArray(response.results)).toBe(true);
     expect(response.results.length).toBe(1);

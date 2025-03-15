@@ -84,7 +84,7 @@ export class RetrievalClient {
     taskPrompt?: string;
     includeTitleIfAvailable?: boolean;
     includeWebSearch?: boolean;
-  }): Promise<any | ReadableStream<Uint8Array>>  {
+  }): Promise<any | ReadableStream<Uint8Array>> {
     const data = {
       query: options.query,
       ...(options.searchMode && {
@@ -131,139 +131,140 @@ export class RetrievalClient {
   }
 
   /**
- * Engage with an intelligent RAG-powered conversational agent for complex
- * information retrieval and analysis.
- *
- * This advanced endpoint combines retrieval-augmented generation (RAG)
- * with a conversational AI agent to provide detailed, context-aware
- * responses based on your document collection.
- *
- * The agent can:
- *    - Maintain conversation context across multiple interactions
- *    - Dynamically search and retrieve relevant information from both
- *      vector and knowledge graph sources
- *    - Break down complex queries into sub-questions for comprehensive
- *      answers
- *    - Cite sources and provide evidence-based responses
- *    - Handle follow-up questions and clarifications
- *    - Navigate complex topics with multi-step reasoning
- *
- * This endpoint offers two operating modes:
- *    - RAG mode: Standard retrieval-augmented generation for answering questions
- *      based on knowledge base
- *    - Research mode: Advanced capabilities for deep analysis, reasoning, and computation
- *
- * @param message Current message to process
- * @param ragGenerationConfig Configuration for RAG generation in 'rag' mode
- * @param researchGenerationConfig Configuration for generation in 'research' mode
- * @param searchMode Search mode to use, either "basic", "advanced", or "custom"
- * @param searchSettings Settings for the search
- * @param taskPrompt Optional custom prompt to override default
- * @param includeTitleIfAvailable Include document titles in responses when available
- * @param conversationId ID of the conversation
- * @param tools List of tool configurations (deprecated)
- * @param ragTools List of tools to enable for RAG mode
- * @param researchTools List of tools to enable for Research mode
- * @param maxToolContextLength Maximum context length for tool replies
- * @param useSystemContext Use system context for generation
- * @param mode Mode to use, either "rag" or "research"
- * @returns
- */
-async agent(options: {
-  message: Message;
-  ragGenerationConfig?: GenerationConfig | Record<string, any>;
-  researchGenerationConfig?: GenerationConfig | Record<string, any>;
-  searchMode?: "basic" | "advanced" | "custom";
-  searchSettings?: SearchSettings | Record<string, any>;
-  taskPrompt?: string;
-  includeTitleIfAvailable?: boolean;
-  conversationId?: string;
-  maxToolContextLength?: number;
-  tools?: Array<string>; // Deprecated
-  ragTools?: Array<string>;
-  researchTools?: Array<string>;
-  useSystemContext?: boolean;
-  mode?: "rag" | "research";
-}): Promise<any | ReadableStream<Uint8Array>>  {
-  const data: Record<string, any> = {
-    message: options.message,
-    ...(options.searchMode && {
-      search_mode: options.searchMode,
-    }),
-    ...(options.ragGenerationConfig && {
-      rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
-    }),
-    ...(options.researchGenerationConfig && {
-      research_generation_config: ensureSnakeCase(options.researchGenerationConfig),
-    }),
-    ...(options.searchSettings && {
-      search_settings: ensureSnakeCase(options.searchSettings),
-    }),
-    ...(options.taskPrompt && {
-      task_prompt: options.taskPrompt,
-    }),
-    ...(typeof options.includeTitleIfAvailable && {
-      include_title_if_available: options.includeTitleIfAvailable,
-    }),
-    ...(options.conversationId && {
-      conversation_id: options.conversationId,
-    }),
-    ...(options.maxToolContextLength && {
-      max_tool_context_length: options.maxToolContextLength,
-    }),
-    ...(options.tools && {
-      tools: options.tools,
-    }),
-    ...(options.ragTools && {
-      rag_tools: options.ragTools,
-    }),
-    ...(options.researchTools && {
-      research_tools: options.researchTools,
-    }),
-    ...(typeof options.useSystemContext !== undefined && {
-      use_system_context: options.useSystemContext,
-    }),
-    ...(options.mode && {
-      mode: options.mode,
-    }),
-  };
+   * Engage with an intelligent RAG-powered conversational agent for complex
+   * information retrieval and analysis.
+   *
+   * This advanced endpoint combines retrieval-augmented generation (RAG)
+   * with a conversational AI agent to provide detailed, context-aware
+   * responses based on your document collection.
+   *
+   * The agent can:
+   *    - Maintain conversation context across multiple interactions
+   *    - Dynamically search and retrieve relevant information from both
+   *      vector and knowledge graph sources
+   *    - Break down complex queries into sub-questions for comprehensive
+   *      answers
+   *    - Cite sources and provide evidence-based responses
+   *    - Handle follow-up questions and clarifications
+   *    - Navigate complex topics with multi-step reasoning
+   *
+   * This endpoint offers two operating modes:
+   *    - RAG mode: Standard retrieval-augmented generation for answering questions
+   *      based on knowledge base
+   *    - Research mode: Advanced capabilities for deep analysis, reasoning, and computation
+   *
+   * @param message Current message to process
+   * @param ragGenerationConfig Configuration for RAG generation in 'rag' mode
+   * @param researchGenerationConfig Configuration for generation in 'research' mode
+   * @param searchMode Search mode to use, either "basic", "advanced", or "custom"
+   * @param searchSettings Settings for the search
+   * @param taskPrompt Optional custom prompt to override default
+   * @param includeTitleIfAvailable Include document titles in responses when available
+   * @param conversationId ID of the conversation
+   * @param tools List of tool configurations (deprecated)
+   * @param ragTools List of tools to enable for RAG mode
+   * @param researchTools List of tools to enable for Research mode
+   * @param maxToolContextLength Maximum context length for tool replies
+   * @param useSystemContext Use system context for generation
+   * @param mode Mode to use, either "rag" or "research"
+   * @returns
+   */
+  async agent(options: {
+    message: Message;
+    ragGenerationConfig?: GenerationConfig | Record<string, any>;
+    researchGenerationConfig?: GenerationConfig | Record<string, any>;
+    searchMode?: "basic" | "advanced" | "custom";
+    searchSettings?: SearchSettings | Record<string, any>;
+    taskPrompt?: string;
+    includeTitleIfAvailable?: boolean;
+    conversationId?: string;
+    maxToolContextLength?: number;
+    tools?: Array<string>; // Deprecated
+    ragTools?: Array<string>;
+    researchTools?: Array<string>;
+    useSystemContext?: boolean;
+    mode?: "rag" | "research";
+  }): Promise<any | ReadableStream<Uint8Array>> {
+    const data: Record<string, any> = {
+      message: options.message,
+      ...(options.searchMode && {
+        search_mode: options.searchMode,
+      }),
+      ...(options.ragGenerationConfig && {
+        rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
+      }),
+      ...(options.researchGenerationConfig && {
+        research_generation_config: ensureSnakeCase(
+          options.researchGenerationConfig,
+        ),
+      }),
+      ...(options.searchSettings && {
+        search_settings: ensureSnakeCase(options.searchSettings),
+      }),
+      ...(options.taskPrompt && {
+        task_prompt: options.taskPrompt,
+      }),
+      ...(typeof options.includeTitleIfAvailable && {
+        include_title_if_available: options.includeTitleIfAvailable,
+      }),
+      ...(options.conversationId && {
+        conversation_id: options.conversationId,
+      }),
+      ...(options.maxToolContextLength && {
+        max_tool_context_length: options.maxToolContextLength,
+      }),
+      ...(options.tools && {
+        tools: options.tools,
+      }),
+      ...(options.ragTools && {
+        rag_tools: options.ragTools,
+      }),
+      ...(options.researchTools && {
+        research_tools: options.researchTools,
+      }),
+      ...(typeof options.useSystemContext !== undefined && {
+        use_system_context: options.useSystemContext,
+      }),
+      ...(options.mode && {
+        mode: options.mode,
+      }),
+    };
 
-  // Determine if streaming is enabled
-  let isStream = false;
-  if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
-    isStream = true;
-  } else if (
-    options.researchGenerationConfig &&
-    options.mode === "research" &&
-    options.researchGenerationConfig.stream
-  ) {
-    isStream = true;
+    // Determine if streaming is enabled
+    let isStream = false;
+    if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
+      isStream = true;
+    } else if (
+      options.researchGenerationConfig &&
+      options.mode === "research" &&
+      options.researchGenerationConfig.stream
+    ) {
+      isStream = true;
+    }
+
+    if (isStream) {
+      return this.streamAgent(data);
+    } else {
+      return await this.client.makeRequest("POST", "retrieval/agent", {
+        data: data,
+      });
+    }
   }
 
-  if (isStream) {
-    return this.streamAgent(data);
-  } else {
-    return await this.client.makeRequest("POST", "retrieval/agent", {
-      data: data,
-    });
+  private async streamAgent(
+    agentData: Record<string, any>,
+  ): Promise<ReadableStream<Uint8Array>> {
+    // Return the raw stream like streamCompletion does
+    return this.client.makeRequest<ReadableStream<Uint8Array>>(
+      "POST",
+      "retrieval/agent",
+      {
+        data: agentData,
+        headers: { "Content-Type": "application/json" },
+        responseType: "stream",
+      },
+    );
   }
-}
-
-private async streamAgent(
-  agentData: Record<string, any>,
-): Promise<ReadableStream<Uint8Array>> {
-  // Return the raw stream like streamCompletion does
-  return this.client.makeRequest<ReadableStream<Uint8Array>>(
-    "POST",
-    "retrieval/agent",
-    {
-      data: agentData,
-      headers: { "Content-Type": "application/json" },
-      responseType: "stream",
-    },
-  );
-}
-
 
   /**
    * Generate completions for a list of messages.
