@@ -143,23 +143,6 @@ class CompletionProvider(Provider):
         generation_config: GenerationConfig,
         **kwargs,
     ) -> LLMChatCompletion:
-        validated_messages = []
-        for msg in messages:
-            if isinstance(msg, dict):
-                msg_copy = msg.copy()
-                if "content" in msg_copy and msg_copy["content"] is None:
-                    msg_copy["content"] = ""
-                validated_messages.append(msg_copy)
-            else:
-                if hasattr(msg, "content") and msg.content is None:
-                    msg.content = ""
-                if hasattr(msg, "to_dict"):
-                    validated_messages.append(msg.to_dict())
-                elif hasattr(msg, "dict"):
-                    validated_messages.append(msg.dict())
-                else:
-                    validated_messages.append(msg)
-
         task = {
             "messages": messages,
             "generation_config": generation_config,

@@ -16,7 +16,8 @@
     "test": "jest --no-cache",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:users": "jest UsersIntegrationSuperUser"
+    "test:users": "jest UsersIntegrationSuperUser",
+    "test:retrieval": "jest RetrievalIntegrationSuperUser"
   },
   "files": [
     "dist"

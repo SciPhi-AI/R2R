@@ -1439,6 +1439,10 @@ class RetrievalService(Service):
             # Create the agent using our factory
             mode = mode or "rag"
 
+            for msg in messages:
+                if msg.content is None:
+                    msg.content = ""
+
             agent = AgentFactory.create_agent(
                 mode=mode,
                 database_provider=self.providers.database,
@@ -1520,10 +1524,15 @@ class RetrievalService(Service):
 
                 return stream_response()
             else:
-                # Ensure all messages have content
                 for idx, msg in enumerate(messages):
                     if msg.content is None:
-                        messages[idx].content = ""
+                        if (
+                            hasattr(msg, "structured_content")
+                            and msg.structured_content
+                        ):
+                            messages[idx].content = ""
+                        else:
+                            messages[idx].content = ""
 
                 # Non-streaming path
                 results = await agent.arun(

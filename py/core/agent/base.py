@@ -242,6 +242,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                                 Message(
                                     role="assistant",
                                     structured_content=tool_uses,
+                                    content="",
                                 )
                             )
                     else:
