@@ -914,11 +914,9 @@ class RetrievalService(Service):
         #
         # So we split by double-newline or some pattern:
         raw_text = response.choices[0].message.content
-        hypothetical_docs = [
+        return [
             chunk.strip() for chunk in raw_text.split("\n\n") if chunk.strip()
         ]
-
-        return hypothetical_docs
 
     @telemetry_event("SearchDocuments")
     async def search_documents(
@@ -1498,6 +1496,11 @@ class RetrievalService(Service):
 
                 return stream_response()
             else:
+                # Ensure all messages have content
+                for idx, msg in enumerate(messages):
+                    if msg.content is None:
+                        messages[idx].content = ""
+
                 # Non-streaming path
                 results = await agent.arun(
                     messages=messages,
@@ -1511,9 +1514,9 @@ class RetrievalService(Service):
                         results[-1]["content"] = ""
                     assistant_message = Message(**results[-1])
                 elif isinstance(results[-1], Message):
+                    assistant_message = results[-1]
                     if assistant_message.content is None:
                         assistant_message.content = ""
-                    assistant_message = results[-1]
                 else:
                     assistant_message = Message(
                         role="assistant", content=str(results[-1])
@@ -1690,8 +1693,8 @@ class RetrievalService(Service):
         filters: dict[str, Any],
     ):
         ### TODO - Come up with smarter way to extract owner / collection ids for non-admin
-        filter_starts_with_and = filters.get("$and", None)
-        filter_starts_with_or = filters.get("$or", None)
+        filter_starts_with_and = filters.get("$and")
+        filter_starts_with_or = filters.get("$or")
         if filter_starts_with_and:
             try:
                 filter_starts_with_and_then_or = filter_starts_with_and[0][
@@ -1794,17 +1797,16 @@ class RetrievalService(Service):
             )
         else:
             prompt_name = "static_research_agent"
-            system_prompt = await self.providers.database.prompts_handler.get_cached_prompt(
+            return await self.providers.database.prompts_handler.get_cached_prompt(
                 # We use custom tooling and a custom agent to handle gemini models
                 prompt_name,
                 inputs={
                     "date": date_str,
                 },
             )
-            return system_prompt
 
         if "deepseek" in model or "gemini" in model:
-            prompt_name = prompt_name + "_xml_tooling"
+            prompt_name = f"{prompt_name}_xml_tooling"
 
         if use_system_context:
             doc_context_str = await self._build_documents_context(
