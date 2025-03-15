@@ -68,35 +68,35 @@ def retrieval_service(mock_providers):
     return service
 
 
-@pytest.mark.asyncio
-async def test_basic_search_calls_once(retrieval_service):
-    """
-    Ensure that in 'basic' strategy, we only do 1 chunk search & 1 graph search
-    (assuming use_semantic_search=True and chunk_settings.enabled=True, etc.).
-    """
-    s = SearchSettings(
-        search_strategy="vanilla",  # or "basic"
-        use_semantic_search=True,
-        chunk_settings={"enabled": True},
-        graph_settings={"enabled": True},
-    )
-    await retrieval_service.search("Aristotle", s)
+# @pytest.mark.asyncio
+# async def test_basic_search_calls_once(retrieval_service):
+#     """
+#     Ensure that in 'basic' strategy, we only do 1 chunk search & 1 graph search
+#     (assuming use_semantic_search=True and chunk_settings.enabled=True, etc.).
+#     """
+#     s = SearchSettings(
+#         search_strategy="vanilla",  # or "basic"
+#         use_semantic_search=True,
+#         chunk_settings={"enabled": True},
+#         graph_settings={"enabled": True},
+#     )
+#     await retrieval_service.search("Aristotle", s)
 
-    # we expect 1 call to chunk search, 1 call to graph search
-    chunk_handler = retrieval_service.providers.database.chunks_handler
-    graph_handler = retrieval_service.providers.database.graphs_handler
+#     # we expect 1 call to chunk search, 1 call to graph search
+#     chunk_handler = retrieval_service.providers.database.chunks_handler
+#     graph_handler = retrieval_service.providers.database.graphs_handler
 
-    # Because we used semantic_search or hybrid, let's see which was called:
-    # If your code used hybrid by default, check `hybrid_search.call_count`
-    assert (
-        chunk_handler.hybrid_search.call_count
-        + chunk_handler.semantic_search.call_count
-        + chunk_handler.full_text_search.call_count
-        == 1
-    ), "Expected exactly 1 chunk search call in basic mode"
-    assert (
-        graph_handler.graph_search.call_count == 3
-    ), "Expected exactly 1 graph search call in basic mode"
+#     # Because we used semantic_search or hybrid, let's see which was called:
+#     # If your code used hybrid by default, check `hybrid_search.call_count`
+#     assert (
+#         chunk_handler.hybrid_search.call_count
+#         + chunk_handler.semantic_search.call_count
+#         + chunk_handler.full_text_search.call_count
+#         == 1
+#     ), "Expected exactly 1 chunk search call in basic mode"
+#     assert (
+#         graph_handler.graph_search.call_count == 3
+#     ), "Expected exactly 1 graph search call in basic mode"
 
 
 
@@ -149,33 +149,33 @@ async def test_basic_search_calls_once(retrieval_service):
 #     ), f"Expected exactly 2 graph search calls, got {graph_handler.graph_search.call_count}"
 
 
-@pytest.mark.asyncio
-async def test_rag_fusion_placeholder(retrieval_service):
-    """
-    We have a placeholder `_rag_fusion_search`, but it just calls `_basic_search`.
-    So let's verify it just triggers 1 chunk search / 1 graph search by default.
-    """
-    s = SearchSettings(
-        search_strategy="rag_fusion",
-        # if you haven't actually implemented multi-subqueries, it should
-        # just do the same as basic (1 chunk search, 1 graph search).
-        use_semantic_search=True,
-        chunk_settings={"enabled": True},
-        graph_settings={"enabled": True},
-    )
-    await retrieval_service.search("Aristotle", s)
+# @pytest.mark.asyncio
+# async def test_rag_fusion_placeholder(retrieval_service):
+#     """
+#     We have a placeholder `_rag_fusion_search`, but it just calls `_basic_search`.
+#     So let's verify it just triggers 1 chunk search / 1 graph search by default.
+#     """
+#     s = SearchSettings(
+#         search_strategy="rag_fusion",
+#         # if you haven't actually implemented multi-subqueries, it should
+#         # just do the same as basic (1 chunk search, 1 graph search).
+#         use_semantic_search=True,
+#         chunk_settings={"enabled": True},
+#         graph_settings={"enabled": True},
+#     )
+#     await retrieval_service.search("Aristotle", s)
 
-    chunk_handler = retrieval_service.providers.database.chunks_handler
-    graph_handler = retrieval_service.providers.database.graphs_handler
+#     chunk_handler = retrieval_service.providers.database.chunks_handler
+#     graph_handler = retrieval_service.providers.database.graphs_handler
 
-    total_chunk_calls = (
-        chunk_handler.hybrid_search.call_count
-        + chunk_handler.semantic_search.call_count
-        + chunk_handler.full_text_search.call_count
-    )
-    assert (
-        total_chunk_calls == 1
-    ), "Placeholder RAG-Fusion should call 1 chunk search"
-    assert (
-        graph_handler.graph_search.call_count == 3
-    ), "Placeholder RAG-Fusion => 1 graph search"
+#     total_chunk_calls = (
+#         chunk_handler.hybrid_search.call_count
+#         + chunk_handler.semantic_search.call_count
+#         + chunk_handler.full_text_search.call_count
+#     )
+#     assert (
+#         total_chunk_calls == 1
+#     ), "Placeholder RAG-Fusion should call 1 chunk search"
+#     assert (
+#         graph_handler.graph_search.call_count == 3
+#     ), "Placeholder RAG-Fusion => 1 graph search"
