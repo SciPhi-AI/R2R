@@ -1578,19 +1578,16 @@ class RetrievalService(Service):
                 raw_text = (
                     assistant_message.content or structured_content or ""
                 )
-
                 # Process citations
                 short_ids = extract_citations(raw_text or "")
                 final_citations = []
                 for sid in short_ids:
+                    obj = collector.find_by_short_id(sid)
                     final_citations.append(
                         {
                             "id": sid,
                             "object": "citation",
-                            "short_id": sid,
-                            "payload": dump_obj(
-                                collector.find_by_short_id(sid)
-                            ),
+                            "payload": dump_obj(obj) if obj else None,
                         }
                     )
 
@@ -1634,6 +1631,14 @@ class RetrievalService(Service):
                             name=conversation_name or "",
                         )
 
+                tool_calls = []
+                if hasattr(agent, "tool_calls"):
+                    if agent.tool_calls is not None:
+                        tool_calls = agent.tool_calls
+                    else:
+                        logger.warning(
+                            "agent.tool_calls is None, using empty list instead"
+                        )
                 # Return the final response
                 return {
                     "messages": [
@@ -1644,7 +1649,7 @@ class RetrievalService(Service):
                             or "",
                             metadata={
                                 "citations": final_citations,
-                                "tool_calls": agent.tool_calls,
+                                "tool_calls": tool_calls,
                                 "aggregated_search_result": json.dumps(
                                     dump_collector(collector)
                                 ),

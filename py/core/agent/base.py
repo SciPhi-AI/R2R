@@ -122,6 +122,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 messages_list,
                 generation_config,
             )
+            logger.debug(f"R2RAgent response: {response}")
             await self.process_llm_response(response, *args, **kwargs)
 
         if not self._completed:
