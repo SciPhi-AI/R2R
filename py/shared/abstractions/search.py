@@ -8,6 +8,7 @@ from uuid import NAMESPACE_DNS, UUID, uuid5
 from pydantic import Field
 
 from .base import R2RSerializable
+from .document import DocumentResponse
 from .llm import GenerationConfig
 from .vector import IndexMeasure
 
@@ -251,43 +252,19 @@ class WebSearchResult(R2RSerializable):
         )
 
 
-class ContextDocumentResult(R2RSerializable):
-    """Holds a single 'document' plus its 'chunks', exactly as your
-    content_method returns them, or tidied up a bit."""
-
-    document: dict[str, Any]  # or create a formal Document model
-    chunks: list[ChunkSearchResult] = Field(default_factory=list)
-
-    def __str__(self) -> str:
-        return f"ContextDocumentResult(document={self.document}, chunks={self.chunks})"
-
-    class Config:
-        populate_by_name = True
-        json_schema_extra = {
-            "example": {
-                "document": {
-                    "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                    "title": "Document Title",
-                    "metadata": {},
-                },
-                "chunks": ["Chunk 1", "Chunk 2"],
-            }
-        }
-
-
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
     web_search_results: Optional[list[WebPageSearchResult]] = None
-    context_document_results: Optional[list[ContextDocumentResult]] = None
+    document_search_results: Optional[list[DocumentResponse]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
 
     def as_dict(self) -> dict:
         return {
@@ -306,9 +283,9 @@ class AggregateSearchResult(R2RSerializable):
                 if self.web_search_results
                 else []
             ),
-            "context_document_results": (
-                [cdr.to_dict() for cdr in self.context_document_results]
-                if self.context_document_results
+            "document_search_results": (
+                [cdr.to_dict() for cdr in self.document_search_results]
+                if self.document_search_results
                 else []
             ),
         }
@@ -361,7 +338,7 @@ class AggregateSearchResult(R2RSerializable):
                         ],
                     }
                 ],
-                "context_document_results": [
+                "document_search_results": [
                     {
                         "document": {
                             "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",

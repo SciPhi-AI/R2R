@@ -7,7 +7,6 @@ from core.base import (
 )
 from core.base.abstractions import (
     AggregateSearchResult,
-    ContextDocumentResult,
     GenerationConfig,
     SearchSettings,
     WebPageSearchResult,
@@ -162,12 +161,13 @@ class RAGAgentMixin:
         """
         if "gemini" in self.rag_generation_config.model:
             tool = Tool(
-                name="content",
+                name="get_file_content",
                 description=(
                     "Fetches the complete contents of all user documents from the local database. "
                     "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
                     "For instance, a single document can be returned with a filter like so:"
                     "{'document_id': {'$eq': '...'}}."
+                    "Be sure to use the full 32 character hexidecimal document ID, and not the shortened 8 character ID."
                 ),
                 results_function=self._content_function,
                 llm_format_function=self.format_search_results_for_llm,
@@ -188,7 +188,7 @@ class RAGAgentMixin:
 
         else:
             tool = Tool(
-                name="content",
+                name="get_file_content",
                 description=(
                     "Fetches the complete contents of all user documents from the local database. "
                     "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
@@ -228,7 +228,7 @@ class RAGAgentMixin:
             { 'document': {...}, 'chunks': [ {...}, {...}, ... ] },
             ...
         ]
-        We'll store these in a new field `context_document_results` of
+        We'll store these in a new field `document_search_results` of
         AggregateSearchResult so we don't collide with chunk_search_results.
         """
         if not self.content_method:
@@ -245,21 +245,8 @@ class RAGAgentMixin:
         options = options or {}
 
         # Actually call your data retrieval
-        raw_context = await self.content_method(filters, options)
+        content = await self.content_method(filters, options)
         # raw_context presumably is a list[dict], each with 'document' + 'chunks'.
-
-        # Convert them to ContextDocumentResult
-        context_document_results = []
-        for item in raw_context:
-            document = item["document"]
-            chunks = item["chunks"]
-            document["metadata"].pop("chunk_metadata", None)
-            context_document_results.append(
-                ContextDocumentResult(
-                    document=document,
-                    chunks=chunks,
-                )
-            )
 
         # Return them in the new aggregator field
         agg = AggregateSearchResult(
@@ -267,7 +254,7 @@ class RAGAgentMixin:
             chunk_search_results=None,
             graph_search_results=None,
             web_search_results=None,
-            context_document_results=context_document_results,
+            document_search_results=content,
         )
         self.search_results_collector.add_aggregate_result(agg)
         return agg
