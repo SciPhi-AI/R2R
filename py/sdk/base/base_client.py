@@ -11,7 +11,7 @@ class BaseClient:
         timeout: float = 300.0,
     ):
         self.base_url = base_url or os.getenv(
-            "R2R_API_BASE", "https://api.cloud.sciphi.ai"
+            "R2R_API_BASE", "https://api.sciphi.ai"
         )
         self.timeout = timeout
         self.access_token: Optional[str] = None

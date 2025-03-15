@@ -133,7 +133,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     const response = await client.retrieval.agent({
       message: overrideMessage,
-      taskPromptOverride: overridePrompt,
+      taskPrompt: overridePrompt,
       useSystemContext: false,
     });
 

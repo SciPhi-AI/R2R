@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Configuration
-URL="https://api.cloud.sciphi.ai/v3/health"
+URL="https://api.sciphi.ai/v3/health"
 TOTAL_REQUESTS=60
 SLEEP_INTERVAL=0.05
 REQUIRED_503_COUNT=20

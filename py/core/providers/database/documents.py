@@ -81,7 +81,7 @@ class PostgresDocumentsHandler(Handler):
 
     async def create_tables(self):
         logger.info(
-            f"Creating table, if not exists: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
+            f"Creating table, if it does not exist: {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
 
         vector_dim = (
@@ -513,6 +513,7 @@ class PostgresDocumentsHandler(Handler):
         filter_collection_ids: Optional[list[UUID]] = None,
         include_summary_embedding: Optional[bool] = True,
         filters: Optional[dict[str, Any]] = None,
+        sort_order: str = "DESC",  # Add this parameter with a default of DESC
     ) -> dict[str, Any]:
         """Fetch overviews of documents with optional offset/limit pagination.
 
@@ -622,7 +623,7 @@ class PostgresDocumentsHandler(Handler):
         query = f"""
             {select_fields}
             {base_query}
-            ORDER BY created_at DESC
+            ORDER BY created_at {sort_order}
             OFFSET ${param_index}
         """
         params.append(offset)

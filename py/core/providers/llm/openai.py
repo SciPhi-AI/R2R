@@ -1,3 +1,5 @@
+import base64
+import io
 import logging
 import os
 from typing import Any
@@ -8,6 +10,122 @@ from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger()
+
+# Try to import PIL for image processing
+try:
+    from PIL import Image
+
+    PILLOW_AVAILABLE = True
+except ImportError:
+    logger.warning(
+        "PIL/Pillow not installed. Image resizing will be disabled."
+    )
+    PILLOW_AVAILABLE = False
+
+
+def resize_base64_image(
+    base64_string: str,
+    max_size: tuple[int, int] = (512, 512),
+    max_megapixels: float = 0.25,
+) -> str:
+    """Aggressively resize images with better error handling and debug output"""
+    logger.debug(
+        f"RESIZING NOW!!! Original length: {len(base64_string)} chars"
+    )
+
+    if not PILLOW_AVAILABLE:
+        logger.warning("PIL/Pillow not available, skipping image resize")
+        return base64_string[
+            :50000
+        ]  # Emergency truncation if PIL not available
+
+    # Decode base64 string to bytes
+    try:
+        image_data = base64.b64decode(base64_string)
+        image = Image.open(io.BytesIO(image_data))
+        logger.debug(f"Image opened successfully: {image.format} {image.size}")
+    except Exception as e:
+        logger.debug(f"Failed to decode/open image: {e}")
+        # Emergency fallback - truncate the base64 string to reduce tokens
+        if len(base64_string) > 50000:
+            return base64_string[:50000]
+        return base64_string
+
+    try:
+        width, height = image.size
+        current_megapixels = (width * height) / 1_000_000
+        logger.debug(
+            f"Original dimensions: {width}x{height} ({current_megapixels:.2f} MP)"
+        )
+
+        # MUCH more aggressive resizing for large images
+        if current_megapixels > 0.5:
+            max_size = (384, 384)
+            max_megapixels = 0.15
+            logger.debug("Large image detected! Using more aggressive limits")
+
+        # Calculate new dimensions with strict enforcement
+        # Always resize if the image is larger than we want
+        scale_factor = min(
+            max_size[0] / width,
+            max_size[1] / height,
+            (max_megapixels / current_megapixels) ** 0.5,
+        )
+
+        if scale_factor >= 1.0:
+            # No resize needed, but still compress
+            new_width, new_height = width, height
+        else:
+            # Apply scaling
+            new_width = max(int(width * scale_factor), 64)  # Min width
+            new_height = max(int(height * scale_factor), 64)  # Min height
+
+        # Always resize/recompress the image
+        logger.debug(f"Resizing to: {new_width}x{new_height}")
+        resized_image = image.resize((new_width, new_height), Image.LANCZOS)  # type: ignore
+
+        # Convert back to base64 with strong compression
+        buffer = io.BytesIO()
+        if image.format == "JPEG" or image.format is None:
+            # Apply very aggressive JPEG compression
+            quality = 50  # Very low quality to reduce size
+            resized_image.save(
+                buffer, format="JPEG", quality=quality, optimize=True
+            )
+        else:
+            # For other formats
+            resized_image.save(
+                buffer, format=image.format or "PNG", optimize=True
+            )
+
+        resized_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        logger.debug(
+            f"Resized base64 length: {len(resized_base64)} chars (reduction: {100 * (1 - len(resized_base64) / len(base64_string)):.1f}%)"
+        )
+        return resized_base64
+
+    except Exception as e:
+        logger.debug(f"Error during resize: {e}")
+        # If anything goes wrong, truncate the base64 to a reasonable size
+        if len(base64_string) > 50000:
+            return base64_string[:50000]
+        return base64_string
+
+
+def estimate_image_tokens(width: int, height: int) -> int:
+    """
+    Estimate the number of tokens an image will use based on Anthropic's formula.
+    This is a rough estimate that can also be used for OpenAI models.
+
+    Args:
+        width: Image width in pixels
+        height: Image height in pixels
+
+    Returns:
+        Estimated number of tokens
+    """
+    return int((width * height) / 750)
 
 
 class OpenAICompletionProvider(CompletionProvider):
@@ -254,12 +372,149 @@ class OpenAICompletionProvider(CompletionProvider):
                     "No valid async client available for model prefix"
                 )
 
-    def _get_base_args(
-        self, generation_config: GenerationConfig
-    ) -> dict[str, Any]:
+    def _process_messages_with_images(
+        self, messages: list[dict]
+    ) -> list[dict]:
+        """
+        Process messages that may contain image_url or image_data fields.
+        Now includes aggressive image resizing similar to Anthropic provider.
+        """
+        processed_messages = []
+
+        for msg in messages:
+            if msg.get("role") == "system":
+                # System messages don't support content arrays in OpenAI
+                processed_messages.append(msg)
+                continue
+
+            # Check if the message contains image data
+            image_url = msg.pop("image_url", None)
+            image_data = msg.pop("image_data", None)
+            content = msg.get("content")
+
+            if image_url or image_data:
+                # Convert to content array format
+                new_content = []
+
+                # Add image content
+                if image_url:
+                    new_content.append(
+                        {"type": "image_url", "image_url": {"url": image_url}}
+                    )
+                elif image_data:
+                    # Resize the base64 image data if available
+                    media_type = image_data.get("media_type", "image/jpeg")
+                    data = image_data.get("data", "")
+
+                    # Apply image resizing if PIL is available
+                    if PILLOW_AVAILABLE and data:
+                        data = resize_base64_image(data)
+                        logger.debug(
+                            f"Image resized, new size: {len(data)} chars"
+                        )
+
+                    # OpenAI expects base64 images in data URL format
+                    data_url = f"data:{media_type};base64,{data}"
+                    new_content.append(
+                        {"type": "image_url", "image_url": {"url": data_url}}
+                    )
+
+                # Add text content if present
+                if content:
+                    new_content.append({"type": "text", "text": content})
+
+                # Update the message
+                new_msg = dict(msg)
+                new_msg["content"] = new_content
+                processed_messages.append(new_msg)
+            else:
+                processed_messages.append(msg)
+
+        return processed_messages
+
+    def _process_array_content_with_images(self, content: list) -> list:
+        """
+        Process content array that may contain image_url items.
+        Used for messages that already have content in array format.
+        """
+        if not content or not isinstance(content, list):
+            return content
+
+        processed_content = []
+
+        for item in content:
+            if isinstance(item, dict):
+                if item.get("type") == "image_url":
+                    # Process image URL if needed
+                    processed_content.append(item)
+                elif item.get("type") == "image" and item.get("source"):
+                    # Convert Anthropic-style to OpenAI-style
+                    source = item.get("source", {})
+                    if source.get("type") == "base64" and source.get("data"):
+                        # Resize the base64 image data
+                        if PILLOW_AVAILABLE:
+                            resized_data = resize_base64_image(
+                                source.get("data")
+                            )
+                        else:
+                            resized_data = source.get("data")
+
+                        media_type = source.get("media_type", "image/jpeg")
+                        data_url = f"data:{media_type};base64,{resized_data}"
+
+                        processed_content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": data_url},
+                            }
+                        )
+                    elif source.get("type") == "url" and source.get("url"):
+                        processed_content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": source.get("url")},
+                            }
+                        )
+                else:
+                    # Pass through other types
+                    processed_content.append(item)
+            else:
+                processed_content.append(item)
+
+        return processed_content
+
+    def _preprocess_messages(self, messages: list[dict]) -> list[dict]:
+        """
+        Preprocess all messages to optimize images before sending to OpenAI API.
+        """
+        if not messages or not isinstance(messages, list):
+            return messages
+
+        processed_messages = []
+
+        for msg in messages:
+            # Skip system messages as they're handled separately
+            if msg.get("role") == "system":
+                processed_messages.append(msg)
+                continue
+
+            # Process array-format content (might contain images)
+            if isinstance(msg.get("content"), list):
+                new_msg = dict(msg)
+                new_msg["content"] = self._process_array_content_with_images(
+                    msg["content"]
+                )
+                processed_messages.append(new_msg)
+            else:
+                # Standard processing for non-array content
+                processed_messages.append(msg)
+
+        return processed_messages
+
+    def _get_base_args(self, generation_config: GenerationConfig) -> dict:
+        # Keep existing implementation...
         args: dict[str, Any] = {
             "model": generation_config.model,
-            "top_p": generation_config.top_p,
             "stream": generation_config.stream,
         }
 
@@ -268,11 +523,14 @@ class OpenAICompletionProvider(CompletionProvider):
         if "o1" not in model_str and "o3" not in model_str:
             args["max_tokens"] = generation_config.max_tokens_to_sample
             args["temperature"] = generation_config.temperature
+            args["top_p"] = generation_config.top_p
         else:
             args["max_completion_tokens"] = (
                 generation_config.max_tokens_to_sample
             )
 
+        if generation_config.reasoning_effort is not None:
+            args["reasoning_effort"] = generation_config.reasoning_effort
         if generation_config.functions is not None:
             args["functions"] = generation_config.functions
         if generation_config.tools is not None:
@@ -286,14 +544,40 @@ class OpenAICompletionProvider(CompletionProvider):
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
 
+        # First preprocess to handle any images in array format
+        messages = self._preprocess_messages(messages)
+
+        # Then process messages with direct image_url or image_data fields
+        processed_messages = self._process_messages_with_images(messages)
+
         args = self._get_base_args(generation_config)
         client, model_name = self._get_async_client_and_model(args["model"])
         args["model"] = model_name
-        args["messages"] = messages
+        args["messages"] = processed_messages
         args = {**args, **kwargs}
+
+        # Check if we're using a vision-capable model when images are present
+        contains_images = any(
+            isinstance(msg.get("content"), list)
+            and any(
+                item.get("type") == "image_url"
+                for item in msg.get("content", [])
+            )
+            for msg in processed_messages
+        )
+
+        if contains_images:
+            vision_models = ["gpt-4-vision", "gpt-4o"]
+            if not any(
+                vision_model in model_name for vision_model in vision_models
+            ):
+                logger.warning(
+                    f"Using model {model_name} with images, but it may not support vision"
+                )
+
         logger.debug(f"Executing async task with args: {args}")
         try:
-            # For Azure Foundry, use the `complete` method; otherwise, use the OpenAI-style method.
+            # Same as before...
             if client == self.async_azure_foundry_client:
                 model_value = args.pop(
                     "model"
@@ -305,6 +589,7 @@ class OpenAICompletionProvider(CompletionProvider):
             return response
         except Exception as e:
             logger.error(f"Async task execution failed: {str(e)}")
+            # HACK: print the exception to the console for debugging
             raise
 
     def _execute_task_sync(self, task: dict[str, Any]):
@@ -312,15 +597,40 @@ class OpenAICompletionProvider(CompletionProvider):
         generation_config = task["generation_config"]
         kwargs = task["kwargs"]
 
+        # First preprocess to handle any images in array format
+        messages = self._preprocess_messages(messages)
+
+        # Then process messages with direct image_url or image_data fields
+        processed_messages = self._process_messages_with_images(messages)
+
         args = self._get_base_args(generation_config)
         client, model_name = self._get_client_and_model(args["model"])
         args["model"] = model_name
-        args["messages"] = messages
+        args["messages"] = processed_messages
         args = {**args, **kwargs}
 
-        logger.debug(f"Executing sync task with args: {args}")
+        # Same vision model check as in async version
+        contains_images = any(
+            isinstance(msg.get("content"), list)
+            and any(
+                item.get("type") == "image_url"
+                for item in msg.get("content", [])
+            )
+            for msg in processed_messages
+        )
+
+        if contains_images:
+            vision_models = ["gpt-4-vision", "gpt-4o"]
+            if not any(
+                vision_model in model_name for vision_model in vision_models
+            ):
+                logger.warning(
+                    f"Using model {model_name} with images, but it may not support vision"
+                )
+
+        logger.debug(f"Executing sync OpenAI task with args: {args}")
         try:
-            # For Azure Foundry, use `complete`; otherwise, use the standard method.
+            # Same as before...
             if client == self.azure_foundry_client:
                 args.pop("model")
                 response = client.complete(**args)

@@ -54,9 +54,9 @@ audio_lm = ""
 # Agent Settings (Custom configuration used by your system)
 ################################################################################
 [agent]
-agent_static_prompt = "static_rag_agent"
-agent_dynamic_prompt = "dynamic_rag_agent"
-tools = ["local_search", "content"]
+rag_agent_static_prompt = "static_rag_agent"
+rag_agent_dynamic_prompt = "dynamic_rag_agent"
+tools = ["search_file_knowledge", "content"]
 
 ################################################################################
 # Authentication Settings (AuthConfig)

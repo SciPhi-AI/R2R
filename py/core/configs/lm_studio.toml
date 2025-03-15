@@ -29,7 +29,7 @@ add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [agent]
-tools = ["local_search"]
+tools = ["search_file_knowledge"]
 
 [completion]
 provider = "litellm"

@@ -48,7 +48,7 @@ class R2RAsyncClient(BaseClient):
     ):
         url = self._get_full_url(endpoint, version)
         if (
-            "https://api.cloud.sciphi.ai" in url
+            "https://api.sciphi.ai" in url
             and ("login" not in endpoint)
             and ("create" not in endpoint)
             and ("users" not in endpoint)
@@ -57,7 +57,7 @@ class R2RAsyncClient(BaseClient):
         ):
             raise R2RException(
                 status_code=401,
-                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
+                message="Access token or api key is required to access `https://api.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
             )
         request_args = self._prepare_request_args(endpoint, **kwargs)
 

@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from typing import Any
+from typing import Any, Generator
 
 from httpx import Client, RequestError, Response
 
@@ -46,7 +46,7 @@ class R2RClient(BaseClient):
     ) -> dict[str, Any] | BytesIO | None:
         url = self._get_full_url(endpoint, version)
         if (
-            "https://api.cloud.sciphi.ai" in url
+            "https://api.sciphi.ai" in url
             and ("login" not in endpoint)
             and ("create" not in endpoint)
             and ("users" not in endpoint)
@@ -55,7 +55,7 @@ class R2RClient(BaseClient):
         ):
             raise R2RException(
                 status_code=401,
-                message="Access token or api key is required to access `https://api.cloud.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
+                message="Access token or api key is required to access `https://api.sciphi.ai`. To change the base url, use `set_base_url` method or set the local environment variable `R2R_API_BASE` to `http://localhost:7272`.",
             )
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
@@ -76,19 +76,59 @@ class R2RClient(BaseClient):
 
     def _make_streaming_request(
         self, method: str, endpoint: str, version: str = "v3", **kwargs
-    ) -> Any:
+    ) -> Generator[dict[str, str], None, None]:
+        """
+        Make a streaming request, parsing Server-Sent Events (SSE) in multiline form.
+
+        Yields a dictionary with keys:
+        - "event": the event type (or "unknown" if not provided)
+        - "data": the JSON string (possibly spanning multiple lines) accumulated from the event's data lines
+        """
         url = self._get_full_url(endpoint, version)
         request_args = self._prepare_request_args(endpoint, **kwargs)
 
         with Client(timeout=self.timeout) as client:
             with client.stream(method, url, **request_args) as response:
                 self._handle_response(response)
+
+                sse_event_block: dict[str, Any] = {"event": None, "data": []}
+
                 for line in response.iter_lines():
-                    if line.strip():  # Ignore empty lines
-                        try:
-                            yield json.loads(line)
-                        except Exception:
-                            yield line
+                    if isinstance(line, bytes):
+                        line = line.decode("utf-8", "replace")
+
+                    # Blank line -> end of this SSE event
+                    if line == "":
+                        # If there's any accumulated data, yield this event
+                        if sse_event_block["data"]:
+                            data_str = "".join(sse_event_block["data"])
+                            yield {
+                                "event": sse_event_block["event"] or "unknown",
+                                "data": data_str,
+                            }
+                        # Reset the block
+                        sse_event_block = {"event": None, "data": []}
+                        continue
+
+                    # Otherwise, parse the line
+                    if line.startswith("event:"):
+                        sse_event_block["event"] = line[
+                            len("event:") :
+                        ].lstrip()
+                    elif line.startswith("data:"):
+                        # Accumulate the exact substring after "data:"
+                        # Notice we do *not* strip() the entire line
+                        chunk = line[len("data:") :]
+                        sse_event_block["data"].append(chunk)
+                    # Optionally handle id:, retry:, etc. if needed
+
+                # If something remains in the buffer at the end
+                if sse_event_block["data"]:
+                    data_str = "".join(sse_event_block["data"])
+                    yield {
+                        "event": sse_event_block["event"] or "unknown",
+                        "data": data_str,
+                    }
 
     def _handle_response(self, response: Response) -> None:
         if response.status_code >= 400:

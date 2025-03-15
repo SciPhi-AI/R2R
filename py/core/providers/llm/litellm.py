@@ -54,6 +54,10 @@ class LiteLLMCompletionProvider(CompletionProvider):
         args["messages"] = messages
         args = {**args, **kwargs}
 
+        logger.debug(
+            f"Executing LiteLLM task with generation_config={generation_config}"
+        )
+
         return await self.acompletion(**args)
 
     def _execute_task_sync(self, task: dict[str, Any]):
@@ -64,6 +68,10 @@ class LiteLLMCompletionProvider(CompletionProvider):
         args = self._get_base_args(generation_config)
         args["messages"] = messages
         args = {**args, **kwargs}
+
+        logger.debug(
+            f"Executing LiteLLM task with generation_config={generation_config}"
+        )
 
         try:
             return self.completion(**args)

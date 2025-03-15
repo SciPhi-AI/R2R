@@ -39,6 +39,8 @@ class AppConfig(InnerConfig):
     fast_llm: Optional[str] = None
     vlm: Optional[str] = None
     audio_lm: Optional[str] = None
+    reasoning_llm: Optional[str] = None
+    planning_llm: Optional[str] = None
 
     # File extension to max-size mapping
     # These are examples; adjust sizes as needed.

@@ -1,12 +1,14 @@
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
 from shared.abstractions import (
     AggregateSearchResult,
     ChunkSearchResult,
+    GraphSearchResult,
     LLMChatCompletion,
     Message,
+    WebPageSearchResult,
 )
 from shared.api.models.base import R2RResults
 from shared.api.models.management.responses import DocumentResponse
@@ -22,86 +24,28 @@ class Citation(R2RSerializable):
     """
 
     # Bracket references
-    index: int = Field(
-        ..., description="Citation bracket index after re-labeling"
+    id: str = Field(..., description="The ID of the citation object")
+    object: str = Field(
+        ...,
+        description="The type of object, e.g. `citation`",
     )
-    rawIndex: Optional[int] = Field(
-        None, description="Original citation bracket index before re-labeling"
-    )
-    startIndex: Optional[int] = Field(
-        None,
-        description="Character offset (start) for the bracket [n] in the final text",
-    )
-    endIndex: Optional[int] = Field(
-        None,
-        description="Character offset (end) for the bracket [n] in the final text",
-    )
-
-    # Expanded snippet offsets around the bracket
-    snippetStartIndex: Optional[int] = Field(
-        None,
-        description="Start offset for the snippet region around the bracket",
-    )
-    snippetEndIndex: Optional[int] = Field(
-        None,
-        description="End offset for the snippet region around the bracket",
-    )
-    # snippet: Optional[str] = Field(
-    #     None,
-    #     description="Sentence-based snippet or text chunk containing this bracket reference",
-    # )
-
-    # Mapped source fields
-    sourceType: Optional[str] = Field(
-        None,
-        description="Type of the cited source (chunk, graph, web, contextDoc)",
-    )
-    id: Optional[str] = Field(
-        None, description="Search result ID (if chunk, e.g. chunk.id)"
-    )
-    document_id: Optional[str] = Field(
-        None, description="Document ID if chunk references a particular doc"
-    )
-    owner_id: Optional[str] = Field(
-        None,
-        description="Owner ID if chunk or doc references a particular user",
-    )
-    collection_ids: Optional[list[str]] = Field(
-        None, description="Collections this chunk or doc belongs to"
-    )
-    score: Optional[float] = Field(
-        None, description="Search score or similarity value"
-    )
-    text: Optional[str] = Field(
-        None, description="Full chunk text or short snippet from the source"
-    )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional key-value fields from the source (title, license, etc.)",
+    payload: (
+        ChunkSearchResult
+        | GraphSearchResult
+        | WebPageSearchResult
+        | DocumentResponse
+        | None
+    ) = Field(
+        ..., description="The object payload and it's corresponding type"
     )
 
     class Config:
+        extra = "ignore"  # This tells Pydantic to ignore extra fields
         json_schema_extra = {
             "example": {
-                "index": 1,
-                "rawIndex": 9,
-                "startIndex": 393,
-                "endIndex": 396,
-                "snippetStartIndex": 320,
-                "snippetEndIndex": 418,
-                "sourceType": "chunk",
-                "id": "e760bb76-1c6e-52eb-910d-0ce5b567011b",
-                "document_id": "e43864f5-a36f-548e-aacd-6f8d48b30c7f",
-                "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                "collection_ids": ["122fdf6a-e116-546b-a8f6-e4cb2e2c0a09"],
-                "score": 0.64,
-                "text": "Document Title: DeepSeek_R1.pdf\n\nText: could achieve an accuracy of ...",
-                "metadata": {
-                    "title": "DeepSeek_R1.pdf",
-                    "license": "CC-BY-4.0",
-                    "chunk_order": 68,
-                    "document_type": "pdf",
-                },
+                "id": "cit.abcd123",
+                "object": "citation",
+                "payload": "ChunkSearchResult(...)",
             }
         }
 
@@ -134,16 +78,12 @@ class RAGResponse(R2RSerializable):
                 "search_results": {
                     "chunk_search_results": [
                         {
-                            "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                            "document_id": "3e157b3a-8469-51db-90d9-52e7d896b49b",
-                            "owner_id": "2acb499e-8428-543b-bd85-0d9098718220",
-                            "collection_ids": [],
-                            "score": 0.23943702876567796,
-                            "text": "Example text from the document",
-                            "metadata": {
-                                "title": "example_document.pdf",
-                                "associated_query": "What is the capital of France?",
-                            },
+                            "index": 1,
+                            "start_index": 25,
+                            "end_index": 28,
+                            "uri": "https://example.com/doc1",
+                            "title": "example_document_1.pdf",
+                            "license": "CC-BY-4.0",
                         }
                     ],
                     "graph_search_results": [
@@ -178,7 +118,7 @@ class RAGResponse(R2RSerializable):
                             ],
                         }
                     ],
-                    "context_document_results": [
+                    "document_search_results": [
                         {
                             "document": {
                                 "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
@@ -358,7 +298,7 @@ class AgentResponse(R2RSerializable):
                                         ],
                                     }
                                 ],
-                                "context_document_results": [
+                                "document_search_results": [
                                     {
                                         "document": {
                                             "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
@@ -391,6 +331,140 @@ class DocumentSearchResult(BaseModel):
         description="The score of the document",
     )
 
+
+# A generic base model for SSE events
+class SSEEventBase(BaseModel):
+    event: str
+    data: Any
+
+
+# Model for the search results event
+class SearchResultsData(BaseModel):
+    id: str
+    object: str
+    data: AggregateSearchResult
+
+
+class SearchResultsEvent(SSEEventBase):
+    event: Literal["search_results"]
+    data: SearchResultsData
+
+
+class DeltaPayload(BaseModel):
+    value: str
+    annotations: list[Any]
+
+
+# Model for message events (partial tokens)
+class MessageDelta(BaseModel):
+    type: str
+    payload: DeltaPayload
+
+
+class Delta(BaseModel):
+    content: list[MessageDelta]
+
+
+class MessageData(BaseModel):
+    id: str
+    object: str
+    delta: Delta
+
+
+class MessageEvent(SSEEventBase):
+    event: Literal["message"]
+    data: MessageData
+
+
+# Model for citation events
+class CitationData(BaseModel):
+    id: str
+    object: str
+
+    class Config:
+        populate_by_name = True
+
+
+class CitationEvent(SSEEventBase):
+    event: Literal["citation"]
+    data: CitationData
+
+
+# Model for the final answer event
+class FinalAnswerData(BaseModel):
+    generated_answer: str
+    citations: list[Citation]  # refine if you have a citation model
+
+
+class FinalAnswerEvent(SSEEventBase):
+    event: Literal["final_answer"]
+    data: FinalAnswerData
+
+
+# "tool_call" event
+class ToolCallData(BaseModel):
+    tool_call_id: str
+    name: str
+    arguments: Any  # If JSON arguments, use dict[str, Any], or str if needed
+
+
+class ToolCallEvent(SSEEventBase):
+    event: Literal["tool_call"]
+    data: ToolCallData
+
+
+# "tool_result" event
+class ToolResultData(BaseModel):
+    tool_call_id: str
+    role: Literal["tool", "function"]
+    content: str
+
+
+class ToolResultEvent(SSEEventBase):
+    event: Literal["tool_result"]
+    data: ToolResultData
+
+
+# Optionally, define a fallback model for unrecognized events
+class UnknownEvent(SSEEventBase):
+    pass
+
+
+# 1) Define a new ThinkingEvent type
+class ThinkingData(BaseModel):
+    id: str
+    object: str
+    delta: Delta
+
+
+class ThinkingEvent(SSEEventBase):
+    event: str = "thinking"
+    data: ThinkingData
+
+
+# Create a union type for all RAG events
+RAGEvent = (
+    SearchResultsEvent
+    | MessageEvent
+    | CitationEvent
+    | FinalAnswerEvent
+    | UnknownEvent
+    | ToolCallEvent
+    | ToolResultEvent
+    | ToolResultData
+    | ToolResultEvent
+)
+
+AgentEvent = (
+    ThinkingEvent
+    | SearchResultsEvent
+    | MessageEvent
+    | CitationEvent
+    | FinalAnswerEvent
+    | ToolCallEvent
+    | ToolResultEvent
+    | UnknownEvent
+)
 
 WrappedCompletionResponse = R2RResults[LLMChatCompletion]
 # Create wrapped versions of the responses

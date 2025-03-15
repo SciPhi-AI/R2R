@@ -164,7 +164,6 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         async for chunk in self._execute_with_backoff_async_stream(task):
-            logger.debug(f"Received delta: {chunk.choices[0].delta}")
             if isinstance(chunk, dict):
                 yield LLMChatCompletionChunk(**chunk)
                 continue
