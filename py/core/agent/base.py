@@ -1,4 +1,3 @@
-# type: ignore
 import asyncio
 import json
 import logging
@@ -83,10 +82,7 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 generation_config,
             )
 
-            # Extract the summary text
-            summary = response.choices[0].message.content
-
-            return summary
+            return response.choices[0].message.content
         except Exception as e:
             logger.error(f"Error generating LLM summary: {str(e)}")
             # Fall back to basic summary if LLM generation fails
@@ -383,7 +379,7 @@ class R2RStreamingAgent(R2RAgent):
                 await self.conversation.add_message(m)
 
         # Track all citations emitted during streaming for final persistence
-        self.streaming_citations = []
+        self.streaming_citations: list[dict] = []
 
         async def sse_generator() -> AsyncGenerator[str, None]:
             announced_short_ids = set()
