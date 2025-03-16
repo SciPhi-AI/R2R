@@ -45,7 +45,6 @@ def test_agent_rag_tool_usage(client, test_collection):
         rag_generation_config={"stream": False, "max_tokens_to_sample": 150},
     )
 
-    print(response)
     assert str(doc_id) == response.results.messages[-1].metadata["citations"][0]["payload"]["document_id"], "Agent should use RAG tool to retrieve unique content"
     assert str("search_file_knowledge") == response.results.messages[-1].metadata["tool_calls"][-1]["name"], "Agent should use RAG tool to retrieve unique content"
 
@@ -64,10 +63,6 @@ def test_agent_rag_tool_usage2(client, test_collection):
         rag_tools=["search_file_descriptions", "get_file_content"],
         rag_generation_config={"stream": False, "max_tokens_to_sample": 150},
     )
-    print('response = ', response)
-    print("-"*100)
-    for message in response.results.messages:
-        print(message.metadata)
     # assert unique_id in response.results.messages[-1].content, "Agent should use RAG tool to retrieve unique content"
     # assert str(doc_id) == response.results.messages[-1].metadata["citations"][0]["payload"]["document_id"], "Agent should use RAG tool to retrieve unique content"
     assert str("search_file_descriptions") == response.results.messages[-1].metadata["tool_calls"][0]["name"], "Agent should use search_file_descriptions to retrieve unique content"
