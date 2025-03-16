@@ -39,11 +39,13 @@ from core.base import (
 from core.base.api.models import RAGResponse, User
 from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import (
+    CitationTracker,
     SearchResultsCollector,
     SSEFormatter,
     dump_collector,
     dump_obj,
     extract_citations,
+    find_new_citation_spans,
     num_tokens_from_messages,
 )
 from shared.api.models.management.responses import MessageResponse
@@ -1085,11 +1087,13 @@ class RetrievalService(Service):
                     ):
                         yield line
 
-                    announced_ids = (
-                        set()
-                    )  # keep track of which short IDs we’ve announced
+                    # Initialize citation tracker to manage citation state
+                    citation_tracker = CitationTracker()
+
+                    # Store citation payloads by ID for reuse
+                    citation_payloads = {}
+
                     partial_text_buffer = ""
-                    citations: list[dict] = []
 
                     # Begin streaming from the LLM
                     msg_stream = self.providers.llm.aget_completion_stream(
@@ -1127,56 +1131,92 @@ class RetrievalService(Service):
 
                                 # (a) Extract citations from updated buffer
                                 #     For each *new* short ID, emit an SSE "citation" event
-                                found_ids = extract_citations(
-                                    partial_text_buffer
+                                # Find new citation spans in the accumulated text
+                                new_citation_spans = find_new_citation_spans(
+                                    partial_text_buffer, citation_tracker
                                 )
-                                for sid in found_ids:
-                                    if sid not in announced_ids:
-                                        announced_ids.add(sid)
-                                        payload = self._find_item_by_shortid(
-                                            sid, collector
-                                        )
-                                        # citations.append(citation_payload)
-                                        """Create citation payload for a short ID"""
-                                        # This will be overridden in RAG subclasses
-                                        # check if as_dict is on payload
-                                        if isinstance(
-                                            payload, dict
-                                        ) and hasattr(payload, "as_dict"):
-                                            payload = payload.as_dict()
-                                        if isinstance(
-                                            payload, dict
-                                        ) and hasattr(payload, "dict"):
-                                            payload = payload.dict
-                                        if isinstance(
-                                            payload, dict
-                                        ) and hasattr(payload, "to_dict"):
-                                            payload = payload.to_dict()
 
-                                        citation_payload = {
-                                            "id": f"{sid}",
+                                # Process each new citation span
+                                for cid, spans in new_citation_spans.items():
+                                    for span in spans:
+                                        # Check if this is the first time we've seen this citation ID
+                                        is_new_citation = (
+                                            citation_tracker.is_new_citation(
+                                                cid
+                                            )
+                                        )
+
+                                        # Get payload if it's a new citation
+                                        payload = None
+                                        if is_new_citation:
+                                            source_obj = (
+                                                self._find_item_by_shortid(
+                                                    cid, collector
+                                                )
+                                            )
+                                            if source_obj:
+                                                # Store payload for reuse
+                                                payload = dump_obj(source_obj)
+                                                citation_payloads[cid] = (
+                                                    payload
+                                                )
+
+                                        # Create citation event payload
+                                        citation_data = {
+                                            "id": cid,
                                             "object": "citation",
-                                            "payload": dump_obj(
-                                                payload
-                                            ),  # Will be populated in RAG agents
+                                            "is_new": is_new_citation,
+                                            "span": {
+                                                "start": span[0],
+                                                "end": span[1],
+                                            },
                                         }
 
-                                        # Emit citation
+                                        # Only include full payload for new citations
+                                        if is_new_citation and payload:
+                                            citation_data["payload"] = payload
+
+                                        # Emit the citation event
                                         async for (
                                             line
                                         ) in SSEFormatter.yield_citation_event(
-                                            citation_payload
+                                            citation_data
                                         ):
                                             yield line
 
                             # If the LLM signals it’s done
                             if finish_reason == "stop":
+                                # Prepare consolidated citations for final answer event
+                                consolidated_citations = []
+                                # Group citations by ID with all their spans
+                                for (
+                                    cid,
+                                    spans,
+                                ) in citation_tracker.get_all_spans().items():
+                                    if cid in citation_payloads:
+                                        consolidated_citations.append(
+                                            {
+                                                "id": cid,
+                                                "object": "citation",
+                                                "spans": [
+                                                    {
+                                                        "start": s[0],
+                                                        "end": s[1],
+                                                    }
+                                                    for s in spans
+                                                ],
+                                                "payload": citation_payloads[
+                                                    cid
+                                                ],
+                                            }
+                                        )
+
                                 # (c) Emit final answer + all collected citations
                                 final_answer_evt = {
                                     "id": "msg_final",
                                     "object": "rag.final_answer",
                                     "generated_answer": partial_text_buffer,
-                                    "citations": citations,
+                                    "citations": consolidated_citations,
                                 }
                                 async for (
                                     line

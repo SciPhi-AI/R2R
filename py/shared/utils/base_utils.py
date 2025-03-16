@@ -647,7 +647,7 @@ class SSEFormatter:
         """
 
         # Include the full payload only for new citations
-        if not citation_data["is_new"] or "payload" not in citation_data:
+        if not citation_data.get("is_new") or "payload" not in citation_data:
             citation_data["payload"] = None
 
         # Yield the event
