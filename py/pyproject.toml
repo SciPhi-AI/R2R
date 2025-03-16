@@ -105,6 +105,16 @@ dev = [
     "pytest-xdist >=3.6.1,<4.0.0",
     "ruff >=0.9.6,<0.10.0",
 ]
+tools = [
+    "biopython>=1.85",
+    "colorama >=0.4.6,<0.5.0",
+    "firecrawl-py>=1.13.5",
+    "numpy>=1.26.4",
+    "pandas>=2.2.3",
+    "scipy>=1.15.2",
+    "simpy>=4.1.1",
+    "statsmodels>=0.14.4",
+]
 
 [project.scripts]
 r2r-serve = "r2r.serve:run_server"

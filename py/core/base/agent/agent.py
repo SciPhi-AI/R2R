@@ -272,6 +272,7 @@ class RAGAgentConfig(AgentConfig):
     research_tools: list[str] = [
         "rag",
         "reasoning",
+        # DISABLED by default
         "critique",
         "python_executor",
     ]

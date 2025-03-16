@@ -312,7 +312,7 @@ class RAGAgentMixin:
         returning a list of DocumentResponse objects.
         """
         return Tool(
-            name="search_files",
+            name="search_file_descriptions",
             description=(
                 "Semantic search over the stored documents over AI generated summaries of input documents. "
                 "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "

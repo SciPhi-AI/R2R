@@ -236,6 +236,15 @@ class GenerationConfig(R2RSerializable):
                 )
 
     def __init__(self, **data):
+        # Handle max_tokens mapping to max_tokens_to_sample
+        if "max_tokens" in data:
+            # Only set max_tokens_to_sample if it's not already provided
+            if "max_tokens_to_sample" not in data:
+                data["max_tokens_to_sample"] = data.pop("max_tokens")
+            else:
+                # If both are provided, max_tokens_to_sample takes precedence
+                data.pop("max_tokens")
+
         if (
             "response_format" in data
             and isinstance(data["response_format"], type)
