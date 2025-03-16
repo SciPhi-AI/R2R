@@ -8,6 +8,22 @@ import {
 } from "../../types";
 import { ensureSnakeCase } from "../../utils";
 
+function parseSseEvent(raw: { event: string; data: string }) {
+  // Some SSE servers send a "done" event at the end:
+  if (raw.event === "done") return null;
+
+  try {
+    const parsedJson = JSON.parse(raw.data);
+    return {
+      event: raw.event,
+      data: parsedJson,
+    };
+  } catch (err) {
+    console.error("Failed to parse SSE line:", raw.data, err);
+    return null;
+  }
+}
+
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
 
@@ -56,7 +72,7 @@ export class RetrievalClient {
    * @param query
    * @param searchSettings Settings for the search
    * @param ragGenerationConfig Configuration for RAG generation
-   * @param taskPromptOverride Optional custom prompt to override default
+   * @param taskPrompt Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @returns
    */
@@ -65,9 +81,10 @@ export class RetrievalClient {
     searchMode?: "advanced" | "basic" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    taskPromptOverride?: string;
+    taskPrompt?: string;
     includeTitleIfAvailable?: boolean;
-  }): Promise<any | AsyncGenerator<string, void, unknown>> {
+    includeWebSearch?: boolean;
+  }): Promise<any | ReadableStream<Uint8Array>> {
     const data = {
       query: options.query,
       ...(options.searchMode && {
@@ -79,11 +96,14 @@ export class RetrievalClient {
       ...(options.ragGenerationConfig && {
         rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
       }),
-      ...(options.taskPromptOverride && {
-        task_prompt_override: options.taskPromptOverride,
+      ...(options.taskPrompt && {
+        task_prompt_override: options.taskPrompt,
       }),
       ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
+      }),
+      ...(options.includeWebSearch && {
+        include_web_search: options.includeWebSearch,
       }),
     };
 
@@ -104,9 +124,7 @@ export class RetrievalClient {
       "retrieval/rag",
       {
         data: ragData,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         responseType: "stream",
       },
     );
@@ -130,47 +148,43 @@ export class RetrievalClient {
    *    - Handle follow-up questions and clarifications
    *    - Navigate complex topics with multi-step reasoning
    *
-   * Key Features:
-   *    - Hybrid search combining vector and knowledge graph approaches
-   *    - Contextual conversation management with conversation_id tracking
-   *    - Customizable generation parameters for response style and length
-   *    - Source document citation with optional title inclusion
-   *    - Streaming support for real-time responses
+   * This endpoint offers two operating modes:
+   *    - RAG mode: Standard retrieval-augmented generation for answering questions
+   *      based on knowledge base
+   *    - Research mode: Advanced capabilities for deep analysis, reasoning, and computation
    *
-   * Common Use Cases:
-   *    - Research assistance and literature review
-   *    - Document analysis and summarization
-   *    - Technical support and troubleshooting
-   *    - Educational Q&A and tutoring
-   *    - Knowledge base exploration
-   *
-   * The agent uses both vector search and knowledge graph capabilities to
-   * find and synthesize information, providing detailed, factual responses
-   * with proper attribution to source documents.
    * @param message Current message to process
-   * @param ragGenerationConfig Configuration for RAG generation
+   * @param ragGenerationConfig Configuration for RAG generation in 'rag' mode
+   * @param researchGenerationConfig Configuration for generation in 'research' mode
    * @param searchMode Search mode to use, either "basic", "advanced", or "custom"
    * @param searchSettings Settings for the search
-   * @param taskPromptOverride Optional custom prompt to override default
+   * @param taskPrompt Optional custom prompt to override default
    * @param includeTitleIfAvailable Include document titles in responses when available
    * @param conversationId ID of the conversation
-   * @param tools List of tool configurations
+   * @param tools List of tool configurations (deprecated)
+   * @param ragTools List of tools to enable for RAG mode
+   * @param researchTools List of tools to enable for Research mode
    * @param maxToolContextLength Maximum context length for tool replies
-   * @param useExtendedPrompt Use extended prompt for generation
+   * @param useSystemContext Use system context for generation
+   * @param mode Mode to use, either "rag" or "research"
    * @returns
    */
   async agent(options: {
     message: Message;
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
+    researchGenerationConfig?: GenerationConfig | Record<string, any>;
     searchMode?: "basic" | "advanced" | "custom";
     searchSettings?: SearchSettings | Record<string, any>;
-    taskPromptOverride?: string;
+    taskPrompt?: string;
     includeTitleIfAvailable?: boolean;
     conversationId?: string;
     maxToolContextLength?: number;
-    tools?: Array<Record<string, any>>;
+    tools?: Array<string>; // Deprecated
+    ragTools?: Array<string>;
+    researchTools?: Array<string>;
     useSystemContext?: boolean;
-  }): Promise<any | AsyncGenerator<string, void, unknown>> {
+    mode?: "rag" | "research";
+  }): Promise<any | ReadableStream<Uint8Array>> {
     const data: Record<string, any> = {
       message: options.message,
       ...(options.searchMode && {
@@ -179,20 +193,22 @@ export class RetrievalClient {
       ...(options.ragGenerationConfig && {
         rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
       }),
+      ...(options.researchGenerationConfig && {
+        research_generation_config: ensureSnakeCase(
+          options.researchGenerationConfig,
+        ),
+      }),
       ...(options.searchSettings && {
         search_settings: ensureSnakeCase(options.searchSettings),
       }),
-      ...(options.taskPromptOverride && {
-        task_prompt_override: options.taskPromptOverride,
+      ...(options.taskPrompt && {
+        task_prompt: options.taskPrompt,
       }),
-      ...(options.includeTitleIfAvailable !== undefined && {
+      ...(typeof options.includeTitleIfAvailable && {
         include_title_if_available: options.includeTitleIfAvailable,
       }),
       ...(options.conversationId && {
         conversation_id: options.conversationId,
-      }),
-      ...(options.tools && {
-        tools: options.tools,
       }),
       ...(options.maxToolContextLength && {
         max_tool_context_length: options.maxToolContextLength,
@@ -200,12 +216,33 @@ export class RetrievalClient {
       ...(options.tools && {
         tools: options.tools,
       }),
+      ...(options.ragTools && {
+        rag_tools: options.ragTools,
+      }),
+      ...(options.researchTools && {
+        research_tools: options.researchTools,
+      }),
       ...(typeof options.useSystemContext !== undefined && {
         use_system_context: options.useSystemContext,
       }),
+      ...(options.mode && {
+        mode: options.mode,
+      }),
     };
 
+    // Determine if streaming is enabled
+    let isStream = false;
     if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
+      isStream = true;
+    } else if (
+      options.researchGenerationConfig &&
+      options.mode === "research" &&
+      options.researchGenerationConfig.stream
+    ) {
+      isStream = true;
+    }
+
+    if (isStream) {
       return this.streamAgent(data);
     } else {
       return await this.client.makeRequest("POST", "retrieval/agent", {
@@ -217,14 +254,13 @@ export class RetrievalClient {
   private async streamAgent(
     agentData: Record<string, any>,
   ): Promise<ReadableStream<Uint8Array>> {
+    // Return the raw stream like streamCompletion does
     return this.client.makeRequest<ReadableStream<Uint8Array>>(
       "POST",
       "retrieval/agent",
       {
         data: agentData,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         responseType: "stream",
       },
     );

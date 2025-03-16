@@ -41,7 +41,6 @@ from .search import (
     AggregateSearchResult,
     ChunkSearchResult,
     ChunkSearchSettings,
-    ContextDocumentResult,
     GraphCommunityResult,
     GraphEntityResult,
     GraphRelationshipResult,
@@ -51,7 +50,7 @@ from .search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
-    WebSearchResult,
+    WebPageSearchResult,
     select_search_filters,
 )
 from .user import Token, TokenData, User
@@ -112,14 +111,13 @@ __all__ = [
     # Search abstractions
     "AggregateSearchResult",
     "GraphSearchResult",
-    "WebSearchResult",
+    "WebPageSearchResult",
     "GraphSearchResultType",
     "GraphEntityResult",
     "GraphRelationshipResult",
     "GraphCommunityResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
-    "ContextDocumentResult",
     "ChunkSearchResult",
     "SearchSettings",
     "select_search_filters",

@@ -8,7 +8,7 @@ static_rag_agent:
 
     If no relevant results are found, then state that no results were found. If no obvious question is present, then do not carry out a search, and instead ask for clarification.
 
-    REMINDER - Use line item references to like [1], [2], ... refer to specifically numbered items in the provided context.
+    REMINDER - Use line item references to like [c910e2e], [b12cd2f], to refer to the specific search result IDs returned in the provided context.
 
   input_types:
     date: str

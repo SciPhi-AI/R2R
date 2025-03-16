@@ -6,6 +6,11 @@ from .providers import *
 from .utils import *
 
 __all__ = [
+    "ThinkingEvent",
+    "ToolCallEvent",
+    "ToolResultEvent",
+    "CitationEvent",
+    "Citation",
     ## ABSTRACTIONS
     # Base abstractions
     "AsyncSyncMeta",
@@ -42,12 +47,12 @@ __all__ = [
     "Prompt",
     # Search abstractions
     "AggregateSearchResult",
-    "WebSearchResponse",
+    "WebSearchResult",
     "GraphSearchResult",
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
-    "WebSearchResult",
+    "WebPageSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",
@@ -111,7 +116,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "format_search_results_for_llm",
-    "format_search_results_for_stream",
     "validate_uuid",
     # ID generation
     "generate_id",
@@ -120,7 +124,7 @@ __all__ = [
     "generate_default_user_collection_id",
     "generate_user_id",
     "increment_version",
-    "map_citations_to_collector",
-    "extract_citations",
-    "reassign_citations_in_order",
+    "yield_sse_event",
+    "dump_collector",
+    "dump_obj",
 ]

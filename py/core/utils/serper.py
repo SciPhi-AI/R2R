@@ -1,7 +1,10 @@
 # TODO - relocate to a dedicated module
 import http.client
 import json
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 # TODO - Move process json to dedicated data processing module
@@ -74,6 +77,7 @@ class SerperClient:
         payload = json.dumps({"q": query, "num_outputs": limit})
         connection.request("POST", "/search", payload, self.headers)
         response = connection.getresponse()
+        logger.debug("Received response {response} from Serper API.")
         data = response.read()
         json_data = json.loads(data.decode("utf-8"))
         return SerperClient._extract_results(json_data)

@@ -193,6 +193,7 @@ class DocumentResponse(R2RSerializable):
     summary: Optional[str] = None
     summary_embedding: Optional[list[float]] = None  # Add optional embedding
     total_tokens: Optional[int] = None
+    chunks: Optional[list] = None
 
     def convert_to_db_entry(self):
         """Prepare the document info for database entry, extracting certain

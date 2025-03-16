@@ -1,6 +1,5 @@
 import logging
-import textwrap
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from uuid import UUID
 
 from fastapi import Body, Depends
@@ -26,6 +25,9 @@ from core.base.api.models import (
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
 from .base_router import BaseRouterV3
+from .examples import EXAMPLES
+
+logger = logging.getLogger(__name__)
 
 
 def merge_search_settings(
@@ -86,82 +88,7 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Search R2R",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            # if using auth, do client.login(...)
-
-                            # Basic mode, no overrides
-                            response = client.retrieval.search(
-                                query="Who is Aristotle?",
-                                search_mode="basic"
-                            )
-
-                            # Advanced mode with overrides
-                            response = client.retrieval.search(
-                                query="Who is Aristotle?",
-                                search_mode="advanced",
-                                search_settings={
-                                    "filters": {"document_id": {"$eq": "3e157b3a-..."}},
-                                    "limit": 5
-                                }
-                            )
-
-                            # Custom mode with full control
-                            response = client.retrieval.search(
-                                query="Who is Aristotle?",
-                                search_mode="custom",
-                                search_settings={
-                                    "use_semantic_search": True,
-                                    "filters": {"category": {"$like": "%philosophy%"}},
-                                    "limit": 20,
-                                    "chunk_settings": {"index_measure": "l2_distance"}
-                                }
-                            )
-                            """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.search({
-                                    query: "Who is Aristotle?",
-                                    search_settings: {
-                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        useSemanticSearch: true
-                                    }
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/search" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "query": "Who is Aristotle?",
-                                "search_settings": {
-                                    filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    use_semantic_search: true
-                                }
-                            }'
-                            """),
-                    },
-                ]
-            },
+            openapi_extra=EXAMPLES["search"],
         )
         @self.base_endpoint
         async def search_app(
@@ -203,26 +130,54 @@ class RetrievalRouter(BaseRouterV3):
             Apply filters directly inside `search_settings.filters`. For example:
             ```json
             {
-              "filters": {"document_id": {"$eq": "3e157b3a-..."}}
+            "filters": {"document_id": {"$eq": "e43864f5-a36f-548e-aacd-6f8d48b30c7f"}}
             }
             ```
             Supported operators: `$eq`, `$neq`, `$gt`, `$gte`, `$lt`, `$lte`, `$like`, `$ilike`, `$in`, `$nin`.
 
-            **Limit:**
-            Control how many results you get by specifying `limit` inside `search_settings`. For example:
+            **Hybrid Search:**
+            Enable hybrid search by setting `use_hybrid_search: true` in search_settings. This combines semantic search with
+            keyword-based search for improved results. Configure with `hybrid_settings`:
             ```json
             {
-              "limit": 20
+            "use_hybrid_search": true,
+            "hybrid_settings": {
+                "full_text_weight": 1.0,
+                "semantic_weight": 5.0,
+                "full_text_limit": 200,
+                "rrf_k": 50
+            }
             }
             ```
 
-            **Examples:**
-            - Using `basic` mode and no overrides:
-            Just specify `search_mode="basic"`.
-            - Using `advanced` mode and applying a filter:
-            Specify `search_mode="advanced"` and include `search_settings={"filters": {...}, "limit": 5}` to override defaults.
-            - Using `custom` mode:
-            Provide the entire `search_settings` to define your search exactly as you want it.
+            **Graph-Enhanced Search:**
+            Knowledge graph integration is enabled by default. Control with `graph_search_settings`:
+            ```json
+            {
+            "graph_search_settings": {
+                "use_graph_search": true,
+                "kg_search_type": "local"
+            }
+            }
+            ```
+
+            **Advanced Filtering:**
+            Use complex filters to narrow down results by metadata fields or document properties:
+            ```json
+            {
+            "filters": {
+                "$and":[
+                    {"document_type": {"$eq": "pdf"}},
+                    {"metadata.year": {"$gt": 2020}}
+                ]
+            }
+            }
+            ```
+
+            **Results:**
+            The response includes vector search results and optional graph search results.
+            Each result contains the matched text, document ID, and relevance score.
+
             """
             if query == "":
                 raise R2RException("Query cannot be empty", 400)
@@ -239,88 +194,8 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/rag",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG Query",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            # when using auth, do client.login(...)
-
-                            response = client.retrieval.rag(
-                                query="Who is Aristotle?",
-                                search_settings={
-                                    "use_semantic_search": True,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 10,
-                                    "chunk_settings": {
-                                        "limit": 20, # separate limit for chunk vs. graph
-                                    },
-                                },
-                                rag_generation_config={
-                                    "stream": false,
-                                    "temperature": 0.7,
-                                    "max_tokens": 150
-                                }
-                            )
-                            """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.retrieval.rag({
-                                    query: "Who is Aristotle?",
-                                    search_settings: {
-                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        useSemanticSearch: true,
-                                        chunkSettings: {
-                                            limit: 20, # separate limit for chunk vs. graph
-                                        },
-                                    },
-                                    ragGenerationConfig: {
-                                        stream: false,
-                                        temperature: 0.7,
-                                        maxTokens: 150
-                                    }
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/rag" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "query": "Who is Aristotle?",
-                                "search_settings": {
-                                    "use_semantic_search": True,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 10,
-                                    chunk_settings={
-                                        "limit": 20, # separate limit for chunk vs. graph
-                                    },
-                                },
-                                "rag_generation_config": {
-                                    stream: false,
-                                    temperature: 0.7,
-                                    max_tokens: 150
-                                }
-                            }'
-                            """),
-                    },
-                ]
-            },
+            response_model=None,
+            openapi_extra=EXAMPLES["rag"],
         )
         @self.base_endpoint
         async def rag_app(
@@ -349,7 +224,7 @@ class RetrievalRouter(BaseRouterV3):
                 default_factory=GenerationConfig,
                 description="Configuration for RAG generation",
             ),
-            task_prompt_override: Optional[str] = Body(
+            task_prompt: Optional[str] = Body(
                 default=None,
                 description="Optional custom prompt to override default",
             ),
@@ -357,15 +232,65 @@ class RetrievalRouter(BaseRouterV3):
                 default=False,
                 description="Include document titles in responses when available",
             ),
+            include_web_search: bool = Body(
+                default=False,
+                description="Include web search results provided to the LLM.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedRAGResponse:
             """Execute a RAG (Retrieval-Augmented Generation) query.
 
-            This endpoint combines search results with language model generation.
-            It supports the same filtering capabilities as the search endpoint,
-            allowing for precise control over the retrieved context.
+            This endpoint combines search results with language model generation to produce accurate,
+            contextually-relevant responses based on your document corpus.
 
-            The generation process can be customized using the `rag_generation_config` parameter.
+            **Features:**
+            - Combines vector search, optional knowledge graph integration, and LLM generation
+            - Automatically cites sources with unique citation identifiers
+            - Supports both streaming and non-streaming responses
+            - Compatible with various LLM providers (OpenAI, Anthropic, etc.)
+            - Web search integration for up-to-date information
+
+            **Search Configuration:**
+            All search parameters from the search endpoint apply here, including filters, hybrid search, and graph-enhanced search.
+
+            **Generation Configuration:**
+            Fine-tune the language model's behavior with `rag_generation_config`:
+            ```json
+            {
+            "model": "openai/gpt-4o-mini",  // Model to use
+            "temperature": 0.7,              // Control randomness (0-1)
+            "max_tokens": 1500,              // Maximum output length
+            "stream": true                   // Enable token streaming
+            }
+            ```
+
+            **Model Support:**
+            - OpenAI models (default)
+            - Anthropic Claude models (requires ANTHROPIC_API_KEY)
+            - Local models via Ollama
+            - Any provider supported by LiteLLM
+
+            **Streaming Responses:**
+            When `stream: true` is set, the endpoint returns Server-Sent Events with the following types:
+            - `search_results`: Initial search results from your documents
+            - `message`: Partial tokens as they're generated
+            - `citation`: Citation metadata when sources are referenced
+            - `final_answer`: Complete answer with structured citations
+
+            **Example Response:**
+            ```json
+            {
+            "generated_answer": "DeepSeek-R1 is a model that demonstrates impressive performance...[1]",
+            "search_results": { ... },
+            "citations": [
+                {
+                    "id": "cit.123456",
+                    "object": "citation",
+                    "payload": { ... }
+                }
+            ]
+            }
+            ```
             """
 
             if "model" not in rag_generation_config.__fields_set__:
@@ -379,12 +304,13 @@ class RetrievalRouter(BaseRouterV3):
                 query=query,
                 search_settings=effective_settings,
                 rag_generation_config=rag_generation_config,
-                task_prompt_override=task_prompt_override,
+                task_prompt=task_prompt,
                 include_title_if_available=include_title_if_available,
+                include_web_search=include_web_search,
             )
 
             if rag_generation_config.stream:
-
+                # ========== Streaming path ==========
                 async def stream_generator():
                     try:
                         async for chunk in response:
@@ -401,114 +327,14 @@ class RetrievalRouter(BaseRouterV3):
                     stream_generator(), media_type="text/event-stream"
                 )  # type: ignore
             else:
+                # ========== Non-streaming path ==========
                 return response
 
         @self.router.post(
             "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                        from r2r import R2RClient
-
-                        client = R2RClient()
-                        # when using auth, do client.login(...)
-
-                        response = client.retrieval.agent(
-                            message={
-                                "role": "user",
-                                "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                            },
-                            search_settings={
-                                "use_semantic_search": True,
-                                "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                "limit": 10,
-                                chunk_settings={
-                                    "limit": 20, # separate limit for chunk vs. graph
-                                },
-                                graph_settings={
-                                    "enabled": True,
-                                },
-                            },
-                            rag_generation_config: {
-                                stream: false,
-                                temperature: 0.7,
-                                max_tokens: 150
-                            }
-                            include_title_if_available=True,
-                            conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
-                        )
-                        """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.retrieval.agent({
-                                    message: {
-                                        role: "user",
-                                        content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                                    },
-                                    searchSettings: {
-                                        filters: {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                        useSemanticSearch: true,
-                                        chunkSettings: {
-                                            limit: 20, # separate limit for chunk vs. graph
-                                            enabled: true
-                                        },
-                                        graphSettings: {
-                                            enabled: true,
-                                        },
-                                    },
-                                    ragGenerationConfig: {
-                                        stream: false,
-                                        temperature: 0.7,
-                                        maxTokens: 150
-                                    },
-                                    includeTitleIfAvailable: true,
-                                    conversationId: "550e8400-e29b-41d4-a716-446655440000"
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/agent" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "message": {
-                                    "role": "user",
-                                    "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                                },
-                                "search_settings": {
-                                    "use_semantic_search": True,
-                                    "filters": {"document_id": {"$eq": "3e157b3a-8469-51db-90d9-52e7d896b49b"}},
-                                    "limit": 10,
-                                    chunk_settings={
-                                        "limit": 20, # separate limit for chunk vs. graph
-                                    },
-                                    graph_settings={
-                                        "enabled": True,
-                                    },
-                                },
-                                "include_title_if_available": true,
-                                "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
-                                }'
-                            """),
-                    },
-                ]
-            },
+            openapi_extra=EXAMPLES["agent"],
         )
         @self.base_endpoint
         async def agent_app(
@@ -523,43 +349,68 @@ class RetrievalRouter(BaseRouterV3):
             ),
             search_mode: SearchMode = Body(
                 default=SearchMode.custom,
-                description=(
-                    "Default value of `custom` allows full control over search settings.\n\n"
-                    "Pre-configured search modes:\n"
-                    "`basic`: A simple semantic-based search.\n"
-                    "`advanced`: A more powerful hybrid search combining semantic and full-text.\n"
-                    "`custom`: Full control via `search_settings`.\n\n"
-                    "If `filters` or `limit` are provided alongside `basic` or `advanced`, "
-                    "they will override the default settings for that mode."
-                ),
+                description="Pre-configured search modes: basic, advanced, or custom.",
             ),
             search_settings: Optional[SearchSettings] = Body(
                 None,
-                description=(
-                    "The search configuration object. If `search_mode` is `custom`, "
-                    "these settings are used as-is. For `basic` or `advanced`, these settings will override the default mode configuration.\n\n"
-                    "Common overrides include `filters` to narrow results and `limit` to control how many results are returned."
-                ),
+                description="The search configuration object for retrieving context.",
             ),
+            # Generation configurations
             rag_generation_config: GenerationConfig = Body(
                 default_factory=GenerationConfig,
-                description="Configuration for RAG generation",
+                description="Configuration for RAG generation in 'rag' mode",
             ),
+            research_generation_config: Optional[GenerationConfig] = Body(
+                None,
+                description="Configuration for generation in 'research' mode. If not provided but mode='research', rag_generation_config will be used with appropriate model overrides.",
+            ),
+            # Tool configurations
+            rag_tools: Optional[
+                list[
+                    Literal[
+                        "web_search",
+                        "web_scrape",
+                        "search_file_descriptions",
+                        "search_file_knowledge",
+                        "get_file_content",
+                    ]
+                ]
+            ] = Body(
+                None,
+                description="List of tools to enable for RAG mode. Available tools: search_file_knowledge, get_file_content, web_search, web_scrape, search_file_descriptions",
+            ),
+            research_tools: Optional[
+                list[
+                    Literal["rag", "reasoning", "critique", "python_executor"]
+                ]
+            ] = Body(
+                None,
+                description="List of tools to enable for Research mode. Available tools: rag, reasoning, critique, python_executor",
+            ),
+            # Backward compatibility
+            tools: Optional[list[str]] = Body(
+                None,
+                deprecated=True,
+                description="List of tools to execute (deprecated, use rag_tools or research_tools instead)",
+            ),
+            # Other parameters
+            task_prompt: Optional[str] = Body(
+                default=None,
+                description="Optional custom prompt to override default",
+            ),
+            # Backward compatibility
             task_prompt_override: Optional[str] = Body(
                 default=None,
+                deprecated=True,
                 description="Optional custom prompt to override default",
             ),
             include_title_if_available: bool = Body(
                 default=True,
-                description="Include document titles in responses when available",
+                description="Pass document titles from search results into the LLM context window.",
             ),
             conversation_id: Optional[UUID] = Body(
                 default=None,
                 description="ID of the conversation",
-            ),
-            tools: Optional[list[str]] = Body(
-                None,
-                description="List of tools to execute",
             ),
             max_tool_context_length: Optional[int] = Body(
                 default=32_768,
@@ -569,45 +420,91 @@ class RetrievalRouter(BaseRouterV3):
                 default=True,
                 description="Use extended prompt for generation",
             ),
+            mode: Optional[Literal["rag", "research"]] = Body(
+                default="rag",
+                description="Mode to use for generation: 'rag' for standard retrieval or 'research' for deep analysis with reasoning capabilities",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
-            """Engage with an intelligent RAG-powered conversational agent for
-            complex information retrieval and analysis.
-
-            This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
-            detailed, context-aware responses based on your document collection. The agent can:
-
-            - Maintain conversation context across multiple interactions
-            - Dynamically search and retrieve relevant information from both vector and knowledge graph sources
-            - Break down complex queries into sub-questions for comprehensive answers
-            - Cite sources and provide evidence-based responses
-            - Handle follow-up questions and clarifications
-            - Navigate complex topics with multi-step reasoning
-
-            Key Features:
-            - Hybrid search combining vector and knowledge graph approaches
-            - Contextual conversation management with conversation_id tracking
-            - Customizable generation parameters for response style and length
-            - Source document citation with optional title inclusion
-            - Streaming support for real-time responses
-            - Branch management for exploring different conversation paths
-
-            Common Use Cases:
-            - Research assistance and literature review
-            - Document analysis and summarization
-            - Technical support and troubleshooting
-            - Educational Q&A and tutoring
-            - Knowledge base exploration
-
-            The agent uses both vector search and knowledge graph capabilities to find and synthesize
-            information, providing detailed, factual responses with proper attribution to source documents.
             """
-            if "model" not in rag_generation_config.__fields_set__:
-                rag_generation_config.model = self.config.app.quality_llm
+            Engage with an intelligent agent for information retrieval, analysis, and research.
 
+            This endpoint offers two operating modes:
+            - **RAG mode**: Standard retrieval-augmented generation for answering questions based on knowledge base
+            - **Research mode**: Advanced capabilities for deep analysis, reasoning, and computation
+
+            ### RAG Mode (Default)
+
+            The RAG mode provides fast, knowledge-based responses using:
+            - Semantic and hybrid search capabilities
+            - Document-level and chunk-level content retrieval
+            - Optional web search integration
+            - Source citation and evidence-based responses
+
+            ### Research Mode
+
+            The Research mode builds on RAG capabilities and adds:
+            - A dedicated reasoning system for complex problem-solving
+            - Critique capabilities to identify potential biases or logical fallacies
+            - Python execution for computational analysis
+            - Multi-step reasoning for deeper exploration of topics
+
+            ### Available Tools
+
+            **RAG Tools:**
+            - `search_file_knowledge`: Semantic/hybrid search on your ingested documents
+            - `search_file_descriptions`: Search over file-level metadata
+            - `content`: Fetch entire documents or chunk structures
+            - `web_search`: Query external search APIs for up-to-date information
+            - `web_scrape`: Scrape and extract content from specific web pages
+
+            **Research Tools:**
+            - `rag`: Leverage the underlying RAG agent for information retrieval
+            - `reasoning`: Call a dedicated model for complex analytical thinking
+            - `critique`: Analyze conversation history to identify flaws and biases
+            - `python_executor`: Execute Python code for complex calculations and analysis
+
+            ### Streaming Output
+
+            When streaming is enabled, the agent produces different event types:
+            - `thinking`: Shows the model's step-by-step reasoning (when extended_thinking=true)
+            - `tool_call`: Shows when the agent invokes a tool
+            - `tool_result`: Shows the result of a tool call
+            - `citation`: Indicates when a citation is added to the response
+            - `message`: Streams partial tokens of the response
+            - `final_answer`: Contains the complete generated answer and structured citations
+
+            ### Conversations
+
+            Maintain context across multiple turns by including `conversation_id` in each request.
+            After your first call, store the returned `conversation_id` and include it in subsequent calls.
+
+            """
+            # Handle backward compatibility for task_prompt
+            task_prompt = task_prompt or task_prompt_override
+            # Handle model selection based on mode
+            if "model" not in rag_generation_config.__fields_set__:
+                if mode == "rag":
+                    rag_generation_config.model = self.config.app.quality_llm
+                elif mode == "research":
+                    rag_generation_config.model = self.config.app.planning_llm
+
+            # Prepare search settings
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
+
+            # Handle tool configuration and backward compatibility
+            if tools:  # Handle deprecated tools parameter
+                logger.warning(
+                    "The 'tools' parameter is deprecated. Use 'rag_tools' or 'research_tools' based on mode."
+                )
+                rag_tools = tools  # type: ignore
+
+            # Determine effective generation config
+            effective_generation_config = rag_generation_config
+            if mode == "research" and research_generation_config:
+                effective_generation_config = research_generation_config
 
             try:
                 response = await self.services.retrieval.agent(
@@ -615,18 +512,20 @@ class RetrievalRouter(BaseRouterV3):
                     messages=messages,
                     search_settings=effective_settings,
                     rag_generation_config=rag_generation_config,
-                    task_prompt_override=task_prompt_override,
+                    research_generation_config=research_generation_config,
+                    task_prompt=task_prompt,
                     include_title_if_available=include_title_if_available,
                     max_tool_context_length=max_tool_context_length,
                     conversation_id=(
                         str(conversation_id) if conversation_id else None
                     ),
                     use_system_context=use_system_context,
-                    override_tools=tools,
-                    auth_user=auth_user,
+                    rag_tools=rag_tools,
+                    research_tools=research_tools,
+                    mode=mode,
                 )
 
-                if rag_generation_config.stream:
+                if effective_generation_config.stream:
 
                     async def stream_generator():
                         try:
@@ -640,267 +539,20 @@ class RetrievalRouter(BaseRouterV3):
                             # Clean up if needed, then return
                             return
 
-                    return StreamingResponse(
+                    return StreamingResponse(  # type: ignore
                         stream_generator(), media_type="text/event-stream"
-                    )  # type: ignore
+                    )
                 else:
                     return response
             except Exception as e:
-                raise R2RException(str(e), 500) from e
-
-        @self.router.post(
-            "/retrieval/reasoning_agent",
-            dependencies=[Depends(self.rate_limit_dependency)],
-            summary="Reasoning Agent with RAG(Thoughts + Tools)",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                        from r2r import R2RClient
-
-                        client = R2RClient()
-                        # when using auth, do client.login(...)
-
-                        response = client.retrieval.reasoning_agent(
-                            message={
-                                "role": "user",
-                                "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                            },
-                            rag_generation_config: {
-                                stream: false,
-                                temperature: 0.7,
-                                max_tokens: 150
-                            }
-                            conversation_id="550e8400-e29b-41d4-a716-446655440000"  # Optional for conversation continuity
-                        )
-                        """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.retrieval.agent({
-                                    message: {
-                                        role: "user",
-                                        content: "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                                    },
-                                    ragGenerationConfig: {
-                                        stream: false,
-                                        temperature: 0.7,
-                                        maxTokens: 150
-                                    },
-                                    conversationId: "550e8400-e29b-41d4-a716-446655440000"
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/agent" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "message": {
-                                    "role": "user",
-                                    "content": "What were the key contributions of Aristotle to logic and how did they influence later philosophers?"
-                                },
-                                "conversation_id": "550e8400-e29b-41d4-a716-446655440000"
-                                }'
-                            """),
-                    },
-                ]
-            },
-        )
-        @self.base_endpoint
-        async def reasoning_agent_app(
-            message: Optional[Message] = Body(
-                None,
-                description="Current message to process",
-            ),
-            rag_generation_config: GenerationConfig = Body(
-                default_factory=GenerationConfig,
-                description="Configuration for RAG generation",
-            ),
-            conversation_id: Optional[UUID] = Body(
-                default=None,
-                description="ID of the conversation",
-            ),
-            tools: Optional[list[str]] = Body(
-                None,
-                description="List of tools to execute",
-            ),
-            max_tool_context_length: Optional[int] = Body(
-                default=32_768,
-                description="Maximum length of returned tool context",
-            ),
-            auth_user=Depends(self.providers.auth.auth_wrapper()),
-        ) -> WrappedAgentResponse:
-            """Engage with an intelligent RAG-powered conversational agent for
-            complex information retrieval and analysis.
-
-            This advanced endpoint combines retrieval-augmented generation (RAG) with a conversational AI agent to provide
-            detailed, context-aware responses based on your document collection. The agent can:
-
-            - Maintain conversation context across multiple interactions
-            - Dynamically search and retrieve relevant information from both vector and knowledge graph sources
-            - Break down complex queries into sub-questions for comprehensive answers
-            - Cite sources and provide evidence-based responses
-            - Handle follow-up questions and clarifications
-            - Navigate complex topics with multi-step reasoning
-
-            Key Features:
-            - Hybrid search combining vector and knowledge graph approaches
-            - Contextual conversation management with conversation_id tracking
-            - Customizable generation parameters for response style and length
-            - Source document citation with optional title inclusion
-            - Streaming support for real-time responses
-            - Branch management for exploring different conversation paths
-
-            Common Use Cases:
-            - Research assistance and literature review
-            - Document analysis and summarization
-            - Technical support and troubleshooting
-            - Educational Q&A and tutoring
-            - Knowledge base exploration
-
-            The agent uses both vector search and knowledge graph capabilities to find and synthesize
-            information, providing detailed, factual responses with proper attribution to source documents.
-            """
-            effective_settings = self._prepare_search_settings(
-                auth_user, SearchMode.basic, None
-            )
-
-            if "model" not in rag_generation_config.__fields_set__:
-                rag_generation_config.model = self.config.app.quality_llm
-
-            try:
-                response = await self.services.retrieval.agent(
-                    message=message,
-                    messages=None,
-                    search_settings=effective_settings,
-                    rag_generation_config=rag_generation_config,
-                    task_prompt_override=None,
-                    include_title_if_available=False,
-                    max_tool_context_length=max_tool_context_length,
-                    conversation_id=(
-                        str(conversation_id) if conversation_id else None
-                    ),
-                    use_system_context=False,
-                    override_tools=tools,
-                    reasoning_agent=True,
-                )
-
-                if rag_generation_config.stream:
-
-                    async def stream_generator():
-                        try:
-                            async for chunk in response:
-                                if len(chunk) > 1024:
-                                    for i in range(0, len(chunk), 1024):
-                                        yield chunk[i : i + 1024]
-                                else:
-                                    yield chunk
-                        except GeneratorExit:
-                            # Clean up if needed, then return
-                            return
-
-                    return StreamingResponse(
-                        stream_generator(), media_type="text/event-stream"
-                    )  # type: ignore
-                else:
-                    return response
-            except Exception as e:
+                logger.error(f"Error in agent_app: {e}")
                 raise R2RException(str(e), 500) from e
 
         @self.router.post(
             "/retrieval/completion",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Message Completions",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            # when using auth, do client.login(...)
-
-                            response = client.completion(
-                                messages=[
-                                    {"role": "system", "content": "You are a helpful assistant."},
-                                    {"role": "user", "content": "What is the capital of France?"},
-                                    {"role": "assistant", "content": "The capital of France is Paris."},
-                                    {"role": "user", "content": "What about Italy?"}
-                                ],
-                                generation_config={
-                                    "model": "gpt-4o-mini",
-                                    "temperature": 0.7,
-                                    "max_tokens": 150,
-                                    "stream": False
-                                }
-                            )
-                            """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.completion({
-                                    messages: [
-                                        { role: "system", content: "You are a helpful assistant." },
-                                        { role: "user", content: "What is the capital of France?" },
-                                        { role: "assistant", content: "The capital of France is Paris." },
-                                        { role: "user", content: "What about Italy?" }
-                                    ],
-                                    generationConfig: {
-                                        model: "gpt-4o-mini",
-                                        temperature: 0.7,
-                                        maxTokens: 150,
-                                        stream: false
-                                    }
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/completion" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "messages": [
-                                    {"role": "system", "content": "You are a helpful assistant."},
-                                    {"role": "user", "content": "What is the capital of France?"},
-                                    {"role": "assistant", "content": "The capital of France is Paris."},
-                                    {"role": "user", "content": "What about Italy?"}
-                                ],
-                                "generation_config": {
-                                    "model": "gpt-4o-mini",
-                                    "temperature": 0.7,
-                                    "max_tokens": 150,
-                                    "stream": false
-                                }
-                                }'
-                            """),
-                    },
-                ]
-            },
+            openapi_extra=EXAMPLES["completion"],
         )
         @self.base_endpoint
         async def completion(
@@ -927,7 +579,7 @@ class RetrievalRouter(BaseRouterV3):
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={
-                    "model": "gpt-4o-mini",
+                    "model": "openai/gpt-4o-mini",
                     "temperature": 0.7,
                     "max_tokens": 150,
                     "stream": False,
@@ -956,50 +608,7 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/embedding",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Embeddings",
-            openapi_extra={
-                "x-codeSamples": [
-                    {
-                        "lang": "Python",
-                        "source": textwrap.dedent("""
-                            from r2r import R2RClient
-
-                            client = R2RClient()
-                            # when using auth, do client.login(...)
-
-                            result = client.retrieval.embedding(
-                                text="Who is Aristotle?",
-                            )
-                            """),
-                    },
-                    {
-                        "lang": "JavaScript",
-                        "source": textwrap.dedent("""
-                            const { r2rClient } = require("r2r-js");
-
-                            const client = new r2rClient();
-
-                            function main() {
-                                const response = await client.retrieval.embedding({
-                                    text: "Who is Aristotle?",
-                                });
-                            }
-
-                            main();
-                            """),
-                    },
-                    {
-                        "lang": "Shell",
-                        "source": textwrap.dedent("""
-                            curl -X POST "https://api.example.com/retrieval/embedding" \\
-                                -H "Content-Type: application/json" \\
-                                -H "Authorization: Bearer YOUR_API_KEY" \\
-                                -d '{
-                                "text": "Who is Aristotle?",
-                                }'
-                            """),
-                    },
-                ]
-            },
+            openapi_extra=EXAMPLES["embedding"],
         )
         @self.base_endpoint
         async def embedding(

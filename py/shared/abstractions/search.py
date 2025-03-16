@@ -3,13 +3,18 @@
 from copy import copy
 from enum import Enum
 from typing import Any, Optional
-from uuid import UUID
+from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field
 
 from .base import R2RSerializable
+from .document import DocumentResponse
 from .llm import GenerationConfig
 from .vector import IndexMeasure
+
+
+def generate_id_from_label(label) -> UUID:
+    return uuid5(NAMESPACE_DNS, label)
 
 
 class ChunkSearchResult(R2RSerializable):
@@ -19,12 +24,17 @@ class ChunkSearchResult(R2RSerializable):
     document_id: UUID
     owner_id: Optional[UUID]
     collection_ids: list[UUID]
-    score: float
+    score: Optional[float] = None
     text: str
     metadata: dict[str, Any]
 
     def __str__(self) -> str:
-        return f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+        if self.score:
+            return (
+                f"ChunkSearchResult(score={self.score:.3f}, text={self.text})"
+            )
+        else:
+            return f"ChunkSearchResult(text={self.text})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -133,6 +143,7 @@ class GraphSearchResult(R2RSerializable):
     chunk_ids: Optional[list[UUID]] = None
     metadata: dict[str, Any] = {}
     score: Optional[float] = None
+    id: UUID
 
     def __str__(self) -> str:
         return f"GraphSearchResult(content={self.content}, result_type={self.result_type})"
@@ -156,14 +167,15 @@ class GraphSearchResult(R2RSerializable):
         }
 
 
-class WebSearchResult(R2RSerializable):
-    title: str
-    link: str
-    snippet: str
+class WebPageSearchResult(R2RSerializable):
+    title: Optional[str] = None
+    link: Optional[str] = None
+    snippet: Optional[str] = None
     position: int
     type: str = "organic"
     date: Optional[str] = None
     sitelinks: Optional[list[dict]] = None
+    id: UUID
 
     class Config:
         json_schema_extra = {
@@ -183,12 +195,13 @@ class WebSearchResult(R2RSerializable):
         }
 
     def __str__(self) -> str:
-        return f"WebSearchResult(title={self.title}, link={self.link}, snippet={self.snippet})"
+        return f"WebPageSearchResult(title={self.title}, link={self.link}, snippet={self.snippet})"
 
 
 class RelatedSearchResult(R2RSerializable):
     query: str
     type: str = "related"
+    id: UUID
 
 
 class PeopleAlsoAskResult(R2RSerializable):
@@ -196,27 +209,41 @@ class PeopleAlsoAskResult(R2RSerializable):
     snippet: str
     link: str
     title: str
+    id: UUID
     type: str = "peopleAlsoAsk"
 
 
-class WebSearchResponse(R2RSerializable):
-    organic_results: list[WebSearchResult] = []
+class WebSearchResult(R2RSerializable):
+    organic_results: list[WebPageSearchResult] = []
     related_searches: list[RelatedSearchResult] = []
     people_also_ask: list[PeopleAlsoAskResult] = []
 
     @classmethod
-    def from_serper_results(cls, results: list[dict]) -> "WebSearchResponse":
+    def from_serper_results(cls, results: list[dict]) -> "WebSearchResult":
         organic = []
         related = []
         paa = []
 
         for result in results:
             if result["type"] == "organic":
-                organic.append(WebSearchResult(**result))
+                organic.append(
+                    WebPageSearchResult(
+                        **result, id=generate_id_from_label(result.get("link"))
+                    )
+                )
             elif result["type"] == "relatedSearches":
-                related.append(RelatedSearchResult(**result))
+                related.append(
+                    RelatedSearchResult(
+                        **result,
+                        id=generate_id_from_label(result.get("query")),
+                    )
+                )
             elif result["type"] == "peopleAlsoAsk":
-                paa.append(PeopleAlsoAskResult(**result))
+                paa.append(
+                    PeopleAlsoAskResult(
+                        **result, id=generate_id_from_label(result.get("link"))
+                    )
+                )
 
         return cls(
             organic_results=organic,
@@ -225,43 +252,19 @@ class WebSearchResponse(R2RSerializable):
         )
 
 
-class ContextDocumentResult(R2RSerializable):
-    """Holds a single 'document' plus its 'chunks', exactly as your
-    content_method returns them, or tidied up a bit."""
-
-    document: dict[str, Any]  # or create a formal Document model
-    chunks: list[str] = Field(default_factory=list)
-
-    def __str__(self) -> str:
-        return f"ContextDocumentResult(document={self.document}, chunks={self.chunks})"
-
-    class Config:
-        populate_by_name = True
-        json_schema_extra = {
-            "example": {
-                "document": {
-                    "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
-                    "title": "Document Title",
-                    "metadata": {},
-                },
-                "chunks": ["Chunk 1", "Chunk 2"],
-            }
-        }
-
-
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
     chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
-    web_search_results: Optional[list[WebSearchResult]] = None
-    context_document_results: Optional[list[ContextDocumentResult]] = None
+    web_search_results: Optional[list[WebPageSearchResult]] = None
+    document_search_results: Optional[list[DocumentResponse]] = None
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, context_document_results={str(self.context_document_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
 
     def as_dict(self) -> dict:
         return {
@@ -280,9 +283,9 @@ class AggregateSearchResult(R2RSerializable):
                 if self.web_search_results
                 else []
             ),
-            "context_document_results": (
-                [cdr.to_dict() for cdr in self.context_document_results]
-                if self.context_document_results
+            "document_search_results": (
+                [cdr.to_dict() for cdr in self.document_search_results]
+                if self.document_search_results
                 else []
             ),
         }
@@ -335,7 +338,7 @@ class AggregateSearchResult(R2RSerializable):
                         ],
                     }
                 ],
-                "context_document_results": [
+                "document_search_results": [
                     {
                         "document": {
                             "id": "3f3d47f3-8baf-58eb-8bc2-0171fb1c6e09",
@@ -484,6 +487,12 @@ class SearchSettings(R2RSerializable):
     graph_settings: GraphSearchSettings = Field(
         default_factory=GraphSearchSettings,
         description="Settings specific to knowledge graph search",
+    )
+
+    # For HyDE or multi-query:
+    num_sub_queries: int = Field(
+        default=5,
+        description="Number of sub-queries/hypothetical docs to generate when using hyde or rag_fusion search strategies.",
     )
 
     class Config:

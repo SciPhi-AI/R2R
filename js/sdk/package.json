@@ -1,6 +1,6 @@
 {
   "name": "r2r-js",
-  "version": "0.4.30",
+  "version": "0.4.31",
   "description": "",
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",
@@ -16,7 +16,8 @@
     "test": "jest --no-cache",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:users": "jest UsersIntegrationSuperUser"
+    "test:users": "jest UsersIntegrationSuperUser",
+    "test:retrieval": "jest RetrievalIntegrationSuperUser"
   },
   "files": [
     "dist"

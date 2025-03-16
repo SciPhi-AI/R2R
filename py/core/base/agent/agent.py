@@ -13,7 +13,6 @@ from core.base.abstractions import (
     GenerationConfig,
     LLMChatCompletion,
     Message,
-    R2RException,
 )
 from core.base.providers import CompletionProvider, DatabaseProvider
 
@@ -41,12 +40,11 @@ class Conversation:
 
 # TODO - Move agents to provider pattern
 class AgentConfig(BaseModel):
-    agent_static_prompt: str = "static_rag_agent"
-    agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
-    tools: list[str] = ["search"]
-    tool_names: Optional[list[str]] = None
+    rag_rag_agent_static_prompt: str = "static_rag_agent"
+    rag_agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
     stream: bool = False
     include_tools: bool = True
+    max_iterations: int = 10
 
     @classmethod
     def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
@@ -56,9 +54,6 @@ class AgentConfig(BaseModel):
             for k, v in kwargs.items()
             if k in base_args
         }
-        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
-            "tool_names", None
-        )
         return cls(**filtered_kwargs)  # type: ignore
 
 
@@ -76,6 +71,7 @@ class Agent(ABC):
         self.conversation = Conversation()
         self._completed = False
         self._tools: list[Tool] = []
+        self.tool_calls: list[dict] = []
         self.rag_generation_config = rag_generation_config
         self._register_tools()
 
@@ -92,9 +88,12 @@ class Agent(ABC):
                 content=system_instruction
                 or (
                     await self.database_provider.prompts_handler.get_cached_prompt(
-                        self.config.agent_static_prompt,
-                        inputs={"date": str(datetime.now().isoformat())},
+                        self.config.rag_rag_agent_static_prompt,
+                        inputs={
+                            "date": str(datetime.now().strftime("%m/%d/%Y"))
+                        },
                     )
+                    + f"\n Note,you only have {self.config.max_iterations} iterations or tool calls to reach a conclusion before your operation terminates."
                 ),
             )
         )
@@ -178,10 +177,11 @@ class Agent(ABC):
         function_name: str,
         function_arguments: str,
         tool_id: Optional[str] = None,
+        save_messages: bool = True,
         *args,
         **kwargs,
     ) -> ToolResult:
-        logger.info(
+        logger.debug(
             f"Calling function: {function_name}, args: {function_arguments}, tool_id: {tool_id}"
         )
         if tool := next(
@@ -191,11 +191,41 @@ class Agent(ABC):
                 function_args = json.loads(function_arguments)
 
             except JSONDecodeError as e:
-                error_message = f"The requested tool '{function_name}' is not available with arguments {function_arguments} failed."
-                tool_result = ToolResult(
-                    raw_result=error_message,
-                    llm_formatted_result=error_message,
+                error_message = f"Calling the requested tool '{function_name}' with arguments {function_arguments} failed with `JSONDecodeError`."
+                if save_messages:
+                    await self.conversation.add_message(
+                        Message(
+                            role="tool" if tool_id else "function",
+                            content=error_message,
+                            name=function_name,
+                            tool_call_id=tool_id,
+                        )
+                    )
+
+                # raise R2RException(
+                #     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
+                #     status_code=400,
+                # )
+
+            merged_kwargs = {**kwargs, **function_args}
+            try:
+                raw_result = await tool.results_function(
+                    *args, **merged_kwargs
                 )
+                llm_formatted_result = tool.llm_format_function(raw_result)
+            except Exception as e:
+                raw_result = f"Calling the requested tool '{function_name}' with arguments {function_arguments} failed with an exception: {e}."
+                logger.error(raw_result)
+                llm_formatted_result = raw_result
+
+            tool_result = ToolResult(
+                raw_result=raw_result,
+                llm_formatted_result=llm_formatted_result,
+            )
+            if tool.stream_function:
+                tool_result.stream_result = tool.stream_function(raw_result)
+
+            if save_messages:
                 await self.conversation.add_message(
                     Message(
                         role="tool" if tool_id else "function",
@@ -204,29 +234,58 @@ class Agent(ABC):
                         tool_call_id=tool_id,
                     )
                 )
+                # HACK - to fix issues with claude thinking + tool use [https://github.com/anthropics/anthropic-cookbook/blob/main/extended_thinking/extended_thinking_with_tool_use.ipynb]
+                if self.rag_generation_config.extended_thinking:
+                    await self.conversation.add_message(
+                        Message(
+                            role="user",
+                            content="Continue...",
+                        )
+                    )
 
-                raise R2RException(
-                    message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
-                    status_code=400,
-                ) from e
-
-            merged_kwargs = {**kwargs, **function_args}
-            raw_result = await tool.results_function(*args, **merged_kwargs)
-            llm_formatted_result = tool.llm_format_function(raw_result)
-            tool_result = ToolResult(
-                raw_result=raw_result,
-                llm_formatted_result=llm_formatted_result,
+            self.tool_calls.append(
+                {
+                    "name": function_name,
+                    "args": function_arguments,
+                }
             )
-            if tool.stream_function:
-                tool_result.stream_result = tool.stream_function(raw_result)
-
-            await self.conversation.add_message(
-                Message(
-                    role="tool" if tool_id else "function",
-                    content=str(tool_result.llm_formatted_result),
-                    name=function_name,
-                    tool_call_id=tool_id,
-                )
-            )
-
         return tool_result
+
+
+# TODO - Move agents to provider pattern
+class RAGAgentConfig(AgentConfig):
+    rag_rag_agent_static_prompt: str = "static_rag_agent"
+    rag_agent_dynamic_prompt: str = "dynamic_reasoning_rag_agent_prompted"
+    stream: bool = False
+    include_tools: bool = True
+    max_iterations: int = 10
+    # tools: list[str] = [] # HACK - unused variable.
+
+    # Default RAG tools
+    rag_tools: list[str] = [
+        "search_file_descriptions",
+        "search_file_knowledge",
+        "get_file_content",
+    ]
+
+    # Default Research tools
+    research_tools: list[str] = [
+        "rag",
+        "reasoning",
+        # DISABLED by default
+        "critique",
+        "python_executor",
+    ]
+
+    @classmethod
+    def create(cls: Type["AgentConfig"], **kwargs: Any) -> "AgentConfig":
+        base_args = cls.model_fields.keys()
+        filtered_kwargs = {
+            k: v if v != "None" else None
+            for k, v in kwargs.items()
+            if k in base_args
+        }
+        filtered_kwargs["tools"] = kwargs.get("tools", None) or kwargs.get(
+            "tool_names", None
+        )
+        return cls(**filtered_kwargs)  # type: ignore

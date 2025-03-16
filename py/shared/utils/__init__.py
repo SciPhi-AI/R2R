@@ -3,9 +3,9 @@ from .base_utils import (
     _get_vector_column_str,
     decrement_version,
     deep_update,
-    extract_citations,
+    dump_collector,
+    dump_obj,
     format_search_results_for_llm,
-    format_search_results_for_stream,
     generate_default_prompt_id,
     generate_default_user_collection_id,
     generate_document_id,
@@ -14,14 +14,12 @@ from .base_utils import (
     generate_id,
     generate_user_id,
     increment_version,
-    map_citations_to_collector,
-    reassign_citations_in_order,
     validate_uuid,
+    yield_sse_event,
 )
 from .splitter.text import RecursiveCharacterTextSplitter, TextSplitter
 
 __all__ = [
-    "format_search_results_for_stream",
     "format_search_results_for_llm",
     # ID generation
     "generate_id",
@@ -31,9 +29,6 @@ __all__ = [
     "generate_user_id",
     "generate_default_prompt_id",
     "generate_entity_document_id",
-    "map_citations_to_collector",
-    "extract_citations",
-    "reassign_citations_in_order",
     # Other
     "increment_version",
     "decrement_version",
@@ -45,4 +40,7 @@ __all__ = [
     # Vector utils
     "_decorate_vector_type",
     "_get_vector_column_str",
+    "yield_sse_event",
+    "dump_collector",
+    "dump_obj",
 ]
