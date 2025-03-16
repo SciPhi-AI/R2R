@@ -160,7 +160,9 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 self._completed = True
 
             # Determine which provider we're using
-            using_anthropic = "anthropic" in self.rag_generation_config.model.lower()
+            using_anthropic = (
+                "anthropic" in self.rag_generation_config.model.lower()
+            )
 
             # OPENAI HANDLING
             if not using_anthropic:
