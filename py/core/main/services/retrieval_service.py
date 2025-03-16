@@ -1787,6 +1787,10 @@ class RetrievalService(Service):
             sort_order="DESC" if reverse_order else "ASC",
         )
 
+        found_max = False
+        if len(docs_data["results"]) == limit:
+            found_max = True
+
         docs = docs_data["results"]
         if not docs:
             return "No documents found."
@@ -1807,6 +1811,11 @@ class RetrievalService(Service):
             lines.append(
                 f"[{i}] Title: {title}, Summary: {(doc.summary[0:max_summary_length] + ('...' if len(doc.summary) > max_summary_length else ''),)}, Total Tokens: {doc.total_tokens}, ID: {doc.id}"
             )
+        if found_max:
+            lines.append(
+                f"Note: Displaying only the first {limit} documents. Use a filter to narrow down the search if more documents are required."
+            )
+
         return "\n".join(lines)
 
     async def _build_aware_system_instruction(
