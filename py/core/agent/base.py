@@ -1305,3 +1305,180 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                 tool_params = {"value": raw_params}
 
         return tool_name, tool_params
+
+
+class R2RXMLToolsAgent(R2RAgent):
+    """
+    A non-streaming agent that:
+     - parses <think> or <Thought> blocks as chain-of-thought
+     - filters out XML tags related to tool calls and actions
+     - processes <Action><ToolCalls><ToolCall> blocks
+     - properly extracts citations when they appear in the text
+    """
+
+    # We treat <think> or <Thought> as the same token boundaries
+    THOUGHT_OPEN = re.compile(r"<(Thought|think)>", re.IGNORECASE)
+    THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
+
+    # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
+    ACTION_PATTERN = re.compile(
+        r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALLS_PATTERN = re.compile(
+        r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL
+    )
+    TOOLCALL_PATTERN = re.compile(
+        r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL
+    )
+    NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
+    PARAMS_PATTERN = re.compile(
+        r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL
+    )
+    RESPONSE_PATTERN = re.compile(
+        r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL
+    )
+
+    async def process_llm_response(self, response, *args, **kwargs):
+        """
+        Override the base process_llm_response to handle XML structured responses
+        including thoughts and tool calls.
+        """
+        if self._completed:
+            return
+
+        message = response.choices[0].message
+        finish_reason = response.choices[0].finish_reason
+
+        if not message.content:
+            # If there's no content, let the parent class handle the normal tool_calls flow
+            return await super().process_llm_response(
+                response, *args, **kwargs
+            )
+
+        # Get the response content
+        content = message.content
+
+        # HACK for gemini
+        content = content.replace("```action", "")
+        content = content.replace("```tool_code", "")
+        content = content.replace("```", "")
+
+        if (
+            not content.startswith("<")
+            and "deepseek" in self.rag_generation_config.model
+        ):  # HACK - fix issues with adding `<think>` to the beginning
+            content = "<think>" + content
+
+        # Process any tool calls in the content
+        action_matches = self.ACTION_PATTERN.findall(content)
+        if action_matches:
+            xml_toolcalls = "<ToolCalls>"
+            for action_block in action_matches:
+                tool_calls_text = []
+                # Look for ToolCalls wrapper, or use the raw action block
+                calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
+                if calls_wrapper:
+                    for tw in calls_wrapper:
+                        tool_calls_text.append(tw)
+                else:
+                    tool_calls_text.append(action_block)
+
+                # Process each ToolCall
+                for calls_region in tool_calls_text:
+                    calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
+                    for tc_block in calls_found:
+                        tool_name, tool_params = self._parse_single_tool_call(
+                            tc_block
+                        )
+                        if tool_name:
+                            tool_call_id = f"call_{abs(hash(tc_block))}"
+                            try:
+                                tool_result = (
+                                    await self.handle_function_or_tool_call(
+                                        tool_name,
+                                        json.dumps(tool_params),
+                                        tool_id=tool_call_id,
+                                        save_messages=False,
+                                    )
+                                )
+
+                                # Add tool result to XML
+                                xml_toolcalls += (
+                                    f"<ToolCall>"
+                                    f"<Name>{tool_name}</Name>"
+                                    f"<Parameters>{json.dumps(tool_params)}</Parameters>"
+                                    f"<Result>{tool_result.llm_formatted_result}</Result>"
+                                    f"</ToolCall>"
+                                )
+
+                            except Exception as e:
+                                logger.error(f"Error in tool call: {str(e)}")
+                                # Add error to XML
+                                xml_toolcalls += (
+                                    f"<ToolCall>"
+                                    f"<Name>{tool_name}</Name>"
+                                    f"<Parameters>{json.dumps(tool_params)}</Parameters>"
+                                    f"<Result>Error: {str(e)}</Result>"
+                                    f"</ToolCall>"
+                                )
+
+            xml_toolcalls += "</ToolCalls>"
+            pre_action_text = content[: content.find(action_block)]
+            post_action_text = content[
+                content.find(action_block) + len(action_block) :
+            ]
+            iteration_text = pre_action_text + xml_toolcalls + post_action_text
+
+            # Create the assistant message
+            await self.conversation.add_message(
+                Message(role="assistant", content=iteration_text)
+            )
+        else:
+            # Create an assistant message with the content as-is
+            await self.conversation.add_message(
+                Message(role="assistant", content=content)
+            )
+
+        # Only mark as completed if the finish_reason is "stop" or there are no action calls
+        # This allows the agent to continue the conversation when tool calls are processed
+        if finish_reason == "stop":
+            self._completed = True
+
+    def _parse_single_tool_call(
+        self, toolcall_text: str
+    ) -> Tuple[Optional[str], dict]:
+        """
+        Parse a ToolCall block to extract the name and parameters.
+
+        Args:
+            toolcall_text: The text content of a ToolCall block
+
+        Returns:
+            Tuple of (tool_name, tool_parameters)
+        """
+        name_match = self.NAME_PATTERN.search(toolcall_text)
+        if not name_match:
+            return None, {}
+        tool_name = name_match.group(1).strip()
+
+        params_match = self.PARAMS_PATTERN.search(toolcall_text)
+        if not params_match:
+            return tool_name, {}
+
+        raw_params = params_match.group(1).strip()
+        try:
+            # Handle potential JSON parsing issues
+            # First try direct parsing
+            tool_params = json.loads(raw_params)
+        except json.JSONDecodeError:
+            # If that fails, try to clean up the JSON string
+            try:
+                # Replace escaped quotes that might cause issues
+                cleaned_params = raw_params.replace('\\"', '"')
+                # Try again with the cleaned string
+                tool_params = json.loads(cleaned_params)
+            except json.JSONDecodeError:
+                # If all else fails, treat as a plain string value
+                tool_params = {"value": raw_params}
+
+        return tool_name, tool_params
