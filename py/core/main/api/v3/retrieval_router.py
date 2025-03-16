@@ -333,7 +333,7 @@ class RetrievalRouter(BaseRouterV3):
         @self.router.post(
             "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
-            summary="RAG-powered Conversational Agent with Research Capabilities",
+            summary="RAG-powered Conversational Agent",
             openapi_extra=EXAMPLES["agent"],
         )
         @self.base_endpoint
@@ -482,7 +482,6 @@ class RetrievalRouter(BaseRouterV3):
             """
             # Handle backward compatibility for task_prompt
             task_prompt = task_prompt or task_prompt_override
-
             # Handle model selection based on mode
             if "model" not in rag_generation_config.__fields_set__:
                 if mode == "rag":
