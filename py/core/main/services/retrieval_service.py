@@ -1844,7 +1844,7 @@ class RetrievalService(Service):
                 },
             )
 
-        if model is not None and ("deepseek" in model or "gemini" in model):
+        if model is not None and ("deepseek" in model):
             prompt_name = f"{prompt_name}_xml_tooling"
 
         if use_system_context:
