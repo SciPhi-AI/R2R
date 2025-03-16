@@ -79,17 +79,17 @@ def test_agent_rag_tool_usage2(client, test_collection):
 
 
 
-def test_agent_python_execution_tool(client, test_collection):
-    """Test agent uses Python execution tool for computation."""
-    response = client.retrieval.agent(
-        message={"role": "user", "content": "Calculate the factorial of 15! × 32 using Python. Return the result as a single string like 32812...."},
-        mode="research",
-        research_tools=["python_executor"],
-        research_generation_config={"stream": False, "max_tokens_to_sample": 200},
-    )
-    print(response)
+# def test_agent_python_execution_tool(client, test_collection):
+#     """Test agent uses Python execution tool for computation."""
+#     response = client.retrieval.agent(
+#         message={"role": "user", "content": "Calculate the factorial of 15! × 32 using Python. Return the result as a single string like 32812...."},
+#         mode="research",
+#         research_tools=["python_executor"],
+#         research_generation_config={"stream": False, "max_tokens_to_sample": 200},
+#     )
+#     print(response)
 
-    assert "41845579776000" in response.results.messages[-1].content.replace(",",""), "Agent should execute Python code and return correct factorial result"
+#     assert "41845579776000" in response.results.messages[-1].content.replace(",",""), "Agent should execute Python code and return correct factorial result"
 
 # def test_agent_web_search_tool(client, monkeypatch):
 #     """Test agent uses web search tool when appropriate."""

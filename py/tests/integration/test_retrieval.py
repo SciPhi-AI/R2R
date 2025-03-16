@@ -280,7 +280,7 @@ def test_rag_task_prompt(client: R2RClient):
     """
     results = client.retrieval.rag(
         query="Tell me about Aristotle",
-        rag_generation_config={"stream": False, "max_tokens": 50},
+        rag_generation_config={"stream": False}, # , "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
         task_prompt=custom_prompt,
     ).results
