@@ -589,7 +589,7 @@ def select_search_filters(
         user_collections = set(auth_user.collection_ids)
         for key in filters.keys():
             if "collection_ids" in key:
-                selected_collections = set(filters[key]["$overlap"])
+                selected_collections = set(map(UUID, filters[key]["$overlap"]))
                 break
 
         if selected_collections:
