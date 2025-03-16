@@ -160,10 +160,10 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
                 self._completed = True
 
             # Determine which provider we're using
-            using_openai = "openai" in self.rag_generation_config.model.lower()
+            using_anthropic = "anthropic" in self.rag_generation_config.model.lower()
 
             # OPENAI HANDLING
-            if using_openai:
+            if not using_anthropic:
                 if message.tool_calls:
                     assistant_msg = Message(
                         role="assistant",
