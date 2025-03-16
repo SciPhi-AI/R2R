@@ -622,12 +622,47 @@ async def yield_sse_event(event_name: str, payload: dict, chunk_size=1024):
     yield "\n"
 
 
-# Updated SSEFormatter with additional helper methods:
 class SSEFormatter:
     """
-    Standardized formatter for Server-Sent Events (SSE) across all agent types.
+    Enhanced formatter for Server-Sent Events (SSE) with citation tracking.
+    Extends the existing SSEFormatter with improved citation handling.
     """
 
+    @staticmethod
+    async def yield_citation_event(
+        citation_data: dict,
+    ):
+        """
+        Emits a citation event with optimized payload.
+
+        Args:
+            citation_id: The short ID of the citation (e.g., 'abc1234')
+            span: (start, end) position tuple for this occurrence
+            payload: Source object (included only for first occurrence)
+            is_new: Whether this is the first time we've seen this citation
+            citation_id_counter: Optional counter for citation occurrences
+
+        Yields:
+            Formatted SSE event lines
+        """
+
+        # Include the full payload only for new citations
+        if not citation_data["is_new"] or "payload" not in citation_data:
+            citation_data["payload"] = None
+
+        # Yield the event
+        async for line in yield_sse_event("citation", citation_data):
+            yield line
+
+    @staticmethod
+    async def yield_final_answer_event(
+        final_data: dict,
+    ):
+        # Yield the event
+        async for line in yield_sse_event("final_answer", final_data):
+            yield line
+
+    # Include other existing SSEFormatter methods for compatibility
     @staticmethod
     async def yield_message_event(text_segment, msg_id=None):
         msg_id = msg_id or f"msg_{uuid.uuid4().hex[:8]}"
@@ -671,6 +706,21 @@ class SSEFormatter:
             yield line
 
     @staticmethod
+    def yield_done_event():
+        return "event: done\ndata: [DONE]\n\n"
+
+    @staticmethod
+    async def yield_error_event(error_message, error_id=None):
+        error_id = error_id or f"err_{uuid.uuid4().hex[:8]}"
+        error_payload = {
+            "id": error_id,
+            "object": "agent.error",
+            "error": {"message": error_message, "type": "agent_error"},
+        }
+        async for line in yield_sse_event("error", error_payload):
+            yield line
+
+    @staticmethod
     async def yield_tool_call_event(tool_call_data):
         from ..api.models.retrieval.responses import ToolCallEvent
 
@@ -679,25 +729,6 @@ class SSEFormatter:
             "tool_call", tc_event.dict()["data"]
         ):
             yield line
-
-    @staticmethod
-    async def yield_tool_result_event(tool_result_data):
-        from ..api.models.retrieval.responses import ToolResultEvent
-
-        tr_event = ToolResultEvent(event="tool_result", data=tool_result_data)
-        async for line in yield_sse_event(
-            "tool_result", tr_event.dict()["data"]
-        ):
-            yield line
-
-    @staticmethod
-    async def yield_final_answer_event(final_data):
-        async for line in yield_sse_event("final_answer", final_data):
-            yield line
-
-    @staticmethod
-    def yield_done_event():
-        return "event: done\ndata: [DONE]\n\n"
 
     # New helper for emitting search results:
     @staticmethod
@@ -710,22 +741,12 @@ class SSEFormatter:
         async for line in yield_sse_event("search_results", payload):
             yield line
 
-    # New helper for emitting citation events:
     @staticmethod
-    async def yield_citation_event(citation_payload):
-        # Ensure the payload includes the proper event object label.
-        if "object" not in citation_payload:
-            citation_payload["object"] = "citation"
-        async for line in yield_sse_event("citation", citation_payload):
-            yield line
+    async def yield_tool_result_event(tool_result_data):
+        from ..api.models.retrieval.responses import ToolResultEvent
 
-    @staticmethod
-    async def yield_error_event(error_message, error_id=None):
-        error_id = error_id or f"err_{uuid.uuid4().hex[:8]}"
-        error_payload = {
-            "id": error_id,
-            "object": "agent.error",
-            "error": {"message": error_message, "type": "agent_error"},
-        }
-        async for line in yield_sse_event("error", error_payload):
+        tr_event = ToolResultEvent(event="tool_result", data=tool_result_data)
+        async for line in yield_sse_event(
+            "tool_result", tr_event.dict()["data"]
+        ):
             yield line

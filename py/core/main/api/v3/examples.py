@@ -405,7 +405,7 @@ agent_app_examples = {
         {
             "lang": "Python",
             "source": textwrap.dedent(
-"""
+                """
 from r2r import R2RClient
 from r2r import (
     ThinkingEvent,
@@ -455,7 +455,7 @@ for event in streaming_response:
     if event_type != current_event_type:
         current_event_type = event_type
         print() # Add newline before new event type
-        
+
         # Print emoji based on the new event type
         if isinstance(event, ThinkingEvent):
             print(f"\n🧠 Thinking: ", end="", flush=True)
@@ -469,7 +469,7 @@ for event in streaming_response:
             print(f"\n💬 Message: ", end="", flush=True)
         elif isinstance(event, FinalAnswerEvent):
             print(f"\n✅ Final answer: ", end="", flush=True)
-    
+
     # Print the content without the emoji
     if isinstance(event, ThinkingEvent):
         print(f"{event.data.delta.content[0].payload.value}", end="", flush=True)
@@ -564,14 +564,14 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                     // Process streaming events with emoji only on type change
                     if (Symbol.asyncIterator in streamingResponse) {
                         let currentEventType = null;
-                        
+
                         for await (const event of streamingResponse) {
                             // Check if event type has changed
                             const eventType = event.event;
                             if (eventType !== currentEventType) {
                                 currentEventType = eventType;
                                 console.log(); // Add newline before new event type
-                                
+
                                 // Print emoji based on the new event type
                                 switch(eventType) {
                                     case "thinking":
@@ -594,7 +594,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                                         break;
                                 }
                             }
-                            
+
                             // Print content based on event type
                             switch(eventType) {
                                 case "thinking":
@@ -622,7 +622,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
 
                     // Conversation with multiple turns (synchronous)
                     const conversation = await client.conversations.create();
-                    
+
                     // First message in conversation
                     const results1 = await client.retrieval.agent({
                         query: "What does DeepSeek R1 imply for the future of AI?",
@@ -636,7 +636,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                         },
                         conversationId: conversation.results.id
                     });
-                    
+
                     // Follow-up query in the same conversation
                     const results2 = await client.retrieval.agent({
                         query: "How does it compare to other reasoning models?",
@@ -650,7 +650,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                         },
                         conversationId: conversation.results.id
                     });
-                    
+
                     // Log the results
                     console.log(`First response: ${results1.generated_answer.substring(0, 100)}...`);
                     console.log(`Follow-up response: ${results2.generated_answer.substring(0, 100)}...`);

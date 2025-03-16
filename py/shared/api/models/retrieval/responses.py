@@ -16,38 +16,123 @@ from shared.api.models.management.responses import DocumentResponse
 from ....abstractions import R2RSerializable
 
 
-class Citation(R2RSerializable):
-    """Represents a single citation reference in the RAG response.
+class CitationSpan(R2RSerializable):
+    """Represents a single occurrence of a citation in text."""
 
-    Combines both bracket metadata (start/end offsets, snippet range) and the
-    mapped source fields (id, doc ID, chunk text, etc.).
+    start_index: int = Field(
+        ..., description="Starting character index of the citation"
+    )
+    end_index: int = Field(
+        ..., description="Ending character index of the citation"
+    )
+    context_start: int = Field(
+        ..., description="Starting index of the surrounding context"
+    )
+    context_end: int = Field(
+        ..., description="Ending index of the surrounding context"
+    )
+
+
+class Citation(R2RSerializable):
+    """
+    Represents a citation reference in the RAG response.
+
+    The first time a citation appears, it includes the full payload.
+    Subsequent appearances only include the citation ID and span information.
     """
 
-    # Bracket references
-    id: str = Field(..., description="The ID of the citation object")
-    object: str = Field(
-        ...,
-        description="The type of object, e.g. `citation`",
+    # Basic identification
+    id: str = Field(
+        ..., description="The short ID of the citation (e.g., 'e41ac2d')"
     )
+    object: str = Field(
+        "citation", description="The type of object, always 'citation'"
+    )
+
+    # Optimize payload delivery
+    is_new: bool = Field(
+        True,
+        description="Whether this is the first occurrence of this citation",
+    )
+
+    # Position information
+    span: Optional[CitationSpan] = Field(
+        None, description="Position of this citation occurrence in the text"
+    )
+
+    # Source information - only included for first occurrence
+    source_type: Optional[str] = Field(
+        None, description="Type of source: 'chunk', 'graph', 'web', or 'doc'"
+    )
+
+    # Full payload - only included for first occurrence
     payload: (
         ChunkSearchResult
         | GraphSearchResult
         | WebPageSearchResult
         | DocumentResponse
+        | dict[str, Any]
         | None
     ) = Field(
-        ..., description="The object payload and it's corresponding type"
+        None,
+        description="The complete source object (only included for new citations)",
     )
 
     class Config:
-        extra = "ignore"  # This tells Pydantic to ignore extra fields
+        extra = "ignore"
         json_schema_extra = {
             "example": {
-                "id": "cit.abcd123",
+                "id": "e41ac2d",
                 "object": "citation",
-                "payload": "ChunkSearchResult(...)",
+                "is_new": True,
+                "span": {
+                    "start_index": 120,
+                    "end_index": 129,
+                    "context_start": 80,
+                    "context_end": 180,
+                },
+                "source_type": "chunk",
+                "payload": {
+                    "id": "e41ac2d1-full-id",
+                    "text": "The study found significant improvements...",
+                    "metadata": {"title": "Research Paper"},
+                },
             }
         }
+
+
+# class Citation(R2RSerializable):
+#     """Represents a single citation reference in the RAG response.
+
+#     Combines both bracket metadata (start/end offsets, snippet range) and the
+#     mapped source fields (id, doc ID, chunk text, etc.).
+#     """
+
+#     # Bracket references
+#     id: str = Field(..., description="The ID of the citation object")
+#     object: str = Field(
+#         ...,
+#         description="The type of object, e.g. `citation`",
+#     )
+#     payload: (
+#         ChunkSearchResult
+#         | GraphSearchResult
+#         | WebPageSearchResult
+#         | DocumentResponse
+#         | None
+#     ) = Field(
+#         ..., description="The object payload and it's corresponding type"
+#     )
+
+#     class Config:
+#         extra = "ignore"  # This tells Pydantic to ignore extra fields
+#         json_schema_extra = {
+#             "example": {
+#                 "id": "cit.abcd123",
+#                 "object": "citation",
+#                 "payload": "ChunkSearchResult(...)",
+#             }
+#         }
 
 
 class RAGResponse(R2RSerializable):
@@ -376,15 +461,56 @@ class MessageEvent(SSEEventBase):
     data: MessageData
 
 
-# Model for citation events
-class CitationData(BaseModel):
-    id: str
-    object: str
+# Update CitationSpan model for SSE events
+class CitationSpanData(BaseModel):
+    start: int = Field(
+        ..., description="Starting character index of the citation"
+    )
+    end: int = Field(..., description="Ending character index of the citation")
+    context_start: Optional[int] = Field(
+        None, description="Starting index of surrounding context"
+    )
+    context_end: Optional[int] = Field(
+        None, description="Ending index of surrounding context"
+    )
 
+
+# Update CitationData model
+class CitationData(BaseModel):
+    id: str = Field(
+        ..., description="The short ID of the citation (e.g., 'e41ac2d')"
+    )
+    object: str = Field(
+        "citation", description="The type of object, always 'citation'"
+    )
+
+    # New fields from the enhanced Citation model
+    is_new: Optional[bool] = Field(
+        None,
+        description="Whether this is the first occurrence of this citation",
+    )
+
+    span: Optional[CitationSpanData] = Field(
+        None, description="Position of this citation occurrence in the text"
+    )
+
+    source_type: Optional[str] = Field(
+        None, description="Type of source: 'chunk', 'graph', 'web', or 'doc'"
+    )
+
+    # Optional payload field, only for first occurrence
+    payload: Optional[Any] = Field(
+        None,
+        description="The complete source object (only included for new citations)",
+    )
+
+    # For backward compatibility, maintain the existing fields
     class Config:
         populate_by_name = True
+        extra = "ignore"
 
 
+# CitationEvent remains the same, but now using the updated CitationData
 class CitationEvent(SSEEventBase):
     event: Literal["citation"]
     data: CitationData

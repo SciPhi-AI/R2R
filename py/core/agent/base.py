@@ -8,11 +8,12 @@ from typing import AsyncGenerator, Optional, Tuple
 from core.base import AsyncSyncMeta, LLMChatCompletion, Message, syncable
 from core.base.agent import Agent, Conversation
 from core.utils import (
+    CitationTracker,
     SearchResultsCollector,
     SSEFormatter,
     convert_nonserializable_objects,
     dump_obj,
-    extract_citations,
+    find_new_citation_spans,
 )
 
 logger = logging.getLogger()
@@ -382,11 +383,16 @@ class R2RStreamingAgent(R2RAgent):
             for m in messages:
                 await self.conversation.add_message(m)
 
+        # Initialize citation tracker for this run
+        citation_tracker = CitationTracker()
+
+        # Dictionary to store citation payloads by ID
+        citation_payloads = {}
+
         # Track all citations emitted during streaming for final persistence
         self.streaming_citations: list[dict] = []
 
         async def sse_generator() -> AsyncGenerator[str, None]:
-            announced_short_ids = set()
             pending_tool_calls = {}
             partial_text_buffer = ""
             iterations_count = 0
@@ -444,30 +450,55 @@ class R2RStreamingAgent(R2RAgent):
                             ):
                                 yield line
 
-                            # (b) Extract bracket references from the entire partial_text_buffer
-                            #     so we find newly appeared short IDs
-                            new_sids = extract_citations(partial_text_buffer)
-                            for sid in new_sids:
-                                if sid not in announced_short_ids:
-                                    announced_short_ids.add(sid)
-                                    # SSE "citation"
-                                    citation_evt_payload = self._create_citation_payload(
-                                        sid,
-                                        self.search_results_collector.find_by_short_id(
-                                            sid
-                                        ),
+                            # (b) Find new citation spans in the accumulated text
+                            new_citation_spans = find_new_citation_spans(
+                                partial_text_buffer, citation_tracker
+                            )
+
+                            # Process each new citation span
+                            for cid, spans in new_citation_spans.items():
+                                for span in spans:
+                                    # Check if this is the first time we've seen this citation ID
+                                    is_new_citation = (
+                                        citation_tracker.is_new_citation(cid)
                                     )
 
-                                    # Store citations for final persistence
+                                    # Get payload if it's a new citation
+                                    payload = None
+                                    if is_new_citation:
+                                        source_obj = self.search_results_collector.find_by_short_id(
+                                            cid
+                                        )
+                                        if source_obj:
+                                            # Store payload for reuse
+                                            payload = dump_obj(source_obj)
+                                            citation_payloads[cid] = payload
+
+                                    # Create citation event payload
+                                    citation_data = {
+                                        "id": cid,
+                                        "object": "citation",
+                                        "is_new": is_new_citation,
+                                        "span": {
+                                            "start": span[0],
+                                            "end": span[1],
+                                        },
+                                    }
+
+                                    # Only include full payload for new citations
+                                    if is_new_citation and payload:
+                                        citation_data["payload"] = payload
+
+                                    # Add to streaming citations for final answer
                                     self.streaming_citations.append(
-                                        citation_evt_payload
+                                        citation_data
                                     )
 
-                                    # Using SSEFormatter to yield a "citation" event
+                                    # Emit the citation event
                                     async for (
                                         line
                                     ) in SSEFormatter.yield_citation_event(
-                                        citation_evt_payload
+                                        citation_data
                                     ):
                                         yield line
 
@@ -565,13 +596,35 @@ class R2RStreamingAgent(R2RAgent):
                                     final_message
                                 )
 
-                            # (a) Emit final answer SSE event
-                            final_evt_payload = (
-                                self._create_final_answer_payload(
-                                    partial_text_buffer,
-                                    self.streaming_citations,
-                                )
-                            )
+                            # (a) Prepare final answer with optimized citations
+                            consolidated_citations = []
+                            # Group citations by ID with all their spans
+                            for (
+                                cid,
+                                spans,
+                            ) in citation_tracker.get_all_spans().items():
+                                if cid in citation_payloads:
+                                    consolidated_citations.append(
+                                        {
+                                            "id": cid,
+                                            "object": "citation",
+                                            "spans": [
+                                                {"start": s[0], "end": s[1]}
+                                                for s in spans
+                                            ],
+                                            "payload": citation_payloads[cid],
+                                        }
+                                    )
+
+                            # Create final answer payload
+                            final_evt_payload = {
+                                "id": "msg_final",
+                                "object": "agent.final_answer",
+                                "generated_answer": partial_text_buffer,
+                                "citations": consolidated_citations,
+                            }
+
+                            # Emit final answer event
                             async for (
                                 line
                             ) in SSEFormatter.yield_final_answer_event(
@@ -607,9 +660,13 @@ class R2RStreamingAgent(R2RAgent):
                     )
 
                     # Create and emit a final answer payload with the summary
-                    final_evt_payload = self._create_final_answer_payload(
-                        summary, self.streaming_citations
-                    )
+                    final_evt_payload = {
+                        "id": "msg_final",
+                        "object": "agent.final_answer",
+                        "generated_answer": summary,
+                        "citations": consolidated_citations,
+                    }
+
                     async for line in SSEFormatter.yield_final_answer_event(
                         final_evt_payload
                     ):
@@ -774,8 +831,16 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
             for m in messages:
                 await self.conversation.add_message(m)
 
+        # Initialize citation tracker for this run
+        citation_tracker = CitationTracker()
+
+        # Dictionary to store citation payloads by ID
+        citation_payloads = {}
+
+        # Track all citations emitted during streaming for final persistence
+        self.streaming_citations: list[dict] = []
+
         async def sse_generator() -> AsyncGenerator[str, None]:
-            announced_short_ids = set()
             iterations_count = 0
 
             try:
@@ -801,10 +866,32 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                     yielded_first_event = False
                     in_action_block = False
                     is_thinking = False
+                    accumulated_thinking = ""
+                    thinking_signatures = {}
 
                     async for chunk in llm_stream:
                         delta = chunk.choices[0].delta
                         finish_reason = chunk.choices[0].finish_reason
+
+                        # Handle thinking if present
+                        if hasattr(delta, "thinking") and delta.thinking:
+                            # Accumulate thinking for later use in messages
+                            accumulated_thinking += delta.thinking
+
+                            # Emit SSE "thinking" event
+                            async for (
+                                line
+                            ) in SSEFormatter.yield_thinking_event(
+                                delta.thinking
+                            ):
+                                yield line
+
+                        # Add this new handler for thinking signatures
+                        if hasattr(delta, "thinking_signature"):
+                            thinking_signatures[accumulated_thinking] = (
+                                delta.thinking_signature
+                            )
+                            accumulated_thinking = ""
 
                         # 3) If new text, accumulate it
                         if delta.content:
@@ -869,24 +956,55 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                     )[-1].split("</think>")[-1]
                                     delta.content = post_thought_text
 
-                            # Extract bracket references from the entire iteration_buffer
-                            #     so we find newly appeared short IDs
-                            new_sids = extract_citations(iteration_buffer)
-                            for sid in new_sids:
-                                if sid not in announced_short_ids:
-                                    announced_short_ids.add(sid)
-                                    # SSE "citation"
-                                    citation_evt_payload = self._create_citation_payload(
-                                        sid,
-                                        self.search_results_collector.find_by_short_id(
-                                            sid
-                                        ),
+                            # (b) Find new citation spans in the accumulated text
+                            new_citation_spans = find_new_citation_spans(
+                                iteration_buffer, citation_tracker
+                            )
+
+                            # Process each new citation span
+                            for cid, spans in new_citation_spans.items():
+                                for span in spans:
+                                    # Check if this is the first time we've seen this citation ID
+                                    is_new_citation = (
+                                        citation_tracker.is_new_citation(cid)
                                     )
-                                    # Using SSEFormatter to yield a "citation" event
+
+                                    # Get payload if it's a new citation
+                                    payload = None
+                                    if is_new_citation:
+                                        source_obj = self.search_results_collector.find_by_short_id(
+                                            cid
+                                        )
+                                        if source_obj:
+                                            # Store payload for reuse
+                                            payload = dump_obj(source_obj)
+                                            citation_payloads[cid] = payload
+
+                                    # Create citation event payload
+                                    citation_data = {
+                                        "id": cid,
+                                        "object": "citation",
+                                        "is_new": is_new_citation,
+                                        "span": {
+                                            "start": span[0],
+                                            "end": span[1],
+                                        },
+                                    }
+
+                                    # Only include full payload for new citations
+                                    if is_new_citation and payload:
+                                        citation_data["payload"] = payload
+
+                                    # Add to streaming citations for final answer
+                                    self.streaming_citations.append(
+                                        citation_data
+                                    )
+
+                                    # Emit the citation event
                                     async for (
                                         line
                                     ) in SSEFormatter.yield_citation_event(
-                                        citation_evt_payload
+                                        citation_data
                                     ):
                                         yield line
 
@@ -933,15 +1051,23 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         elif finish_reason == "stop":
                             break
 
+                    # Process any accumulated thinking
+                    await self._handle_thinking(
+                        thinking_signatures, accumulated_thinking
+                    )
+
                     # 6) The LLM is done. If we have any leftover partial text,
                     #    finalize it in the conversation
                     if iteration_buffer:
-                        await self.conversation.add_message(
-                            Message(
-                                role="assistant",
-                                content=iteration_buffer,
-                            )
+                        # Create the final message with metadata including citations
+                        final_message = Message(
+                            role="assistant",
+                            content=iteration_buffer,
+                            metadata={"citations": self.streaming_citations},
                         )
+
+                        # Add it to the conversation
+                        await self.conversation.add_message(final_message)
 
                     # --- 4) Process any <Action>/<ToolCalls> blocks, or mark completed
                     action_matches = self.ACTION_PATTERN.findall(
@@ -1036,17 +1162,47 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         iteration_text = (
                             pre_action_text + xml_toolcalls + post_action_text
                         )
+
+                        # Update the conversation with tool results
                         await self.conversation.add_message(
                             Message(
                                 role="assistant",
                                 content=iteration_text,
+                                metadata={
+                                    "citations": self.streaming_citations
+                                },
                             )
                         )
                     else:
-                        # (a) Emit final answer SSE event
-                        final_evt_payload = self._create_final_answer_payload(
-                            iteration_buffer, self.streaming_citations
-                        )
+                        # (a) Prepare final answer with optimized citations
+                        consolidated_citations = []
+                        # Group citations by ID with all their spans
+                        for (
+                            cid,
+                            spans,
+                        ) in citation_tracker.get_all_spans().items():
+                            if cid in citation_payloads:
+                                consolidated_citations.append(
+                                    {
+                                        "id": cid,
+                                        "object": "citation",
+                                        "spans": [
+                                            {"start": s[0], "end": s[1]}
+                                            for s in spans
+                                        ],
+                                        "payload": citation_payloads[cid],
+                                    }
+                                )
+
+                        # Create final answer payload
+                        final_evt_payload = {
+                            "id": "msg_final",
+                            "object": "agent.final_answer",
+                            "generated_answer": iteration_buffer,
+                            "citations": consolidated_citations,
+                        }
+
+                        # Emit final answer event
                         async for (
                             line
                         ) in SSEFormatter.yield_final_answer_event(
@@ -1058,7 +1214,6 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         yield SSEFormatter.yield_done_event()
                         self._completed = True
 
-                # For R2RStreamingAgent, replace the code after the while loop:
                 # If we exit the while loop due to hitting max iterations
                 if not self._completed:
                     # Generate a summary using the LLM
@@ -1072,19 +1227,23 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                     ):
                         yield line
 
-                    # Add summary to conversation
+                    # Add summary to conversation with citations metadata
                     await self.conversation.add_message(
                         Message(
                             role="assistant",
                             content=summary,
+                            metadata={"citations": self.streaming_citations},
                         )
                     )
 
                     # Create and emit a final answer payload with the summary
-                    final_evt_payload = self._create_final_answer_payload(
-                        summary,
-                        [],  # TODO - propagate citations here
-                    )
+                    final_evt_payload = {
+                        "id": "msg_final",
+                        "object": "agent.final_answer",
+                        "generated_answer": summary,
+                        "citations": consolidated_citations,
+                    }
+
                     async for line in SSEFormatter.yield_final_answer_event(
                         final_evt_payload
                     ):
@@ -1107,183 +1266,6 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
         # Finally, we return the async generator
         async for line in sse_generator():
             yield line
-
-    def _parse_single_tool_call(
-        self, toolcall_text: str
-    ) -> Tuple[Optional[str], dict]:
-        """
-        Parse a ToolCall block to extract the name and parameters.
-
-        Args:
-            toolcall_text: The text content of a ToolCall block
-
-        Returns:
-            Tuple of (tool_name, tool_parameters)
-        """
-        name_match = self.NAME_PATTERN.search(toolcall_text)
-        if not name_match:
-            return None, {}
-        tool_name = name_match.group(1).strip()
-
-        params_match = self.PARAMS_PATTERN.search(toolcall_text)
-        if not params_match:
-            return tool_name, {}
-
-        raw_params = params_match.group(1).strip()
-        try:
-            # Handle potential JSON parsing issues
-            # First try direct parsing
-            tool_params = json.loads(raw_params)
-        except json.JSONDecodeError:
-            # If that fails, try to clean up the JSON string
-            try:
-                # Replace escaped quotes that might cause issues
-                cleaned_params = raw_params.replace('\\"', '"')
-                # Try again with the cleaned string
-                tool_params = json.loads(cleaned_params)
-            except json.JSONDecodeError:
-                # If all else fails, treat as a plain string value
-                tool_params = {"value": raw_params}
-
-        return tool_name, tool_params
-
-
-class R2RXMLToolsAgent(R2RAgent):
-    """
-    A non-streaming agent that:
-     - parses <think> or <Thought> blocks as chain-of-thought
-     - filters out XML tags related to tool calls and actions
-     - processes <Action><ToolCalls><ToolCall> blocks
-     - properly extracts citations when they appear in the text
-    """
-
-    # We treat <think> or <Thought> as the same token boundaries
-    THOUGHT_OPEN = re.compile(r"<(Thought|think)>", re.IGNORECASE)
-    THOUGHT_CLOSE = re.compile(r"</(Thought|think)>", re.IGNORECASE)
-
-    # Regexes to parse out <Action>, <ToolCalls>, <ToolCall>, <Name>, <Parameters>, <Response>
-    ACTION_PATTERN = re.compile(
-        r"<Action>(.*?)</Action>", re.IGNORECASE | re.DOTALL
-    )
-    TOOLCALLS_PATTERN = re.compile(
-        r"<ToolCalls>(.*?)</ToolCalls>", re.IGNORECASE | re.DOTALL
-    )
-    TOOLCALL_PATTERN = re.compile(
-        r"<ToolCall>(.*?)</ToolCall>", re.IGNORECASE | re.DOTALL
-    )
-    NAME_PATTERN = re.compile(r"<Name>(.*?)</Name>", re.IGNORECASE | re.DOTALL)
-    PARAMS_PATTERN = re.compile(
-        r"<Parameters>(.*?)</Parameters>", re.IGNORECASE | re.DOTALL
-    )
-    RESPONSE_PATTERN = re.compile(
-        r"<Response>(.*?)</Response>", re.IGNORECASE | re.DOTALL
-    )
-
-    async def process_llm_response(self, response, *args, **kwargs):
-        """
-        Override the base process_llm_response to handle XML structured responses
-        including thoughts and tool calls.
-        """
-        if self._completed:
-            return
-
-        message = response.choices[0].message
-        finish_reason = response.choices[0].finish_reason
-
-        if not message.content:
-            # If there's no content, let the parent class handle the normal tool_calls flow
-            return await super().process_llm_response(
-                response, *args, **kwargs
-            )
-
-        # Get the response content
-        content = message.content
-
-        # HACK for gemini
-        content = content.replace("```action", "")
-        content = content.replace("```tool_code", "")
-        content = content.replace("```", "")
-
-        if (
-            not content.startswith("<")
-            and "deepseek" in self.rag_generation_config.model
-        ):  # HACK - fix issues with adding `<think>` to the beginning
-            content = "<think>" + content
-
-        # Process any tool calls in the content
-        action_matches = self.ACTION_PATTERN.findall(content)
-        if action_matches:
-            xml_toolcalls = "<ToolCalls>"
-            for action_block in action_matches:
-                tool_calls_text = []
-                # Look for ToolCalls wrapper, or use the raw action block
-                calls_wrapper = self.TOOLCALLS_PATTERN.findall(action_block)
-                if calls_wrapper:
-                    for tw in calls_wrapper:
-                        tool_calls_text.append(tw)
-                else:
-                    tool_calls_text.append(action_block)
-
-                # Process each ToolCall
-                for calls_region in tool_calls_text:
-                    calls_found = self.TOOLCALL_PATTERN.findall(calls_region)
-                    for tc_block in calls_found:
-                        tool_name, tool_params = self._parse_single_tool_call(
-                            tc_block
-                        )
-                        if tool_name:
-                            tool_call_id = f"call_{abs(hash(tc_block))}"
-                            try:
-                                tool_result = (
-                                    await self.handle_function_or_tool_call(
-                                        tool_name,
-                                        json.dumps(tool_params),
-                                        tool_id=tool_call_id,
-                                        save_messages=False,
-                                    )
-                                )
-
-                                # Add tool result to XML
-                                xml_toolcalls += (
-                                    f"<ToolCall>"
-                                    f"<Name>{tool_name}</Name>"
-                                    f"<Parameters>{json.dumps(tool_params)}</Parameters>"
-                                    f"<Result>{tool_result.llm_formatted_result}</Result>"
-                                    f"</ToolCall>"
-                                )
-
-                            except Exception as e:
-                                logger.error(f"Error in tool call: {str(e)}")
-                                # Add error to XML
-                                xml_toolcalls += (
-                                    f"<ToolCall>"
-                                    f"<Name>{tool_name}</Name>"
-                                    f"<Parameters>{json.dumps(tool_params)}</Parameters>"
-                                    f"<Result>Error: {str(e)}</Result>"
-                                    f"</ToolCall>"
-                                )
-
-            xml_toolcalls += "</ToolCalls>"
-            pre_action_text = content[: content.find(action_block)]
-            post_action_text = content[
-                content.find(action_block) + len(action_block) :
-            ]
-            iteration_text = pre_action_text + xml_toolcalls + post_action_text
-
-            # Create the assistant message
-            await self.conversation.add_message(
-                Message(role="assistant", content=iteration_text)
-            )
-        else:
-            # Create an assistant message with the content as-is
-            await self.conversation.add_message(
-                Message(role="assistant", content=content)
-            )
-
-        # Only mark as completed if the finish_reason is "stop" or there are no action calls
-        # This allows the agent to continue the conversation when tool calls are processed
-        if finish_reason == "stop":
-            self._completed = True
 
     def _parse_single_tool_call(
         self, toolcall_text: str
