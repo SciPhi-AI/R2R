@@ -144,7 +144,7 @@ class UsersRouter(BaseRouterV3):
                 profile_picture=profile_picture,
             )
 
-            return registration_response
+            return registration_response  # type: ignore
 
         @self.router.post(
             "/users/export",
@@ -227,7 +227,7 @@ class UsersRouter(BaseRouterV3):
             ) = await self.services.management.export_users(
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -424,7 +424,7 @@ class UsersRouter(BaseRouterV3):
             form_data: OAuth2PasswordRequestForm = Depends(),
         ) -> WrappedLoginResponse:
             """Authenticate a user and provide access tokens."""
-            return await self.services.auth.login(
+            return await self.services.auth.login(  # type: ignore
                 form_data.username, form_data.password
             )
 
@@ -526,7 +526,7 @@ class UsersRouter(BaseRouterV3):
             result = await self.services.auth.refresh_access_token(
                 refresh_token=refresh_token
             )
-            return result
+            return result  # type: ignore
 
         @self.router.post(
             "/users/change-password",
@@ -978,7 +978,7 @@ class UsersRouter(BaseRouterV3):
             await self.services.auth.delete_user(
                 user_id=id,
                 password=password,
-                delete_vector_data=delete_vector_data,
+                delete_vector_data=delete_vector_data or False,
                 is_superuser=auth_user.is_superuser,
             )
             return GenericBooleanResponse(success=True)  # type: ignore
@@ -1319,7 +1319,7 @@ class UsersRouter(BaseRouterV3):
 
             # Pass `metadata` to our auth or management service so it can do a
             # partial (Stripe-like) merge of metadata.
-            return await self.services.auth.update_user(
+            return await self.services.auth.update_user(  # type: ignore
                 user_id=id,
                 email=email,
                 is_superuser=is_superuser,

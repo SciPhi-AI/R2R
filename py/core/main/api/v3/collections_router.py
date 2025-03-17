@@ -167,7 +167,7 @@ class CollectionsRouter(BaseRouterV3):
                     auth_user.id
                 )
             )
-            if (user_collections_count + 1) >= user_max_collections:
+            if (user_collections_count + 1) >= user_max_collections:  # type: ignore
                 raise R2RException(
                     f"User has reached the maximum number of collections allowed ({user_max_collections}).",
                     400,
@@ -175,13 +175,13 @@ class CollectionsRouter(BaseRouterV3):
             collection = await self.services.management.create_collection(
                 owner_id=auth_user.id,
                 name=name,
-                description=description,
+                description=description or "",
             )
             # Add the creating user to the collection
             await self.services.management.add_user_to_collection(
                 auth_user.id, collection.id
             )
-            return collection
+            return collection  # type: ignore
 
         @self.router.post(
             "/collections/export",
@@ -264,7 +264,7 @@ class CollectionsRouter(BaseRouterV3):
             ) = await self.services.management.export_collections(
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -440,12 +440,12 @@ class CollectionsRouter(BaseRouterV3):
             )
             overview = collections_overview_response["results"]
 
-            if len(overview) == 0:
+            if len(overview) == 0:  # type: ignore
                 raise R2RException(
                     "The specified collection does not exist.",
                     404,
                 )
-            return overview[0]
+            return overview[0]  # type: ignore
 
         @self.router.post(
             "/collections/{id}",
@@ -536,7 +536,7 @@ class CollectionsRouter(BaseRouterV3):
                 id,
                 name=name,
                 description=description,
-                generate_description=generate_description,
+                generate_description=generate_description or False,
             )
 
         @self.router.delete(

@@ -5,7 +5,6 @@ from uuid import UUID
 
 from core.base import R2RException, Token
 from core.base.api.models import User
-from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import generate_default_user_collection_id
 
 from ..abstractions import R2RProviders
@@ -26,7 +25,6 @@ class AuthService(Service):
             providers,
         )
 
-    @telemetry_event("RegisterUser")
     async def register(
         self,
         email: str,
@@ -43,13 +41,11 @@ class AuthService(Service):
             profile_picture=profile_picture,
         )
 
-    @telemetry_event("SendVerificationEmail")
     async def send_verification_email(
         self, email: str
     ) -> tuple[str, datetime]:
         return await self.providers.auth.send_verification_email(email=email)
 
-    @telemetry_event("VerifyEmail")
     async def verify_email(
         self, email: str, verification_code: str
     ) -> dict[str, str]:
@@ -77,11 +73,9 @@ class AuthService(Service):
         )
         return {"message": f"User account {user_id} verified successfully."}
 
-    @telemetry_event("Login")
     async def login(self, email: str, password: str) -> dict[str, Token]:
         return await self.providers.auth.login(email, password)
 
-    @telemetry_event("GetCurrentUser")
     async def user(self, token: str) -> User:
         token_data = await self.providers.auth.decode_token(token)
         if not token_data.email:
@@ -97,13 +91,11 @@ class AuthService(Service):
             )
         return user
 
-    @telemetry_event("RefreshToken")
     async def refresh_access_token(
         self, refresh_token: str
     ) -> dict[str, Token]:
         return await self.providers.auth.refresh_access_token(refresh_token)
 
-    @telemetry_event("ChangePassword")
     async def change_password(
         self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
@@ -113,11 +105,9 @@ class AuthService(Service):
             user, current_password, new_password
         )
 
-    @telemetry_event("RequestPasswordReset")
     async def request_password_reset(self, email: str) -> dict[str, str]:
         return await self.providers.auth.request_password_reset(email)
 
-    @telemetry_event("ConfirmPasswordReset")
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
@@ -125,11 +115,9 @@ class AuthService(Service):
             reset_token, new_password
         )
 
-    @telemetry_event("Logout")
     async def logout(self, token: str) -> dict[str, str]:
         return await self.providers.auth.logout(token)
 
-    @telemetry_event("UpdateUserProfile")
     async def update_user(
         self,
         user_id: UUID,
@@ -163,7 +151,6 @@ class AuthService(Service):
             user, merge_limits=merge_limits, new_metadata=new_metadata
         )
 
-    @telemetry_event("DeleteUserAccount")
     async def delete_user(
         self,
         user_id: UUID,
@@ -222,7 +209,6 @@ class AuthService(Service):
 
         return {"message": f"User account {user_id} deleted successfully."}
 
-    @telemetry_event("CleanExpiredBlacklistedTokens")
     async def clean_expired_blacklisted_tokens(
         self,
         max_age_hours: int = 7 * 24,
@@ -232,7 +218,6 @@ class AuthService(Service):
             max_age_hours, current_time
         )
 
-    @telemetry_event("GetUserVerificationCode")
     async def get_user_verification_code(
         self,
         user_id: UUID,
@@ -254,7 +239,6 @@ class AuthService(Service):
             ],
         }
 
-    @telemetry_event("GetUserVerificationCode")
     async def get_user_reset_token(
         self,
         user_id: UUID,
@@ -276,7 +260,6 @@ class AuthService(Service):
             ],
         }
 
-    @telemetry_event("SendResetEmail")
     async def send_reset_email(self, email: str) -> dict:
         """Generate a new verification code and send a reset email to the user.
         Returns the verification code for testing/sandbox environments.

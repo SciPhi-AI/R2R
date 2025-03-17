@@ -350,7 +350,7 @@ class DocumentsRouter(BaseRouterV3):
                         auth_user.id
                     )
                 )
-                if user_collections_count >= user_max_collections:
+                if user_collections_count >= user_max_collections:  # type: ignore
                     raise R2RException(
                         status_code=403,
                         message=f"User has reached the maximum number of collections allowed ({user_max_collections}).",
@@ -652,7 +652,7 @@ class DocumentsRouter(BaseRouterV3):
             ) = await self.services.management.export_documents(
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -1034,7 +1034,10 @@ class DocumentsRouter(BaseRouterV3):
             """
             list_document_chunks = (
                 await self.services.management.list_document_chunks(
-                    id, offset, limit, include_vectors
+                    document_id=id,
+                    offset=offset,
+                    limit=limit,
+                    include_vectors=include_vectors or False,
                 )
             )
 
@@ -1057,7 +1060,7 @@ class DocumentsRouter(BaseRouterV3):
             user_has_access = (
                 is_owner
                 or set(auth_user.collection_ids).intersection(
-                    {ele.id for ele in document_collections["results"]}
+                    {ele.id for ele in document_collections["results"]}  # type: ignore
                 )
                 != set()
             )
@@ -1166,7 +1169,8 @@ class DocumentsRouter(BaseRouterV3):
                 )
 
                 document_collection_ids = {
-                    str(ele.id) for ele in document_collections["results"]
+                    str(ele.id)
+                    for ele in document_collections["results"]  # type: ignore
                 }
 
                 user_collection_ids = {
@@ -1873,7 +1877,7 @@ class DocumentsRouter(BaseRouterV3):
                 id=id,
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -2103,7 +2107,7 @@ class DocumentsRouter(BaseRouterV3):
                 id=id,
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)

@@ -188,7 +188,7 @@ class RetrievalRouter(BaseRouterV3):
                 query=query,
                 search_settings=effective_settings,
             )
-            return results
+            return results  # type: ignore
 
         @self.router.post(
             "/retrieval/rag",
@@ -515,13 +515,13 @@ class RetrievalRouter(BaseRouterV3):
                     research_generation_config=research_generation_config,
                     task_prompt=task_prompt,
                     include_title_if_available=include_title_if_available,
-                    max_tool_context_length=max_tool_context_length,
+                    max_tool_context_length=max_tool_context_length or 32_768,
                     conversation_id=(
-                        str(conversation_id) if conversation_id else None
+                        str(conversation_id) if conversation_id else None  # type: ignore
                     ),
-                    use_system_context=use_system_context,
-                    rag_tools=rag_tools,
-                    research_tools=research_tools,
+                    use_system_context=use_system_context or True,
+                    rag_tools=rag_tools,  # type: ignore
+                    research_tools=research_tools,  # type: ignore
                     mode=mode,
                 )
 
@@ -600,7 +600,7 @@ class RetrievalRouter(BaseRouterV3):
             """
 
             return await self.services.retrieval.completion(
-                messages=messages,
+                messages=messages,  # type: ignore
                 generation_config=generation_config,
             )
 

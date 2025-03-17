@@ -87,7 +87,7 @@ class ConversationsRouter(BaseRouterV3):
             """
             user_id = auth_user.id
 
-            return await self.services.management.create_conversation(
+            return await self.services.management.create_conversation(  # type: ignore
                 user_id=user_id,
                 name=name,
             )
@@ -261,7 +261,7 @@ class ConversationsRouter(BaseRouterV3):
             ) = await self.services.management.export_conversations(
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -353,7 +353,7 @@ class ConversationsRouter(BaseRouterV3):
             ) = await self.services.management.export_messages(
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header or True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -429,7 +429,7 @@ class ConversationsRouter(BaseRouterV3):
                 conversation_id=id,
                 user_ids=requesting_user_id,
             )
-            return conversation
+            return conversation  # type: ignore
 
         @self.router.post(
             "/conversations/{id}",
@@ -495,7 +495,7 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint updates the name of an existing conversation
             identified by its UUID.
             """
-            return await self.services.management.update_conversation(
+            return await self.services.management.update_conversation(  # type: ignore
                 conversation_id=id,
                 name=name,
             )
@@ -647,7 +647,7 @@ class ConversationsRouter(BaseRouterV3):
             if role not in ["user", "assistant", "system"]:
                 raise R2RException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
-            return await self.services.management.add_message(
+            return await self.services.management.add_message(  # type: ignore
                 conversation_id=id,
                 content=message,
                 parent_id=parent_id,
@@ -726,7 +726,7 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint updates the content of an existing message in a
             conversation.
             """
-            return await self.services.management.edit_message(
+            return await self.services.management.edit_message(  # type: ignore
                 message_id=message_id,
                 new_content=content,
                 additional_metadata=metadata,

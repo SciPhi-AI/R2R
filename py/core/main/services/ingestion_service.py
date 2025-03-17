@@ -30,7 +30,6 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import User
-from core.telemetry.telemetry_decorator import telemetry_event
 from shared.abstractions import PDFParsingError, PopplerNotFoundError
 
 from ..abstractions import R2RProviders
@@ -52,7 +51,6 @@ class IngestionService:
         self.config = config
         self.providers = providers
 
-    @telemetry_event("IngestFile")
     async def ingest_file_ingress(
         self,
         file_data: dict,
@@ -553,7 +551,6 @@ class IngestionService:
                 f"Failed to update document status: {document_info.id}. Error: {str(e)}"
             )
 
-    @telemetry_event("IngestChunks")
     async def ingest_chunks_ingress(
         self,
         document_id: UUID,
@@ -604,7 +601,6 @@ class IngestionService:
         )
         return document_info
 
-    @telemetry_event("UpdateChunk")
     async def update_chunk_ingress(
         self,
         document_id: UUID,
