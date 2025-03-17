@@ -34,6 +34,7 @@ R2R (Reason to Retrieve) is an advanced AI retrieval system supporting Retrieval
 
 R2R also includes a **Deep Research API**, a multi-step reasoning system that fetches relevant data from your knowledgebase and/or the internet to deliver richer, context-aware answers for complex queries.
 
+
 ## Getting Started
 
 ### Cloud Option: [SciPhi Cloud](https://app.sciphi.ai)
@@ -54,6 +55,9 @@ python -m r2r.serve
 ```
 
 For detailed self-hosting instructions, see the [self-hosting docs](https://r2r-docs.sciphi.ai/self-hosting/installation/overview).
+
+## Demo
+https://github.com/user-attachments/assets/173f7a1f-7c0b-4055-b667-e2cdcf70128b
 
 ## Using the API
 
