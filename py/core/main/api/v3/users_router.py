@@ -227,7 +227,9 @@ class UsersRouter(BaseRouterV3):
             ) = await self.services.management.export_users(
                 columns=columns,
                 filters=filters,
-                include_header=include_header or True,
+                include_header=include_header
+                if include_header is not None
+                else True,
             )
 
             background_tasks.add_task(temp_file.close)

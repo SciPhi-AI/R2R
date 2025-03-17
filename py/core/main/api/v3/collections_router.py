@@ -175,7 +175,7 @@ class CollectionsRouter(BaseRouterV3):
             collection = await self.services.management.create_collection(
                 owner_id=auth_user.id,
                 name=name,
-                description=description or "",
+                description=description,
             )
             # Add the creating user to the collection
             await self.services.management.add_user_to_collection(
@@ -264,7 +264,9 @@ class CollectionsRouter(BaseRouterV3):
             ) = await self.services.management.export_collections(
                 columns=columns,
                 filters=filters,
-                include_header=include_header or True,
+                include_header=include_header
+                if include_header is not None
+                else True,
             )
 
             background_tasks.add_task(temp_file.close)

@@ -536,7 +536,7 @@ class ManagementService(Service):
         self,
         owner_id: UUID,
         name: Optional[str] = None,
-        description: str = "",
+        description: str | None = None,
     ) -> CollectionResponse:
         result = await self.providers.database.collections_handler.create_collection(
             owner_id=owner_id,

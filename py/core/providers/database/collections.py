@@ -122,7 +122,7 @@ class PostgresCollectionsHandler(Handler):
         self,
         owner_id: UUID,
         name: Optional[str] = None,
-        description: str = "",
+        description: str | None = None,
         collection_id: Optional[UUID] = None,
     ) -> CollectionResponse:
         if not name and not collection_id:

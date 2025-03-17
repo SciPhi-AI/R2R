@@ -519,7 +519,9 @@ class RetrievalRouter(BaseRouterV3):
                     conversation_id=(
                         str(conversation_id) if conversation_id else None  # type: ignore
                     ),
-                    use_system_context=use_system_context or True,
+                    use_system_context=use_system_context
+                    if use_system_context is not None
+                    else True,
                     rag_tools=rag_tools,  # type: ignore
                     research_tools=research_tools,  # type: ignore
                     mode=mode,
