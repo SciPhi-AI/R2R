@@ -2,6 +2,10 @@ volumes:
   postgres_data:
     name: postgres_data
 
+networks:
+  firecrawl_firecrawl:
+    external: true
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -48,6 +52,8 @@ services:
       - ./user_configs:/app/user_configs
     extra_hosts:
       - host.docker.internal:host-gateway
+    networks:
+      - firecrawl_firecrawl
 
   r2r-dashboard:
     image: sciphiai/r2r-dashboard:1.0.2

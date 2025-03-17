@@ -153,6 +153,7 @@ __all__ = [
     "MDParser",
     "HTMLParser",
     "TextParser",
+    "PythonParser",
     "SupabaseAuthProvider",
     "R2RAuthProvider",
     "JwtAuthProvider",
