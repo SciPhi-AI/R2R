@@ -74,6 +74,9 @@ host = os.getenv("R2R_HOST", os.getenv("HOST", "0.0.0.0"))
 port = int(os.getenv("R2R_PORT", "7272"))
 
 logging.info(
+    f"Environment R2R_IMAGE: {os.getenv('R2R_IMAGE')}",
+)
+logging.info(
     f"Environment R2R_CONFIG_NAME: {'None' if config_name is None else config_name}"
 )
 logging.info(

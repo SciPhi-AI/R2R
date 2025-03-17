@@ -713,8 +713,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         system_prompt_override: Optional[str] = None,
         task_prompt_name: Optional[str] = None,
         task_role: str = "user",
-        task_inputs: dict | None = None,
-        task_prompt_override: Optional[str] = None,
+        task_inputs: Optional[dict] = None,
+        task_prompt: Optional[str] = None,
     ) -> list[dict]:
         """Create a message payload from system and task prompts."""
         if system_inputs is None:
@@ -733,7 +733,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         task_prompt = await self.get_cached_prompt(
             task_prompt_name or "rag",
             task_inputs,
-            prompt_override=task_prompt_override,
+            prompt_override=task_prompt,
         )
 
         return [

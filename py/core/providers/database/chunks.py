@@ -87,7 +87,7 @@ class PostgresChunksHandler(Handler):
         self,
         project_name: str,
         connection_manager: PostgresConnectionManager,
-        dimension: int,
+        dimension: int | float,
         quantization_type: VectorQuantizationType,
     ):
         super().__init__(project_name, connection_manager)

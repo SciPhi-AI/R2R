@@ -8,7 +8,7 @@ import toml
 from pydantic import BaseModel
 
 from ..base.abstractions import GenerationConfig
-from ..base.agent.agent import AgentConfig  # type: ignore
+from ..base.agent.agent import RAGAgentConfig  # type: ignore
 from ..base.providers import AppConfig
 from ..base.providers.auth import AuthConfig
 from ..base.providers.crypto import CryptoConfig
@@ -75,7 +75,7 @@ class R2RConfig:
     completion_embedding: EmbeddingConfig
     email: EmailConfig
     ingestion: IngestionConfig
-    agent: AgentConfig
+    agent: RAGAgentConfig
     orchestration: OrchestrationConfig
 
     def __init__(self, config_data: dict[str, Any]):
@@ -116,7 +116,7 @@ class R2RConfig:
             **self.completion_embedding, app=self.app
         )  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
-        self.agent = AgentConfig.create(**self.agent, app=self.app)  # type: ignore
+        self.agent = RAGAgentConfig.create(**self.agent, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(
             **self.orchestration, app=self.app
         )  # type: ignore

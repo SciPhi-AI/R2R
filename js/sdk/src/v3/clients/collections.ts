@@ -84,7 +84,7 @@ export class CollectionsClient {
     const data = {
       ...(options.name && { name: options.name }),
       ...(options.description && { description: options.description }),
-      ...(options.generateDescription && {
+      ...(options.generateDescription !== undefined && {
         generate_description: options.generateDescription,
       }),
     };
@@ -243,7 +243,7 @@ export class CollectionsClient {
   }): Promise<WrappedBooleanResponse> {
     const data = {
       ...(options.settings && { settings: options.settings }),
-      ...(options.runWithOrchestration && {
+      ...(options.runWithOrchestration !== undefined && {
         run_with_orchestration: options.runWithOrchestration,
       }),
     };

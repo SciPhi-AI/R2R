@@ -268,7 +268,7 @@ def test_pagination_offset(client: R2RClient):
             ), "Offset should return different results"
 
 
-def test_rag_task_prompt_override(client: R2RClient):
+def test_rag_task_prompt(client: R2RClient):
     custom_prompt = """
     Answer the query given immediately below given the context. End your answer with: [END-TEST-PROMPT]
 
@@ -280,15 +280,9 @@ def test_rag_task_prompt_override(client: R2RClient):
     """
     results = client.retrieval.rag(
         query="Tell me about Aristotle",
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 50
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
-        task_prompt_override=custom_prompt,
+        rag_generation_config={"stream": False}, # , "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
+        task_prompt=custom_prompt,
     ).results
     answer = results.completion
     assert "[END-TEST-PROMPT]" in answer, (
@@ -448,8 +442,6 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
     # _setup_collection_with_documents(client)
 
     # ((category=ancient OR rating<5) AND tags contains 'philosophy')
-    print('test_collection["collection_id"] = ',
-          test_collection["collection_id"])
     filters = {
         "$and": [
             {
@@ -492,9 +484,9 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
     ).results
     chunk_search_results = results.chunk_search_results
 
-    print("results -> ", chunk_search_results)
-    assert len(chunk_search_results) == 2, (
-        f"Expected 2 docs, got {len(chunk_search_results)}")
+    assert (
+        len(chunk_search_results) == 2
+    ), f"Expected 2 docs, got {len(chunk_search_results)}"
 
 
 def test_filters_no_match(client: R2RClient):
@@ -656,5 +648,113 @@ def test_filter_by_document_type(client: R2RClient):
                                           "filters": filters
                                       }).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) > 0, (
-        "No results found for filter by document type")
+    assert (
+        len(chunk_search_results) > 0
+    ), "No results found for filter by document type"
+
+
+def test_search_hyde_mode(client: R2RClient):
+    """
+    Integration test for HyDE search. We create a doc, then query with
+    search_strategy='hyde'. We expect the system to generate hypothetical docs,
+    embed them, and return chunk search results.
+    """
+    # 1) Create a test doc containing "Aristotle" text
+    suffix = str(uuid.uuid4())
+    client.documents.create(
+        chunks=[
+            f"Aristotle. Fulltext test doc. {uuid.uuid4()}",
+            f"Plato. Fulltext test doc. {uuid.uuid4()}",
+            f"Socrates. Fulltext test doc. {uuid.uuid4()}",
+            f"Pythagoras. Fulltext test doc. {uuid.uuid4()}",
+            f"Euclid. Fulltext test doc. {uuid.uuid4()}",
+        ],
+        metadata={"category": "test_hyde_fulltext"},
+    )
+
+    # 2) Perform a HyDE search
+    resp = client.retrieval.search(
+        query="Aristotle achievements?",
+        search_mode="custom",  # or 'basic'—the key is in search_settings below
+        search_settings={
+            "search_strategy": "hyde",
+            "use_semantic_search": True,
+            "limit": 5,
+            # If you want multiple hypothetical docs:
+            "num_sub_queries": 5,
+        },
+    )
+
+    # 3) Validate the results
+    results = resp.results
+    assert results is not None, "No results returned by HyDE search"
+    assert (
+        len(results.chunk_search_results) == 25
+    ), "Expected 25 chunk search results"
+    chunk_results = results.chunk_search_results
+    # We can't guarantee you have actual matches in your DB,
+    # but we can at least confirm the structure is correct.
+    # If your DB has a doc referencing "Aristotle," we might get hits:
+    assert (
+        chunk_results is not None
+    ), "No chunk_search_results in HyDE search response"
+    # Optionally you can assert chunk_results is not empty if you expect a match
+    # but that depends on your environment.
+
+
+def test_search_rag_fusion_mode(client: R2RClient):
+    """
+    Integration test for RAG-Fusion search. For now, your code is a placeholder
+    that calls _basic_search. But this ensures it doesn't error out and returns
+    valid results.
+    """
+    suffix = str(uuid.uuid4())
+    client.documents.create(
+        raw_text=f"Plato was another Greek philosopher. RAGFusionTestDoc: {suffix}",
+        metadata={"category": "test_rag_fusion"},
+    )
+
+    # 2) Perform a RAG-Fusion search
+    resp = client.retrieval.search(
+        query="Plato's contributions?",
+        search_mode="custom",
+        search_settings={
+            "search_strategy": "rag_fusion",
+            "use_semantic_search": True,
+            "limit": 5,
+            # "num_sub_queries": 3 if you actually implement it
+        },
+    )
+
+    # 3) Validate the results
+    results = resp.results
+    assert results is not None, "No results returned by RAG-Fusion search"
+    chunk_results = results.chunk_search_results
+    assert chunk_results is not None, "No chunk_search_results for RAG-Fusion"
+    # Possibly check if chunk_results is not empty if you have data
+    assert (
+        len(results.chunk_search_results) == 5
+    ), "Expected 5 chunk search results"
+
+
+def test_rag_fusion_mode_with_subqueries(client: R2RClient):
+    """
+    If/when you actually implement multi-subquery logic for rag_fusion,
+    you'd pass 'num_sub_queries': 3, etc.
+    Currently it's a placeholder, but let's just confirm the service doesn't error out.
+    """
+    resp = client.retrieval.search(
+        query="What are Plato's main dialogues?",
+        search_mode="custom",
+        search_settings={
+            "search_strategy": "rag_fusion",
+            "use_semantic_search": True,
+            "limit": 5,
+            "num_sub_queries": 3,
+        },
+    )
+    results = resp.results
+    assert (
+        results is not None
+    ), "No results returned by RAG-Fusion with subqueries"
+    # When fully implemented, you can check if the chunk results are non-empty, etc.

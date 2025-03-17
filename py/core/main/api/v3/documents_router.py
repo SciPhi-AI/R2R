@@ -453,7 +453,6 @@ class DocumentsRouter(BaseRouterV3):
             else:
                 if file:
                     file_data = await self._process_file(file)
-                    content_length = len(file_data["content"])
 
                     if not file.filename:
                         raise R2RException(
@@ -467,6 +466,8 @@ class DocumentsRouter(BaseRouterV3):
                     max_allowed_size = await self.services.management.get_max_upload_size_by_type(
                         user_id=auth_user.id, file_type_or_ext=file_ext
                     )
+
+                    content_length = file_data["content_length"]
 
                     if content_length > max_allowed_size:
                         raise R2RException(
@@ -2170,8 +2171,10 @@ class DocumentsRouter(BaseRouterV3):
         import base64
 
         content = await file.read()
+
         return {
             "filename": file.filename,
             "content": base64.b64encode(content).decode("utf-8"),
             "content_type": file.content_type,
+            "content_length": len(content),
         }

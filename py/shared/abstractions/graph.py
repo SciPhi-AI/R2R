@@ -148,11 +148,6 @@ class StoreType(str, Enum):
 class GraphCreationSettings(R2RSerializable):
     """Settings for knowledge graph creation."""
 
-    clustering_mode: str = Field(
-        default="local",
-        description="Whether to use remote clustering for graph creation.",
-    )
-
     graph_extraction_prompt: str = Field(
         default="graph_extraction",
         description="The prompt to use for knowledge graph extraction.",

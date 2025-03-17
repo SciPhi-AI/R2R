@@ -10,6 +10,7 @@ from core.providers import (
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
+    MailerSendEmailProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
     R2RIngestionProvider,
@@ -24,7 +25,9 @@ if TYPE_CHECKING:
     from core.main.services.graph_service import GraphService
     from core.main.services.ingestion_service import IngestionService
     from core.main.services.management_service import ManagementService
-    from core.main.services.retrieval_service import RetrievalService
+    from core.main.services.retrieval_service import (  # type: ignore
+        RetrievalService,  # type: ignore
+    )
 
 
 class R2RProviders(BaseModel):
@@ -39,6 +42,7 @@ class R2RProviders(BaseModel):
         AsyncSMTPEmailProvider
         | ConsoleMockEmailProvider
         | SendGridEmailProvider
+        | MailerSendEmailProvider
     )
 
     class Config:

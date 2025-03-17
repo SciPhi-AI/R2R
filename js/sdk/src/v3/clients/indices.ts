@@ -20,7 +20,7 @@ export class IndiciesClient {
   }): Promise<WrappedGenericMessageResponse> {
     const data = {
       config: options.config,
-      ...(options.runWithOrchestration && {
+      ...(options.runWithOrchestration !== undefined && {
         run_with_orchestration: options.runWithOrchestration,
       }),
     };

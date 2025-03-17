@@ -240,17 +240,13 @@ export class UsersClient {
 
   /**
    * List users with pagination and filtering options.
-   * @param email Email to filter by (partial match)
-   * @param is_active Filter by active status
-   * @param is_superuser Filter by superuser status
+   * @param ids Optional list of user IDs to filter by
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
    * @returns
    */
   async list(options?: {
-    email?: string;
-    is_active?: boolean;
-    is_superuser?: boolean;
+    ids?: string[];
     offset?: number;
     limit?: number;
   }): Promise<WrappedUsersResponse> {
@@ -259,14 +255,8 @@ export class UsersClient {
       limit: options?.limit ?? 100,
     };
 
-    if (options?.email) {
-      params.email = options.email;
-    }
-    if (options?.is_active) {
-      params.is_active = options.is_active;
-    }
-    if (options?.is_superuser) {
-      params.is_superuser = options.is_superuser;
+    if (options?.ids) {
+      params.ids = options.ids;
     }
 
     return this.client.makeRequest("GET", "users", {
@@ -304,7 +294,7 @@ export class UsersClient {
   async update(options: {
     id: string;
     email?: string;
-    is_superuser?: boolean;
+    isSuperuser?: boolean;
     name?: string;
     bio?: string;
     profilePicture?: string;
@@ -312,7 +302,9 @@ export class UsersClient {
   }): Promise<WrappedUserResponse> {
     const data = {
       ...(options.email && { email: options.email }),
-      ...(options.is_superuser && { is_superuser: options.is_superuser }),
+      ...(options.isSuperuser !== undefined && {
+        is_superuser: options.isSuperuser,
+      }),
       ...(options.name && { name: options.name }),
       ...(options.bio && { bio: options.bio }),
       ...(options.profilePicture && {

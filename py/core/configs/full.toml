@@ -1,10 +1,6 @@
 [completion]
-provider = "litellm"
+provider = "r2r"
 concurrent_request_limit = 128
-
-[database]
-  [database.graph_creation_settings]
-    clustering_mode = "remote"
 
 [ingestion]
 provider = "unstructured_local"

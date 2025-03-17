@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.4.4"
+version = "3.5.0"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}
@@ -15,7 +15,7 @@ requires-python = ">=3.10,<3.13"
 dependencies = [
     "aiofiles >=24.1.0,<25.0.0",
     "alembic >=1.13.3,<2.0.0",
-    "fastapi >=0.114.0,<0.115.0",
+    "fastapi >=0.115.11,<0.116.0",
     "httpx >=0.27.0,<0.28.0",
     "openai >=1.11.1,<2.0.0",
     "posthog >=3.5.0,<4.0.0",
@@ -35,7 +35,7 @@ core = [
     "aiohttp >=3.10.10,<4.0.0",
     "aioshutil >=1.5,<2.0",
     "aiosqlite >=0.20.0,<0.21.0",
-    "anthropic >=0.45.1,<0.46.0",
+    "anthropic >=0.49.0",
     "apscheduler >=3.10.4,<4.0.0",
     "asyncpg >=0.29.0,<0.30.0",
     "azure-ai-inference >=1.0.0b8,<2.0.0",
@@ -46,6 +46,7 @@ core = [
     "colorlog >=6.9.0,<7.0.0",
     "docutils >=0.21.2,<0.22.0",
     "epub >=0.5.2,<0.6.0",
+    "firecrawl-py >=1.13.5",
     "fsspec >=2024.6.0,<2025.0.0",
     "future >=1.0.0,<2.0.0",
     "google-auth >=2.37.0,<3.0.0",
@@ -76,6 +77,7 @@ core = [
     "python-pptx >=1.0.1,<2.0.0",
     "pyyaml >=6.0.1,<7.0.0",
     "sendgrid >=6.11.0,<7.0.0",
+    "mailersend >=0.5.6,<0.6.0",
     "sentry-sdk >=2.20.0,<3.0.0",
     "sqlalchemy >=2.0.30,<3.0.0",
     "striprtf >=0.0.28,<0.0.29",
@@ -103,6 +105,16 @@ dev = [
     "pytest-xdist >=3.6.1,<4.0.0",
     "ruff >=0.9.6,<0.10.0",
 ]
+tools = [
+    "biopython>=1.85",
+    "colorama >=0.4.6,<0.5.0",
+    "firecrawl-py>=1.13.5",
+    "numpy>=1.26.4",
+    "pandas>=2.2.3",
+    "scipy>=1.15.2",
+    "simpy>=4.1.1",
+    "statsmodels>=0.14.4",
+]
 
 [project.scripts]
 r2r-serve = "r2r.serve:run_server"
@@ -121,7 +133,7 @@ line-ending = "auto"
 
 [tool.mypy]
 ignore_missing_imports = true
-exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|cli/examples/*|tests/*'
+exclude = 'core/parsers/media/pyzerox/.*|playground/.*|deprecated/.*|dump/.*|docs/source|vecs/*|core/examples/*|sdk/examples/*|tests/*'
 
 [[tool.mypy.overrides]]
 module = "yaml"
@@ -143,5 +155,5 @@ packages = { find = { where = [ "." ], include = [ "r2r*", "sdk*", "shared*", "c
 include-package-data = true
 
 [tool.setuptools.package-data]
-core = ["configs/*.toml"]
+core = ["configs/*.toml", "providers/database/prompts/*.yaml"]
 r2r = ["r2r.toml"]

@@ -19,29 +19,11 @@ class PromptResponse(BaseModel):
     input_types: dict[str, str]
 
 
-class LogEntry(BaseModel):
-    key: str
-    value: Any
-    timestamp: datetime
-
-
-class LogResponse(BaseModel):
-    run_id: UUID
-    entries: list[LogEntry]
-    timestamp: Optional[datetime]
-    user_id: Optional[UUID]
-
-
 class ServerStats(BaseModel):
     start_time: datetime
     uptime_seconds: float
     cpu_usage: float
     memory_usage: float
-
-
-class AnalyticsResponse(BaseModel):
-    analytics_data: Optional[dict] = None
-    filtered_logs: dict[str, Any]
 
 
 class SettingsResponse(BaseModel):
@@ -79,18 +61,6 @@ class ConversationResponse(BaseModel):
     created_at: datetime
     user_id: Optional[UUID] = None
     name: Optional[str] = None
-
-
-class VerificationResult(BaseModel):
-    verification_code: str
-    expiry: datetime
-    message: Optional[str] = None
-
-
-class ResetDataResult(BaseModel):
-    reset_token: str
-    expiry: datetime
-    message: Optional[str] = None
 
 
 class MessageResponse(BaseModel):
@@ -195,9 +165,4 @@ WrappedUsersResponse = PaginatedR2RResult[list[User]]
 WrappedAPIKeyResponse = R2RResults[ApiKey]
 WrappedAPIKeysResponse = PaginatedR2RResult[list[ApiKeyNoPriv]]
 WrappedLoginResponse = R2RResults[LoginResponse]
-
-WrappedLogsResponse = R2RResults[list[LogResponse]]
-WrappedAnalyticsResponse = R2RResults[AnalyticsResponse]
-WrappedVerificationResult = R2RResults[VerificationResult]
-WrappedResetDataResult = R2RResults[ResetDataResult]
 WrappedLimitsResponse = R2RResults[LimitsResponse]

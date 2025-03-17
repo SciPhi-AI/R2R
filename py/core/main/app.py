@@ -17,7 +17,6 @@ from .api.v3.conversations_router import ConversationsRouter
 from .api.v3.documents_router import DocumentsRouter
 from .api.v3.graph_router import GraphRouter
 from .api.v3.indices_router import IndicesRouter
-from .api.v3.logs_router import LogsRouter
 from .api.v3.prompts_router import PromptsRouter
 from .api.v3.retrieval_router import RetrievalRouter
 from .api.v3.system_router import SystemRouter
@@ -39,7 +38,6 @@ class R2RApp:
         documents_router: DocumentsRouter,
         graph_router: GraphRouter,
         indices_router: IndicesRouter,
-        logs_router: LogsRouter,
         prompts_router: PromptsRouter,
         retrieval_router: RetrievalRouter,
         system_router: SystemRouter,
@@ -55,7 +53,6 @@ class R2RApp:
         self.documents_router = documents_router
         self.graph_router = graph_router
         self.indices_router = indices_router
-        self.logs_router = logs_router
         self.orchestration_provider = orchestration_provider
         self.prompts_router = prompts_router
         self.retrieval_router = retrieval_router
@@ -84,7 +81,6 @@ class R2RApp:
         self.app.include_router(self.documents_router, prefix="/v3")
         self.app.include_router(self.graph_router, prefix="/v3")
         self.app.include_router(self.indices_router, prefix="/v3")
-        self.app.include_router(self.logs_router, prefix="/v3")
         self.app.include_router(self.prompts_router, prefix="/v3")
         self.app.include_router(self.retrieval_router, prefix="/v3")
         self.app.include_router(self.system_router, prefix="/v3")

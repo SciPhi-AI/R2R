@@ -8,7 +8,6 @@ from ..api.v3.conversations_router import ConversationsRouter
 from ..api.v3.documents_router import DocumentsRouter
 from ..api.v3.graph_router import GraphRouter
 from ..api.v3.indices_router import IndicesRouter
-from ..api.v3.logs_router import LogsRouter
 from ..api.v3.prompts_router import PromptsRouter
 from ..api.v3.retrieval_router import RetrievalRouter
 from ..api.v3.system_router import SystemRouter
@@ -19,7 +18,9 @@ from ..services.auth_service import AuthService  # noqa: F401
 from ..services.graph_service import GraphService  # noqa: F401
 from ..services.ingestion_service import IngestionService  # noqa: F401
 from ..services.management_service import ManagementService  # noqa: F401
-from ..services.retrieval_service import RetrievalService  # noqa: F401
+from ..services.retrieval_service import (  # type: ignore
+    RetrievalService,  # noqa: F401 # type: ignore
+)
 from .factory import R2RProviderFactory
 
 logger = logging.getLogger()
@@ -76,11 +77,6 @@ class R2RBuilder:
                 config=self.config,
             ).get_router(),
             "indices_router": IndicesRouter(
-                providers=providers,
-                services=services,
-                config=self.config,
-            ).get_router(),
-            "logs_router": LogsRouter(
                 providers=providers,
                 services=services,
                 config=self.config,

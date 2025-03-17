@@ -123,6 +123,30 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   //   expect(content.length).toBeGreaterThan(0);
   // }, 30000);
 
+  test("Get an agent answer with a task prompt override", async () => {
+    const overrideMessage = {
+      role: "user" as const,
+      content: "What is the capital of France?",
+    };
+
+    const overridePrompt = "Antworte auf Deutsch.";
+
+    const response = await client.retrieval.agent({
+      message: overrideMessage,
+      taskPrompt: overridePrompt,
+      useSystemContext: false,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.messages.length).toBeGreaterThan(0);
+    expect(response.results.messages[0].role).toBe("assistant");
+    expect(response.results.messages[0].content).toContain("Paris");
+
+    const germanWords = ["Die", "Hauptstadt", "von", "Frankreich", "ist"];
+    const responseText = response.results.messages[0].content;
+    expect(germanWords.some((word) => responseText.includes(word))).toBe(true);
+  }, 30000);
+
   test("List and delete conversations", async () => {
     const listResponse = await client.conversations.list();
     expect(listResponse.results).toBeDefined();

@@ -20,11 +20,19 @@ vlm = "openai/gpt-4o"
 # LLM used for transcription
 audio_lm = "openai/whisper-1"
 
+# Reasoning model, used for `research` agent
+reasoning_llm = "openai/o3-mini"
+# Planning model, used for `research` agent
+planning_llm = "anthropic/claude-3-7-sonnet-20250219"
+
+
 [agent]
-agent_static_prompt = "static_rag_agent"
-agent_dynamic_prompt = "dynamic_rag_agent"
-# tools = ["local_search", "content", "web_search"]
-tools = ["local_search", "content"]
+rag_agent_static_prompt = "static_rag_agent"
+rag_agent_dynamic_prompt = "dynamic_rag_agent"
+# The following tools are available to the `rag` agent
+rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_content"] # can add  "web_search" | "web_scrape"
+# The following tools are available to the `research` agent
+research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
 provider = "r2r"

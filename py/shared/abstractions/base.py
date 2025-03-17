@@ -22,6 +22,10 @@ class R2RSerializable(BaseModel):
             data_dict = data
         return cls(**data_dict)
 
+    def as_dict(self) -> dict[str, Any]:
+        data = self.model_dump(exclude_unset=True)
+        return self._serialize_values(data)
+
     def to_dict(self) -> dict[str, Any]:
         data = self.model_dump(exclude_unset=True)
         return self._serialize_values(data)

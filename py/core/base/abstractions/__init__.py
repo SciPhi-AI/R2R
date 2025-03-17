@@ -44,7 +44,6 @@ from shared.abstractions.search import (
     AggregateSearchResult,
     ChunkSearchResult,
     ChunkSearchSettings,
-    ContextDocumentResult,
     GraphCommunityResult,
     GraphEntityResult,
     GraphRelationshipResult,
@@ -54,7 +53,7 @@ from shared.abstractions.search import (
     HybridSearchSettings,
     SearchMode,
     SearchSettings,
-    WebSearchResponse,
+    WebPageSearchResult,
     WebSearchResult,
     select_search_filters,
 )
@@ -116,8 +115,7 @@ __all__ = [
     # Prompt abstractions
     "Prompt",
     # Search abstractions
-    "WebSearchResponse",
-    "ContextDocumentResult",
+    "WebSearchResult",
     "AggregateSearchResult",
     "GraphSearchResult",
     "GraphSearchResultType",
@@ -127,7 +125,7 @@ __all__ = [
     "GraphSearchSettings",
     "ChunkSearchSettings",
     "ChunkSearchResult",
-    "WebSearchResult",
+    "WebPageSearchResult",
     "SearchSettings",
     "select_search_filters",
     "SearchMode",
