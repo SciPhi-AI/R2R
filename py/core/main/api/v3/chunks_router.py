@@ -89,7 +89,7 @@ class ChunksRouter(BaseRouterV3):
                 query=query,
                 search_settings=search_settings,
             )
-            return results.chunk_search_results
+            return results.chunk_search_results  # type: ignore
 
         @self.router.get(
             "/chunks/{id}",

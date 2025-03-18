@@ -37,7 +37,6 @@ from core.base import (
     format_search_results_for_llm,
 )
 from core.base.api.models import RAGResponse, User
-from core.telemetry.telemetry_decorator import telemetry_event
 from core.utils import (
     CitationTracker,
     SearchResultsCollector,
@@ -252,7 +251,6 @@ class RetrievalService(Service):
             providers,
         )
 
-    @telemetry_event("Search")
     async def search(
         self,
         query: str,
@@ -936,7 +934,6 @@ class RetrievalService(Service):
             if chunk.strip()
         ]
 
-    @telemetry_event("SearchDocuments")
     async def search_documents(
         self,
         query: str,
@@ -958,7 +955,6 @@ class RetrievalService(Service):
         )
         return result
 
-    @telemetry_event("Completion")
     async def completion(
         self,
         messages: list[dict],
@@ -973,7 +969,6 @@ class RetrievalService(Service):
             **kwargs,
         )
 
-    @telemetry_event("Embedding")
     async def embedding(
         self,
         text: str,
@@ -982,7 +977,6 @@ class RetrievalService(Service):
             text=text
         )
 
-    @telemetry_event("RAG")
     async def rag(
         self,
         query: str,
@@ -1268,7 +1262,6 @@ class RetrievalService(Service):
                         return result_obj  # (source_type, result_obj)
         return None
 
-    @telemetry_event("Agent")
     async def agent(
         self,
         rag_generation_config: GenerationConfig,
