@@ -3,10 +3,8 @@ js/tests/*
 **/.DS_Store
 
 
-docker/env/
-docker/
+docker/env/*.env
 
-paul
 
 .DS_Store
 *.gguf
