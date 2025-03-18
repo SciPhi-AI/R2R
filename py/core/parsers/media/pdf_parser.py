@@ -96,27 +96,54 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             image_data = buf.read()
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
+            model = self.config.vision_pdf_model or self.config.app.vlm
+
             # Configure generation parameters
             generation_config = GenerationConfig(
                 model=self.config.vision_pdf_model or self.config.app.vlm,
                 stream=False,
             )
 
+            is_anthropic = model and "anthropic/" in model
+
+            # FIXME: This is a hacky fix to handle the different formats
+            # that was causing an outage. This logic really needs to be refactored
+            # and cleaned up such that it handles providers more robustly.
+
             # Prepare message with image content
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.vision_prompt_text},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_base64}"
+            if is_anthropic:
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": self.vision_prompt_text},
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/jpeg",
+                                    "data": image_base64,
+                                },
                             },
-                        },
-                    ],
-                }
-            ]
+                        ],
+                    }
+                ]
+            else:
+                # Use OpenAI format
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": self.vision_prompt_text},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_base64}"
+                                },
+                            },
+                        ],
+                    }
+                ]
 
             logger.debug(f"Sending page {page_num} to vision model.")
             req_start = time.perf_counter()
