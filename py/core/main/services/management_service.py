@@ -393,6 +393,18 @@ class ManagementService(Service):
             filter_collection_ids=collection_ids,
         )
 
+    async def update_document_metadata(
+        self,
+        document_id: UUID,
+        metadata: list[dict],
+        overwrite: bool = False,
+    ):
+        return await self.providers.database.documents_handler.update_document_metadata(
+            document_id=document_id,
+            metadata=metadata,
+            overwrite=overwrite,
+        )
+
     async def list_document_chunks(
         self,
         document_id: UUID,
