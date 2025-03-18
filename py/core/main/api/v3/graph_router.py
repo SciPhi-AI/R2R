@@ -279,13 +279,13 @@ class GraphRouter(BaseRouterV3):
                     limit=1,
                 )
             )["results"]
-            if len(collections_overview_response) == 0:
+            if len(collections_overview_response) == 0:  # type: ignore
                 raise R2RException("Collection not found.", 404)
 
             # Check user permissions for graph
             if (
                 not auth_user.is_superuser
-                and collections_overview_response[0].owner_id != auth_user.id
+                and collections_overview_response[0].owner_id != auth_user.id  # type: ignore
             ):
                 raise R2RException(
                     "Only superusers can `build communities` for a graph they do not own.",
@@ -657,7 +657,9 @@ class GraphRouter(BaseRouterV3):
                 id=collection_id,
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header
+                if include_header is not None
+                else True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -702,7 +704,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.graph.create_entity(
+            return await self.services.graph.create_entity(  # type: ignore
                 name=name,
                 description=description,
                 parent_id=collection_id,
@@ -763,7 +765,7 @@ class GraphRouter(BaseRouterV3):
                     "The currently authenticated user does not have access to the collection associated with the given graph.",
                     403,
                 )
-            return await self.services.graph.create_relationship(
+            return await self.services.graph.create_relationship(  # type: ignore
                 subject=subject,
                 subject_id=subject_id,
                 predicate=predicate,
@@ -863,7 +865,9 @@ class GraphRouter(BaseRouterV3):
                 id=collection_id,
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header
+                if include_header is not None
+                else True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -986,7 +990,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.graph.update_entity(
+            return await self.services.graph.update_entity(  # type: ignore
                 entity_id=entity_id,
                 name=name,
                 category=category,
@@ -1272,7 +1276,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.graph.update_relationship(
+            return await self.services.graph.update_relationship(  # type: ignore
                 relationship_id=relationship_id,
                 subject=subject,
                 subject_id=subject_id,
@@ -1453,7 +1457,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.graph.create_community(
+            return await self.services.graph.create_community(  # type: ignore
                 parent_id=collection_id,
                 name=name,
                 summary=summary,
@@ -1771,7 +1775,9 @@ class GraphRouter(BaseRouterV3):
                 id=collection_id,
                 columns=columns,
                 filters=filters,
-                include_header=include_header,
+                include_header=include_header
+                if include_header is not None
+                else True,
             )
 
             background_tasks.add_task(temp_file.close)
@@ -1861,7 +1867,7 @@ class GraphRouter(BaseRouterV3):
                     403,
                 )
 
-            return await self.services.graph.update_community(
+            return await self.services.graph.update_community(  # type: ignore
                 community_id=community_id,
                 name=name,
                 summary=summary,
@@ -1950,13 +1956,13 @@ class GraphRouter(BaseRouterV3):
                     limit=1,
                 )
             )["results"]
-            if len(collections_overview_response) == 0:
+            if len(collections_overview_response) == 0:  # type: ignore
                 raise R2RException("Collection not found.", 404)
 
             # Check user permissions for graph
             if (
                 not auth_user.is_superuser
-                and collections_overview_response[0].owner_id != auth_user.id
+                and collections_overview_response[0].owner_id != auth_user.id  # type: ignore
             ):
                 raise R2RException("Only superusers can `pull` a graph.", 403)
 
@@ -1975,9 +1981,9 @@ class GraphRouter(BaseRouterV3):
                 offset=0,
                 limit=1,
             )
-            if len(list_graphs_response["results"]) == 0:
+            if len(list_graphs_response["results"]) == 0:  # type: ignore
                 raise R2RException("Graph not found", 404)
-            collection_id = list_graphs_response["results"][0].collection_id
+            collection_id = list_graphs_response["results"][0].collection_id  # type: ignore
             documents: list[DocumentResponse] = []
             document_req = await self.providers.database.collections_handler.documents_in_collection(
                 collection_id, offset=0, limit=100

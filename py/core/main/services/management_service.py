@@ -20,7 +20,6 @@ from core.base import (
     StoreType,
     User,
 )
-from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RProviders
 from ..config import R2RConfig
@@ -40,7 +39,6 @@ class ManagementService(Service):
             providers,
         )
 
-    @telemetry_event("AppSettings")
     async def app_settings(self):
         prompts = (
             await self.providers.database.prompts_handler.get_all_prompts()
@@ -57,7 +55,6 @@ class ManagementService(Service):
             "r2r_project_name": project_name,
         }
 
-    @telemetry_event("UsersOverview")
     async def users_overview(
         self,
         offset: int,
@@ -222,7 +219,6 @@ class ManagementService(Service):
             "deleted_document_ids": [str(d) for d in docs_to_delete],
         }
 
-    @telemetry_event("DownloadFile")
     async def download_file(
         self, document_id: UUID
     ) -> Optional[Tuple[str, BinaryIO, int]]:
@@ -232,7 +228,6 @@ class ManagementService(Service):
             return result
         return None
 
-    @telemetry_event("ExportFiles")
     async def export_files(
         self,
         document_ids: Optional[list[UUID]] = None,
@@ -247,7 +242,6 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("ExportCollections")
     async def export_collections(
         self,
         columns: Optional[list[str]] = None,
@@ -260,7 +254,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportDocuments")
     async def export_documents(
         self,
         columns: Optional[list[str]] = None,
@@ -273,7 +266,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportDocumentEntities")
     async def export_document_entities(
         self,
         id: UUID,
@@ -289,7 +281,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportDocumentRelationships")
     async def export_document_relationships(
         self,
         id: UUID,
@@ -305,7 +296,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportConversations")
     async def export_conversations(
         self,
         columns: Optional[list[str]] = None,
@@ -318,7 +308,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportGraphEntities")
     async def export_graph_entities(
         self,
         id: UUID,
@@ -334,7 +323,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportGraphRelationships")
     async def export_graph_relationships(
         self,
         id: UUID,
@@ -350,7 +338,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportGraphCommunities")
     async def export_graph_communities(
         self,
         id: UUID,
@@ -366,7 +353,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportMessages")
     async def export_messages(
         self,
         columns: Optional[list[str]] = None,
@@ -379,7 +365,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("ExportUsers")
     async def export_users(
         self,
         columns: Optional[list[str]] = None,
@@ -392,7 +377,6 @@ class ManagementService(Service):
             include_header=include_header,
         )
 
-    @telemetry_event("DocumentsOverview")
     async def documents_overview(
         self,
         offset: int,
@@ -409,7 +393,6 @@ class ManagementService(Service):
             filter_collection_ids=collection_ids,
         )
 
-    @telemetry_event("DocumentChunks")
     async def list_document_chunks(
         self,
         document_id: UUID,
@@ -426,7 +409,6 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("AssignDocumentToCollection")
     async def assign_document_to_collection(
         self, document_id: UUID, collection_id: UUID
     ):
@@ -449,7 +431,6 @@ class ManagementService(Service):
 
         return {"message": "Document assigned to collection successfully"}
 
-    @telemetry_event("RemoveDocumentFromCollection")
     async def remove_document_from_collection(
         self, document_id: UUID, collection_id: UUID
     ):
@@ -551,12 +532,11 @@ class ManagementService(Service):
         }
         return sorted(centrality.items(), key=lambda x: x[1], reverse=True)[:5]
 
-    @telemetry_event("CreateCollection")
     async def create_collection(
         self,
         owner_id: UUID,
         name: Optional[str] = None,
-        description: str = "",
+        description: str | None = None,
     ) -> CollectionResponse:
         result = await self.providers.database.collections_handler.create_collection(
             owner_id=owner_id,
@@ -570,7 +550,6 @@ class ManagementService(Service):
         )
         return result
 
-    @telemetry_event("UpdateCollection")
     async def update_collection(
         self,
         collection_id: UUID,
@@ -588,7 +567,6 @@ class ManagementService(Service):
             description=description,
         )
 
-    @telemetry_event("DeleteCollection")
     async def delete_collection(self, collection_id: UUID) -> bool:
         await self.providers.database.collections_handler.delete_collection_relational(
             collection_id
@@ -606,7 +584,6 @@ class ManagementService(Service):
             )
         return True
 
-    @telemetry_event("ListCollections")
     async def collections_overview(
         self,
         offset: int,
@@ -623,7 +600,6 @@ class ManagementService(Service):
             filter_collection_ids=collection_ids,
         )
 
-    @telemetry_event("AddUserToCollection")
     async def add_user_to_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -633,7 +609,6 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("RemoveUserFromCollection")
     async def remove_user_from_collection(
         self, user_id: UUID, collection_id: UUID
     ) -> bool:
@@ -641,7 +616,6 @@ class ManagementService(Service):
             user_id, collection_id
         )
 
-    @telemetry_event("GetUsersInCollection")
     async def get_users_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> dict[str, list[User] | int]:
@@ -649,7 +623,6 @@ class ManagementService(Service):
             collection_id, offset=offset, limit=limit
         )
 
-    @telemetry_event("GetDocumentsInCollection")
     async def documents_in_collection(
         self, collection_id: UUID, offset: int = 0, limit: int = 100
     ) -> dict[str, list[DocumentResponse] | int]:
@@ -657,7 +630,6 @@ class ManagementService(Service):
             collection_id, offset=offset, limit=limit
         )
 
-    @telemetry_event("SummarizeCollection")
     async def summarize_collection(
         self, id: UUID, offset: int, limit: int
     ) -> str:
@@ -669,14 +641,14 @@ class ManagementService(Service):
 
         document_summaries = [
             document.summary
-            for document in documents_in_collection_response["results"]
+            for document in documents_in_collection_response["results"]  # type: ignore
         ]
 
         logger.info(
             f"Summarizing collection {id} with {len(document_summaries)} of {documents_in_collection_response['total_entries']} documents."
         )
 
-        formatted_summaries = "\n\n".join(document_summaries)
+        formatted_summaries = "\n\n".join(document_summaries)  # type: ignore
 
         messages = await self.providers.database.prompts_handler.get_message_payload(
             system_prompt_name=self.config.database.collection_summary_system_prompt,
@@ -697,7 +669,6 @@ class ManagementService(Service):
         else:
             raise ValueError("Expected a generated response.")
 
-    @telemetry_event("AddPrompt")
     async def add_prompt(
         self, name: str, template: str, input_types: dict[str, str]
     ) -> dict:
@@ -709,7 +680,6 @@ class ManagementService(Service):
         except ValueError as e:
             raise R2RException(status_code=400, message=str(e)) from e
 
-    @telemetry_event("GetPrompt")
     async def get_cached_prompt(
         self,
         prompt_name: str,
@@ -729,7 +699,6 @@ class ManagementService(Service):
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e)) from e
 
-    @telemetry_event("GetPrompt")
     async def get_prompt(
         self,
         prompt_name: str,
@@ -745,11 +714,9 @@ class ManagementService(Service):
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e)) from e
 
-    @telemetry_event("GetAllPrompts")
     async def get_all_prompts(self) -> dict[str, Prompt]:
         return await self.providers.database.prompts_handler.get_all_prompts()
 
-    @telemetry_event("UpdatePrompt")
     async def update_prompt(
         self,
         name: str,
@@ -764,7 +731,6 @@ class ManagementService(Service):
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e)) from e
 
-    @telemetry_event("DeletePrompt")
     async def delete_prompt(self, name: str) -> dict:
         try:
             await self.providers.database.prompts_handler.delete_prompt(name)
@@ -772,7 +738,6 @@ class ManagementService(Service):
         except ValueError as e:
             raise R2RException(status_code=404, message=str(e)) from e
 
-    @telemetry_event("GetConversation")
     async def get_conversation(
         self,
         conversation_id: UUID,
@@ -783,7 +748,6 @@ class ManagementService(Service):
             filter_user_ids=user_ids,
         )
 
-    @telemetry_event("CreateConversation")
     async def create_conversation(
         self,
         user_id: Optional[UUID] = None,
@@ -794,7 +758,6 @@ class ManagementService(Service):
             name=name,
         )
 
-    @telemetry_event("ConversationsOverview")
     async def conversations_overview(
         self,
         offset: int,
@@ -809,7 +772,6 @@ class ManagementService(Service):
             conversation_ids=conversation_ids,
         )
 
-    @telemetry_event("AddMessage")
     async def add_message(
         self,
         conversation_id: UUID,
@@ -824,7 +786,6 @@ class ManagementService(Service):
             metadata=metadata,
         )
 
-    @telemetry_event("EditMessage")
     async def edit_message(
         self,
         message_id: UUID,
@@ -839,7 +800,6 @@ class ManagementService(Service):
             )
         )
 
-    @telemetry_event("UpdateConversation")
     async def update_conversation(
         self, conversation_id: UUID, name: str
     ) -> ConversationResponse:
@@ -847,7 +807,6 @@ class ManagementService(Service):
             conversation_id=conversation_id, name=name
         )
 
-    @telemetry_event("DeleteConversation")
     async def delete_conversation(
         self,
         conversation_id: UUID,

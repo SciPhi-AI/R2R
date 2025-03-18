@@ -26,7 +26,6 @@ from core.base.abstractions import (
     StoreType,
 )
 from core.base.api.models import GraphResponse
-from core.telemetry.telemetry_decorator import telemetry_event
 
 from ..abstractions import R2RProviders
 from ..config import R2RConfig
@@ -56,7 +55,6 @@ class GraphService(Service):
             providers,
         )
 
-    @telemetry_event("create_entity")
     async def create_entity(
         self,
         name: str,
@@ -79,7 +77,6 @@ class GraphService(Service):
             metadata=metadata,
         )
 
-    @telemetry_event("update_entity")
     async def update_entity(
         self,
         entity_id: UUID,
@@ -104,7 +101,6 @@ class GraphService(Service):
             metadata=metadata,
         )
 
-    @telemetry_event("delete_entity")
     async def delete_entity(
         self,
         parent_id: UUID,
@@ -116,7 +112,6 @@ class GraphService(Service):
             store_type=StoreType.GRAPHS,
         )
 
-    @telemetry_event("get_entities")
     async def get_entities(
         self,
         parent_id: UUID,
@@ -135,7 +130,6 @@ class GraphService(Service):
             include_embeddings=include_embeddings,
         )
 
-    @telemetry_event("create_relationship")
     async def create_relationship(
         self,
         subject: str,
@@ -170,7 +164,6 @@ class GraphService(Service):
             )
         )
 
-    @telemetry_event("delete_relationship")
     async def delete_relationship(
         self,
         parent_id: UUID,
@@ -184,7 +177,6 @@ class GraphService(Service):
             )
         )
 
-    @telemetry_event("update_relationship")
     async def update_relationship(
         self,
         relationship_id: UUID,
@@ -219,7 +211,6 @@ class GraphService(Service):
             )
         )
 
-    @telemetry_event("get_relationships")
     async def get_relationships(
         self,
         parent_id: UUID,
@@ -237,7 +228,6 @@ class GraphService(Service):
             entity_names=entity_names,
         )
 
-    @telemetry_event("create_community")
     async def create_community(
         self,
         parent_id: UUID,
@@ -261,7 +251,6 @@ class GraphService(Service):
             rating_explanation=rating_explanation,
         )
 
-    @telemetry_event("update_community")
     async def update_community(
         self,
         community_id: UUID,
@@ -288,7 +277,6 @@ class GraphService(Service):
             rating_explanation=rating_explanation,
         )
 
-    @telemetry_event("delete_community")
     async def delete_community(
         self,
         parent_id: UUID,
@@ -299,7 +287,6 @@ class GraphService(Service):
             community_id=community_id,
         )
 
-    @telemetry_event("get_communities")
     async def get_communities(
         self,
         parent_id: UUID,
@@ -317,7 +304,6 @@ class GraphService(Service):
             include_embeddings=include_embeddings,
         )
 
-    @telemetry_event("list_graphs")
     async def list_graphs(
         self,
         offset: int,
@@ -332,7 +318,6 @@ class GraphService(Service):
             filter_collection_id=collection_id,
         )
 
-    @telemetry_event("update_graph")
     async def update_graph(
         self,
         collection_id: UUID,
@@ -345,7 +330,6 @@ class GraphService(Service):
             description=description,
         )
 
-    @telemetry_event("reset_graph")
     async def reset_graph(self, id: UUID) -> bool:
         await self.providers.database.graphs_handler.reset(
             parent_id=id,
@@ -357,7 +341,6 @@ class GraphService(Service):
         )
         return True
 
-    @telemetry_event("get_document_ids_for_create_graph")
     async def get_document_ids_for_create_graph(
         self,
         collection_id: UUID,
@@ -374,7 +357,6 @@ class GraphService(Service):
             collection_id=collection_id,
         )
 
-    @telemetry_event("graph_search_results_entity_description")
     async def graph_search_results_entity_description(
         self,
         document_id: UUID,
@@ -604,7 +586,6 @@ class GraphService(Service):
 
         return main_entity.name
 
-    @telemetry_event("graph_search_results_clustering")
     async def graph_search_results_clustering(
         self,
         collection_id: UUID,
@@ -640,7 +621,6 @@ class GraphService(Service):
         )
         return {"num_communities": num_communities}
 
-    @telemetry_event("graph_search_results_community_summary")
     async def graph_search_results_community_summary(
         self,
         offset: int,
@@ -962,7 +942,6 @@ class GraphService(Service):
 
         return "".join(prompt_chunks)
 
-    @telemetry_event("delete")
     async def delete(
         self,
         collection_id: UUID,
@@ -1319,7 +1298,6 @@ class GraphService(Service):
                     store_type=StoreType.DOCUMENTS,
                 )
 
-    @telemetry_event("deduplicate_document_entities")
     async def deduplicate_document_entities(
         self,
         document_id: UUID,

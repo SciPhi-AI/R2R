@@ -33,7 +33,9 @@ async def create_app(
     config_path = config_path or os.getenv("R2R_CONFIG_PATH")
 
     if config_path and config_name:
-        raise ValueError("Cannot specify both config_path and config_name")
+        raise ValueError(
+            f"Cannot specify both config_path and config_name, got {config_path} and {config_name}"
+        )
 
     if not config_path and not config_name:
         # If neither is specified nor set in environment,
