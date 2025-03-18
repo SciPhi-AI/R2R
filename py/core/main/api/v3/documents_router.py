@@ -698,7 +698,7 @@ class DocumentsRouter(BaseRouterV3):
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentResponse:
-            """Appends metadata to a document. This endpoint allows adding new metadata fields or updating existing ones."""
+            """Replaces metadata in a document. This endpoint allows overwriting existing metadata fields."""
             request_user_ids = (
                 None if auth_user.is_superuser else [auth_user.id]
             )
