@@ -571,6 +571,86 @@ class DocumentsRouter(BaseRouterV3):
                 "task_id": None,
             }
 
+        @self.router.patch(
+            "/documents/{id}/metadata",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Append metadata to a document",
+        )
+        @self.base_endpoint
+        async def patch_metadata(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to append metadata to.",
+            ),
+            metadata: list[dict] = Body(
+                ...,
+                description="Metadata to append to the document.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedDocumentResponse:
+            """Appends metadata to a document. This endpoint allows adding new metadata fields or updating existing ones."""
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            return await self.services.management.update_document_metadata(
+                document_id=id,
+                metadata=metadata,
+                overwrite=False,
+            )
+
+        @self.router.put(
+            "/documents/{id}/metadata",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Append metadata to a document",
+        )
+        @self.base_endpoint
+        async def put_metadata(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to append metadata to.",
+            ),
+            metadata: list[dict] = Body(
+                ...,
+                description="Metadata to append to the document.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedDocumentResponse:
+            """Appends metadata to a document. This endpoint allows adding new metadata fields or updating existing ones."""
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            return await self.services.management.update_document_metadata(
+                document_id=id,
+                metadata=metadata,
+                overwrite=True,
+            )
+
         @self.router.post(
             "/documents/export",
             summary="Export documents to CSV",

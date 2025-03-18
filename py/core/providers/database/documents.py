@@ -695,6 +695,44 @@ class PostgresDocumentsHandler(Handler):
                 detail="Database query failed",
             ) from e
 
+    async def update_document_metadata(
+        self,
+        document_id: UUID,
+        metadata: list[dict],
+        overwrite: bool = False,
+    ) -> DocumentResponse:
+        """
+        Update the metadata of a document, either by appending to existing metadata or overwriting it.
+        Accepts a list of metadata dictionaries.
+        """
+
+        doc_result = await self.get_documents_overview(
+            offset=0,
+            limit=1,
+            filter_document_ids=[document_id],
+        )
+
+        if not doc_result["results"]:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Document with ID {document_id} not found",
+            )
+
+        existing_doc = doc_result["results"][0]
+
+        if overwrite:
+            combined_metadata: dict[str, Any] = {}
+            for meta_item in metadata:
+                combined_metadata |= meta_item
+            existing_doc.metadata = combined_metadata
+        else:
+            for meta_item in metadata:
+                existing_doc.metadata.update(meta_item)
+
+        await self.upsert_documents_overview(existing_doc)
+
+        return existing_doc
+
     async def semantic_document_search(
         self, query_embedding: list[float], search_settings: SearchSettings
     ) -> list[DocumentResponse]:

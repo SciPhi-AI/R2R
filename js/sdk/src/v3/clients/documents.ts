@@ -151,11 +151,45 @@ export class DocumentsClient {
   }
 
   /**
+   * Append metadata to a document.
+   * @param id ID of document to append metadata to
+   * @param metadata List of metadata to append
+   * @returns WrappedDocumentResponse
+   */
+  async appendMetadata(options: {
+    id: string;
+    metadata: Record<string, any>[];
+  }): Promise<WrappedDocumentResponse> {
+    return this.client.makeRequest(
+      "PATCH",
+      `documents/${options.id}/metadata`,
+      {
+        data: options.metadata,
+      },
+    );
+  }
+
+  /**
+   * Replace metadata for a document.
+   * @param id ID of document to replace metadata for
+   * @param metadata List of metadata to replace
+   * @returns WrappedDocumentResponse
+   */
+  async replaceMetadata(options: {
+    id: string;
+    metadata: Record<string, any>[];
+  }): Promise<WrappedDocumentResponse> {
+    return this.client.makeRequest("PUT", `documents/${options.id}/metadata`, {
+      data: options.metadata,
+    });
+  }
+
+  /**
    * Get a specific document by ID.
    * @param ids Optional list of document IDs to filter by
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
-   * @returns
+   * @returns WrappedDocumentsResponse
    */
   async retrieve(options: { id: string }): Promise<WrappedDocumentResponse> {
     return this.client.makeRequest("GET", `documents/${options.id}`);
