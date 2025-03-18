@@ -4,6 +4,7 @@ js/tests/*
 
 
 docker/env/
+docker/compose.yaml
 
 
 .DS_Store
@@ -45,8 +46,4 @@ go.work.sum
 .ruff_cache/
 *.egg-info
 .venv
-docker/env/*.env
-docker/env/*.env
-docker/env/*.env
-docker/env/*.env
-docker/env/*.env
+
