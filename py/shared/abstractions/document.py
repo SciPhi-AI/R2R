@@ -88,6 +88,9 @@ class DocumentType(str, Enum):
     # XML
     XML = "xml"
 
+    # Code
+    PY = "py"
+
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)

@@ -3,8 +3,8 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Optional
 
-# from core.parsers import *
 from core import parsers
+from core.parsers import PythonParser
 from core.base import (
     AsyncParser,
     ChunkingStrategy,
