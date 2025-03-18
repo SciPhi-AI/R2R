@@ -6,7 +6,7 @@ js/tests/*
 docker/env/
 docker/
 
-paul/
+paul
 
 .DS_Store
 *.gguf
