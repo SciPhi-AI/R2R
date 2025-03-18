@@ -6,6 +6,8 @@ js/tests/*
 docker/env/
 docker/
 
+paul/
+
 .DS_Store
 *.gguf
 logs/
