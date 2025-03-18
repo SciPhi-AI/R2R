@@ -575,6 +575,41 @@ class DocumentsRouter(BaseRouterV3):
             "/documents/{id}/metadata",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Append metadata to a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.append_metadata(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                metadata=[{"key": "new_key", "value": "new_value"}]
+                            )
+                            """),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.appendMetadata({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    metadata: [{ key: "new_key", value: "new_value" }],
+                                });
+                            }
+
+                            main();
+                            """),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def patch_metadata(
@@ -614,7 +649,42 @@ class DocumentsRouter(BaseRouterV3):
         @self.router.put(
             "/documents/{id}/metadata",
             dependencies=[Depends(self.rate_limit_dependency)],
-            summary="Append metadata to a document",
+            summary="Replace metadata of a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.replace_metadata(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                metadata=[{"key": "new_key", "value": "new_value"}]
+                            )
+                            """),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.replaceMetadata({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    metadata: [{ key: "new_key", value: "new_value" }],
+                                });
+                            }
+
+                            main();
+                            """),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def put_metadata(
