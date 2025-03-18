@@ -3,7 +3,7 @@ js/tests/*
 **/.DS_Store
 
 
-docker/env/*.env
+docker/env/
 
 
 .DS_Store
