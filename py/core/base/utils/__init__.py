@@ -35,7 +35,6 @@ __all__ = [
     "TextSplitter",
     "validate_uuid",
     "deep_update",
-    "estimate_image_tokens",
     "_decorate_vector_type",
     "_get_vector_column_str",
     "yield_sse_event",
