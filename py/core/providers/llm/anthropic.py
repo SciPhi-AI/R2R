@@ -844,7 +844,7 @@ class AnthropicCompletionProvider(CompletionProvider):
 
     def _execute_task_sync_nonstreaming(
         self, args: dict[str, Any]
-    ) -> LLMChatCompletion:
+    ): #-> LLMChatCompletion:  # FIXME: LLMChatCompletion is an object from the OpenAI API, which causes a validation error
         """Non-streaming synchronous call."""
         try:
             response = self.client.messages.create(**args)

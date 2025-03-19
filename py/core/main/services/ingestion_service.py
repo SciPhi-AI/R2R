@@ -208,9 +208,8 @@ class IngestionService:
         document_info: DocumentResponse,
         ingestion_config: dict | None,
     ) -> AsyncGenerator[DocumentChunk, None]:
-        """Inline replacement for the old parsing_pipe.run(...) Reads the file
-        content from the DB, calls the ingestion provider to parse, and yields
-        DocumentChunk objects."""
+        """Reads the file content from the DB, calls the ingestion
+        provider to parse, and yields DocumentChunk objects."""
         version = document_info.version or "v0"
         ingestion_config_override = ingestion_config or {}
 
