@@ -48,6 +48,7 @@ jobs:
           exit 1
 
   integration-test:
+    needs: package-install-test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -145,6 +146,7 @@ jobs:
           exit 1
 
   integration-test-gemini:
+    needs: package-install-test
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
