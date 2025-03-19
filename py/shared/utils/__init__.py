@@ -5,7 +5,6 @@ from .base_utils import (
     deep_update,
     dump_collector,
     dump_obj,
-    estimate_image_tokens,
     format_search_results_for_llm,
     generate_default_prompt_id,
     generate_default_user_collection_id,
@@ -15,7 +14,6 @@ from .base_utils import (
     generate_id,
     generate_user_id,
     increment_version,
-    resize_base64_image,
     validate_uuid,
     yield_sse_event,
 )
@@ -45,6 +43,4 @@ __all__ = [
     "yield_sse_event",
     "dump_collector",
     "dump_obj",
-    "resize_base64_image",
-    "estimate_image_tokens",
 ]
