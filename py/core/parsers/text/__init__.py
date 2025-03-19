@@ -6,6 +6,8 @@ from .python_parser import PythonParser
 from .css_parser import CSSParser
 from .js_parser import JSParser
 from .ts_parser import TSParser
+from .docker_parser import DockerfileParser
+from .compose_parser import DockerComposeParser
 
 __all__ = [
     "MDParser",
@@ -15,4 +17,7 @@ __all__ = [
     "CSSParser",
     "JSParser",
     "TSParser",
+    "DockerfileParser",
+    "DockerComposeParser",
+
 ]

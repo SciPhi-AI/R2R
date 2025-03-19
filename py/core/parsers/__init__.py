@@ -37,4 +37,6 @@ __all__ = [
     "CSSParser",
     "JSParser",
     "TSParser",
+    "DockerfileParser",
+    "DockerComposeParser",
 ]

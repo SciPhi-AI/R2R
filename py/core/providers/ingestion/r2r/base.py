@@ -72,6 +72,8 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.CSS: parsers.CSSParser,
         DocumentType.JS: parsers.JSParser,
         DocumentType.TS: parsers.TSParser,
+        DocumentType.DOCKER: parsers.DockerfileParser,
+        DocumentType.DOCKER_COMPOSE: parsers.DockerComposeParser,
     }
 
     EXTRA_PARSERS = {
