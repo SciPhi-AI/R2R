@@ -1,10 +1,9 @@
 import base64
 import io
 import logging
-
 from typing import Tuple
-from PIL import Image
 
+from PIL import Image
 
 logger = logging.getLogger()
 
