@@ -4,7 +4,6 @@ import time
 from typing import Any, AsyncGenerator, Optional
 
 from core import parsers
-from core.parsers import PythonParser
 from core.base import (
     AsyncParser,
     ChunkingStrategy,
@@ -70,6 +69,9 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.TIFF: parsers.TIFFParser,
         DocumentType.XLS: parsers.XLSParser,
         DocumentType.PY: parsers.PythonParser,
+        DocumentType.CSS: parsers.CSSParser,
+        DocumentType.JS: parsers.JSParser,
+        DocumentType.TS: parsers.TSParser,
     }
 
     EXTRA_PARSERS = {

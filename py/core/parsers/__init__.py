@@ -34,4 +34,7 @@ __all__ = [
     "HTMLParser",
     "TextParser",
     "PythonParser",
+    "CSSParser",
+    "JSParser",
+    "TSParser",
 ]

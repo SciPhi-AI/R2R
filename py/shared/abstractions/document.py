@@ -90,6 +90,9 @@ class DocumentType(str, Enum):
 
     # Code
     PY = "py"
+    JS = "js"
+    TS = "ts"
+    CSS = "css"
 
 
 class Document(R2RSerializable):
