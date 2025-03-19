@@ -20,6 +20,7 @@ from core.providers import (
     AsyncSMTPEmailProvider,
     BcryptCryptoConfig,
     BCryptCryptoProvider,
+    ClerkAuthProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
@@ -66,7 +67,7 @@ class R2RProviderFactory:
         ),
         *args,
         **kwargs,
-    ) -> R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider:
+    ) -> R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider | ClerkAuthProvider:
         if auth_config.provider == "r2r":
             r2r_auth = R2RAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
@@ -79,6 +80,10 @@ class R2RProviderFactory:
             )
         elif auth_config.provider == "jwt":
             return JwtAuthProvider(
+                auth_config, crypto_provider, database_provider, email_provider
+            )
+        elif auth_config.provider == "clerk":
+            return ClerkAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
             )
         else:

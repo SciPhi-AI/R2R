@@ -156,6 +156,7 @@ __all__ = [
     "SupabaseAuthProvider",
     "R2RAuthProvider",
     "JwtAuthProvider",
+    "ClerkAuthProvider",
     # Email
     # Crypto
     "BCryptCryptoProvider",
