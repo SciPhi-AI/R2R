@@ -25,6 +25,7 @@ from shared.abstractions.graph import (
     GraphEnrichmentSettings,
 )
 from shared.api.models import (
+    AgentEvent,
     AgentResponse,
     Citation,
     CitationData,
@@ -33,6 +34,7 @@ from shared.api.models import (
     DeltaPayload,
     FinalAnswerData,
     FinalAnswerEvent,
+    MessageData,
     MessageDelta,
     MessageEvent,
     RAGResponse,
@@ -73,10 +75,12 @@ __all__ = [
     # "RAGResponse",
     "Citation",
     "RAGResponse",
+    "AgentEvent",
     "AgentResponse",
     "SSEEventBase",
     "SearchResultsData",
     "SearchResultsEvent",
+    "MessageData",
     "MessageDelta",
     "MessageEvent",
     "DeltaPayload",

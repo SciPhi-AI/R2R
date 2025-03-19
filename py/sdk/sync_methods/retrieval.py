@@ -2,26 +2,7 @@ import json
 import uuid
 from typing import Any, Generator, Optional
 
-from core.base.api.models import (
-    AgentEvent,
-    CitationData,
-    CitationEvent,
-    Delta,
-    DeltaPayload,
-    FinalAnswerData,
-    FinalAnswerEvent,
-    MessageData,
-    MessageDelta,
-    MessageEvent,
-    SearchResultsData,
-    SearchResultsEvent,
-    ThinkingData,
-    ThinkingEvent,
-    ToolCallData,
-    ToolCallEvent,
-    ToolResultData,
-    ToolResultEvent,
-    UnknownEvent,
+from shared.api.models import (
     WrappedAgentResponse,
     WrappedEmbeddingResponse,
     WrappedLLMChatCompletion,
@@ -30,10 +11,29 @@ from core.base.api.models import (
 )
 
 from ..models import (
+    AgentEvent,
+    CitationData,
+    CitationEvent,
+    Delta,
+    DeltaPayload,
+    FinalAnswerData,
+    FinalAnswerEvent,
     GenerationConfig,
     Message,
+    MessageData,
+    MessageDelta,
+    MessageEvent,
     SearchMode,
+    SearchResultsData,
+    SearchResultsEvent,
     SearchSettings,
+    ThinkingData,
+    ThinkingEvent,
+    ToolCallData,
+    ToolCallEvent,
+    ToolResultData,
+    ToolResultEvent,
+    UnknownEvent,
 )
 
 
