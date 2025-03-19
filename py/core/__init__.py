@@ -154,8 +154,6 @@ __all__ = [
     "HTMLParser",
     "TextParser",
     "PythonParser",
-    "DockerfileParser",
-    "DockerComposeParser",
     "JavaScriptParser",
     "TypeScriptParser",
     "CSSParser",

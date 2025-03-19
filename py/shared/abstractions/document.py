@@ -93,8 +93,6 @@ class DocumentType(str, Enum):
     JS = "js"
     TS = "ts"
     CSS = "css"
-    DOCKER  = "Dockerfile"
-    DOCKER_COMPOSE = "yaml"
 
 
 class Document(R2RSerializable):
