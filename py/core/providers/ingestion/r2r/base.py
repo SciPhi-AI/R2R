@@ -243,40 +243,57 @@ class R2RIngestionProvider(IngestionProvider):
                     raise ValueError(
                         "Only Zerox PDF parser override is available."
                     )
-                    
+
                 # Collect content from VLMPDFParser
                 async for chunk in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
                     if isinstance(chunk, dict) and chunk.get("content"):
                         contents.append(chunk)
-                    elif chunk:  # Handle string output for backward compatibility
+                    elif (
+                        chunk
+                    ):  # Handle string output for backward compatibility
                         contents.append({"content": chunk})
-                        
-                if contents and document.document_type == DocumentType.PDF and parser_overrides.get(DocumentType.PDF.value) == "zerox":
-                    text_splitter = self._build_text_splitter(ingestion_config_override)
-                    
+
+                if (
+                    contents
+                    and document.document_type == DocumentType.PDF
+                    and parser_overrides.get(DocumentType.PDF.value) == "zerox"
+                ):
+                    text_splitter = self._build_text_splitter(
+                        ingestion_config_override
+                    )
+
                     iteration = 0
 
-                    sorted_contents = [item for item in sorted(contents, key=lambda x: x.get("page_number", 0)) if isinstance(item.get("content"), str)]
+                    sorted_contents = [
+                        item
+                        for item in sorted(
+                            contents, key=lambda x: x.get("page_number", 0)
+                        )
+                        if isinstance(item.get("content"), str)
+                    ]
 
-                    
                     for content_item in sorted_contents:
                         page_num = content_item.get("page_number", 0)
                         page_content = content_item["content"]
-                        
-                        page_chunks = text_splitter.create_documents([page_content])
-                        
+
+                        page_chunks = text_splitter.create_documents(
+                            [page_content]
+                        )
+
                         # Create document chunks for each split piece
                         for chunk in page_chunks:
                             metadata = {
-                                **document.metadata, 
+                                **document.metadata,
                                 "chunk_order": iteration,
-                                "page_number": page_num
+                                "page_number": page_num,
                             }
-                            
+
                             extraction = DocumentChunk(
-                                id=generate_extraction_id(document.id, iteration),
+                                id=generate_extraction_id(
+                                    document.id, iteration
+                                ),
                                 document_id=document.id,
                                 owner_id=document.owner_id,
                                 collection_ids=document.collection_ids,
@@ -285,14 +302,14 @@ class R2RIngestionProvider(IngestionProvider):
                             )
                             iteration += 1
                             yield extraction
-                    
+
                     logger.debug(
                         f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
                         f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
                         f"into {iteration} extractions in t={time.time() - t0:.2f} seconds using page-by-page splitting."
                     )
                     return
-                    
+
             else:
                 # Standard parsing for non-override cases
                 async for text in self.parsers[document.document_type].ingest(

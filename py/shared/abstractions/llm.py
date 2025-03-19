@@ -87,7 +87,12 @@ class ChatCompletionMessage(BaseModel):
 
 class Choice(BaseModel):
     finish_reason: Literal[
-        "stop", "length", "tool_calls", "content_filter", "function_call", "max_tokens"
+        "stop",
+        "length",
+        "tool_calls",
+        "content_filter",
+        "function_call",
+        "max_tokens",
     ]
     """The reason the model stopped generating tokens.
 

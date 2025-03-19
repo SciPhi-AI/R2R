@@ -1,10 +1,10 @@
 # type: ignore
 import asyncio
 import base64
+import json
 import logging
 import string
 import time
-import json
 import unicodedata
 from io import BytesIO
 from typing import AsyncGenerator
@@ -148,33 +148,43 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 response = await self.llm_provider.aget_completion(
                     messages=messages,
                     generation_config=generation_config,
-                    tools=[{
-                        "name": "parse_pdf_page",
-                        "description": "Parse text content from a PDF page",
-                        "input_schema": {
-                            "type": "object",
-                            "properties": {
-                                "page_content": {
-                                    "type": "string",
-                                    "description": "Extracted text from the PDF page"
+                    tools=[
+                        {
+                            "name": "parse_pdf_page",
+                            "description": "Parse text content from a PDF page",
+                            "input_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "page_content": {
+                                        "type": "string",
+                                        "description": "Extracted text from the PDF page",
+                                    },
                                 },
+                                "required": ["page_content"],
                             },
-                            "required": ["page_content"]
                         }
-                    }],
-                    tool_choice={"type": "tool", "name": "parse_pdf_page"}
+                    ],
+                    tool_choice={"type": "tool", "name": "parse_pdf_page"},
                 )
-                
-                if response.choices and response.choices[0].message and response.choices[0].message.tool_calls:
+
+                if (
+                    response.choices
+                    and response.choices[0].message
+                    and response.choices[0].message.tool_calls
+                ):
                     tool_call = response.choices[0].message.tool_calls[0]
                     args = json.loads(tool_call.function.arguments)
                     content = args.get("page_content", "")
                     page_elapsed = time.perf_counter() - page_start
-                    logger.debug(f"Processed page {page_num} in {page_elapsed:.2f} seconds.")
+                    logger.debug(
+                        f"Processed page {page_num} in {page_elapsed:.2f} seconds."
+                    )
 
                     return {"page": str(page_num), "content": content}
                 else:
-                    logger.warning(f"No valid tool call in response for page {page_num}, document might be missing text.")
+                    logger.warning(
+                        f"No valid tool call in response for page {page_num}, document might be missing text."
+                    )
             else:
                 response = await self.llm_provider.aget_completion(
                     messages=messages, generation_config=generation_config
