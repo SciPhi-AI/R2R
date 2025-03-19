@@ -127,4 +127,6 @@ __all__ = [
     "yield_sse_event",
     "dump_collector",
     "dump_obj",
+    "resize_base64_image",
+    "estimate_image_tokens",
 ]

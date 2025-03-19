@@ -108,6 +108,8 @@ __all__ = [
     "TextSplitter",
     "generate_id",
     "increment_version",
+    "resize_base64_image",
+    "estimate_image_tokens",
     "validate_uuid",
     "yield_sse_event",
     "convert_nonserializable_objects",
