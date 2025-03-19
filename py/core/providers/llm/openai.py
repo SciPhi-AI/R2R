@@ -3,10 +3,11 @@ import os
 from typing import Any
 
 from openai import AsyncAzureOpenAI, AsyncOpenAI, OpenAI
-from utils import resize_base64_image
 
 from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
+
+from .utils import resize_base64_image
 
 logger = logging.getLogger()
 

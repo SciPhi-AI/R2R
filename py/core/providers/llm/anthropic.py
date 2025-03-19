@@ -21,10 +21,11 @@ from anthropic.types import (
     RawMessageStartEvent,
     ToolUseBlock,
 )
-from utils import resize_base64_image
 
 from core.base.abstractions import GenerationConfig, LLMChatCompletion
 from core.base.providers.llm import CompletionConfig, CompletionProvider
+
+from .utils import resize_base64_image
 
 logger = logging.getLogger(__name__)
 
