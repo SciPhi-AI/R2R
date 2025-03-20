@@ -153,7 +153,7 @@ class ImageParser(AsyncParser[str | bytes]):
                 try:
                     # Detect image type from binary data and filename (if available)
                     media_type = self._get_image_media_type(data, filename)
-                    logger.info(f"Detected image type: {media_type}")
+                    logger.debug(f"Detected image type: {media_type}")
 
                     # We keep the original image data as-is, without conversion to JPEG
                     image_data = base64.b64encode(data).decode("utf-8")
