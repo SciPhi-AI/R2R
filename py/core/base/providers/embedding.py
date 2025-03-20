@@ -31,7 +31,7 @@ class EmbeddingConfig(ProviderConfig):
     add_title_as_prefix: bool = True
     concurrent_request_limit: int = 256
     max_retries: int = 3
-    initial_backoff: float
+    initial_backoff: float = 1
     max_backoff: float = 64.0
     quantization_settings: VectorQuantizationSettings = (
         VectorQuantizationSettings()
