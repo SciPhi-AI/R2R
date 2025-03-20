@@ -3,8 +3,8 @@ import base64
 import logging
 from io import BytesIO
 from typing import AsyncGenerator, Optional
-import filetype
 
+import filetype
 import pillow_heif
 from PIL import Image
 
@@ -183,24 +183,30 @@ class ImageParser(AsyncParser[str | bytes]):
             if isinstance(data, bytes):
                 try:
                     # First detect the original media type
-                    original_media_type = self._get_image_media_type(data, filename)
-                    logger.debug(f"Detected original image type: {original_media_type}")
-                    
+                    original_media_type = self._get_image_media_type(
+                        data, filename
+                    )
+                    logger.debug(
+                        f"Detected original image type: {original_media_type}"
+                    )
+
                     # Determine if we need to convert HEIC
                     is_heic_format = self._is_heic(data)
-                    
+
                     # Handle HEIC images
                     if is_heic_format and convert_heic:
-                        logger.debug("Detected HEIC format, converting to JPEG")
+                        logger.debug(
+                            "Detected HEIC format, converting to JPEG"
+                        )
                         data = await self._convert_heic_to_jpeg(data)
                         media_type = "image/jpeg"
                     else:
                         # Keep original format and media type
                         media_type = original_media_type
-                    
+
                     # Encode the data to base64
                     image_data = base64.b64encode(data).decode("utf-8")
-                    
+
                 except Exception as e:
                     logger.error(f"Error processing image data: {str(e)}")
                     raise
@@ -208,15 +214,14 @@ class ImageParser(AsyncParser[str | bytes]):
                 # If data is already a string (base64), we assume it has a reliable content type
                 # from the source that encoded it
                 image_data = data
-                
+
                 # Try to determine the media type from the context if available
-                media_type = kwargs.get("media_type", "application/octet-stream")
+                media_type = kwargs.get(
+                    "media_type", "application/octet-stream"
+                )
 
             # Get the model from kwargs or config
-            model = (
-                kwargs.get("vlm", None) or 
-                self.config.app.vlm
-            )
+            model = kwargs.get("vlm", None) or self.config.app.vlm
 
             generation_config = GenerationConfig(
                 model=model,
