@@ -70,7 +70,7 @@ class TIFFParser(AsyncParser[str | bytes]):
 
             # Use vision model to analyze image
             generation_config = GenerationConfig(
-                model=self.config.vision_img_model or self.config.app.vlm,
+                model=self.config.app.vlm,
                 stream=False,
             )
 

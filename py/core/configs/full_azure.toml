@@ -31,8 +31,6 @@ max_characters = 4_096
 combine_under_n_chars = 1_024
 overlap = 1_024
 document_summary_model = "azure/gpt-4o-mini"
-vision_img_model = "azure/gpt-4o"
-vision_pdf_model = "azure/gpt-4o"
 automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.extra_parsers]

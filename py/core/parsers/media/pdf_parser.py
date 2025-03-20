@@ -93,11 +93,11 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             image_data = buf.read()
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
-            model = self.config.vision_pdf_model or self.config.app.vlm
+            model = self.config.app.vlm
 
             # Configure generation parameters
             generation_config = GenerationConfig(
-                model=self.config.vision_pdf_model or self.config.app.vlm,
+                model=self.config.app.vlm,
                 stream=False,
             )
 

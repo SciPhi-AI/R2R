@@ -40,9 +40,7 @@ class IngestionConfig(ProviderConfig):
         "extra_parsers": {},
         "audio_transcription_model": None,
         "vision_img_prompt_name": "vision_img",
-        "vision_img_model": None,
         "vision_pdf_prompt_name": "vision_pdf",
-        "vision_pdf_model": None,
         "skip_document_summary": False,
         "document_summary_system_prompt": "system",
         "document_summary_task_prompt": "summary",
@@ -84,16 +82,10 @@ class IngestionConfig(ProviderConfig):
             "vision_img_prompt_name"
         ]
     )
-    vision_img_model: Optional[str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_img_model"]
-    )
     vision_pdf_prompt_name: str = Field(
         default_factory=lambda: IngestionConfig._defaults[
             "vision_pdf_prompt_name"
         ]
-    )
-    vision_pdf_model: Optional[str] = Field(
-        default_factory=lambda: IngestionConfig._defaults["vision_pdf_model"]
     )
     skip_document_summary: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[
