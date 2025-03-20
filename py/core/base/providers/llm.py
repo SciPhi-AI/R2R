@@ -24,7 +24,7 @@ class CompletionConfig(ProviderConfig):
     generation_config: Optional[GenerationConfig] = None
     concurrent_request_limit: int = 256
     max_retries: int = 3
-    initial_backoff: float
+    initial_backoff: float = 1.0
     max_backoff: float = 64.0
 
     def validate_config(self) -> None:
