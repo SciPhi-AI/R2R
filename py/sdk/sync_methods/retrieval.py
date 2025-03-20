@@ -409,7 +409,7 @@ class RetrievalSDK:
             include_title_if_available=include_title_if_available,
             include_web_search=include_web_search,
         )
-        # rag_generation_config = data.get("rag_generation_config")
+        rag_generation_config = data.get("rag_generation_config")
         if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):

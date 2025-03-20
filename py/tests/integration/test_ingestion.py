@@ -356,3 +356,107 @@ def test_img_ingestion(client: R2RClient):
     )
 
     client.documents.delete(result.results.document_id)
+
+def test_metadata_title_handling(client: R2RClient):
+    """Test that document title in metadata is properly stored and retrievable."""
+    # Test with raw text
+    raw_text_title = "Raw Text Title Test"
+    raw_text_metadata = {
+        "title": raw_text_title,
+        "author": "Test Author",
+        "custom_field": "custom_value",
+    }
+
+    # Create document with raw text
+    raw_text_response = client.documents.create(
+        raw_text="This is test text with title " + str(time.time()),
+        ingestion_mode="fast",
+        metadata=raw_text_metadata,
+        run_with_orchestration=False
+    )
+
+    assert raw_text_response is not None
+    assert raw_text_response.results is not None
+    raw_text_doc_id = raw_text_response.results.document_id
+
+    # Wait for ingestion to complete
+    start_time = time.time()
+    while True:
+        try:
+            retrieval_response = client.documents.retrieve(id=raw_text_doc_id)
+            if retrieval_response.results.ingestion_status == "success":
+                break
+            elif retrieval_response.results.ingestion_status == "failed":
+                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+        except R2RException:
+            if time.time() - start_time > 600:
+                raise TimeoutError("Ingestion didn't complete within timeout")
+            time.sleep(2)
+
+    # Verify document in list has correct title
+    list_response = client.documents.list()
+    raw_text_doc = next((doc for doc in list_response.results
+                        if doc.id == raw_text_doc_id), None)
+    assert raw_text_doc is not None
+    assert raw_text_doc.title == raw_text_title
+
+    # Verify retrieved document has correct title in metadata
+    raw_text_doc_detail = client.documents.retrieve(id=raw_text_doc_id)
+    # Update metadata with server assigned version
+    raw_text_metadata["version"] = "v0"
+    assert raw_text_doc_detail.results.metadata == raw_text_metadata
+
+    # Test with chunks
+    chunks_title = "Chunks Title Test"
+    chunks_metadata = {
+        "title": chunks_title,
+        "author": "Test Author",
+        "custom_field": "custom_value",
+    }
+
+    # Create document with chunks
+    chunks = ["This is chunk 1 " + str(time.time()),
+              "This is chunk 2",
+              "This is chunk 3"]
+
+    chunks_response = client.documents.create(
+        chunks=chunks,
+        ingestion_mode="fast",
+        metadata=chunks_metadata,
+        run_with_orchestration=False
+    )
+
+    assert chunks_response is not None
+    assert chunks_response.results is not None
+    chunks_doc_id = chunks_response.results.document_id
+
+    # Wait for ingestion to complete
+    start_time = time.time()
+    while True:
+        try:
+            retrieval_response = client.documents.retrieve(id=chunks_doc_id)
+            if retrieval_response.results.ingestion_status == "success":
+                break
+            elif retrieval_response.results.ingestion_status == "failed":
+                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+        except R2RException:
+            if time.time() - start_time > 600:
+                raise TimeoutError("Ingestion didn't complete within timeout")
+            time.sleep(2)
+
+    # Verify document in list has correct title
+    list_response = client.documents.list()
+    chunks_doc = next((doc for doc in list_response.results
+                      if doc.id == chunks_doc_id), None)
+    assert chunks_doc is not None
+    assert chunks_doc.title == chunks_title
+
+    # Verify retrieved document has correct title in metadata
+    chunks_doc_detail = client.documents.retrieve(id=chunks_doc_id)
+    # Update metadata with server assigned version
+    chunks_metadata["version"] = "v0"
+    assert chunks_doc_detail.results.metadata == chunks_metadata
+
+    # Clean up
+    client.documents.delete(id=raw_text_doc_id)
+    client.documents.delete(id=chunks_doc_id)
