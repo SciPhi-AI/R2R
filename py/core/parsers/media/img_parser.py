@@ -182,9 +182,6 @@ class ImageParser(AsyncParser[str | bytes]):
                 stream=False,
             )
 
-            print("generation_config = ", generation_config)
-            print("media_type = ", media_type)
-
             if "anthropic" in model:
                 messages = [
                     {
