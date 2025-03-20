@@ -94,7 +94,9 @@ try:
 
     mcp = FastMCP("R2R Retrieval System")
 except Exception as e:
-    raise ImportError("MCP is not installed. Please run `pip install mcp`") from e
+    raise ImportError(
+        "MCP is not installed. Please run `pip install mcp`"
+    ) from e
 
 # Pass lifespan to server
 mcp = FastMCP("R2R Retrieval System")
