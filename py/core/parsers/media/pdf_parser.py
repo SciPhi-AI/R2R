@@ -1,8 +1,7 @@
 # type: ignore
-
-# Standard library imports
 import asyncio
 import base64
+import json
 import logging
 import string
 import time
@@ -10,13 +9,11 @@ import unicodedata
 from io import BytesIO
 from typing import AsyncGenerator
 
-# Third-party imports
 from pdf2image import convert_from_bytes, convert_from_path
 from pdf2image.exceptions import PDFInfoNotInstalledError
 from PIL import Image
 from pypdf import PdfReader
 
-# Local application imports
 from core.base.abstractions import GenerationConfig
 from core.base.parsers.base_parser import AsyncParser
 from core.base.providers import (
@@ -147,25 +144,67 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             logger.debug(f"Sending page {page_num} to vision model.")
             req_start = time.perf_counter()
-            response = await self.llm_provider.aget_completion(
-                messages=messages, generation_config=generation_config
-            )
-            req_elapsed = time.perf_counter() - req_start
-            logger.debug(
-                f"Vision model response for page {page_num} received in {req_elapsed:.2f} seconds."
-            )
-
-            if response.choices and response.choices[0].message:
-                content = response.choices[0].message.content
-                page_elapsed = time.perf_counter() - page_start
-                logger.debug(
-                    f"Processed page {page_num} in {page_elapsed:.2f} seconds."
+            if is_anthropic:
+                response = await self.llm_provider.aget_completion(
+                    messages=messages,
+                    generation_config=generation_config,
+                    tools=[
+                        {
+                            "name": "parse_pdf_page",
+                            "description": "Parse text content from a PDF page",
+                            "input_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "page_content": {
+                                        "type": "string",
+                                        "description": "Extracted text from the PDF page",
+                                    },
+                                },
+                                "required": ["page_content"],
+                            },
+                        }
+                    ],
+                    tool_choice={"type": "tool", "name": "parse_pdf_page"},
                 )
-                return {"page": str(page_num), "content": content}
+
+                if (
+                    response.choices
+                    and response.choices[0].message
+                    and response.choices[0].message.tool_calls
+                ):
+                    tool_call = response.choices[0].message.tool_calls[0]
+                    args = json.loads(tool_call.function.arguments)
+                    content = args.get("page_content", "")
+                    page_elapsed = time.perf_counter() - page_start
+                    logger.debug(
+                        f"Processed page {page_num} in {page_elapsed:.2f} seconds."
+                    )
+
+                    return {"page": str(page_num), "content": content}
+                else:
+                    logger.warning(
+                        f"No valid tool call in response for page {page_num}, document might be missing text."
+                    )
             else:
-                msg = f"No response content for page {page_num}"
-                logger.error(msg)
-                raise ValueError(msg)
+                response = await self.llm_provider.aget_completion(
+                    messages=messages, generation_config=generation_config
+                )
+                req_elapsed = time.perf_counter() - req_start
+                logger.debug(
+                    f"Vision model response for page {page_num} received in {req_elapsed:.2f} seconds."
+                )
+
+                if response.choices and response.choices[0].message:
+                    content = response.choices[0].message.content
+                    page_elapsed = time.perf_counter() - page_start
+                    logger.debug(
+                        f"Processed page {page_num} in {page_elapsed:.2f} seconds."
+                    )
+                    return {"page": str(page_num), "content": content}
+                else:
+                    msg = f"No response content for page {page_num}"
+                    logger.error(msg)
+                    raise ValueError(msg)
         except Exception as e:
             logger.error(
                 f"Error processing page {page_num} with vision model: {str(e)}"
@@ -216,7 +255,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                         results[page_num] = result
                         while next_page in results:
                             yield {
-                                "content": results[next_page]["content"],
+                                "content": results[next_page]["content"] or "",
                                 "page_number": next_page,
                             }
                             results.pop(next_page)

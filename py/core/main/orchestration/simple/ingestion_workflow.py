@@ -23,6 +23,7 @@ from ...services import IngestionService
 logger = logging.getLogger()
 
 
+# FIXME: No need to duplicate this function between the workflows, consolidate it into a shared module
 def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -43,8 +44,6 @@ def simple_ingestion_factory(service: IngestionService):
             parsed_data = IngestionServiceAdapter.parse_ingest_file_input(
                 input_data
             )
-            # ingestion_result = await service.ingest_file_ingress(**parsed_data)
-            # document_info = ingestion_result["info"]
 
             document_info = service.create_document_info_from_file(
                 parsed_data["document_id"],
@@ -61,7 +60,8 @@ def simple_ingestion_factory(service: IngestionService):
 
             ingestion_config = parsed_data["ingestion_config"]
             extractions_generator = service.parse_file(
-                document_info, ingestion_config
+                document_info=document_info,
+                ingestion_config=ingestion_config,
             )
             extractions = [
                 extraction.model_dump()
@@ -79,7 +79,8 @@ def simple_ingestion_factory(service: IngestionService):
 
             if not ingestion_config.get("skip_document_summary", False):
                 await service.update_document_status(
-                    document_info, status=IngestionStatus.AUGMENTING
+                    document_info=document_info,
+                    status=IngestionStatus.AUGMENTING,
                 )
                 await service.augment_document_info(document_info, extractions)
 

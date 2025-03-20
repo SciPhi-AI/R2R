@@ -12,9 +12,6 @@ from .base import R2RSerializable
 if TYPE_CHECKING:
     from .search import AggregateSearchResult
 
-
-# LLMChatCompletion = ChatCompletion
-
 from typing_extensions import Literal
 
 
@@ -87,7 +84,12 @@ class ChatCompletionMessage(BaseModel):
 
 class Choice(BaseModel):
     finish_reason: Literal[
-        "stop", "length", "tool_calls", "content_filter", "function_call"
+        "stop",
+        "length",
+        "tool_calls",
+        "content_filter",
+        "function_call",
+        "max_tokens",
     ]
     """The reason the model stopped generating tokens.
 
