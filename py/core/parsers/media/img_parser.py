@@ -1,8 +1,8 @@
 # type: ignore
 import base64
+import imghdr
 import logging
-from io import BytesIO
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 import pillow_heif
 from PIL import Image
@@ -19,6 +19,19 @@ logger = logging.getLogger()
 
 
 class ImageParser(AsyncParser[str | bytes]):
+    # Mapping of file extensions to MIME types
+    MIME_TYPE_MAPPING = {
+        "bmp": "image/bmp",
+        "gif": "image/gif",
+        "heic": "image/heic",
+        "jpeg": "image/jpeg",
+        "jpg": "image/jpeg",
+        "png": "image/png",
+        "tiff": "image/tiff",
+        "tif": "image/tiff",
+        "webp": "image/webp",
+    }
+
     def __init__(
         self,
         config: IngestionConfig,
@@ -34,7 +47,7 @@ class ImageParser(AsyncParser[str | bytes]):
         self.pillow_heif.register_heif_opener()
 
     def _is_heic(self, data: bytes) -> bool:
-        """More robust HEIC detection using magic numbers and patterns."""
+        """Detect HEIC format using magic numbers and patterns."""
         heic_patterns = [
             b"ftyp",
             b"heic",
@@ -47,7 +60,6 @@ class ImageParser(AsyncParser[str | bytes]):
             b"hevx",
         ]
 
-        # Check for HEIC file signature
         try:
             header = data[:32]  # Get first 32 bytes
             return any(pattern in header for pattern in heic_patterns)
@@ -55,33 +67,75 @@ class ImageParser(AsyncParser[str | bytes]):
             logger.error(f"Error checking for HEIC format: {str(e)}")
             return False
 
-    async def _convert_heic_to_jpeg(self, data: bytes) -> bytes:
-        """Convert HEIC image to JPEG format."""
+    def _is_jpeg(self, data: bytes) -> bool:
+        """Detect JPEG format using magic numbers."""
+        return len(data) >= 2 and data[0] == 0xFF and data[1] == 0xD8
+
+    def _is_png(self, data: bytes) -> bool:
+        """Detect PNG format using magic numbers."""
+        png_signature = b"\x89PNG\r\n\x1a\n"
+        return data.startswith(png_signature)
+
+    def _is_bmp(self, data: bytes) -> bool:
+        """Detect BMP format using magic numbers."""
+        return data.startswith(b"BM")
+
+    def _is_tiff(self, data: bytes) -> bool:
+        """Detect TIFF format using magic numbers."""
+        return (
+            data.startswith(b"II*\x00")  # Little-endian
+            or data.startswith(b"MM\x00*")
+        )  # Big-endian
+
+    def _get_image_media_type(
+        self, data: bytes, filename: Optional[str] = None
+    ) -> str:
+        """
+        Determine the correct media type based on image data and/or filename.
+
+        Args:
+            data: The binary image data
+            filename: Optional filename which may contain extension information
+
+        Returns:
+            str: The MIME type for the image
+        """
         try:
-            # Create BytesIO object for input
-            input_buffer = BytesIO(data)
+            # First, try format-specific detection functions
+            if self._is_heic(data):
+                return "image/heic"
+            if self._is_jpeg(data):
+                return "image/jpeg"
+            if self._is_png(data):
+                return "image/png"
+            if self._is_bmp(data):
+                return "image/bmp"
+            if self._is_tiff(data):
+                return "image/tiff"
 
-            # Load HEIC image using pillow_heif
-            heif_file = self.pillow_heif.read_heif(input_buffer)
+            # Try using imghdr as a fallback
+            img_type = imghdr.what(None, h=data)
+            if img_type:
+                # Map the detected type to a MIME type
+                return self.MIME_TYPE_MAPPING.get(
+                    img_type, f"image/{img_type}"
+                )
 
-            # Get the primary image - API changed, need to get first image
-            heif_image = heif_file[0]  # Get first image in the container
+            # If we have a filename, try to get the type from the extension
+            if filename:
+                extension = filename.split(".")[-1].lower()
+                if extension in self.MIME_TYPE_MAPPING:
+                    return self.MIME_TYPE_MAPPING[extension]
 
-            # Convert to PIL Image directly from the HEIF image
-            pil_image = heif_image.to_pillow()
-
-            # Convert to RGB if needed
-            if pil_image.mode != "RGB":
-                pil_image = pil_image.convert("RGB")
-
-            # Save as JPEG
-            output_buffer = BytesIO()
-            pil_image.save(output_buffer, format="JPEG", quality=95)
-            return output_buffer.getvalue()
+            # If all else fails, default to octet-stream (generic binary)
+            logger.warning(
+                "Could not determine image type, using application/octet-stream"
+            )
+            return "application/octet-stream"
 
         except Exception as e:
-            logger.error(f"Error converting HEIC to JPEG: {str(e)}")
-            raise
+            logger.error(f"Error determining image media type: {str(e)}")
+            return "application/octet-stream"  # Default to generic binary as fallback
 
     async def ingest(
         self, data: str | bytes, **kwargs
@@ -93,40 +147,77 @@ class ImageParser(AsyncParser[str | bytes]):
                 )
             )
         try:
+            filename = kwargs.get("filename", None)
+
             if isinstance(data, bytes):
                 try:
-                    # Check if it's HEIC and convert if necessary
-                    if self._is_heic(data):
-                        logger.debug(
-                            "Detected HEIC format, converting to JPEG"
-                        )
-                        data = await self._convert_heic_to_jpeg(data)
+                    # Detect image type from binary data and filename (if available)
+                    media_type = self._get_image_media_type(data, filename)
+                    logger.info(f"Detected image type: {media_type}")
+
+                    # We keep the original image data as-is, without conversion to JPEG
                     image_data = base64.b64encode(data).decode("utf-8")
+
                 except Exception as e:
                     logger.error(f"Error processing image data: {str(e)}")
                     raise
             else:
+                # If data is already a string (base64), we assume it has a reliable content type
+                # from the source that encoded it
                 image_data = data
 
+                # Try to determine the media type from the context if available
+                media_type = kwargs.get(
+                    "media_type", "application/octet-stream"
+                )
+
+            model = (
+                kwargs.get("vision_img_model", None)
+                or self.config.vision_img_model
+                or self.config.app.vlm
+            )
+
             generation_config = GenerationConfig(
-                model=self.config.vision_img_model or self.config.app.vlm,
+                model=model,
                 stream=False,
             )
 
-            messages = [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": self.vision_prompt_text},
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{image_data}"
+            print("generation_config = ", generation_config)
+            print("media_type = ", media_type)
+
+            if "anthropic" in model:
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": self.vision_prompt_text},
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": image_data,
+                                },
                             },
-                        },
-                    ],
-                }
-            ]
+                        ],
+                    }
+                ]
+            else:
+                # For OpenAI-style APIs, use their format
+                messages = [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": self.vision_prompt_text},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{media_type};base64,{image_data}"
+                                },
+                            },
+                        ],
+                    }
+                ]
 
             response = await self.llm_provider.aget_completion(
                 messages=messages, generation_config=generation_config

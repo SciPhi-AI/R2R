@@ -355,11 +355,13 @@ class DocumentsRouter(BaseRouterV3):
                         status_code=403,
                         message=f"User has reached the maximum number of collections allowed ({user_max_collections}).",
                     )
-
+            print("ingestion_config = ", ingestion_config)
             effective_ingestion_config = self._prepare_ingestion_config(
                 ingestion_mode=ingestion_mode,
                 ingestion_config=ingestion_config,
             )
+            print("effective_ingestion_config = ", effective_ingestion_config)
+
             if not file and not raw_text and not chunks:
                 raise R2RException(
                     status_code=422,

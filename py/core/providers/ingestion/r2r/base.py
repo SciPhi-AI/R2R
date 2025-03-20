@@ -67,7 +67,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.P7S: parsers.P7SParser,
         DocumentType.RST: parsers.RSTParser,
         DocumentType.RTF: parsers.RTFParser,
-        DocumentType.TIFF: parsers.TIFFParser,
+        DocumentType.TIFF: parsers.ImageParser,
         DocumentType.XLS: parsers.XLSParser,
     }
 
@@ -311,6 +311,7 @@ class R2RIngestionProvider(IngestionProvider):
                     return
 
             else:
+                print("overrides = ", ingestion_config_override)
                 # Standard parsing for non-override cases
                 async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
