@@ -67,7 +67,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.P7S: parsers.P7SParser,
         DocumentType.RST: parsers.RSTParser,
         DocumentType.RTF: parsers.RTFParser,
-        DocumentType.TIFF: parsers.TIFFParser,
+        DocumentType.TIFF: parsers.ImageParser,
         DocumentType.XLS: parsers.XLSParser,
     }
 
