@@ -2993,7 +2993,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.5.3"
+version = "3.5.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
