@@ -138,6 +138,51 @@ class DocumentsSDK:
 
         return WrappedIngestionResponse(**response_dict)
 
+    def append_metadata(
+        self,
+        id: str | UUID,
+        metadata: list[dict],
+    ) -> WrappedDocumentResponse:
+        """Append metadata to a document.
+
+        Args:
+            id (str | UUID): ID of document to append metadata to
+            metadata (list[dict]): Metadata to append
+
+        Returns:
+            WrappedDocumentResponse
+        """
+        data = json.dumps(metadata)
+        response_dict = self.client._make_request(
+            "PATCH",
+            f"documents/{str(id)}/metadata",
+            data=data,
+            version="v3",
+        )
+
+        return WrappedDocumentResponse(**response_dict)
+
+    def replace_metadata(
+        self,
+        id: str | UUID,
+        metadata: list[dict],
+    ) -> WrappedDocumentResponse:
+        """Replace metadata for a document.
+
+        Args:
+            id (str | UUID): ID of document to replace metadata for
+            metadata (list[dict]): The metadata that will replace the existing metadata
+        """
+        data = json.dumps(metadata)
+        response_dict = self.client._make_request(
+            "PUT",
+            f"documents/{str(id)}/metadata",
+            data=data,
+            version="v3",
+        )
+
+        return WrappedDocumentResponse(**response_dict)
+
     def retrieve(
         self,
         id: str | UUID,

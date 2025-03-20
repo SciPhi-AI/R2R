@@ -1,5 +1,6 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
+import exp from "constants";
 import fs from "fs";
 import path from "path";
 
@@ -109,6 +110,53 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
     );
     expect(response.results.metadata.title).toBe("marmeladov.txt");
+    expect(response.results.sizeInBytes).toBeDefined();
+    expect(response.results.ingestionStatus).toBe("success");
+    expect(response.results.extractionStatus).toBe("pending");
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.summary).toBeDefined();
+  });
+
+  test("Append new metadata to document", async () => {
+    const response = await client.documents.appendMetadata({
+      id: documentId,
+      metadata: [{ newfield: "new value" }, { newfield2: "new value 2" }],
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(documentId);
+    expect(response.results.collectionIds).toContain(
+      "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+    );
+    expect(response.results.metadata.title).toBe("marmeladov.txt");
+    expect(response.results.metadata.newfield).toBe("new value");
+    expect(response.results.metadata.newfield2).toBe("new value 2");
+    expect(response.results.sizeInBytes).toBeDefined();
+    expect(response.results.ingestionStatus).toBe("success");
+    expect(response.results.extractionStatus).toBe("pending");
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.summary).toBeDefined();
+  });
+
+  test("Replace metadata of document", async () => {
+    const response = await client.documents.replaceMetadata({
+      id: documentId,
+      metadata: [
+        { replacedfield: "replaced value" },
+        { replacedfield2: "replaced value 2" },
+      ],
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBe(documentId);
+    expect(response.results.collectionIds).toContain(
+      "122fdf6a-e116-546b-a8f6-e4cb2e2c0a09",
+    );
+    expect(Object.keys(response.results.metadata).length).toBe(2);
+    expect(response.results.metadata.replacedfield).toBe("replaced value");
+    expect(response.results.metadata.replacedfield2).toBe("replaced value 2");
     expect(response.results.sizeInBytes).toBeDefined();
     expect(response.results.ingestionStatus).toBe("success");
     expect(response.results.extractionStatus).toBe("pending");

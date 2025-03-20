@@ -492,8 +492,10 @@ class DocumentsRouter(BaseRouterV3):
                     document_id = id or generate_document_id(
                         raw_text, auth_user.id
                     )
+                    title = metadata.get("title", None)
+                    title = title + ".txt" if title else None
                     file_data = {
-                        "filename": "N/A",
+                        "filename": title or "N/A",
                         "content_type": "text/plain",
                     }
                 else:
@@ -570,6 +572,156 @@ class DocumentsRouter(BaseRouterV3):
                 "document_id": str(document_id),
                 "task_id": None,
             }
+
+        @self.router.patch(
+            "/documents/{id}/metadata",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Append metadata to a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.append_metadata(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                metadata=[{"key": "new_key", "value": "new_value"}]
+                            )
+                            """),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.appendMetadata({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    metadata: [{ key: "new_key", value: "new_value" }],
+                                });
+                            }
+
+                            main();
+                            """),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def patch_metadata(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to append metadata to.",
+            ),
+            metadata: list[dict] = Body(
+                ...,
+                description="Metadata to append to the document.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedDocumentResponse:
+            """Appends metadata to a document. This endpoint allows adding new metadata fields or updating existing ones."""
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            return await self.services.management.update_document_metadata(
+                document_id=id,
+                metadata=metadata,
+                overwrite=False,
+            )
+
+        @self.router.put(
+            "/documents/{id}/metadata",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            summary="Replace metadata of a document",
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.documents.replace_metadata(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                metadata=[{"key": "new_key", "value": "new_value"}]
+                            )
+                            """),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            function main() {
+                                const response = await client.documents.replaceMetadata({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    metadata: [{ key: "new_key", value: "new_value" }],
+                                });
+                            }
+
+                            main();
+                            """),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def put_metadata(
+            id: UUID = Path(
+                ...,
+                description="The ID of the document to append metadata to.",
+            ),
+            metadata: list[dict] = Body(
+                ...,
+                description="Metadata to append to the document.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedDocumentResponse:
+            """Replaces metadata in a document. This endpoint allows overwriting existing metadata fields."""
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            return await self.services.management.update_document_metadata(
+                document_id=id,
+                metadata=metadata,
+                overwrite=True,
+            )
 
         @self.router.post(
             "/documents/export",

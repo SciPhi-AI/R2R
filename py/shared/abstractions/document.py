@@ -325,10 +325,8 @@ class IngestionConfig(R2RSerializable):
     audio_transcription_model: str = ""
 
     vision_img_prompt_name: str = "vision_img"
-    vision_img_model: str = ""
 
     vision_pdf_prompt_name: str = "vision_pdf"
-    vision_pdf_model: str = ""
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "system"
@@ -356,9 +354,7 @@ class IngestionConfig(R2RSerializable):
                 extra_parsers={},
                 audio_transcription_model="",
                 vision_img_prompt_name="vision_img",
-                vision_img_model="",
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model="",
                 skip_document_summary=False,
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
@@ -375,9 +371,7 @@ class IngestionConfig(R2RSerializable):
                 extra_parsers={},
                 audio_transcription_model="",
                 vision_img_prompt_name="vision_img",
-                vision_img_model="",
                 vision_pdf_prompt_name="vision_pdf",
-                vision_pdf_model="",
                 skip_document_summary=True,  # skip summaries
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",

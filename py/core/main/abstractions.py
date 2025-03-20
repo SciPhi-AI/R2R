@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from core.providers import (
     AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
+    ClerkAuthProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
@@ -36,7 +37,12 @@ if TYPE_CHECKING:
 
 
 class R2RProviders(BaseModel):
-    auth: R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider
+    auth: (
+        R2RAuthProvider
+        | SupabaseAuthProvider
+        | JwtAuthProvider
+        | ClerkAuthProvider
+    )
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
     embedding: (

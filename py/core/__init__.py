@@ -145,7 +145,6 @@ __all__ = [
     "ORGParser",
     "P7SParser",
     "RSTParser",
-    "TIFFParser",
     "TSVParser",
     "XLSParser",
     "XLSXParser",
@@ -160,6 +159,7 @@ __all__ = [
     "SupabaseAuthProvider",
     "R2RAuthProvider",
     "JwtAuthProvider",
+    "ClerkAuthProvider",
     # Email
     # Crypto
     "BCryptCryptoProvider",

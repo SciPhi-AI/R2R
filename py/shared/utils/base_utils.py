@@ -27,7 +27,7 @@ logger = logging.getLogger()
 
 
 def id_to_shorthand(id: str | UUID):
-    return str(id)[0:7]
+    return str(id)[:7]
 
 
 def format_search_results_for_llm(
