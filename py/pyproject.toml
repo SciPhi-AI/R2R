@@ -28,6 +28,7 @@ dependencies = [
     "typing-extensions >=4.12.2,<5.0.0",
     "pydantic>=2.10.6",
     "python-json-logger>=3.2.1",
+    "filetype>=1.2.0",
 ]
 
 [project.optional-dependencies]

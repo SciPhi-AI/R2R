@@ -970,6 +970,15 @@ wheels = [
 ]
 
 [[package]]
+name = "filetype"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/29/745f7d30d47fe0f251d3ad3dc2978a23141917661998763bebb6da007eb1/filetype-1.2.0.tar.gz", hash = "sha256:66b56cd6474bf41d8c54660347d37afcc3f7d1970648de365c102ef77548aadb", size = 998020 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/18/79/1b8fa1bb3568781e84c9200f951c735f3f157429f44be0495da55894d620/filetype-1.2.0-py2.py3-none-any.whl", hash = "sha256:7ce71b6880181241cf7ac8697a2f1eb6a8bd9b429f7ad6d27b8db9ba5f1c2d25", size = 19970 },
+]
+
+[[package]]
 name = "firecrawl-py"
 version = "1.13.5"
 source = { registry = "https://pypi.org/simple" }
@@ -2990,6 +2999,7 @@ dependencies = [
     { name = "aiofiles" },
     { name = "alembic" },
     { name = "fastapi" },
+    { name = "filetype" },
     { name = "httpx" },
     { name = "openai" },
     { name = "psycopg-binary" },
@@ -3108,6 +3118,7 @@ requires-dist = [
     { name = "docutils", marker = "extra == 'core'", specifier = ">=0.21.2,<0.22.0" },
     { name = "epub", marker = "extra == 'core'", specifier = ">=0.5.2,<0.6.0" },
     { name = "fastapi", specifier = ">=0.115.11,<0.116.0" },
+    { name = "filetype", specifier = ">=1.2.0" },
     { name = "firecrawl-py", marker = "extra == 'core'", specifier = ">=1.13.5" },
     { name = "fsspec", marker = "extra == 'core'", specifier = ">=2024.6.0,<2025.0.0" },
     { name = "future", marker = "extra == 'core'", specifier = ">=1.0.0,<2.0.0" },

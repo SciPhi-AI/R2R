@@ -330,3 +330,24 @@ def test_metadata_handling(client: R2RClient):
         client.documents.delete(id=doc_id)
     except Exception:
         raise
+
+def test_img_ingestion(client: R2RClient):
+    """Test ingestion with metadata."""
+
+    result = client.documents.create(
+        file_path="core/examples/supported_file_types/png.png",
+        metadata={"title": "Test Document", "author": "Test Author"},
+        ingestion_config={"vision_img_model":"openai/gpt-4o"},
+        run_with_orchestration=False
+    )
+
+    client.documents.delete(result.results.document_id)
+
+    result = client.documents.create(
+        file_path="core/examples/supported_file_types/png.png",
+        metadata={"title": "Test Document", "author": "Test Author"},
+        ingestion_config={"vision_img_model":"anthropic/anthropic/claude-3-7-sonnet-20250219"},
+        run_with_orchestration=False
+    )
+
+    client.documents.delete(result.results.document_id)
