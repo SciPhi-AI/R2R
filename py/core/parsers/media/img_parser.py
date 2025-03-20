@@ -1,8 +1,9 @@
 # type: ignore
 import base64
-import imghdr
 import logging
+from io import BytesIO
 from typing import AsyncGenerator, Optional
+import filetype
 
 import pillow_heif
 from PIL import Image
@@ -67,6 +68,34 @@ class ImageParser(AsyncParser[str | bytes]):
             logger.error(f"Error checking for HEIC format: {str(e)}")
             return False
 
+    async def _convert_heic_to_jpeg(self, data: bytes) -> bytes:
+        """Convert HEIC image to JPEG format."""
+        try:
+            # Create BytesIO object for input
+            input_buffer = BytesIO(data)
+
+            # Load HEIC image using pillow_heif
+            heif_file = self.pillow_heif.read_heif(input_buffer)
+
+            # Get the primary image - API changed, need to get first image
+            heif_image = heif_file[0]  # Get first image in the container
+
+            # Convert to PIL Image directly from the HEIF image
+            pil_image = heif_image.to_pillow()
+
+            # Convert to RGB if needed
+            if pil_image.mode != "RGB":
+                pil_image = pil_image.convert("RGB")
+
+            # Save as JPEG
+            output_buffer = BytesIO()
+            pil_image.save(output_buffer, format="JPEG", quality=95)
+            return output_buffer.getvalue()
+
+        except Exception as e:
+            logger.error(f"Error converting HEIC to JPEG: {str(e)}")
+            raise
+
     def _is_jpeg(self, data: bytes) -> bool:
         """Detect JPEG format using magic numbers."""
         return len(data) >= 2 and data[0] == 0xFF and data[1] == 0xD8
@@ -114,7 +143,7 @@ class ImageParser(AsyncParser[str | bytes]):
                 return "image/tiff"
 
             # Try using imghdr as a fallback
-            img_type = imghdr.what(None, h=data)
+            img_type = filetype.guess(data)
             if img_type:
                 # Map the detected type to a MIME type
                 return self.MIME_TYPE_MAPPING.get(
@@ -148,16 +177,30 @@ class ImageParser(AsyncParser[str | bytes]):
             )
         try:
             filename = kwargs.get("filename", None)
+            # Whether to convert HEIC to JPEG (default: True for backward compatibility)
+            convert_heic = kwargs.get("convert_heic", True)
 
             if isinstance(data, bytes):
                 try:
-                    # Detect image type from binary data and filename (if available)
-                    media_type = self._get_image_media_type(data, filename)
-                    logger.debug(f"Detected image type: {media_type}")
-
-                    # We keep the original image data as-is, without conversion to JPEG
+                    # First detect the original media type
+                    original_media_type = self._get_image_media_type(data, filename)
+                    logger.debug(f"Detected original image type: {original_media_type}")
+                    
+                    # Determine if we need to convert HEIC
+                    is_heic_format = self._is_heic(data)
+                    
+                    # Handle HEIC images
+                    if is_heic_format and convert_heic:
+                        logger.debug("Detected HEIC format, converting to JPEG")
+                        data = await self._convert_heic_to_jpeg(data)
+                        media_type = "image/jpeg"
+                    else:
+                        # Keep original format and media type
+                        media_type = original_media_type
+                    
+                    # Encode the data to base64
                     image_data = base64.b64encode(data).decode("utf-8")
-
+                    
                 except Exception as e:
                     logger.error(f"Error processing image data: {str(e)}")
                     raise
@@ -165,21 +208,22 @@ class ImageParser(AsyncParser[str | bytes]):
                 # If data is already a string (base64), we assume it has a reliable content type
                 # from the source that encoded it
                 image_data = data
-
+                
                 # Try to determine the media type from the context if available
-                media_type = kwargs.get(
-                    "media_type", "application/octet-stream"
-                )
+                media_type = kwargs.get("media_type", "application/octet-stream")
 
+            # Get the model from kwargs or config
             model = (
-                kwargs.get("vlm", None)
-                or self.config.app.vlm
+                kwargs.get("vlm", None) or 
+                self.config.app.vlm
             )
 
             generation_config = GenerationConfig(
                 model=model,
                 stream=False,
             )
+
+            logger.debug(f"Using model: {model}, media_type: {media_type}")
 
             if "anthropic" in model:
                 messages = [
