@@ -495,7 +495,7 @@ class DocumentsRouter(BaseRouterV3):
                     title = metadata.get("title", None)
                     title = title + ".txt" if title else None
                     file_data = {
-                        "filename": title,
+                        "filename": title or "N/A",
                         "content_type": "text/plain",
                     }
                 else:
