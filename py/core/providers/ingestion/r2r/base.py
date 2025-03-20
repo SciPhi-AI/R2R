@@ -311,7 +311,6 @@ class R2RIngestionProvider(IngestionProvider):
                     return
 
             else:
-                print("overrides = ", ingestion_config_override)
                 # Standard parsing for non-override cases
                 async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
