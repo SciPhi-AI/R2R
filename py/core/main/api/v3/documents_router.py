@@ -492,8 +492,10 @@ class DocumentsRouter(BaseRouterV3):
                     document_id = id or generate_document_id(
                         raw_text, auth_user.id
                     )
+                    title = metadata.get("title", None)
+                    title = title + ".txt" if title else None
                     file_data = {
-                        "filename": metadata.get("title", "N/A") + ".txt",
+                        "filename":  title,
                         "content_type": "text/plain",
                     }
                 else:
