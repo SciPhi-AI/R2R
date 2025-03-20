@@ -243,7 +243,7 @@ class SQLFilterBuilder:
     def _build_collection_id_condition(self, op: str, val: Any) -> str:
         """For the 'chunks' table, collection_ids is an array of UUIDs.
 
-        This logic stays exactly as you had it.
+        We need to use array operators to compare arrays correctly.
         """
         param_idx = len(self.params) + 1
 
@@ -252,16 +252,20 @@ class SQLFilterBuilder:
                 raise FilterError(
                     "$eq for collection_id expects a single UUID string"
                 )
-            self.params.append(val)
-            return f"${param_idx}::uuid = ANY(collection_ids)"
+            self.params.append(
+                [val]
+            )  # Make it a list with one element for the overlap check
+            return (
+                f"collection_ids && ${param_idx}::uuid[]"  # Use && for overlap
+            )
 
         elif op == "$ne":
             if not isinstance(val, str):
                 raise FilterError(
                     "$ne for collection_id expects a single UUID string"
                 )
-            self.params.append(val)
-            return f"NOT (${param_idx}::uuid = ANY(collection_ids))"
+            self.params.append([val])
+            return f"NOT (collection_ids && ${param_idx}::uuid[])"  # Negate the overlap
 
         elif op == "$in":
             if not isinstance(val, list):
@@ -269,7 +273,9 @@ class SQLFilterBuilder:
                     "$in for collection_id expects a list of UUID strings"
                 )
             self.params.append(val)
-            return f"collection_ids && ${param_idx}::uuid[]"
+            return (
+                f"collection_ids && ${param_idx}::uuid[]"  # Use && for overlap
+            )
 
         elif op == "$nin":
             if not isinstance(val, list):
@@ -277,7 +283,7 @@ class SQLFilterBuilder:
                     "$nin for collection_id expects a list of UUID strings"
                 )
             self.params.append(val)
-            return f"NOT (collection_ids && ${param_idx}::uuid[])"
+            return f"NOT (collection_ids && ${param_idx}::uuid[])"  # Negate the overlap
 
         elif op == "$contains":
             if isinstance(val, str):
@@ -292,10 +298,21 @@ class SQLFilterBuilder:
                     "$contains for collection_id expects a UUID or list of UUIDs"
                 )
 
+        elif op == "$overlap":
+            if not isinstance(val, list):
+                self.params.append([val])
+            else:
+                self.params.append(val)
+            return f"collection_ids && ${param_idx}::uuid[]"
+
         else:
             raise FilterError(f"Unsupported operator {op} for collection_id")
 
     def _build_column_condition(self, col: str, op: str, val: Any) -> str:
+        # If we're dealing with collection_ids, route to our specialized handler
+        if col == "collection_ids":
+            return self._build_collection_id_condition(op, val)
+
         param_idx = len(self.params) + 1
         if op == "$eq":
             self.params.append(val)

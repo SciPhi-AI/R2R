@@ -758,3 +758,135 @@ def test_rag_fusion_mode_with_subqueries(client: R2RClient):
         results is not None
     ), "No results returned by RAG-Fusion with subqueries"
     # When fully implemented, you can check if the chunk results are non-empty, etc.
+
+def test_collection_id_filters(client: R2RClient):
+    """
+    Test both collection_id and collection_ids filters to ensure they work properly
+    with the updated filters.py code.
+    """
+    # Create a new collection for this test
+    collection_response = client.collections.create(
+        name=f"Collection Filter Test {uuid.uuid4()}"
+    )
+    collection_id = collection_response.results.id
+
+    # Create a second collection to verify filtering works correctly
+    other_collection_response = client.collections.create(
+        name=f"Other Collection {uuid.uuid4()}"
+    )
+    other_collection_id = other_collection_response.results.id
+
+    # Add unique identifier to track the test documents
+    unique_marker = str(uuid.uuid4())
+
+    # Create documents in the first collection
+    for i in range(3):
+        doc_response = client.documents.create(
+            raw_text=f"Test document {i} for collection filter test with marker {unique_marker}",
+            metadata={"test_group": "collection_filter_test"}
+        )
+        doc_id = doc_response.results.document_id
+
+        # Add document to the first collection
+        client.collections.add_document(
+            id=collection_id,
+            document_id=doc_id
+        )
+
+    # Create a document in the second collection
+    doc_response = client.documents.create(
+        raw_text=f"Test document in second collection with marker {unique_marker}",
+        metadata={"test_group": "collection_filter_test"}
+    )
+    doc_id = doc_response.results.document_id
+
+    # Add document to the second collection
+    client.collections.add_document(
+        id=other_collection_id,
+        document_id=doc_id
+    )
+
+    # Wait for indexing to complete
+    import time
+    time.sleep(2)
+
+    # Test 1: Using collection_id filter (singular form)
+    results1 = client.retrieval.search(
+        query=unique_marker,
+        search_mode="custom",
+        search_settings={
+            "use_fulltext_search": True,
+            "use_semantic_search": False,
+            "filters": {
+                "collection_id": {"$eq": str(collection_id)}
+            }
+        }
+    ).results
+
+    # Test 2: Using collection_ids filter (plural form)
+    results2 = client.retrieval.search(
+        query=unique_marker,
+        search_mode="custom",
+        search_settings={
+            "use_fulltext_search": True,
+            "use_semantic_search": False,
+            "filters": {
+                "collection_ids": {"$overlap": [str(collection_id)]}
+            }
+        }
+    ).results
+
+    # Test 3: Using $in operator with collection_id
+    results3 = client.retrieval.search(
+        query=unique_marker,
+        search_mode="custom",
+        search_settings={
+            "use_fulltext_search": True,
+            "use_semantic_search": False,
+            "filters": {
+                "collection_id": {"$in": [str(collection_id)]}
+            }
+        }
+    ).results
+
+    # Test 4: Using both collections with $overlap
+    results4 = client.retrieval.search(
+        query=unique_marker,
+        search_mode="custom",
+        search_settings={
+            "use_fulltext_search": True,
+            "use_semantic_search": False,
+            "filters": {
+                "collection_ids": {"$overlap": [str(collection_id), str(other_collection_id)]}
+            }
+        }
+    ).results
+
+    # Test 5: Using a non-existent collection ID
+    results5 = client.retrieval.search(
+        query=unique_marker,
+        search_mode="custom",
+        search_settings={
+            "use_fulltext_search": True,
+            "use_semantic_search": False,
+            "filters": {
+                "collection_id": {"$eq": str(uuid.uuid4())}
+            }
+        }
+    ).results
+
+    # Verify results
+    # First three tests should return exactly 3 chunks from the first collection
+    assert len(results1.chunk_search_results) == 3, f"collection_id $eq filter returned {len(results1.chunk_search_results)} results, expected 3"
+    assert len(results2.chunk_search_results) == 3, f"collection_ids $overlap filter returned {len(results2.chunk_search_results)} results, expected 3"
+    assert len(results3.chunk_search_results) == 3, f"collection_id $in filter returned {len(results3.chunk_search_results)} results, expected 3"
+
+    # Test 4 should return all 4 chunks from both collections
+    assert len(results4.chunk_search_results) == 4, f"collection_ids $overlap with multiple IDs returned {len(results4.chunk_search_results)} results, expected 4"
+
+    # Test 5 should return no results for non-existent collection
+    assert len(results5.chunk_search_results) == 0, f"Non-existent collection ID filter returned {len(results5.chunk_search_results)} results, expected 0"
+
+    # Clean up
+    client.collections.delete(id=collection_id)
+    client.collections.delete(id=other_collection_id)
