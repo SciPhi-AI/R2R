@@ -1387,10 +1387,14 @@ class RetrievalService(Service):
                     )
                     if needs_initial_conversation_name is None:
                         overview = await self.providers.database.conversations_handler.get_conversations_overview(
+                            offset=0,
+                            limit=1,
                             conversation_ids=[conversation_id],
                         )
                         if overview.get("total_entries", 0) > 0:
-                            needs_initial_conversation_name = overview.results[0].get("name") is None
+                            needs_initial_conversation_name = (
+                                overview.get("results")[0].get("name") is None  # type: ignore
+                            )
                 except Exception as e:
                     logger.error(f"Error fetching conversation: {str(e)}")
 
@@ -1644,6 +1648,10 @@ class RetrievalService(Service):
                 )
 
                 # Generate conversation name if needed
+                print(
+                    "needs_initial_conversation_name  = ",
+                    needs_initial_conversation_name,
+                )
                 if needs_initial_conversation_name:
                     conversation_name = None
                     try:
