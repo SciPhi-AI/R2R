@@ -1,4 +1,4 @@
-from .auth import JwtAuthProvider, R2RAuthProvider, SupabaseAuthProvider
+from .auth import ClerkAuthProvider, JwtAuthProvider, R2RAuthProvider, SupabaseAuthProvider
 from .crypto import (
     BcryptCryptoConfig,
     BCryptCryptoProvider,
@@ -39,6 +39,7 @@ __all__ = [
     "R2RAuthProvider",
     "SupabaseAuthProvider",
     "JwtAuthProvider",
+    "ClerkAuthProvider",
     # Ingestion
     "R2RIngestionProvider",
     "R2RIngestionConfig",
