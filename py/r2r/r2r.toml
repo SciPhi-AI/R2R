@@ -82,6 +82,7 @@ base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
 concurrent_request_limit = 256
+initial_backoff = 1.0
 quantization_settings = { quantization_type = "FP32" }
 
 [completion_embedding]
