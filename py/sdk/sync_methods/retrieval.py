@@ -238,6 +238,7 @@ def agent_arg_parser(
     research_tools: Optional[list[str]] = None,
     tools: Optional[list[str]] = None,  # For backward compatibility
     mode: Optional[str] = "rag",
+    needs_initial_conversation_name: Optional[bool] = None,
 ) -> dict:
     if rag_generation_config and not isinstance(rag_generation_config, dict):
         rag_generation_config = rag_generation_config.model_dump()
@@ -273,6 +274,11 @@ def agent_arg_parser(
 
     if search_mode:
         data["search_mode"] = search_mode
+
+    if needs_initial_conversation_name:
+        data["needs_initial_conversation_name"] = (
+            needs_initial_conversation_name
+        )
 
     if message:
         cast_message: Message = (
@@ -441,6 +447,7 @@ class RetrievalSDK:
         research_tools: Optional[list[str]] = None,
         tools: Optional[list[str]] = None,  # For backward compatibility
         mode: Optional[str] = "rag",
+        needs_initial_conversation_name: Optional[bool] = None,
     ) -> (
         WrappedAgentResponse
         | Generator[
@@ -496,6 +503,7 @@ class RetrievalSDK:
             research_tools=research_tools,
             tools=tools,
             mode=mode,
+            needs_initial_conversation_name=needs_initial_conversation_name,
         )
 
         # Determine if streaming is enabled
