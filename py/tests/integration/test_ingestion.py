@@ -334,6 +334,11 @@ def test_metadata_handling(client: R2RClient):
 def test_img_ingestion(client: R2RClient):
     """Test ingestion with metadata."""
 
+    try:
+        client.documents.delete(result.results.document_id)
+    except:
+        pass
+
     result = client.documents.create(
         file_path="core/examples/supported_file_types/png.png",
         metadata={"title": "Test Document", "author": "Test Author"},

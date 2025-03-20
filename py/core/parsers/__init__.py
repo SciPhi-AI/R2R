@@ -25,7 +25,6 @@ __all__ = [
     "ORGParser",
     "P7SParser",
     "RSTParser",
-    "TIFFParser",
     "TSVParser",
     "XLSParser",
     "XLSXParser",

@@ -142,7 +142,7 @@ class ImageParser(AsyncParser[str | bytes]):
             if self._is_tiff(data):
                 return "image/tiff"
 
-            # Try using imghdr as a fallback
+            # Try using filetype as a fallback
             img_type = filetype.guess(data)
             if img_type:
                 # Map the detected type to a MIME type
