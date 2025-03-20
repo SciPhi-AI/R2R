@@ -1,4 +1,9 @@
-from .auth import ClerkAuthProvider, JwtAuthProvider, R2RAuthProvider, SupabaseAuthProvider
+from .auth import (
+    ClerkAuthProvider,
+    JwtAuthProvider,
+    R2RAuthProvider,
+    SupabaseAuthProvider,
+)
 from .crypto import (
     BcryptCryptoConfig,
     BCryptCryptoProvider,

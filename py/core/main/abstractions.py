@@ -37,7 +37,12 @@ if TYPE_CHECKING:
 
 
 class R2RProviders(BaseModel):
-    auth: R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider | ClerkAuthProvider
+    auth: (
+        R2RAuthProvider
+        | SupabaseAuthProvider
+        | JwtAuthProvider
+        | ClerkAuthProvider
+    )
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
     embedding: (

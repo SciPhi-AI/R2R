@@ -67,7 +67,12 @@ class R2RProviderFactory:
         ),
         *args,
         **kwargs,
-    ) -> R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider | ClerkAuthProvider:
+    ) -> (
+        R2RAuthProvider
+        | SupabaseAuthProvider
+        | JwtAuthProvider
+        | ClerkAuthProvider
+    ):
         if auth_config.provider == "r2r":
             r2r_auth = R2RAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
