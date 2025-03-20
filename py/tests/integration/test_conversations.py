@@ -1,3 +1,4 @@
+import time
 import contextlib
 import uuid
 
@@ -217,3 +218,88 @@ def test_update_message_with_additional_metadata(client: R2RClient,
         "'edited' flag not set in metadata")
     assert updated_message.message.content == "Updated content", (
         "Message content not updated")
+
+
+def test_new_conversation_gets_named_after_first_agent_interaction(client: R2RClient):
+    """Test that a new conversation is automatically named after the first agent interaction."""
+    # Create a new conversation
+    conv_resp = client.conversations.create()
+    conversation_id = conv_resp.results.id
+
+    try:
+        # Verify it has no name initially
+        conv_overview = client.conversations.list(
+            offset=0,
+            limit=10,
+            # conversation_ids=[conversation_id]
+        )
+
+        target_conv = next((c for c in conv_overview.results if str(c.id) == str(conversation_id)), None)
+        assert target_conv is not None, "Test conversation not found"
+        assert target_conv.name is None, "New conversation already had a name"
+
+        # Add a message via the agent method which should trigger naming
+        response = client.retrieval.agent(
+            message={"role": "user", "content": "Hello, this is a test message"},
+            conversation_id=conversation_id,
+        )
+        time.sleep(5) # sleep while name is fetched
+        # Verify the conversation now has a name
+        conv_overview = client.conversations.list(
+            offset=0,
+            limit=10,
+            # conversation_ids=[conversation_id]
+        )
+        target_conv = next((c for c in conv_overview.results if str(c.id) == str(conversation_id)), None)
+        assert target_conv is not None, "Test conversation not found"
+        assert target_conv.name is not None and target_conv.name != "", "Conversation was not automatically named"
+
+    finally:
+        # Cleanup
+        client.conversations.delete(id=conversation_id)
+
+
+def test_existing_named_conversation_preserves_name_after_agent_interaction(client: R2RClient):
+    """Test that an existing conversation with a name preserves that name after agent interaction."""
+    # Create a new conversation
+    conv_resp = client.conversations.create()
+    conversation_id = conv_resp.results.id
+
+    try:
+        # Set a specific name for the conversation
+        custom_name = f"Custom Conversation Name {uuid.uuid4()}"
+        client.conversations.update(
+            id=conversation_id,
+            name=custom_name
+        )
+
+        # Verify the name was set correctly
+        conv_overview = client.conversations.list(
+            offset=0,
+            limit=10,
+            # conversation_ids=[conversation_id]
+        )
+        target_conv = next((c for c in conv_overview.results if str(c.id) == str(conversation_id)), None)
+        assert target_conv is not None, "Test conversation not found"
+        assert target_conv.name == custom_name, "Custom name not set correctly"
+
+        # Add a message via the agent method
+        response = client.retrieval.agent(
+            message={"role": "user", "content": "Hello, this is a test message"},
+            conversation_id=conversation_id,
+        )
+
+        # Verify the conversation still has the same name
+        conv_overview = client.conversations.list(
+            offset=0,
+            limit=100,
+            # conversation_ids=[conversation_id]
+        )
+
+        target_conv = next((c for c in conv_overview.results if str(c.id) == str(conversation_id)), None)
+        assert target_conv is not None, "Test conversation not found"
+        assert target_conv.name == custom_name, "Conversation name was changed after agent interaction"
+
+    finally:
+        # Cleanup
+        client.conversations.delete(id=conversation_id)

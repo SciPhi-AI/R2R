@@ -167,6 +167,7 @@ export class RetrievalClient {
    * @param maxToolContextLength Maximum context length for tool replies
    * @param useSystemContext Use system context for generation
    * @param mode Mode to use, either "rag" or "research"
+   * @param needsInitialConversationName Whether the conversation needs an initial name
    * @returns
    */
   async agent(options: {
@@ -184,6 +185,7 @@ export class RetrievalClient {
     researchTools?: Array<string>;
     useSystemContext?: boolean;
     mode?: "rag" | "research";
+    needsInitialConversationName?: boolean;
   }): Promise<any | ReadableStream<Uint8Array>> {
     const data: Record<string, any> = {
       message: options.message,
@@ -227,6 +229,9 @@ export class RetrievalClient {
       }),
       ...(options.mode && {
         mode: options.mode,
+      }),
+      ...(options.needsInitialConversationName && {
+        needsInitialConversationName: options.needsInitialConversationName,
       }),
     };
 
