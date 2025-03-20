@@ -109,7 +109,7 @@ class ImageParser(AsyncParser[str | bytes]):
                 image_data = data
 
             generation_config = GenerationConfig(
-                model=self.config.vision_img_model or self.config.app.vlm,
+                model=self.config.app.vlm,
                 stream=False,
             )
 

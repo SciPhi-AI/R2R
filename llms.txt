@@ -11085,8 +11085,6 @@ chunk_size = 1024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
 document_summary_model = "openai/gpt-4o-mini"
-vision_img_model = "openai/gpt-4o"
-vision_pdf_model = "openai/gpt-4o"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false
