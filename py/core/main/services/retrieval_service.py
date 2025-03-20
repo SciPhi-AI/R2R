@@ -1774,9 +1774,12 @@ class RetrievalService(Service):
                 ]
 
                 user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_and_then_or[1][
-                    "collection_ids"
-                ]["$overlap"]
+                collection_ids = [
+                    UUID(ele)
+                    for ele in filter_starts_with_and_then_or[1][
+                        "collection_ids"
+                    ]["$overlap"]
+                ]
                 return user_id, [str(ele) for ele in collection_ids]
             except Exception as e:
                 logger.error(
@@ -1787,8 +1790,11 @@ class RetrievalService(Service):
         elif filter_starts_with_or:
             try:
                 user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_or[1]["collection_ids"][
-                    "$overlap"
+                collection_ids = [
+                    UUID(ele)
+                    for ele in filter_starts_with_or[1]["collection_ids"][
+                        "$overlap"
+                    ]
                 ]
                 return user_id, [str(ele) for ele in collection_ids]
             except Exception as e:

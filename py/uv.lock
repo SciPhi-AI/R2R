@@ -2984,7 +2984,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.5.0"
+version = "3.5.3"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -2997,6 +2997,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "python-json-logger" },
     { name = "requests" },
+    { name = "tiktoken" },
     { name = "toml" },
     { name = "types-aiofiles" },
     { name = "types-requests" },
@@ -3055,7 +3056,6 @@ core = [
     { name = "sqlalchemy" },
     { name = "striprtf" },
     { name = "supabase" },
-    { name = "tiktoken" },
     { name = "tokenizers" },
     { name = "unstructured-client" },
     { name = "uvicorn" },
@@ -3151,7 +3151,7 @@ requires-dist = [
     { name = "sqlalchemy", marker = "extra == 'core'", specifier = ">=2.0.30,<3.0.0" },
     { name = "striprtf", marker = "extra == 'core'", specifier = ">=0.0.28,<0.0.29" },
     { name = "supabase", marker = "extra == 'core'", specifier = ">=2.7.4,<3.0.0" },
-    { name = "tiktoken", marker = "extra == 'core'", specifier = ">=0.8.0,<0.9.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<0.9.0" },
     { name = "tokenizers", marker = "extra == 'core'", specifier = "==0.19" },
     { name = "toml", specifier = ">=0.10.2,<0.11.0" },
     { name = "types-aiofiles", specifier = ">=24.1.0.20240626,<25.0.0" },

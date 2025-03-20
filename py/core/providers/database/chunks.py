@@ -422,7 +422,6 @@ class PostgresChunksHandler(Handler):
             OFFSET ${len(params) + 2}
             """
             params.extend([search_settings.limit, search_settings.offset])
-
         results = await self.connection_manager.fetch_query(query, params)
 
         return [
