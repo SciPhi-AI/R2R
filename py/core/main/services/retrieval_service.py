@@ -1648,10 +1648,6 @@ class RetrievalService(Service):
                 )
 
                 # Generate conversation name if needed
-                print(
-                    "needs_initial_conversation_name  = ",
-                    needs_initial_conversation_name,
-                )
                 if needs_initial_conversation_name:
                     conversation_name = None
                     try:
