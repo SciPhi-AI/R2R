@@ -493,7 +493,7 @@ class DocumentsRouter(BaseRouterV3):
                         raw_text, auth_user.id
                     )
                     file_data = {
-                        "filename": "N/A",
+                        "filename": metadata.get("title", "N/A") + ".txt",
                         "content_type": "text/plain",
                     }
                 else:
