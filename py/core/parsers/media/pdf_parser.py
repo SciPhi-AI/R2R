@@ -94,46 +94,33 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             logger.debug(f"Sending page {page_num} to vision model.")
             req_start = time.perf_counter()
 
-            try:
-                if is_anthropic:
-                    response = await self.llm_provider.aget_completion(
-                        messages=messages,
-                        generation_config=generation_config,
-                        tools=[
-                            {
-                                "name": "parse_pdf_page",
-                                "description": "Parse text content from a PDF page",
-                                "input_schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "page_content": {
-                                            "type": "string",
-                                            "description": "Extracted text from the PDF page",
-                                        },
-                                    },
-                                    "required": ["page_content"],
-                                },
-                            }
-                        ],
-                        tool_choice={"type": "tool", "name": "parse_pdf_page"},
-                    )
-                else:
-                    response = await self.llm_provider.aget_completion(
-                        messages=messages, generation_config=generation_config
-                    )
-            except Exception as api_error:
-                logger.error(f"API error on page {page_num}: {str(api_error)}")
-                return {
-                    "page": str(page_num),
-                    "content": f"Error: {str(api_error)}",
-                }
-
-            req_elapsed = time.perf_counter() - req_start
-            logger.debug(
-                f"Vision model response for page {page_num} received in {req_elapsed:.2f} seconds."
-            )
-
             if is_anthropic:
+                response = await self.llm_provider.aget_completion(
+                    messages=messages,
+                    generation_config=generation_config,
+                    tools=[
+                        {
+                            "name": "parse_pdf_page",
+                            "description": "Parse text content from a PDF page",
+                            "input_schema": {
+                                "type": "object",
+                                "properties": {
+                                    "page_content": {
+                                        "type": "string",
+                                        "description": "Extracted text from the PDF page, transcribed into markdown",
+                                    },
+                                    "thoughts": {
+                                        "type": "string",
+                                        "description": "Any thoughts or comments on the text",
+                                    },
+                                },
+                                "required": ["page_content"],
+                            },
+                        }
+                    ],
+                    tool_choice={"type": "tool", "name": "parse_pdf_page"},
+                )
+
                 if (
                     response.choices
                     and response.choices[0].message
@@ -153,6 +140,10 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                     )
                     return {"page": str(page_num), "content": ""}
             else:
+                response = await self.llm_provider.aget_completion(
+                    messages=messages, generation_config=generation_config
+                )
+
                 if response.choices and response.choices[0].message:
                     content = response.choices[0].message.content
                     page_elapsed = time.perf_counter() - page_start
