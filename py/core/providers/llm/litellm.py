@@ -4,7 +4,7 @@ from typing import Any
 import litellm
 from litellm import acompletion, completion
 
-from base.abstractions import GenerationConfig
+from core.base.abstractions import GenerationConfig
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
 logger = logging.getLogger()
