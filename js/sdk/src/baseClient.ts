@@ -1,8 +1,8 @@
 import axios, {
   AxiosInstance,
-  Method,
-  AxiosResponse,
   AxiosRequestConfig,
+  AxiosResponse,
+  Method,
 } from "axios";
 import FormData from "form-data";
 import { ensureCamelCase } from "./utils";
@@ -238,5 +238,10 @@ export abstract class BaseClient {
   setTokens(accessToken: string, refreshToken: string): void {
     this.accessToken = accessToken;
     this.refreshToken = refreshToken;
+  }
+
+  setApiKey(apiKey: string): void {
+    if (!apiKey) throw new Error("API key is required");
+    this.apiKey = apiKey;
   }
 }
