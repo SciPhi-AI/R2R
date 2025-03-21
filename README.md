@@ -1,1 +1,1 @@
-py/README.md
+./py/README.md

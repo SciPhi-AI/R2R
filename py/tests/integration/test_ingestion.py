@@ -151,6 +151,7 @@ def client(config):
     [
         # ("bmp", "core/examples/supported_file_types/bmp.bmp"), ---> why is this failing?
         ("csv", "core/examples/supported_file_types/csv.csv"),
+        ("css", "core/examples/supported_file_types/css.css"),
         ("doc", "core/examples/supported_file_types/doc.doc"),
         # ("docx", "core/examples/supported_file_types/docx.docx"),
         ("eml", "core/examples/supported_file_types/eml.eml"),
@@ -158,6 +159,7 @@ def client(config):
         ("heic", "core/examples/supported_file_types/heic.heic"),
         ("html", "core/examples/supported_file_types/html.html"),
         ("json", "core/examples/supported_file_types/json.json"),
+        ("js", "core/examples/supported_file_types/js.js"),
         ("jpeg", "core/examples/supported_file_types/jpeg.jpeg"),
         ("jpg", "core/examples/supported_file_types/jpg.jpg"),
         ("md", "core/examples/supported_file_types/md.md"),
@@ -169,10 +171,12 @@ def client(config):
         ("png", "core/examples/supported_file_types/png.png"),
         # ("ppt", "core/examples/supported_file_types/ppt.ppt"),
         # ("pptx", "core/examples/supported_file_types/pptx.pptx"),
+        ("py", "core/examples/supported_file_types/py.py"),
         ("rst", "core/examples/supported_file_types/rst.rst"),
         ("rtf", "core/examples/supported_file_types/rtf.rtf"),
         # ("tiff", "core/examples/supported_file_types/tiff.tiff"),
         ("txt", "core/examples/supported_file_types/txt.txt"),
+        ("ts", "core/examples/supported_file_types/ts.ts"),
         ("tsv", "core/examples/supported_file_types/tsv.tsv"),
         ("xls", "core/examples/supported_file_types/xls.xls"),
         ("xlsx", "core/examples/supported_file_types/xlsx.xlsx"),

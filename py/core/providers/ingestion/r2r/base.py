@@ -16,14 +16,13 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.utils import generate_extraction_id
-
-from ...database import PostgresDatabaseProvider
-from ...llm import (
+from core.providers.database import PostgresDatabaseProvider
+from core.providers.llm import (
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
 
@@ -69,6 +68,10 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.RTF: parsers.RTFParser,
         DocumentType.TIFF: parsers.ImageParser,
         DocumentType.XLS: parsers.XLSParser,
+        DocumentType.PY: parsers.PythonParser,
+        DocumentType.CSS: parsers.CSSParser,
+        DocumentType.JS: parsers.JSParser,
+        DocumentType.TS: parsers.TSParser,
     }
 
     EXTRA_PARSERS = {
