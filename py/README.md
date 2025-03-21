@@ -133,6 +133,7 @@ response = client.retrieval.agent(
 - [Join our Discord](https://discord.gg/p6KqD2kjtB) for support and discussion
 - Submit [feature requests](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) or [bug reports](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
 - Open PRs for new features, improvements, or documentation
+- Book a [demo call with the SciPhi founders](https://calendly.com/owen-uzg/sciphi-demo)
 
 ### Our Contributors
 <a href="https://github.com/SciPhi-AI/R2R/graphs/contributors">
