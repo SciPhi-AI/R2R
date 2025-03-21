@@ -8,6 +8,7 @@ docker/compose.yaml
 
 paul/
 todo_list.txt
+.pre-commit-config.yaml
 
 .gitignore
 *.log
