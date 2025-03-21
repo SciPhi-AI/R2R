@@ -3,10 +3,15 @@ repos:
     rev: v4.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^.venv/
       - id: end-of-file-fixer
+        exclude: ^.venv/
       - id: check-added-large-files
+        exclude: ^.venv/
       - id: check-ast
+        exclude: ^.venv/
       - id: check-yaml
+        exclude: ^.venv/
 
   - repo: local
     hooks:
@@ -16,16 +21,17 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        exclude: ^py/migrations/
+        exclude: ^(.venv/|py/migrations/)
 
   - repo: local
     hooks:
       - id: check-print-statements
         name: Check for print statements
-        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/.venv/*" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" ! -path "**/examples.py" ! -path "**/test_*"  | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
+        entry: bash -c 'echo "Checking for print statements..." && find . -type f -name "*.py" -not -path "**/.venv/**" -not -path "**/py/core/examples/**" -not -path "**/py/migrations/**" -not -path "**/py/tests/**" -not -path "**/examples.py" -not -path "**/test_*" | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
         language: system
         types: [python]
         pass_filenames: false
+        exclude: ^(.venv/|py/.venv/|py/core/examples/|py/migrations/|py/tests/)
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.6
@@ -33,10 +39,10 @@ repos:
       - id: ruff
         args: [--fix]
         files: ^py/
-        exclude: ^py/tests/
+        exclude: ^(py/tests/|.venv/)
       - id: ruff-format
         files: ^py/
-        exclude: ^py/tests/
+        exclude: ^(py/tests/|.venv/)
 
   - repo: local
     hooks:
@@ -46,3 +52,4 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
+        exclude: ^(.venv/|migrations/)
