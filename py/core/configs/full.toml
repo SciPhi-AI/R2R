@@ -18,4 +18,3 @@ overlap = 1_024
 provider = "hatchet"
 kg_creation_concurrency_limit = 32
 ingestion_concurrency_limit = 16
-kg_concurrency_limit = 8

@@ -205,6 +205,20 @@ class DocumentsRouter(BaseRouterV3):
                                 metadata={"metadata_1":"some random metadata"},
                                 id=None
                             )
+                                                  
+                            # Asynchronous approach, useful for bulk ingestion
+                            from r2r import R2RAsyncClient
+
+                            aclient = R2RAsyncClient()
+                            # when using auth, do await aclient.login(...)
+
+                            response = await aclient.documents.create(
+                                file_path="pg_essay_1.html",
+                                metadata={"metadata_1":"some random metadata"},
+                                id=None
+                            )
+
+                                                  
                             """),
                     },
                     {

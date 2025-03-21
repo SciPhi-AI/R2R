@@ -15,7 +15,7 @@ fast_llm = "openai/gpt-4o-mini"
 quality_llm = "openai/gpt-4o"
 
 # LLM used for ingesting visual inputs
-vlm = "openai/gpt-4o"
+vlm = "gemini/gemini-2.0-flash"
 
 # LLM used for transcription
 audio_lm = "openai/whisper-1"
