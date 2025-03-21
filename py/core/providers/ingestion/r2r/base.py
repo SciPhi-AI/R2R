@@ -3,8 +3,8 @@ import logging
 import time
 from typing import Any, AsyncGenerator, Optional
 
-from ....parsers import *
-from ....base import (
+from core import parsers
+from core.base import (
     AsyncParser,
     ChunkingStrategy,
     Document,
@@ -17,9 +17,9 @@ from ....base import (
     TextSplitter,
 )
 
-from ....utils import generate_extraction_id
-from ....providers.database import PostgresDatabaseProvider
-from ....providers.llm import (
+from core.utils import generate_extraction_id
+from core.providers.database import PostgresDatabaseProvider
+from core.providers.llm import (
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
     R2RCompletionProvider
