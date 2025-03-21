@@ -257,10 +257,10 @@ class RetrievalRouter(BaseRouterV3):
             Fine-tune the language model's behavior with `rag_generation_config`:
             ```json
             {
-            "model": "openai/gpt-4o-mini",  // Model to use
-            "temperature": 0.7,              // Control randomness (0-1)
-            "max_tokens": 1500,              // Maximum output length
-            "stream": true                   // Enable token streaming
+                "model": "openai/gpt-4o-mini",  // Model to use
+                "temperature": 0.7,              // Control randomness (0-1)
+                "max_tokens": 1500,              // Maximum output length
+                "stream": true                   // Enable token streaming
             }
             ```
 
