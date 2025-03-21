@@ -1,4 +1,4 @@
-import axios, { Method, AxiosError } from "axios";
+import axios, { AxiosError, Method } from "axios";
 import { BaseClient } from "./baseClient";
 
 import { ChunksClient } from "./v3/clients/chunks";
