@@ -9,6 +9,8 @@ docker/compose.yaml
 paul/
 Todo/
 
+.gitignore
+*.log
 .DS_Store
 *.gguf
 logs/
