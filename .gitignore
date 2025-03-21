@@ -6,6 +6,8 @@ js/tests/*
 docker/env/
 docker/compose.yaml
 
+paul/
+Todo/
 
 .DS_Store
 *.gguf
