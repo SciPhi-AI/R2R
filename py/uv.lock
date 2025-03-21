@@ -1540,7 +1540,7 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.61.9"
+version = "1.60.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1555,9 +1555,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/40/81785cf0a61c23039322eafea23caac2a4e98da994044469a209ca10a1dd/litellm-1.61.9.tar.gz", hash = "sha256:792263ab0e40ce10e5bb05f789bbef4578a0caaf40b7a4fc1c373a6eabf9aa0d", size = 6554701 }
+sdist = { url = "https://files.pythonhosted.org/packages/88/02/dd7191498805a6a1b5577993b0e01b5edff7b934fa95fbced4b1f7e09be2/litellm-1.60.0.tar.gz", hash = "sha256:45e3d9d7c19c02b7a1adf1c86102395fc667ebf35f72033e490e8f6fae7d0f8e", size = 6437939 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/66/fd6a3997156a3d785fa8206cdb6f87ab88a033c1204652a71f2122b4a3d7/litellm-1.61.9-py3-none-any.whl", hash = "sha256:b2ba755dc8bfbc095947cc2a548f08117ec29c9176d8f67b3a83eaf52776fbc2", size = 6860767 },
+    { url = "https://files.pythonhosted.org/packages/72/db/382c5e34025acb2a01e02d8ce3e1b675d41a29b2e5c694435272675f6fb2/litellm-1.60.0-py3-none-any.whl", hash = "sha256:e8284f5cc74ae1aed77516cdfbb2db3746d50c4ba055fb21358e6e25aea25a15", size = 6732210 },
 ]
 
 [[package]]
@@ -1925,7 +1925,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.63.2"
+version = "1.60.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1937,9 +1937,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/1c/11b520deb71f9ea54ced3c52cd6a5f7131215deba63ad07f23982e328141/openai-1.63.2.tar.gz", hash = "sha256:aeabeec984a7d2957b4928ceaa339e2ead19c61cfcf35ae62b7c363368d26360", size = 356902 }
+sdist = { url = "https://files.pythonhosted.org/packages/08/ae/8d9706b8ff2363287b4a8807de2dd29cdbdad5424e9d05d345df724320f5/openai-1.60.2.tar.gz", hash = "sha256:a8f843e10f2855713007f491d96afb2694b11b5e02cb97c7d01a0be60bc5bb51", size = 348185 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/15/64/db3462b358072387b8e93e6e6a38d3c741a17b4a84171ef01d6c85c63f25/openai-1.63.2-py3-none-any.whl", hash = "sha256:1f38b27b5a40814c2b7d8759ec78110df58c4a614c25f182809ca52b080ff4d4", size = 472282 },
+    { url = "https://files.pythonhosted.org/packages/e5/5a/d5474ca67a547dde9b87b5bc8a8f90eadf29f523d410f2ba23d63c9b82ec/openai-1.60.2-py3-none-any.whl", hash = "sha256:993bd11b96900b9098179c728026f016b4982ded7ee30dfcf4555eab1171fff9", size = 456107 },
 ]
 
 [[package]]
@@ -2257,18 +2257,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d1/81/74f6a65b848ffd16c18f920620ce999fe45fe27f01ab3911260ce4ed85e4/patsy-1.0.1.tar.gz", hash = "sha256:e786a9391eec818c054e359b737bbce692f051aee4c661f4141cc88fb459c0c4", size = 396010 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/87/2b/b50d3d08ea0fc419c183a84210571eba005328efa62b6b98bc28e9ead32a/patsy-1.0.1-py2.py3-none-any.whl", hash = "sha256:751fb38f9e97e62312e921a1954b81e1bb2bcda4f5eeabaf94db251ee791509c", size = 232923 },
-]
-
-[[package]]
-name = "pdf2image"
-version = "1.17.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pillow" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/00/d8/b280f01045555dc257b8153c00dee3bc75830f91a744cd5f84ef3a0a64b1/pdf2image-1.17.0.tar.gz", hash = "sha256:eaa959bc116b420dd7ec415fcae49b98100dda3dd18cd2fdfa86d09f112f6d57", size = 12811 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/33/61766ae033518957f877ab246f87ca30a85b778ebaad65b7f74fa7e52988/pdf2image-1.17.0-py3-none-any.whl", hash = "sha256:ecdd58d7afb810dffe21ef2b1bbc057ef434dabbac6c33778a38a3f7744a27e2", size = 11618 },
 ]
 
 [[package]]
@@ -2728,6 +2716,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pymupdf"
+version = "1.25.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/56/d7de0325125621a3d095eb43ce35f2e036cd4c0489ff5e8cae816f1cd8b9/pymupdf-1.25.4.tar.gz", hash = "sha256:5f189466b68901055a9ddc77dc1c91cba081a60964f0caa6ff5b9b87001a0194", size = 69792548 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/fa/cd82d78401bed6452ea07e2a3ffd6c30eddb635b888ea5f2f699c2968e80/pymupdf-1.25.4-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:b39ab5fc0cc793f2a93908cb4dc13182e61e9ace3476850ebf0e505f65355475", size = 19364290 },
+    { url = "https://files.pythonhosted.org/packages/ae/76/0757056bdcf273de4934681b84acde6e0b61a46b1755038e8d786ac6b368/pymupdf-1.25.4-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:72ac2a460e15a4b75fb22d0bdeb9eb9b3bd6ab44d5288e56f85ff9e4241d0830", size = 18604391 },
+    { url = "https://files.pythonhosted.org/packages/41/2f/7ca622fff06e879fd4adcde8b1bdbe9989ff2f36fc0607481581f4a3caa1/pymupdf-1.25.4-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:bd16e264438b01bf6f6b8722deb49df20c0a9a7be2b4a8e29dcb7b5183d8b42a", size = 19464372 },
+    { url = "https://files.pythonhosted.org/packages/36/ae/9b3651d457698ff5e19c5a663c51703cc990892b35cf4a779c36a1a1bf64/pymupdf-1.25.4-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:72817aa5f5023632346eee4aad0c32018d7879cf9a72e1820054dc9d8c48150f", size = 20027724 },
+    { url = "https://files.pythonhosted.org/packages/09/f8/3ba60c9cbb01c9aacc2e1c35fc7640456306da99cdea913954f33a0c9c74/pymupdf-1.25.4-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:a8c23242d209512437187dc728001fc7c65c2dd9d37b50071f34c5cd745194a3", size = 21292722 },
+    { url = "https://files.pythonhosted.org/packages/0e/0a/3eb1fab9e788790be32d8ca43235f59652d44252168bfba457c5496948fe/pymupdf-1.25.4-cp39-abi3-win32.whl", hash = "sha256:d90e6087f9b153999fa9f2c4709488fb0355de0302ec502a76c4fc0c0a0c535e", size = 15110936 },
+    { url = "https://files.pythonhosted.org/packages/c3/9f/2872a29766dfe65fb97268233503cc9f7ba6e776eedbdb88ed47216aef84/pymupdf-1.25.4-cp39-abi3-win_amd64.whl", hash = "sha256:af8fa1f7920b3b27343b2511cb9fc44baf2bad8b948db0b0f9d5b2fa589cb305", size = 16579269 },
+]
+
+[[package]]
 name = "pynacl"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3048,12 +3051,12 @@ core = [
     { name = "ollama" },
     { name = "openpyxl" },
     { name = "orgparse" },
-    { name = "pdf2image" },
     { name = "pillow" },
     { name = "pillow-heif" },
     { name = "psutil" },
     { name = "pydantic", extra = ["email"] },
     { name = "pyjwt" },
+    { name = "pymupdf" },
     { name = "pynacl" },
     { name = "pypdf" },
     { name = "pypdf2" },
@@ -3128,7 +3131,7 @@ requires-dist = [
     { name = "gunicorn", marker = "extra == 'core'", specifier = ">=21.2.0,<22.0.0" },
     { name = "hatchet-sdk", marker = "extra == 'core'", specifier = "==0.47.0" },
     { name = "httpx", specifier = ">=0.27.0,<0.28.0" },
-    { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<2.0.0" },
+    { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<1.63.2" },
     { name = "mailersend", marker = "extra == 'core'", specifier = ">=0.5.6,<0.6.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
     { name = "msg-parser", marker = "extra == 'core'", specifier = ">=1.2.0" },
@@ -3136,10 +3139,9 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'core'", specifier = ">=1.22.4,<1.29.0" },
     { name = "olefile", marker = "extra == 'core'", specifier = ">=0.47,<0.48" },
     { name = "ollama", marker = "extra == 'core'", specifier = ">=0.3.1,<0.4.0" },
-    { name = "openai", specifier = ">=1.11.1,<2.0.0" },
+    { name = "openai", specifier = ">=1.11.1,<1.61.0" },
     { name = "openpyxl", marker = "extra == 'core'", specifier = ">=3.1.2,<4.0.0" },
     { name = "orgparse", marker = "extra == 'core'", specifier = ">=0.4.20231004,<0.5.0" },
-    { name = "pdf2image", marker = "extra == 'core'", specifier = ">=1.17.0,<2.0.0" },
     { name = "pillow", marker = "extra == 'core'", specifier = ">=11.1.0,<12.0.0" },
     { name = "pillow-heif", marker = "extra == 'core'", specifier = ">=0.21.0,<0.22.0" },
     { name = "psutil", marker = "extra == 'core'", specifier = ">=6.0.0,<7.0.0" },
@@ -3147,6 +3149,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic", extras = ["email"], marker = "extra == 'core'", specifier = ">=2.8.2,<3.0.0" },
     { name = "pyjwt", marker = "extra == 'core'", specifier = ">=2.8.0,<3.0.0" },
+    { name = "pymupdf", marker = "extra == 'core'", specifier = ">=1.25.4" },
     { name = "pynacl", marker = "extra == 'core'", specifier = ">=1.5.0,<2.0.0" },
     { name = "pypdf", marker = "extra == 'core'", specifier = ">=4.2.0,<5.0.0" },
     { name = "pypdf2", marker = "extra == 'core'", specifier = ">=3.0.1,<4.0.0" },
