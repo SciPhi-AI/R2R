@@ -16,16 +16,16 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-
-from core.utils import generate_extraction_id
 from core.providers.database import PostgresDatabaseProvider
 from core.providers.llm import (
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
-    R2RCompletionProvider
+    R2RCompletionProvider,
 )
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
+
 
 class R2RIngestionConfig(IngestionConfig):
     chunk_size: int = 1024
