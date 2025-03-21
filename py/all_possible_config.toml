@@ -284,6 +284,7 @@ smtp_password = ""
 from_email = ""
 use_tls = true
 sendgrid_api_key = ""
+mailersend_api_key = ""
 verify_email_template_id = ""
 reset_password_template_id = ""
 password_changed_template_id = ""
