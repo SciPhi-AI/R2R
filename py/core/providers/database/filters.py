@@ -3,7 +3,9 @@ from typing import Any
 
 # Using lowercase list, dict, etc. to comply with pre-commit check
 # and maintain backward compatibility
+from py.core.providers.database.utils import psql_quote_literal
 
+# List of column variables
 COLUMN_VARS = [
     "id",
     "document_id",
@@ -455,15 +457,6 @@ def _build_metadata_condition(
 
     else:
         raise FilterError(f"Unsupported operator {op} for metadata field")
-
-
-def psql_quote_literal(value: str) -> str:
-    """Safely quote a string literal for PostgreSQL to prevent SQL injection.
-
-    This is a simple implementation - in production, you should use proper parameterization
-    or your database driver's quoting functions.
-    """
-    return "'" + value.replace("'", "''") + "'"
 
 
 def apply_filters(
