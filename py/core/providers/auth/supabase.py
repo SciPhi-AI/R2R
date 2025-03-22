@@ -4,8 +4,8 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Security
+from fastapi.security import OAuth2PasswordBearer, HTTPAuthorizationCredentials
 from supabase import Client, create_client
 
 from core.base import (
@@ -52,6 +52,7 @@ class SupabaseAuthProvider(AuthProvider):
         self.supabase: Client = create_client(
             self.supabase_url, self.supabase_key
         )
+        self.security = None  # This would need to be properly defined
 
     async def initialize(self):
         # No initialization needed for Supabase
@@ -68,9 +69,22 @@ class SupabaseAuthProvider(AuthProvider):
         )
 
     async def decode_token(self, token: str) -> TokenData:
-        raise NotImplementedError(
-            "decode_token is not used with Supabase authentication"
-        )
+        # Get user from Supabase
+        try:
+            user_response = self.supabase.auth.get_user(token)
+            user = user_response.user
+            if not user:
+                raise R2RException(status_code=401, message="Invalid token")
+            
+            # Create TokenData with user information
+            return TokenData(
+                email=user.email,
+                sub=str(user.id),
+                exp=None  # Supabase handles token expiration
+            )
+        except Exception as e:
+            logger.error(f"Error decoding token: {str(e)}")
+            raise R2RException(status_code=401, message="Invalid token")
 
     async def register(
         self,
@@ -81,49 +95,115 @@ class SupabaseAuthProvider(AuthProvider):
         profile_picture: Optional[str] = None,
     ) -> User:  # type: ignore
         # Use Supabase client to create a new user
+        try:
+            user_metadata = {}
+            if name:
+                user_metadata["full_name"] = name
+            if bio:
+                user_metadata["bio"] = bio
+            if profile_picture:
+                user_metadata["profile_picture"] = profile_picture
 
-        if self.supabase.auth.sign_up(email=email, password=password):
+            response = self.supabase.auth.sign_up({
+                "email": email,
+                "password": password,
+                "options": {
+                    "data": user_metadata
+                } if user_metadata else None
+            })
+            
+            if response.user:
+                # Convert Supabase user to our User model
+                return User(
+                    id=response.user.id,
+                    email=response.user.email,
+                    is_active=True,
+                    is_superuser=False,
+                    created_at=response.user.created_at,
+                    updated_at=response.user.updated_at,
+                    is_verified=response.user.email_confirmed_at is not None,
+                    name=user_metadata.get("full_name"),
+                    bio=user_metadata.get("bio"),
+                    profile_picture=user_metadata.get("profile_picture"),
+                )
+            else:
+                raise R2RException(
+                    status_code=400, message="User registration failed"
+                )
+        except Exception as e:
+            logger.error(f"Registration error: {str(e)}")
             raise R2RException(
-                status_code=400,
-                message="Supabase provider implementation is still under construction",
-            )
-        else:
-            raise R2RException(
-                status_code=400, message="User registration failed"
+                status_code=400, message=f"User registration failed: {str(e)}"
             )
 
     async def send_verification_email(
         self, email: str, user: Optional[User] = None
     ) -> tuple[str, datetime]:
-        raise NotImplementedError(
-            "send_verification_email is not used with Supabase"
-        )
+        # Supabase handles email verification automatically during sign-up
+        # This method can be used to resend the verification email
+        try:
+            self.supabase.auth.resend({
+                "type": "signup",
+                "email": email,
+                "options": {
+                    "email_redirect_to": f"{self.config.site_url}/verify-email"
+                }
+            })
+            # Return a placeholder verification code and expiry
+            # In reality, Supabase handles this internally
+            return "verification_handled_by_supabase", datetime.now()
+        except Exception as e:
+            logger.error(f"Error sending verification email: {str(e)}")
+            raise R2RException(
+                status_code=400, message=f"Failed to send verification email: {str(e)}"
+            )
 
     async def verify_email(
         self, email: str, verification_code: str
     ) -> dict[str, str]:
-        # Use Supabase client to verify email
-        if self.supabase.auth.verify_email(email, verification_code):
-            return {"message": "Email verified successfully"}
-        else:
+        # Use Supabase client to verify email with OTP
+        try:
+            response = self.supabase.auth.verify_otp({
+                "email": email,
+                "token": verification_code,
+                "type": "email"
+            })
+            
+            if response.user:
+                return {"message": "Email verified successfully"}
+            else:
+                raise R2RException(
+                    status_code=400, message="Invalid or expired verification code"
+                )
+        except Exception as e:
+            logger.error(f"Email verification error: {str(e)}")
             raise R2RException(
-                status_code=400, message="Invalid or expired verification code"
+                status_code=400, message=f"Email verification failed: {str(e)}"
             )
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         # Use Supabase client to authenticate user and get tokens
-        if response := self.supabase.auth.sign_in(
-            email=email, password=password
-        ):
-            access_token = response.access_token
-            refresh_token = response.refresh_token
-            return {
-                "access_token": Token(token=access_token, token_type="access"),
-                "refresh_token": Token(
-                    token=refresh_token, token_type="refresh"
-                ),
-            }
-        else:
+        try:
+            response = self.supabase.auth.sign_in_with_password({
+                "email": email,
+                "password": password
+            })
+            
+            if response.session:
+                access_token = response.session.access_token
+                refresh_token = response.session.refresh_token
+                return {
+                    "access_token": Token(token=access_token, token_type="access"),
+                    "refresh_token": Token(
+                        token=refresh_token, token_type="refresh"
+                    ),
+                }
+            else:
+                raise R2RException(
+                    status_code=401, message="Invalid email or password"
+                )
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}")
             raise R2RException(
                 status_code=401, message="Invalid email or password"
             )
@@ -132,38 +212,53 @@ class SupabaseAuthProvider(AuthProvider):
         self, refresh_token: str
     ) -> dict[str, Token]:
         # Use Supabase client to refresh access token
-        if response := self.supabase.auth.refresh_access_token(refresh_token):
-            new_access_token = response.access_token
-            new_refresh_token = response.refresh_token
-            return {
-                "access_token": Token(
-                    token=new_access_token, token_type="access"
-                ),
-                "refresh_token": Token(
-                    token=new_refresh_token, token_type="refresh"
-                ),
-            }
-        else:
+        try:
+            response = self.supabase.auth.refresh_session(refresh_token)
+            
+            if response.session:
+                new_access_token = response.session.access_token
+                new_refresh_token = response.session.refresh_token
+                return {
+                    "access_token": Token(
+                        token=new_access_token, token_type="access"
+                    ),
+                    "refresh_token": Token(
+                        token=new_refresh_token, token_type="refresh"
+                    ),
+                }
+            else:
+                raise R2RException(
+                    status_code=401, message="Invalid refresh token"
+                )
+        except Exception as e:
+            logger.error(f"Token refresh error: {str(e)}")
             raise R2RException(
                 status_code=401, message="Invalid refresh token"
             )
 
     async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         # Use Supabase client to get user details from token
-        if user := self.supabase.auth.get_user(token).user:
-            return User(
-                id=user.id,
-                email=user.email,
-                is_active=True,  # Assuming active if exists in Supabase
-                is_superuser=False,  # Default to False unless explicitly set
-                created_at=user.created_at,
-                updated_at=user.updated_at,
-                is_verified=user.email_confirmed_at is not None,
-                name=user.user_metadata.get("full_name"),
-                # Set other optional fields if available in user metadata
-            )
-
-        else:
+        try:
+            response = self.supabase.auth.get_user(token)
+            user = response.user
+            
+            if user:
+                return User(
+                    id=user.id,
+                    email=user.email,
+                    is_active=True,  # Assuming active if exists in Supabase
+                    is_superuser=False,  # Default to False unless explicitly set
+                    created_at=user.created_at,
+                    updated_at=user.updated_at,
+                    is_verified=user.email_confirmed_at is not None,
+                    name=user.user_metadata.get("full_name"),
+                    bio=user.user_metadata.get("bio"),
+                    profile_picture=user.user_metadata.get("profile_picture"),
+                )
+            else:
+                raise R2RException(status_code=401, message="Invalid token")
+        except Exception as e:
+            logger.error(f"User retrieval error: {str(e)}")
             raise R2RException(status_code=401, message="Invalid token")
 
     def get_current_active_user(
@@ -178,48 +273,79 @@ class SupabaseAuthProvider(AuthProvider):
         self, user: User, current_password: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to update user password
-        if self.supabase.auth.update(user.id, {"password": new_password}):
+        try:
+            # First verify the current password by attempting to sign in
+            self.supabase.auth.sign_in_with_password({
+                "email": user.email,
+                "password": current_password
+            })
+            
+            # Then update the password
+            self.supabase.auth.update_user({
+                "password": new_password
+            })
+            
             return {"message": "Password changed successfully"}
-        else:
+        except Exception as e:
+            logger.error(f"Password change error: {str(e)}")
             raise R2RException(
                 status_code=400, message="Failed to change password"
             )
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
         # Use Supabase client to send password reset email
-        if self.supabase.auth.send_password_reset_email(email):
+        try:
+            self.supabase.auth.reset_password_for_email(
+                email,
+                {
+                    "redirect_to": f"{self.config.site_url}/reset-password"
+                }
+            )
             return {
                 "message": "If the email exists, a reset link has been sent"
             }
-        else:
-            raise R2RException(
-                status_code=400, message="Failed to send password reset email"
-            )
+        except Exception as e:
+            logger.error(f"Password reset request error: {str(e)}")
+            # Return success even if email doesn't exist for security reasons
+            return {
+                "message": "If the email exists, a reset link has been sent"
+            }
 
     async def confirm_password_reset(
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to reset password with token
-        if self.supabase.auth.reset_password_for_email(
-            reset_token, new_password
-        ):
+        try:
+            # In Supabase, the user would have the reset token in their session
+            # after clicking the reset link, so we just need to update the password
+            self.supabase.auth.update_user({
+                "password": new_password
+            })
             return {"message": "Password reset successfully"}
-        else:
+        except Exception as e:
+            logger.error(f"Password reset confirmation error: {str(e)}")
             raise R2RException(
                 status_code=400, message="Invalid or expired reset token"
             )
 
     async def logout(self, token: str) -> dict[str, str]:
         # Use Supabase client to logout user and revoke token
-        self.supabase.auth.sign_out(token)
-        return {"message": "Logged out successfully"}
+        try:
+            self.supabase.auth.sign_out()
+            return {"message": "Logged out successfully"}
+        except Exception as e:
+            logger.error(f"Logout error: {str(e)}")
+            raise R2RException(
+                status_code=400, message="Failed to logout"
+            )
 
     async def clean_expired_blacklisted_tokens(self):
         # Not applicable for Supabase, tokens are managed by Supabase
         pass
 
     async def send_reset_email(self, email: str) -> dict[str, str]:
-        raise NotImplementedError("send_reset_email is not used with Supabase")
+        # This is an alias for request_password_reset
+        return await self.request_password_reset(email)
 
     async def create_user_api_key(
         self,
@@ -245,5 +371,5 @@ class SupabaseAuthProvider(AuthProvider):
         self, provider: str, oauth_id: str, email: str
     ) -> dict[str, Token]:
         raise NotImplementedError(
-            "API key management is not supported with Supabase authentication"
+            "OAuth callback handling is not implemented with Supabase authentication"
         )
