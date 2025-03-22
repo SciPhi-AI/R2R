@@ -169,3 +169,31 @@ def test_collection(client: R2RClient, test_document):
             pass
     except Exception as e:
         print(f"Error during test_collection cleanup: {e}")
+
+
+
+@pytest.fixture(scope="session", autouse=True)
+def global_cleanup(client: R2RClient) -> None:
+    """Global cleanup fixture that runs after all tests.
+
+    Args:
+        client: R2RClient instance with active superuser session
+
+    Note:
+        - Runs automatically at end of test session
+        - Deletes all remaining documents
+        - Uses existing authenticated client from session fixture
+    """
+    yield  # Let all tests run first
+
+    try:
+        # Clean up any leftover documents
+        response = client.documents.list()
+        if response and response.results:
+            for doc in response.results:
+                try:
+                    client.documents.delete(id=doc.id)
+                except R2RException:
+                    continue
+    except Exception as e:
+        print(f"Global cleanup warning: {e}")
