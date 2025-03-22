@@ -147,7 +147,7 @@ async def test_update_prompt_updates_db_and_dict(mock_prompt_handler):
     # Update the prompt
     new_template = "Updated template: {param} and {new_param}"
     new_input_types = {"param": "str", "new_param": "int"}
-    
+
     await mock_prompt_handler.update_prompt(
         name=prompt_name,
         template=new_template,
@@ -158,7 +158,7 @@ async def test_update_prompt_updates_db_and_dict(mock_prompt_handler):
     updated_db_prompt = await mock_prompt_handler.get_prompt(prompt_name)
     assert updated_db_prompt["template"] == new_template
     assert updated_db_prompt["input_types"] == new_input_types
-    
+
     # Verify in-memory dictionary update
     assert mock_prompt_handler.prompts[prompt_name]["template"] == new_template
     assert mock_prompt_handler.prompts[prompt_name]["input_types"] == new_input_types
@@ -189,7 +189,7 @@ async def test_update_prompt_partial_updates(mock_prompt_handler):
     updated_prompt = await mock_prompt_handler.get_prompt(prompt_name)
     assert updated_prompt["template"] == new_template
     assert updated_prompt["input_types"] == original_input_types
-    
+
     # Verify in-memory dictionary update
     assert mock_prompt_handler.prompts[prompt_name]["template"] == new_template
     assert mock_prompt_handler.prompts[prompt_name]["input_types"] == original_input_types
@@ -205,7 +205,7 @@ async def test_update_prompt_partial_updates(mock_prompt_handler):
     updated_prompt = await mock_prompt_handler.get_prompt(prompt_name)
     assert updated_prompt["template"] == new_template  # From previous update
     assert updated_prompt["input_types"] == new_input_types
-    
+
     # Verify in-memory dictionary update
     assert mock_prompt_handler.prompts[prompt_name]["template"] == new_template
     assert mock_prompt_handler.prompts[prompt_name]["input_types"] == new_input_types
@@ -227,19 +227,19 @@ async def test_template_cache_consistency(mock_prompt_handler):
 
     # First access to cache the template
     await mock_prompt_handler.get_cached_prompt(prompt_name, {"param": "value1"})
-    
+
     # Update the prompt
     updated_template = "Updated template: {param}"
     await mock_prompt_handler.update_prompt(
         name=prompt_name,
         template=updated_template,
     )
-    
+
     # Verify that a new request gets the updated template
     # This should happen even without bypass_cache because the template cache was cleared on update
     result = await mock_prompt_handler.get_cached_prompt(prompt_name, {"param": "value2"})
     assert "Updated template: value2" in result
-    
+
     # The stored template in the cache should match the DB
     cached_template = mock_prompt_handler._template_cache.get(prompt_name)
     assert cached_template is not None
@@ -259,23 +259,23 @@ async def test_prompt_deletion_cleanup(mock_prompt_handler):
         template=template,
         input_types=input_types,
     )
-    
+
     # Access it once to ensure it's in caches
     await mock_prompt_handler.get_cached_prompt(prompt_name, {"param": "value"})
-    
+
     # Delete the prompt
     await mock_prompt_handler.delete_prompt(prompt_name)
-    
+
     # Verify it's gone from the in-memory dictionary
     assert prompt_name not in mock_prompt_handler.prompts
-    
+
     # Verify it's gone from template cache
     assert mock_prompt_handler._template_cache.get(prompt_name) is None
-    
+
     # Verify it's gone from prompt cache
     cache_key = mock_prompt_handler._cache_key(prompt_name, {"param": "value"})
     assert mock_prompt_handler._prompt_cache.get(cache_key) is None
-    
+
     # Verify it's gone from database
     with pytest.raises(ValueError, match=f"Prompt template '{prompt_name}' not found"):
         await mock_prompt_handler.get_prompt(prompt_name)
@@ -294,7 +294,7 @@ async def test_immediate_database_updates(mock_prompt_handler):
         template=template,
         input_types=input_types,
     )
-    
+
     # Get original directly from database
     query = f"""
     SELECT template FROM {mock_prompt_handler._get_table_name("prompts")}
@@ -302,18 +302,18 @@ async def test_immediate_database_updates(mock_prompt_handler):
     """
     result = await mock_prompt_handler.connection_manager.fetchrow_query(query, [prompt_name])
     assert result["template"] == template
-    
+
     # Update the prompt
     updated_template = "Updated: {param}"
     await mock_prompt_handler.update_prompt(
         name=prompt_name,
         template=updated_template,
     )
-    
+
     # Immediately verify in database
     result = await mock_prompt_handler.connection_manager.fetchrow_query(query, [prompt_name])
     assert result["template"] == updated_template
-    
+
     # Also verify in-memory state
     assert mock_prompt_handler.prompts[prompt_name]["template"] == updated_template
 
