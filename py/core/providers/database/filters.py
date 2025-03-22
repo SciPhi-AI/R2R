@@ -208,16 +208,17 @@ def _build_collection_id_condition(
             raise FilterError(
                 "$eq for collection_id expects a single UUID string"
             )
-        params.append([value])
-        return f"collection_ids && ${param_idx}::uuid[]", params
+        # Store the single ID directly to match test expectations
+        params.append(value)
+        return f"collection_ids && ARRAY[${param_idx}::uuid]", params
 
     elif op == FilterOperator.NE:
         if not isinstance(value, str):
             raise FilterError(
                 "$ne for collection_id expects a single UUID string"
             )
-        params.append([value])
-        return f"NOT (collection_ids && ${param_idx}::uuid[])", params
+        params.append(value)
+        return f"NOT (collection_ids && ARRAY[${param_idx}::uuid])", params
 
     elif op == FilterOperator.IN:
         if not isinstance(value, list):
@@ -273,14 +274,16 @@ def _build_collection_ids_condition(
 
     elif op == FilterOperator.CONTAINS:
         if isinstance(value, str):
-            params.append([value])
+            # Pass the single ID directly for test compatibility
+            params.append(value)
+            return f"collection_ids @> ARRAY[${param_idx}::uuid]", params
         elif isinstance(value, list):
             params.append(value)
+            return f"collection_ids @> ${param_idx}::uuid[]", params
         else:
             raise FilterError(
                 "$contains for collection_ids expects a UUID or list of UUIDs"
             )
-        return f"collection_ids @> ${param_idx}::uuid[]", params
 
     elif op == FilterOperator.OVERLAP:
         if not isinstance(value, list):
@@ -300,11 +303,25 @@ def _build_column_condition(
     param_idx = len(params) + 1
 
     if op == FilterOperator.EQ:
-        params.append(value)
+        # Special handling for NULL values
+        if value is None:
+            return f"{field} IS NULL", params
+        # Convert boolean values to lowercase strings
+        if isinstance(value, bool):
+            params.append("true" if value else "false")
+        else:
+            params.append(value)
         return f"{field} = ${param_idx}", params
 
     elif op == FilterOperator.NE:
-        params.append(value)
+        # Special handling for NULL values
+        if value is None:
+            return f"{field} IS NOT NULL", params
+        # Convert boolean values to lowercase strings
+        if isinstance(value, bool):
+            params.append("true" if value else "false")
+        else:
+            params.append(value)
         return f"{field} != ${param_idx}", params
 
     elif op == FilterOperator.LT:
@@ -367,7 +384,7 @@ def _build_metadata_condition(
         FilterOperator.GTE,
         FilterOperator.EQ,
         FilterOperator.NE,
-    ) and isinstance(value, (int, float, str))
+    ) and isinstance(value, (int, float, str, bool))
 
     if (
         op == FilterOperator.IN
@@ -394,7 +411,11 @@ def _build_metadata_condition(
 
     # Convert numeric values to strings for text comparison
     def prepare_value(v):
-        return str(v) if isinstance(v, (int, float)) else v
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        elif isinstance(v, (int, float)):
+            return str(v)
+        return v
 
     if op == FilterOperator.EQ:
         if use_text_extraction:
@@ -407,7 +428,8 @@ def _build_metadata_condition(
 
     elif op == FilterOperator.NE:
         if use_text_extraction:
-            params.append(prepare_value(value))
+            prepared_val = prepare_value(value)
+            params.append(prepared_val)
             return f"{path_expr} != ${param_idx}", params
         else:
             params.append(json.dumps(value))
@@ -434,9 +456,7 @@ def _build_metadata_condition(
             raise FilterError("argument to $in filter must be a list")
 
         if use_text_extraction:
-            str_vals = [
-                str(v) if isinstance(v, (int, float)) else v for v in value
-            ]
+            str_vals = [prepare_value(v) for v in value]
             params.append(str_vals)
             return f"{path_expr} = ANY(${param_idx}::text[])", params
 
@@ -453,6 +473,14 @@ def _build_metadata_condition(
             value = [value]
         params.append(json.dumps(value))
         return f"{path_expr} @> ${param_idx}::jsonb", params
+
+    elif op == FilterOperator.LIKE:
+        params.append(prepare_value(value))
+        return f"{path_expr} LIKE ${param_idx}", params
+
+    elif op == FilterOperator.ILIKE:
+        params.append(prepare_value(value))
+        return f"{path_expr} ILIKE ${param_idx}", params
 
     else:
         raise FilterError(f"Unsupported operator {op} for metadata field")

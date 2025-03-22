@@ -404,9 +404,17 @@ def _build_metadata_condition(
 
     # Convert numeric values to strings for text comparison
     def prepare_value(v):
+        if v is None:
+            return None
+        if isinstance(v, bool):
+            return "true" if v else "false"
         return str(v) if isinstance(v, (int, float)) else v
 
     if op == FilterOperator.EQ:
+        # Special handling for NULL values
+        if value is None:
+            return f"{path_expr} IS NULL", params
+
         if use_text_extraction:
             prepared_val = prepare_value(value)
             params.append(prepared_val)
@@ -416,6 +424,10 @@ def _build_metadata_condition(
             return f"{path_expr} = ${param_idx}::jsonb", params
 
     elif op == FilterOperator.NE:
+        # Special handling for NULL values
+        if value is None:
+            return f"{path_expr} IS NOT NULL", params
+
         if use_text_extraction:
             params.append(prepare_value(value))
             return f"{path_expr} != ${param_idx}", params
@@ -462,6 +474,14 @@ def _build_metadata_condition(
             value = [value]
         params.append(json.dumps(value))
         return f"{path_expr} @> ${param_idx}::jsonb", params
+
+    elif op == FilterOperator.LIKE:
+        params.append(prepare_value(value))
+        return f"{path_expr} LIKE ${param_idx}", params
+
+    elif op == FilterOperator.ILIKE:
+        params.append(prepare_value(value))
+        return f"{path_expr} ILIKE ${param_idx}", params
 
     else:
         raise FilterError(f"Unsupported operator {op} for metadata field")
