@@ -12,11 +12,11 @@ class MockSearchSettings:
         self.__dict__.update(kwargs)
         # Set defaults for commonly used attributes
         for attr in ['use_semantic_search', 'use_hybrid_search', 'use_full_text_search',
-                    'use_graph_search', 'filters', 'limit', 'offset', 'search_strategy', 
+                    'use_graph_search', 'filters', 'limit', 'offset', 'search_strategy',
                     'num_sub_queries', 'use_citation_search', 'hybrid_settings']:
             if not hasattr(self, attr):
                 setattr(self, attr, None)
-        
+
         # Default values
         if self.search_strategy is None:
             self.search_strategy = "basic"
@@ -73,7 +73,7 @@ def mock_providers():
             self.completion_embedding.async_get_embedding = AsyncMock(
                 return_value=[0.123] * 768  # pretend vector
             )
-            
+
             # Mock the database chunks handler
             self.database = AsyncMock()
             self.database.chunks_handler = AsyncMock()
@@ -113,7 +113,7 @@ def mock_providers():
                     for i in range(5)
                 ]
             )
-            
+
             # Mock graphs handler
             self.database.graphs_handler = AsyncMock()
             self.database.graphs_handler.graph_search = AsyncMock(
@@ -127,7 +127,7 @@ def mock_providers():
                     for i in range(3)
                 ])
             )
-            
+
             # Mock citation handler
             self.database.citations_handler = AsyncMock()
             self.database.citations_handler.get_citations = AsyncMock(
@@ -141,7 +141,7 @@ def mock_providers():
                     for i in range(3)
                 ]
             )
-            
+
             # Mock LLM
             self.llm = AsyncMock()
             self.llm.aget_completion = AsyncMock(
@@ -155,13 +155,13 @@ def mock_providers():
                     {"choices": [{"delta": {"content": "philosophy"}}]}
                 ])
             )
-            
+
             # Mock prompts handler
             self.database.prompts_handler = AsyncMock()
             self.database.prompts_handler.get_cached_prompt = AsyncMock(
                 return_value="System prompt with {{context}} and {{query}} placeholders"
             )
-            
+
             # Set up different prompt templates
             self.prompts = {
                 "default": "Answer based on the following context: {{context}}\n\nQuery: {{query}}",
@@ -169,13 +169,13 @@ def mock_providers():
                 "rag_fusion": "Generate {num_queries} search queries related to: {{query}}",
                 "citation_format": "Format citation for {{source}}: {{text}}"
             }
-            
+
             # Update get_cached_prompt to use different templates
             async def get_cached_prompt(prompt_id):
                 return self.prompts.get(prompt_id, self.prompts["default"])
-            
+
             self.database.prompts_handler.get_cached_prompt.side_effect = get_cached_prompt
-    
+
     return MockProviders()
 
 

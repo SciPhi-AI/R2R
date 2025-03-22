@@ -51,7 +51,7 @@ def mock_providers():
             self.database.prompts_handler.get_cached_prompt = AsyncMock(
                 return_value="(fake hyde template here)"
             )
-            
+
             # Mock document handler
             self.database.documents_handler = AsyncMock()
             self.database.documents_handler.get_document_by_id = AsyncMock(
@@ -96,7 +96,7 @@ class TestRetrievalBasics:
     """
     Tests for basic retrieval functionality.
     """
-    
+
     @pytest.mark.asyncio
     async def test_basic_search_calls_once(self, retrieval_service):
         """
@@ -134,25 +134,25 @@ class TestRetrievalBasics:
             use_semantic_search=True,
             filters=filters,
         )
-        
+
         # Perform search
         await retrieval_service.search("Aristotle", s)
-        
+
         # Check filters were passed to the search method
         chunk_handler = retrieval_service.providers.database.chunks_handler
         _, kwargs = chunk_handler.semantic_search.call_args
         assert "filters" in kwargs
         assert kwargs["filters"] == filters
-    
-    @pytest.mark.asyncio 
+
+    @pytest.mark.asyncio
     async def test_search_with_error_handling(self, retrieval_service):
         """Test error handling in search functionality."""
         # Make search method raise an exception
         retrieval_service.providers.database.chunks_handler.semantic_search.side_effect = Exception("Search failed")
-        
+
         # Setup search settings
         s = SearchSettings(use_semantic_search=True)
-        
+
         # The method should handle exceptions appropriately
         try:
             result = await retrieval_service.search("Aristotle", s)
@@ -181,7 +181,7 @@ class TestAdvancedSearchStrategies:
             {"choices": [{"message": {"content": "Hypothetical doc 1"}}]},
             {"choices": [{"message": {"content": "Hypothetical doc 2"}}]},
         ]
-        
+
         s = SearchSettings(
             search_strategy="hyde",
             num_sub_queries=2,
@@ -220,7 +220,7 @@ class TestAdvancedSearchStrategies:
         assert (
             graph_handler.graph_search.call_count == 2
         ), f"Expected exactly 2 graph search calls, got {graph_handler.graph_search.call_count}"
-    
+
     @pytest.mark.asyncio
     async def test_rag_fusion_search(self, retrieval_service):
         """
@@ -234,25 +234,25 @@ class TestAdvancedSearchStrategies:
                 }
             }]
         }
-        
+
         # Mock the chunk handler to return different results for each search
         mock_results = [[{"chunk_id": f"chunk-{i}-{j}", "score": 0.9 - (0.1 * j)} for i in range(3)] for j in range(3)]
         retrieval_service.providers.database.chunks_handler.semantic_search.side_effect = mock_results
-        
+
         s = SearchSettings(
             search_strategy="rag_fusion",
             num_sub_queries=3,
             use_semantic_search=True,
         )
-        
+
         results = await retrieval_service.search("Philosophy", s)
-        
+
         # Verify LLM was called to generate subqueries
         assert retrieval_service.providers.llm.aget_completion.call_count == 1
-        
+
         # Verify multiple searches were performed
         assert retrieval_service.providers.database.chunks_handler.semantic_search.call_count == 3
-        
+
         # Check that results were combined/reranked
         assert len(results.get("chunk_search_results", [])) > 0
 
@@ -261,7 +261,7 @@ class TestHybridSearchAndWeightBalancing:
     """
     Tests for hybrid search and weight balancing.
     """
-    
+
     @pytest.mark.asyncio
     async def test_hybrid_search_weight_balancing(self, retrieval_service):
         """Test that hybrid search correctly balances semantic and full-text weights."""
@@ -273,14 +273,14 @@ class TestHybridSearchAndWeightBalancing:
                 "full_text_weight": 0.3
             }
         )
-        
+
         # Perform search
         await retrieval_service.search("Aristotle", s)
-        
+
         # Check hybrid search was called with correct weights
         chunk_handler = retrieval_service.providers.database.chunks_handler
         _, kwargs = chunk_handler.hybrid_search.call_args
-        
+
         assert "semantic_weight" in kwargs
         assert "full_text_weight" in kwargs
         assert kwargs["semantic_weight"] == 0.7
@@ -291,46 +291,46 @@ class TestRAGPromptHandling:
     """
     Tests for RAG prompt handling and generation.
     """
-    
+
     @pytest.mark.asyncio
     async def test_rag_query_processing(self, retrieval_service, mock_chunk_results):
         """Test RAG query processing and prompt construction."""
         # Mock the search results
         retrieval_service.search = AsyncMock(return_value={"chunk_search_results": mock_chunk_results})
-        
+
         # When you call your RAG method (adapt this to your actual method name and signature)
         query = "What did Aristotle say about ethics?"
-        
+
         # Assuming a method that prepares a RAG prompt
         # This is a simplification - adjust to your actual implementation
         async def prepare_rag_prompt(query):
             search_results = await retrieval_service.search(query, SearchSettings())
             chunks = search_results.get("chunk_search_results", [])
-            
+
             # Assume you have a method that builds a context from chunks
             context = "\n".join([c["text"] for c in chunks])
-            
+
             prompt_template = await retrieval_service.providers.database.prompts_handler.get_cached_prompt()
             prompt = prompt_template.replace("{{context}}", context).replace("{{query}}", query)
-            
+
             return prompt
-        
+
         prompt = await prepare_rag_prompt(query)
-        
+
         # Verify search was called
         retrieval_service.search.assert_called_once()
-        
+
         # Verify prompt contains expected elements
         assert "context" in prompt.lower()
         assert query in prompt
         assert any(chunk["text"] in prompt for chunk in mock_chunk_results)
-    
+
     @pytest.mark.asyncio
     async def test_rag_streaming(self, retrieval_service, mock_chunk_results):
         """Test RAG streaming functionality."""
         # Mock search to return results
         retrieval_service.search = AsyncMock(return_value={"chunk_search_results": mock_chunk_results})
-        
+
         # Mock LLM streaming
         stream_chunks = [
             {"choices": [{"delta": {"content": "This "}}]},
@@ -340,66 +340,66 @@ class TestRAGPromptHandling:
             {"choices": [{"delta": {"content": "response."}}]}
         ]
         retrieval_service.providers.llm.aget_completion_stream.return_value = iter(stream_chunks)
-        
+
         # Create a collector for streamed chunks
         collected_chunks = []
-        
+
         # Assuming a streaming method like this:
         async def stream_rag_response(query):
             # Prepare search results and prompt
             search_results = await retrieval_service.search(query, SearchSettings())
             chunks = search_results.get("chunk_search_results", [])
             context = "\n".join([c["text"] for c in chunks])
-            
+
             prompt_template = await retrieval_service.providers.database.prompts_handler.get_cached_prompt()
             prompt = prompt_template.replace("{{context}}", context).replace("{{query}}", query)
-            
+
             # Stream response
             async for chunk in retrieval_service.providers.llm.aget_completion_stream(prompt=prompt):
                 yield chunk
-        
+
         # Collect the streamed chunks
         async for chunk in stream_rag_response("What is philosophy?"):
             collected_chunks.append(chunk)
-        
+
         # Verify search was called
         retrieval_service.search.assert_called_once()
-        
+
         # Verify we got all the stream chunks
         assert len(collected_chunks) == len(stream_chunks)
         assert collected_chunks == stream_chunks
-    
+
     @pytest.mark.asyncio
     async def test_rag_task_prompt_handling(self, retrieval_service, mock_chunk_results):
         """Test that task prompts are correctly incorporated into RAG prompts."""
         # Mock search to return results
         retrieval_service.search = AsyncMock(return_value={"chunk_search_results": mock_chunk_results})
-        
+
         # Mock a task-specific prompt
         task_prompt = "Explain the following concepts in simple terms:"
-        
+
         # When you call your RAG method with a task prompt
         query = "What is virtue ethics?"
-        
+
         # Assuming a method that prepares a RAG prompt with task instructions
         async def prepare_rag_prompt_with_task(query, task_prompt):
             search_results = await retrieval_service.search(query, SearchSettings())
             chunks = search_results.get("chunk_search_results", [])
             context = "\n".join([c["text"] for c in chunks])
-            
+
             prompt_template = await retrieval_service.providers.database.prompts_handler.get_cached_prompt()
             prompt = prompt_template.replace("{{context}}", context).replace("{{query}}", query)
-            
+
             # Add task instructions
             prompt_with_task = f"{task_prompt}\n\n{prompt}"
-            
+
             return prompt_with_task
-        
+
         prompt = await prepare_rag_prompt_with_task(query, task_prompt)
-        
+
         # Verify search was called
         retrieval_service.search.assert_called_once()
-        
+
         # Verify prompt contains the task instructions
         assert task_prompt in prompt
         assert query in prompt

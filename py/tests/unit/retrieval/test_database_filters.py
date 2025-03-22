@@ -36,7 +36,7 @@ from core.providers.database.simplified_filters import (
 
 class TestBaseFilterOperations:
     """Test basic filter operations."""
-    
+
     def test_simple_equality_filter(self):
         """Test simple equality filter for a top-level column."""
         # Test with both implementations
@@ -44,11 +44,11 @@ class TestBaseFilterOperations:
             # Simple equality condition
             filters = {"id": "test-id"}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id =" in sql, f"{name}: SQL should contain equality operator"
             assert params == ["test-id"], f"{name}: Parameters should contain the value"
-    
+
     def test_operator_equality_filter(self):
         """Test equality filter with explicit operator for a top-level column."""
         # Test with both implementations
@@ -59,11 +59,11 @@ class TestBaseFilterOperations:
             # Equality with explicit operator
             filters = {"id": {FilterOperator.EQ: "test-id"}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id =" in sql, f"{name}: SQL should contain equality operator"
             assert params == ["test-id"], f"{name}: Parameters should contain the value"
-    
+
     def test_inequality_filter(self):
         """Test inequality filter for a top-level column."""
         # Test with both implementations
@@ -74,11 +74,11 @@ class TestBaseFilterOperations:
             # Inequality condition
             filters = {"id": {FilterOperator.NE: "test-id"}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id !=" in sql or "id <>" in sql, f"{name}: SQL should contain inequality operator"
             assert params == ["test-id"], f"{name}: Parameters should contain the value"
-    
+
     def test_comparison_filters(self):
         """Test comparison operators (LT, LTE, GT, GTE)."""
         # Test with both implementations
@@ -91,25 +91,25 @@ class TestBaseFilterOperations:
             sql, params = apply_filters(filters, ["value"])
             assert "value <" in sql, f"{name}: SQL should contain less than operator"
             assert params == [100], f"{name}: Parameters should contain the value"
-            
+
             # Less than or equal
             filters = {"value": {FilterOperator.LTE: 100}}
             sql, params = apply_filters(filters, ["value"])
             assert "value <=" in sql, f"{name}: SQL should contain less than or equal operator"
             assert params == [100], f"{name}: Parameters should contain the value"
-            
+
             # Greater than
             filters = {"value": {FilterOperator.GT: 100}}
             sql, params = apply_filters(filters, ["value"])
             assert "value >" in sql, f"{name}: SQL should contain greater than operator"
             assert params == [100], f"{name}: Parameters should contain the value"
-            
+
             # Greater than or equal
             filters = {"value": {FilterOperator.GTE: 100}}
             sql, params = apply_filters(filters, ["value"])
             assert "value >=" in sql, f"{name}: SQL should contain greater than or equal operator"
             assert params == [100], f"{name}: Parameters should contain the value"
-    
+
     def test_in_filter(self):
         """Test IN filter for a top-level column."""
         # Test with both implementations
@@ -120,11 +120,11 @@ class TestBaseFilterOperations:
             # IN condition
             filters = {"id": {FilterOperator.IN: ["id1", "id2", "id3"]}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id IN" in sql, f"{name}: SQL should contain IN operator"
             assert params == ["id1", "id2", "id3"], f"{name}: Parameters should contain all values"
-    
+
     def test_not_in_filter(self):
         """Test NOT IN filter for a top-level column."""
         # Test with both implementations
@@ -135,11 +135,11 @@ class TestBaseFilterOperations:
             # NOT IN condition
             filters = {"id": {FilterOperator.NIN: ["id1", "id2", "id3"]}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id NOT IN" in sql, f"{name}: SQL should contain NOT IN operator"
             assert params == ["id1", "id2", "id3"], f"{name}: Parameters should contain all values"
-    
+
     def test_like_filters(self):
         """Test LIKE and ILIKE filters."""
         # Test with both implementations
@@ -152,7 +152,7 @@ class TestBaseFilterOperations:
             sql, params = apply_filters(filters, ["text"])
             assert "text LIKE" in sql, f"{name}: SQL should contain LIKE operator"
             assert params == ["%pattern%"], f"{name}: Parameters should contain pattern"
-            
+
             # ILIKE condition (case insensitive)
             filters = {"text": {FilterOperator.ILIKE: "%pattern%"}}
             sql, params = apply_filters(filters, ["text"])
@@ -162,7 +162,7 @@ class TestBaseFilterOperations:
 
 class TestLogicalOperators:
     """Test logical operator behavior."""
-    
+
     def test_and_operator(self):
         """Test AND operator with multiple conditions."""
         # Test with both implementations
@@ -178,13 +178,13 @@ class TestLogicalOperators:
                 ]
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert " AND " in sql, f"{name}: SQL should contain AND operator"
             assert "id =" in sql, f"{name}: SQL should contain first condition"
             assert "owner_id =" in sql, f"{name}: SQL should contain second condition"
             assert params == ["test-id", "owner-id"], f"{name}: Parameters should contain both values"
-    
+
     def test_or_operator(self):
         """Test OR operator with multiple conditions."""
         # Test with both implementations
@@ -200,13 +200,13 @@ class TestLogicalOperators:
                 ]
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert " OR " in sql, f"{name}: SQL should contain OR operator"
             assert "id =" in sql, f"{name}: SQL should contain first condition"
             assert "owner_id =" in sql, f"{name}: SQL should contain second condition"
             assert params == ["test-id", "owner-id"], f"{name}: Parameters should contain both values"
-    
+
     def test_nested_logical_operators(self):
         """Test nested logical operators (AND within OR, OR within AND)."""
         # Test with both implementations
@@ -227,7 +227,7 @@ class TestLogicalOperators:
                 ]
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert " OR " in sql, f"{name}: SQL should contain OR operator"
             assert " AND " in sql, f"{name}: SQL should contain AND operator"
@@ -237,7 +237,7 @@ class TestLogicalOperators:
             assert "status =" in sql, f"{name}: SQL should contain second nested condition"
             assert "id =" in sql, f"{name}: SQL should contain outer condition"
             assert params == ["document", "active", "special-id"], f"{name}: Parameters should contain all values"
-    
+
     def test_multiple_conditions_implicit_and(self):
         """Test multiple conditions in a filter dict (implicit AND)."""
         # Test with both implementations
@@ -248,7 +248,7 @@ class TestLogicalOperators:
                 "owner_id": "owner-id"
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert " AND " in sql, f"{name}: SQL should contain AND operator"
             assert "id =" in sql, f"{name}: SQL should contain first condition"
@@ -258,7 +258,7 @@ class TestLogicalOperators:
 
 class TestMetadataFilters:
     """Test filtering on metadata fields (JSON)."""
-    
+
     def test_simple_metadata_equality(self):
         """Test simple equality filter for a metadata field."""
         # Test with both implementations
@@ -266,12 +266,12 @@ class TestMetadataFilters:
             # Metadata equality condition
             filters = {"metadata.key": "value"}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "key" in sql.lower(), f"{name}: SQL should reference JSON key"
             assert params == ["value"], f"{name}: Parameters should contain the value"
-    
+
     def test_nested_metadata_equality(self):
         """Test equality filter for a nested metadata field."""
         # Test with both implementations
@@ -279,13 +279,13 @@ class TestMetadataFilters:
             # Nested metadata equality condition
             filters = {"metadata.nested.key": "value"}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "nested" in sql.lower(), f"{name}: SQL should reference nested JSON key"
             assert "key" in sql.lower(), f"{name}: SQL should reference nested JSON key"
             assert params == ["value"], f"{name}: Parameters should contain the value"
-    
+
     def test_numeric_metadata_comparison(self):
         """Test numeric comparison on metadata fields."""
         # Test with both implementations
@@ -296,18 +296,18 @@ class TestMetadataFilters:
             # Numeric comparison
             filters = {"metadata.number": {FilterOperator.GT: 10}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "number" in sql.lower(), f"{name}: SQL should reference JSON key"
             assert ">" in sql, f"{name}: SQL should contain greater than operator"
-            
+
             # Parameters check - implementations might handle numeric values differently
             if isinstance(params[0], str):
                 assert params == ["10"], f"{name}: Parameters should contain numeric value as string"
             else:
                 assert params == [10], f"{name}: Parameters should contain numeric value"
-    
+
     def test_metadata_contains(self):
         """Test CONTAINS operator for JSON data."""
         # Test with both implementations
@@ -318,16 +318,16 @@ class TestMetadataFilters:
             # CONTAINS for JSON object
             filters = {"metadata.obj": {FilterOperator.CONTAINS: {"nested": "value"}}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "obj" in sql.lower(), f"{name}: SQL should reference JSON key"
             assert "@>" in sql or "CONTAINS" in sql.upper(), f"{name}: SQL should contain containment operator"
-            
+
             # Check JSON serialization
             param_obj = json.loads(params[0]) if isinstance(params[0], str) else params[0]
             assert param_obj == {"nested": "value"}, f"{name}: Parameters should contain JSON object"
-    
+
     def test_metadata_in_array(self):
         """Test IN operator for checking if a value is in a metadata array."""
         # Test with both implementations
@@ -338,12 +338,12 @@ class TestMetadataFilters:
             # Array contains value
             filters = {"metadata.tags": {FilterOperator.CONTAINS: "tag1"}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "tags" in sql.lower(), f"{name}: SQL should reference JSON key"
             assert "@>" in sql or "CONTAINS" in sql.upper(), f"{name}: SQL should contain containment operator"
-            
+
             # Check parameter handling - implementations might handle arrays differently
             if isinstance(params[0], str):
                 param_value = json.loads(params[0])
@@ -355,7 +355,7 @@ class TestMetadataFilters:
 
 class TestSpecialFieldHandling:
     """Test handling of special fields like collection_ids and parent_id."""
-    
+
     def test_collection_id_filter(self):
         """Test filtering by collection_id (which is a shorthand for collection_ids)."""
         # Test with both implementations
@@ -363,11 +363,11 @@ class TestSpecialFieldHandling:
             # Collection ID filter
             filters = {"collection_id": "collection-123"}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "collection_ids" in sql.lower(), f"{name}: SQL should reference collection_ids column"
             assert params == ["collection-123"], f"{name}: Parameters should contain the collection ID"
-    
+
     def test_collection_ids_filter(self):
         """Test filtering by collection_ids array."""
         # Test with both implementations
@@ -378,11 +378,11 @@ class TestSpecialFieldHandling:
             # Collection IDs contains
             filters = {"collection_ids": {FilterOperator.CONTAINS: "collection-123"}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "collection_ids" in sql.lower(), f"{name}: SQL should reference collection_ids column"
             assert "@>" in sql or "CONTAINS" in sql.upper(), f"{name}: SQL should contain containment operator"
-            
+
             # Check parameter handling
             if isinstance(params[0], str):
                 param_value = json.loads(params[0])
@@ -390,7 +390,7 @@ class TestSpecialFieldHandling:
             else:
                 # Direct array parameter
                 assert "collection-123" in params[0], f"{name}: Parameter should contain the collection ID"
-    
+
     def test_collection_ids_overlap(self):
         """Test OVERLAP operator for collection_ids."""
         # Test with both implementations
@@ -401,11 +401,11 @@ class TestSpecialFieldHandling:
             # Collection IDs overlap
             filters = {"collection_ids": {FilterOperator.OVERLAP: ["collection-123", "collection-456"]}}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "collection_ids" in sql.lower(), f"{name}: SQL should reference collection_ids column"
             assert "&&" in sql or "OVERLAP" in sql.upper(), f"{name}: SQL should contain overlap operator"
-            
+
             # Check parameter handling
             if isinstance(params[0], str):
                 param_value = json.loads(params[0])
@@ -415,7 +415,7 @@ class TestSpecialFieldHandling:
                 # Direct array parameter
                 assert "collection-123" in params[0], f"{name}: Parameter should contain the collection IDs"
                 assert "collection-456" in params[0], f"{name}: Parameter should contain the collection IDs"
-    
+
     def test_parent_id_filters(self):
         """Test filtering by parent_id with different operators."""
         # Test with both implementations
@@ -426,16 +426,16 @@ class TestSpecialFieldHandling:
             # Parent ID equality
             filters = {"parent_id": "parent-123"}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "parent_id" in sql.lower(), f"{name}: SQL should reference parent_id column"
             assert "=" in sql, f"{name}: SQL should contain equality operator"
             assert params == ["parent-123"], f"{name}: Parameters should contain the parent ID"
-            
+
             # Parent ID null check
             filters = {"parent_id": None}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "parent_id" in sql.lower(), f"{name}: SQL should reference parent_id column"
             assert "IS NULL" in sql.upper(), f"{name}: SQL should contain IS NULL"
@@ -443,7 +443,7 @@ class TestSpecialFieldHandling:
 
 class TestEdgeCases:
     """Test edge cases and error handling."""
-    
+
     def test_empty_filters(self):
         """Test behavior with empty filters."""
         # Test with both implementations
@@ -451,11 +451,11 @@ class TestEdgeCases:
             # Empty filters
             filters = {}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert sql, f"{name}: Should return non-empty SQL even with empty filters"
             assert params == [], f"{name}: Should return empty parameters with empty filters"
-    
+
     def test_null_value(self):
         """Test handling of null/None values."""
         # Test with both implementations
@@ -463,11 +463,11 @@ class TestEdgeCases:
             # Null value
             filters = {"id": None}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "id" in sql.lower(), f"{name}: SQL should reference id column"
             assert "IS NULL" in sql.upper(), f"{name}: SQL should contain IS NULL"
-    
+
     def test_boolean_values(self):
         """Test handling of boolean values."""
         # Test with both implementations
@@ -475,27 +475,27 @@ class TestEdgeCases:
             # Boolean true
             filters = {"metadata.flag": True}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "flag" in sql.lower(), f"{name}: SQL should reference JSON key"
-            
+
             # Boolean values might be handled differently
             if params[0] == True:
                 assert params == [True], f"{name}: Parameters should contain boolean value"
             elif isinstance(params[0], str):
                 assert params[0].lower() in ["true", "'true'", "t"], f"{name}: Parameters should contain string representation of boolean"
-            
+
             # Boolean false
             filters = {"metadata.flag": False}
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             if params[0] == False:
                 assert params == [False], f"{name}: Parameters should contain boolean value"
             elif isinstance(params[0], str):
                 assert params[0].lower() in ["false", "'false'", "f"], f"{name}: Parameters should contain string representation of boolean"
-    
+
     def test_filter_modes(self):
         """Test different filter modes (where_clause, condition_only, append_only)."""
         # Test with both implementations (if supported)
@@ -505,11 +505,11 @@ class TestEdgeCases:
                 filters = {"id": "test-id"}
                 sql, params = apply_filters(filters, [], mode="where_clause")
                 assert sql.lstrip().upper().startswith("WHERE"), f"{name}: SQL should start with WHERE in where_clause mode"
-                
+
                 # Condition only mode
                 sql, params = apply_filters(filters, [], mode="condition_only")
                 assert not sql.lstrip().upper().startswith("WHERE"), f"{name}: SQL should not start with WHERE in condition_only mode"
-                
+
                 # Append only mode
                 sql, params = apply_filters(filters, [], mode="append_only")
                 assert not sql.lstrip().upper().startswith("WHERE"), f"{name}: SQL should not start with WHERE in append_only mode"
@@ -517,7 +517,7 @@ class TestEdgeCases:
             except Exception as e:
                 # Implementation might not support all modes
                 pass
-    
+
     def test_invalid_operator(self):
         """Test handling of invalid operators."""
         # Test with both implementations
@@ -536,18 +536,18 @@ class TestEdgeCases:
             except Exception as e:
                 # Other exceptions might be raised as well
                 pass
-    
+
     def test_custom_top_level_columns(self):
         """Test with custom top_level_columns parameter."""
         # Test with both implementations
         for apply_filters, name in [(main_apply_filters, "main"), (simplified_apply_filters, "simplified")]:
             # Custom top level columns
             custom_columns = ["id", "custom_field", "another_field"]
-            
+
             # Filter on custom field
             filters = {"custom_field": "value"}
             sql, params = apply_filters(filters, custom_columns)
-            
+
             # Assertions
             assert "custom_field" in sql.lower(), f"{name}: SQL should reference custom field"
             assert "=" in sql, f"{name}: SQL should contain equality operator"
@@ -556,7 +556,7 @@ class TestEdgeCases:
 
 class TestComplexFilterCombinations:
     """Test complex combinations of different filter types."""
-    
+
     def test_combined_filters(self):
         """Test combination of different filter types."""
         # Test with both implementations
@@ -579,19 +579,19 @@ class TestComplexFilterCombinations:
                 ]
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert " AND " in sql, f"{name}: SQL should contain AND operator"
             assert " OR " in sql, f"{name}: SQL should contain OR operator"
             assert "id =" in sql, f"{name}: SQL should contain ID condition"
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "collection_ids" in sql.lower(), f"{name}: SQL should reference collection_ids column"
-            
+
             # Params check
             assert "test-id" in params, f"{name}: Parameters should contain ID value"
             assert "document" in params, f"{name}: Parameters should contain document type"
             assert "image" in params, f"{name}: Parameters should contain image type"
-    
+
     def test_multiple_json_levels(self):
         """Test filtering with deeply nested JSON fields."""
         # Test with both implementations
@@ -601,11 +601,11 @@ class TestComplexFilterCombinations:
                 "metadata.level1.level2.level3": "deep-value"
             }
             sql, params = apply_filters(filters, [])
-            
+
             # Assertions
             assert "metadata" in sql.lower(), f"{name}: SQL should reference metadata column"
             assert "level1" in sql.lower(), f"{name}: SQL should reference level1 JSON key"
-            assert "level2" in sql.lower(), f"{name}: SQL should reference level2 JSON key" 
+            assert "level2" in sql.lower(), f"{name}: SQL should reference level2 JSON key"
             assert "level3" in sql.lower(), f"{name}: SQL should reference level3 JSON key"
             assert params == ["deep-value"], f"{name}: Parameters should contain the deep value"
 
@@ -644,11 +644,11 @@ class TestSimplifiedFilterEdgeCases:
         metadata_filter1 = {"metadata.level1": "value1"}
         metadata_filter2 = {"metadata.level1.level2": "value2"}
         metadata_filter3 = {"metadata.level1.level2.level3": "value3"}
-        
+
         sql1, params1 = simplified_apply_filters(metadata_filter1, [])
         sql2, params2 = simplified_apply_filters(metadata_filter2, [])
         sql3, params3 = simplified_apply_filters(metadata_filter3, [])
-        
+
         # Verify extraction syntax is consistent
         assert "'level1'" in sql1, "JSON path extraction should use consistent syntax"
         assert "'level1'" in sql2 and "'level2'" in sql2, "Nested JSON path should extract correctly"
@@ -660,11 +660,11 @@ class TestSimplifiedFilterEdgeCases:
         special_filter1 = {"metadata.field with space": "value1"}
         special_filter2 = {"metadata.field.with.dots": "value2"}
         special_filter3 = {"metadata.field@special#chars": "value3"}
-        
+
         sql1, _ = simplified_apply_filters(special_filter1, [])
         sql2, _ = simplified_apply_filters(special_filter2, [])
         sql3, _ = simplified_apply_filters(special_filter3, [])
-        
+
         # Verify all are properly escaped/handled
         assert "'field with space'" in sql1, "Spaces in JSON path should be handled correctly"
         assert "'field'" in sql2 and "'with'" in sql2 and "'dots'" in sql2, "Dots in field names should be handled correctly"
@@ -679,10 +679,10 @@ class TestSimplifiedFilterEdgeCases:
         array_filter2 = {
             "metadata.scores": {SimplifiedFilterOperator.GT: 5}
         }
-        
+
         sql1, params1 = simplified_apply_filters(array_filter1, [])
         sql2, params2 = simplified_apply_filters(array_filter2, [])
-        
+
         # Verify array operations work correctly
         assert "CONTAINS" in sql1.upper() or "?" in sql1, "Array contains operation should be properly formatted"
         assert params1 == ["tag1"], "Array contains parameter should be correct"
@@ -698,10 +698,10 @@ class TestFilterTypeConversions:
         # Test with numeric values
         filters1 = {"metadata.count": 42}
         filters2 = {"metadata.price": 99.99}
-        
+
         sql1, params1 = simplified_apply_filters(filters1, [])
         sql2, params2 = simplified_apply_filters(filters2, [])
-        
+
         # Check that numeric values are handled appropriately
         assert 42 in params1 or "42" in params1, "Integer should be used correctly in parameters"
         assert 99.99 in params2 or "99.99" in params2, "Float should be used correctly in parameters"
@@ -711,10 +711,10 @@ class TestFilterTypeConversions:
         # Test with boolean values
         filters1 = {"metadata.active": True}
         filters2 = {"metadata.enabled": False}
-        
+
         sql1, params1 = simplified_apply_filters(filters1, [])
         sql2, params2 = simplified_apply_filters(filters2, [])
-        
+
         # Check that boolean values are handled correctly
         assert True in params1 or "true" in [str(p).lower() for p in params1], "True value should be correctly processed"
         assert False in params2 or "false" in [str(p).lower() for p in params2], "False value should be correctly processed"
@@ -723,9 +723,9 @@ class TestFilterTypeConversions:
         """Test handling of null values."""
         # Test with null values
         filters1 = {"metadata.optional_field": None}
-        
+
         sql1, params1 = simplified_apply_filters(filters1, [])
-        
+
         # Check that null values are handled correctly
         assert "IS NULL" in sql1.upper() or "= NULL" in sql1.upper(), "NULL value should be properly processed"
 
@@ -734,7 +734,7 @@ class TestFilterTypeConversions:
         # Test with complex array content
         complex_array = [{"name": "item1", "value": 10}, {"name": "item2", "value": 20}]
         filters = {"metadata.complex_array": complex_array}
-        
+
         try:
             sql, params = simplified_apply_filters(filters, [])
             # If it succeeds, check the parameters contain the stringified array
@@ -763,9 +763,9 @@ class TestRealWorldQueries:
                 {"metadata.created_at": {SimplifiedFilterOperator.GTE: "2023-01-01"}}
             ]
         }
-        
+
         sql, params = simplified_apply_filters(complex_filters, [])
-        
+
         # Verify the complex query syntax
         assert "AND" in sql, "Complex query should contain AND operator"
         assert "OR" in sql, "Complex query should contain OR operator"
@@ -784,13 +784,13 @@ class TestRealWorldQueries:
             "limit": 50,
             "offset": 100
         }
-        
+
         # Extract limit and offset if your implementation handles them separately
         limit = pagination_filters.pop("limit", None)
         offset = pagination_filters.pop("offset", None)
-        
+
         sql, params = simplified_apply_filters(pagination_filters, [])
-        
+
         # Verify pagination filter syntax
         assert "<" in sql, "Pagination query should contain LT operator"
         assert ">" in sql, "Pagination query should contain GT operator"
@@ -813,9 +813,9 @@ class TestRealWorldQueries:
                 }
             ]
         }
-        
+
         sql, params = simplified_apply_filters(hierarchical_filters, [])
-        
+
         # Verify hierarchical query syntax
         assert "parent_id" in sql, "Hierarchical query should filter by parent_id"
         assert "OR" in sql, "Hierarchical query should contain OR operator"
@@ -834,9 +834,9 @@ class TestRealWorldQueries:
                 {"metadata.tags": {SimplifiedFilterOperator.CONTAINS: "keyword"}}  # Changed ARRAY_CONTAINS to CONTAINS
             ]
         }
-        
+
         sql, params = simplified_apply_filters(fulltext_filters, [])
-        
+
         # Verify full-text search syntax
         assert "OR" in sql, "Full-text query should contain OR operator"
         assert "ILIKE" in sql.upper() or "%" in sql, "Full-text query should use ILIKE or similar operator"
@@ -857,9 +857,9 @@ class TestCornerCases:
             large_filter[SimplifiedFilterOperator.AND].append(
                 {"metadata.field" + str(i): "value" + str(i)}
             )
-        
+
         sql, params = simplified_apply_filters(large_filter, [])
-        
+
         # Verify large filter handling
         assert len(params) == 20, "Large filter should process all 20 parameters"
         assert sql.count("AND") >= 19, "Large filter should contain at least 19 AND joins"
@@ -874,9 +874,9 @@ class TestCornerCases:
                 {"metadata.status": {SimplifiedFilterOperator.NE: "archived"}}
             ]
         }
-        
+
         sql, params = simplified_apply_filters(duplicate_field_filter, [])
-        
+
         # Verify duplicate field handling
         assert sql.count("status") >= 3, "Duplicate fields should appear multiple times in the query"
         assert "=" in sql, "Duplicate field query should contain equality operator"
@@ -888,7 +888,7 @@ class TestCornerCases:
         # Test with empty list values
         empty_list_filter1 = {"metadata.tags": {SimplifiedFilterOperator.IN: []}}
         empty_list_filter2 = {"collection_ids": {SimplifiedFilterOperator.OVERLAP: []}}
-        
+
         # We expect either a specific SQL representation (FALSE, 0=1, etc.)
         # or a FilterError to be raised
         try:
@@ -901,7 +901,7 @@ class TestCornerCases:
         except SimplifiedFilterError:
             # Some implementations might raise an error for empty lists, which is also fine
             pass
-            
+
         try:
             sql2, params2 = simplified_apply_filters(empty_list_filter2, [])
             # If no error, the SQL should handle empty lists appropriately
@@ -918,16 +918,16 @@ class TestCornerCases:
         special_value_filter1 = {"id": "value'with'quotes"}
         special_value_filter2 = {"metadata.field": "value % with _ wildcards"}
         special_value_filter3 = {"metadata.field": "value;with;semicolons"}
-        
+
         sql1, params1 = simplified_apply_filters(special_value_filter1, [])
         sql2, params2 = simplified_apply_filters(special_value_filter2, [])
         sql3, params3 = simplified_apply_filters(special_value_filter3, [])
-        
+
         # Verify special values are properly parameterized (not directly in SQL)
         assert "value'with'quotes" not in sql1, "Values with quotes should be parameterized, not in SQL"
         assert "value % with _ wildcards" not in sql2, "Values with wildcards should be parameterized, not in SQL"
         assert "value;with;semicolons" not in sql3, "Values with semicolons should be parameterized, not in SQL"
-        
+
         # Verify parameters contain the exact values
         assert "value'with'quotes" in str(params1), "Quotes in values should be preserved in parameters"
         assert "value % with _ wildcards" in str(params2), "Wildcards in values should be preserved in parameters"
@@ -938,10 +938,10 @@ class TestCornerCases:
         # Test with Unicode values
         unicode_filter1 = {"metadata.title": "こんにちは世界"}  # Hello world in Japanese
         unicode_filter2 = {"metadata.description": "Привет, мир"}  # Hello world in Russian
-        
+
         sql1, params1 = simplified_apply_filters(unicode_filter1, [])
         sql2, params2 = simplified_apply_filters(unicode_filter2, [])
-        
+
         # Verify Unicode values are properly handled
         assert "こんにちは世界" in str(params1), "Japanese characters should be preserved in parameters"
         assert "Привет, мир" in str(params2), "Russian characters should be preserved in parameters"

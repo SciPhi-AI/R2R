@@ -21,31 +21,31 @@ class CitationTracker:
         # Format: {citation_id: {(start, end), (start, end), ...}}
         self.processed_spans = {}
         self.citation_spans = {}
-    
+
     def is_new_span(self, citation_id, span):
         """Check if this span is new and mark it as processed if it is."""
         # Handle invalid inputs
         if citation_id is None or citation_id == "" or span is None:
             return False
-            
+
         # Initialize set for this citation ID if needed
         if citation_id not in self.processed_spans:
             self.processed_spans[citation_id] = set()
-            
+
         # Check if we've seen this span before for this citation
         if span in self.processed_spans[citation_id]:
             return False
-            
+
         # This is a new span, track it
         self.processed_spans[citation_id].add(span)
-        
+
         # Also track by citation ID for easy lookup
         if citation_id not in self.citation_spans:
             self.citation_spans[citation_id] = []
-        
+
         self.citation_spans[citation_id].append(span)
         return True
-    
+
     def get_all_citation_spans(self):
         """Get all citation spans processed so far."""
         return {
@@ -76,7 +76,7 @@ def mock_providers():
             self.database.citations_handler.get_citation = AsyncMock(
                 side_effect=lambda citation_id: MockCitation(citation_id)
             )
-            
+
             # Mock LLM
             self.llm = AsyncMock()
             self.llm.aget_completion = AsyncMock(
@@ -114,7 +114,7 @@ def sample_chunk_results():
 
 class TestCitationExtraction:
     """Tests for citation extraction functionality."""
-    
+
     def test_extract_citations_basic(self):
         """Test basic citation extraction from text with standard format."""
         # Test function to extract citations
@@ -122,7 +122,7 @@ class TestCitationExtraction:
             citation_pattern = r'\[([\w\d]+)\]'
             citations = re.findall(citation_pattern, text)
             return citations
-        
+
         # Test cases
         test_cases = [
             (
@@ -142,62 +142,62 @@ class TestCitationExtraction:
                 ["abc1234", "def5678", "ghi9012"]
             )
         ]
-        
+
         # Run tests
         for text, expected_citations in test_cases:
             extracted = extract_citations(text)
             assert extracted == expected_citations
-    
+
     def test_extract_citations_with_spans(self):
         """Test citation extraction with text spans."""
         # Test function to extract citations with spans
         def extract_citations_with_spans(text):
             citation_pattern = r'\[([\w\d]+)\]'
             citations_with_spans = []
-            
+
             for match in re.finditer(citation_pattern, text):
                 citation_id = match.group(1)
                 start = match.start()
                 end = match.end()
-                
+
                 # Get the context (text before and after the citation)
                 context_start = max(0, start - 50)
                 context_end = min(len(text), end + 50)
                 context = text[context_start:context_end]
-                
+
                 citations_with_spans.append({
                     "citation_id": citation_id,
                     "start": start,
                     "end": end,
                     "context": context
                 })
-            
+
             return citations_with_spans
-        
+
         # Test text
         text = (
             "Aristotle discussed virtue ethics in his Nicomachean Ethics [abc1234]. "
             "According to Plato [xyz5678], the ideal state is described in The Republic. "
             "Socrates' method of questioning is demonstrated in many dialogues [ghi9012]."
         )
-        
+
         # Extract citations with spans
         extracted = extract_citations_with_spans(text)
-        
+
         # Verify the correct number of citations was extracted
         assert len(extracted) == 3
-        
+
         # Verify citation IDs are correct
         assert extracted[0]["citation_id"] == "abc1234"
         assert extracted[1]["citation_id"] == "xyz5678"
         assert extracted[2]["citation_id"] == "ghi9012"
-        
+
         # Verify spans and context
         for citation in extracted:
             assert citation["start"] < citation["end"]
             assert text[citation["start"]:citation["end"]] == f"[{citation['citation_id']}]"
             assert citation["citation_id"] in citation["context"]
-    
+
     def test_citation_extraction_edge_cases(self):
         """Test citation extraction with edge cases and malformed citations."""
         # Test function to extract citations that exactly matches the implementation in core.utils
@@ -205,17 +205,17 @@ class TestCitationExtraction:
             # Handle None or empty input
             if text is None or text == "":
                 return []
-                
+
             # Match the core implementation pattern: 7-8 alphanumeric chars
             citation_pattern = re.compile(r"\[([A-Za-z0-9]{7,8})\]")
-            
+
             sids = []
             for match in citation_pattern.finditer(text):
                 sid = match.group(1)
                 sids.append(sid)
-                
+
             return sids
-        
+
         # Edge case tests
         test_cases = [
             (
@@ -251,19 +251,19 @@ class TestCitationExtraction:
                 []  # Should not extract brackets with special characters
             ),
         ]
-        
+
         # Run tests
         for text, expected_citations in test_cases:
             extracted = extract_citations(text)
             assert extracted == expected_citations
-    
+
     def test_citation_sanitization(self):
         """Test sanitization of citation IDs."""
         # Function to sanitize citation IDs
         def sanitize_citation_id(citation_id):
             # Remove any non-alphanumeric characters
             return re.sub(r'[^a-zA-Z0-9]', '', citation_id)
-        
+
         # Test cases
         test_cases = [
             ("abc1234", "abc1234"),  # Already clean
@@ -272,7 +272,7 @@ class TestCitationExtraction:
             ("abc_1234", "abc1234"),  # Contains underscore
             ("abc 1234", "abc1234"),  # Contains space
         ]
-        
+
         # Run tests
         for input_id, expected_id in test_cases:
             sanitized = sanitize_citation_id(input_id)
@@ -281,7 +281,7 @@ class TestCitationExtraction:
 
 class TestCitationTracker:
     """Tests for citation tracking functionality."""
-    
+
     def test_citation_tracker_init(self):
         """Test initialization of citation tracker."""
         tracker = CitationTracker()
@@ -291,35 +291,35 @@ class TestCitationTracker:
         assert isinstance(tracker.citation_spans, dict)
         assert len(tracker.processed_spans) == 0
         assert len(tracker.citation_spans) == 0
-    
+
     def test_is_new_span(self):
         """Test is_new_span method."""
         tracker = CitationTracker()
-        
+
         # First occurrence should be new
         assert tracker.is_new_span("abc1234", (10, 18)) is True
-        
+
         # Same span should not be new anymore
         assert tracker.is_new_span("abc1234", (10, 18)) is False
-        
+
         # Different span for same citation should be new
         assert tracker.is_new_span("abc1234", (30, 38)) is True
-        
+
         # Different citation ID should be new
         assert tracker.is_new_span("def5678", (10, 18)) is True
-    
+
     def test_get_all_citation_spans(self):
         """Test get_all_citation_spans method."""
         tracker = CitationTracker()
-        
+
         # Add some spans
         tracker.is_new_span("abc1234", (10, 18))
         tracker.is_new_span("abc1234", (30, 38))
         tracker.is_new_span("def5678", (50, 58))
-        
+
         # Get all spans
         all_spans = tracker.get_all_citation_spans()
-        
+
         # Verify results
         assert "abc1234" in all_spans
         assert "def5678" in all_spans
@@ -328,18 +328,18 @@ class TestCitationTracker:
         assert (10, 18) in all_spans["abc1234"]
         assert (30, 38) in all_spans["abc1234"]
         assert (50, 58) in all_spans["def5678"]
-    
+
     def test_citation_tracker_multiple_spans(self):
         """Test tracking multiple citation spans."""
         tracker = CitationTracker()
-        
+
         # Sample text with multiple citations
         text = (
             "Aristotle discussed virtue ethics in his Nicomachean Ethics [abc1234]. "
             "Later in the same work [abc1234], he expanded on this concept. "
             "According to Plato [def5678], the ideal state is described in The Republic."
         )
-        
+
         # Extract and track citations
         citation_pattern = r'\[([\w\d]+)\]'
         for match in re.finditer(citation_pattern, text):
@@ -347,7 +347,7 @@ class TestCitationTracker:
             start = match.start()
             end = match.end()
             tracker.is_new_span(citation_id, (start, end))
-        
+
         # Verify tracking
         all_spans = tracker.get_all_citation_spans()
         assert len(all_spans["abc1234"]) == 2
@@ -356,19 +356,19 @@ class TestCitationTracker:
 
 class TestCitationStreamingEvents:
     """Tests for citation events during streaming."""
-    
+
     def test_emit_citation_event(self):
         """Test emitting a citation event during streaming."""
         # Create a mock agent
         class MockAgent:
             def __init__(self):
                 self.emitted_events = []
-            
+
             def emit_event(self, event):
                 self.emitted_events.append(event)
-        
+
         agent = MockAgent()
-        
+
         # Function to emit a citation event
         def emit_citation_event(agent, citation_id, start, end, text_context):
             event = {
@@ -381,10 +381,10 @@ class TestCitationStreamingEvents:
                 }
             }
             agent.emit_event(event)
-        
+
         # Emit an event
         emit_citation_event(agent, "abc1234", 10, 18, "text with [abc1234] citation")
-        
+
         # Verify event
         assert len(agent.emitted_events) == 1
         event = agent.emitted_events[0]
@@ -392,7 +392,7 @@ class TestCitationStreamingEvents:
         assert event["data"]["citation_id"] == "abc1234"
         assert event["data"]["start"] == 10
         assert event["data"]["end"] == 18
-    
+
     def test_citation_tracking_during_streaming(self):
         """Test tracking citations during streaming."""
         # Create a mock agent with citation tracker
@@ -400,12 +400,12 @@ class TestCitationStreamingEvents:
             def __init__(self):
                 self.emitted_events = []
                 self.citation_tracker = CitationTracker()
-            
+
             def emit_event(self, event):
                 self.emitted_events.append(event)
-        
+
         agent = MockAgent()
-        
+
         # Function to process streaming text and emit citation events
         def process_streaming_text(agent, text, start_offset=0):
             # Extract citations
@@ -414,14 +414,14 @@ class TestCitationStreamingEvents:
                 citation_id = match.group(1)
                 start = match.start() + start_offset
                 end = match.end() + start_offset
-                
+
                 # Check if this is a new span
                 if agent.citation_tracker.is_new_span(citation_id, (start, end)):
                     # Get context
                     context_start = max(0, match.start() - 10)
                     context_end = min(len(text), match.end() + 10)
                     context = text[context_start:context_end]
-                    
+
                     # Emit event
                     event = {
                         "type": "citation",
@@ -433,7 +433,7 @@ class TestCitationStreamingEvents:
                         }
                     }
                     agent.emit_event(event)
-        
+
         # Process streaming text in chunks
         chunks = [
             "Aristotle discussed virtue ethics ",
@@ -442,20 +442,20 @@ class TestCitationStreamingEvents:
             "the ideal state is described in The Republic. ",
             "Later, Aristotle also mentioned [abc1234] this concept."
         ]
-        
+
         offset = 0
         for chunk in chunks:
             process_streaming_text(agent, chunk, offset)
             offset += len(chunk)
-        
+
         # Verify events and tracking
         assert len(agent.emitted_events) == 3  # 3 citations total (2 abc1234, 1 def5678)
-        
+
         # Verify citation IDs in events
         citation_ids = [event["data"]["citation_id"] for event in agent.emitted_events]
         assert citation_ids.count("abc1234") == 2
         assert citation_ids.count("def5678") == 1
-        
+
         # Verify tracker state
         all_spans = agent.citation_tracker.get_all_citation_spans()
         assert len(all_spans["abc1234"]) == 2
@@ -464,7 +464,7 @@ class TestCitationStreamingEvents:
 
 class TestRAGWithCitations:
     """Tests for RAG functionality with citations."""
-    
+
     @pytest.mark.asyncio
     async def test_rag_with_citation_metadata(self, mock_providers, sample_chunk_results):
         """Test RAG with citation metadata in search results."""
@@ -472,14 +472,14 @@ class TestRAGWithCitations:
         def build_rag_prompt_with_citations(query, search_results):
             context = ""
             citation_metadata = {}
-            
+
             for i, result in enumerate(search_results):
                 # Extract citation information
                 citation_id = result.get("metadata", {}).get("citation_id")
                 if citation_id:
                     # Add to context with citation marker
                     context += f"\n[{i+1}] {result['text']} [{citation_id}]"
-                    
+
                     # Store metadata
                     citation_metadata[citation_id] = {
                         "document_id": result["document_id"],
@@ -488,26 +488,26 @@ class TestRAGWithCitations:
                     }
                 else:
                     context += f"\n[{i+1}] {result['text']}"
-            
+
             prompt = f"Question: {query}\n\nContext:{context}\n\nPlease answer the question based on the provided context."
-            
+
             return prompt, citation_metadata
-        
+
         # Build prompt
         query = "What is the main concept?"
         prompt, citation_metadata = build_rag_prompt_with_citations(query, sample_chunk_results)
-        
+
         # Verify prompt contains citations
         for i in range(5):
             assert f"[cite{i}]" in prompt
-        
+
         # Verify metadata is stored
         assert len(citation_metadata) == 5
         for i in range(5):
             assert f"cite{i}" in citation_metadata
             assert citation_metadata[f"cite{i}"]["document_id"] == f"doc-{i//2}"
             assert citation_metadata[f"cite{i}"]["chunk_id"] == f"chunk-{i}"
-    
+
     @pytest.mark.asyncio
     async def test_rag_response_with_citations(self, mock_providers, sample_chunk_results):
         """Test generating a RAG response with citations."""
@@ -516,12 +516,12 @@ class TestRAGWithCitations:
             # Build prompt with citations
             context = ""
             citation_metadata = {}
-            
+
             for i, result in enumerate(search_results):
                 citation_id = result.get("metadata", {}).get("citation_id")
                 if citation_id:
                     context += f"\n[{i+1}] {result['text']} [{citation_id}]"
-                    
+
                     citation_metadata[citation_id] = {
                         "document_id": result["document_id"],
                         "chunk_id": result["chunk_id"],
@@ -529,9 +529,9 @@ class TestRAGWithCitations:
                     }
                 else:
                     context += f"\n[{i+1}] {result['text']}"
-            
+
             prompt = f"Question: {query}\n\nContext:{context}\n\nPlease answer the question based on the provided context."
-            
+
             # Generate response (mocked)
             # In real implementation, this would call the LLM
             mock_providers.llm.aget_completion.return_value = {
@@ -541,30 +541,30 @@ class TestRAGWithCitations:
                     }
                 }]
             }
-            
+
             response = await mock_providers.llm.aget_completion(prompt=prompt)
             content = response["choices"][0]["message"]["content"]
-            
+
             return content, citation_metadata
-        
+
         # Generate response
         query = "What is the main concept?"
         response, citation_metadata = await generate_rag_response_with_citations(query, sample_chunk_results)
-        
+
         # Verify response contains citations
         assert "[cite0]" in response
         assert "[cite2]" in response
-        
+
         # Extract citations from response
         def extract_citations_from_response(text):
             citation_pattern = r'\[([\w\d]+)\]'
             citations = re.findall(citation_pattern, text)
             return citations
-        
+
         citations = extract_citations_from_response(response)
         assert "cite0" in citations
         assert "cite2" in citations
-    
+
     @pytest.mark.asyncio
     async def test_consolidate_citations_in_final_answer(self, mock_providers):
         """Test consolidating citations in the final answer."""
@@ -573,7 +573,7 @@ class TestRAGWithCitations:
         tracker.is_new_span("cite0", (10, 18))
         tracker.is_new_span("cite0", (30, 38))
         tracker.is_new_span("cite2", (50, 58))
-        
+
         # Create citation metadata
         citation_metadata = {
             "cite0": {
@@ -587,12 +587,12 @@ class TestRAGWithCitations:
                 "metadata": {"source": "source-2", "title": "Document 1"}
             }
         }
-        
+
         # Function to consolidate citations
         def consolidate_citations(response_text, citation_tracker, citation_metadata):
             # Get all citations from the tracker
             all_citation_spans = citation_tracker.get_all_citation_spans()
-            
+
             # Build consolidated citations
             consolidated_citations = {}
             for citation_id, spans in all_citation_spans.items():
@@ -604,24 +604,24 @@ class TestRAGWithCitations:
                         "chunk_id": metadata["chunk_id"],
                         "metadata": metadata["metadata"]
                     }
-            
+
             # Return the response with consolidated citations
             return {
                 "response": response_text,
                 "citations": consolidated_citations
             }
-        
+
         # Test response
         response_text = "The main concept is explained in [cite0] and further elaborated in [cite2]."
-        
+
         # Consolidate citations
         result = consolidate_citations(response_text, tracker, citation_metadata)
-        
+
         # Verify result
         assert "response" in result
         assert "citations" in result
         assert result["response"] == response_text
-        
+
         # Verify consolidated citations
         assert "cite0" in result["citations"]
         assert "cite2" in result["citations"]
@@ -633,7 +633,7 @@ class TestRAGWithCitations:
 
 class TestCitationUtils:
     """Tests for citation utility functions."""
-    
+
     def test_extract_citations(self):
         """Test that citations are correctly extracted from text."""
         # Simple case with one citation
@@ -659,46 +659,46 @@ class TestCitationUtils:
             # Handle None or empty input
             if text is None or text == "":
                 return []
-                
+
             # Match the core implementation pattern: 7-8 alphanumeric chars
             citation_pattern = re.compile(r"\[([A-Za-z0-9]{7,8})\]")
-            
+
             sids = []
             for match in citation_pattern.finditer(text):
                 sid = match.group(1)
                 sids.append(sid)
-                
+
             return sids
-        
+
         # Citations at beginning or end of text
         text = "[abc1234] at the beginning and at the end [def5678]"
         citations = local_extract_citations(text)
         assert citations == ["abc1234", "def5678"], "Should extract citations at beginning and end"
-    
+
         # Empty text
         text = ""
         citations = local_extract_citations(text)
         assert citations == [], "Should handle empty text gracefully"
-    
+
         # None input
         citations = local_extract_citations(None)
         assert citations == [], "Should handle None input gracefully"
-    
+
         # Text with brackets but no valid citation format
         text = "Text with [short] but no valid citation format."
         citations = local_extract_citations(text)
         assert citations == [], "Should not extract non-citation brackets (too short)"
-        
+
         # Text with brackets but wrong length
         text = "Text with [abc123] (too short) and [abcdefghi] (too long)."
         citations = local_extract_citations(text)
         assert citations == [], "Should not extract brackets with wrong length"
-        
+
         # Text with brackets that have correct length but non-alphanumeric chars
         text = "Text with [abc-1234] has the right length but contains special characters."
         citations = local_extract_citations(text)
         assert citations == [], "Should not extract brackets with special characters"
-        
+
         # Text with close brackets only
         text = "Text with close brackets only]."
         citations = local_extract_citations(text)
@@ -767,57 +767,57 @@ class TestCitationUtils:
     def test_core_citation_tracker(self):
         """Test the core CitationTracker class functionality."""
         tracker = CitationTracker()
-        
+
         # Test initial state
         assert len(tracker.processed_spans) == 0, "Should start with empty citation spans"
-        
+
         # Test adding a new span
         assert tracker.is_new_span("abc1234", (10, 20)), "First span should be considered new"
         assert "abc1234" in tracker.processed_spans, "Citation ID should be in processed_spans"
         assert (10, 20) in tracker.processed_spans["abc1234"], "Span should be recorded"
-        
+
         # Test adding a duplicate span
         assert not tracker.is_new_span("abc1234", (10, 20)), "Duplicate span should not be considered new"
         assert len(tracker.processed_spans["abc1234"]) == 1, "Duplicate span should not be added again"
-        
+
         # Test adding a new span for the same citation
         assert tracker.is_new_span("abc1234", (30, 40)), "Different span for same citation should be new"
         assert len(tracker.processed_spans["abc1234"]) == 2, "New span should be added"
         assert (30, 40) in tracker.processed_spans["abc1234"], "New span should be recorded"
-        
+
         # Test get_all_spans
         all_spans = tracker.get_all_citation_spans()
         assert "abc1234" in all_spans, "Citation ID should be in all spans"
         assert len(all_spans["abc1234"]) == 2, "Should have 2 spans for the citation"
-    
+
     def test_core_citation_tracker_edge_cases(self):
         """Test edge cases for the core CitationTracker class."""
         tracker = CitationTracker()
-        
+
         # Test with empty or invalid inputs
         assert not tracker.is_new_span("", (10, 20)), "Empty citation ID should not be tracked"
         assert not tracker.is_new_span(None, (10, 20)), "None citation ID should not be tracked"
         assert tracker.is_new_span("abc1234", (-5, 20)), "Negative start position should be accepted"
         assert tracker.is_new_span("abc1234", (30, 20)), "End before start should be accepted (implementation dependent)"
-        
+
         # Test overlapping spans
         assert tracker.is_new_span("def5678", (10, 30)), "First overlapping span should be new"
         assert tracker.is_new_span("def5678", (20, 40)), "Second overlapping span should be new"
         assert len(tracker.processed_spans["def5678"]) == 2, "Both overlapping spans should be recorded"
-        
+
         # Test with very large spans
         assert tracker.is_new_span("large", (0, 10000)), "Very large span should be tracked"
         assert (0, 10000) in tracker.processed_spans["large"], "Large span should be recorded correctly"
-        
+
         # Test get_all_spans with multiple citations
         all_spans = tracker.get_all_citation_spans()
         assert len(all_spans) >= 3, "Should have at least 3 different citation IDs"
         # Empty citation ID won't be included since we properly reject them in is_new_span
-    
+
     def test_find_new_citation_spans(self):
         """Test the function that finds new citation spans in text."""
         tracker = CitationTracker()
-        
+
         # First text with citations
         text = "This is a text with citation [abc1234]."
         new_spans1 = find_new_citation_spans(text, tracker)
@@ -826,40 +826,40 @@ class TestCitationUtils:
         citation_id, start, end = new_spans1[0]
         assert citation_id in tracker.processed_spans, "Citation ID should be tracked"
         assert (start, end) in tracker.processed_spans[citation_id], "Span should be tracked"
-        
+
         # Duplicate span in new text
         text2 = text  # Same text with same citation
         new_spans2 = find_new_citation_spans(text2, tracker)
         assert new_spans2 == [], "Should not find duplicate spans"
-        
+
         # Text with new citation
         text3 = "This is another text with a new citation [def5678]."
         new_spans3 = find_new_citation_spans(text3, tracker)
         assert len(new_spans3) == 1, "Should find one new span"
         assert new_spans3[0][0] == "def5678", "New citation ID should match"
-        
+
         # Text with both old and new citations
         text4 = "Text with both [abc1234] and [ghi9012]."
         new_spans4 = find_new_citation_spans(text4, tracker)
         assert len(new_spans4) == 1, "Should only find the new span"
         assert new_spans4[0][0] == "ghi9012", "Only new citation ID should be found"
-        
+
     def test_find_new_citation_spans_edge_cases(self):
         """Test edge cases for finding new citation spans."""
         tracker = CitationTracker()
-        
+
         # Empty text
         new_spans1 = find_new_citation_spans("", tracker)
         assert new_spans1 == [], "Should return empty list for empty text"
-        
+
         # Text without citations
         new_spans2 = find_new_citation_spans("This text has no citations or brackets.", tracker)
         assert new_spans2 == [], "Should return empty list for text without citations"
-        
+
         # None input
         new_spans3 = find_new_citation_spans(None, tracker)
         assert new_spans3 == [], "Should handle None input gracefully and return empty list"
-        
+
         # Multiple citations in one text
         text = "Text with multiple citations [abc1234] and [def5678] and [ghi9012]."
         new_spans = find_new_citation_spans(text, tracker)
@@ -878,35 +878,35 @@ class TestCitationUtils:
         for i, citation in enumerate(citations):
             text += f"Citation {i+1}: [{citation}]. "
         text += "End of text."
-        
+
         # Extract all citations
         extracted = extract_citations(text)
         assert len(extracted) == 100, "Should extract all 100 citations"
-        
+
         # Extract all spans
         spans = extract_citation_spans(text)
         assert len(spans) == 100, "Should extract all 100 spans"
-        
+
         # Test find_new_citation_spans with a tracker
         tracker = CitationTracker()
         new_spans = find_new_citation_spans(text, tracker)
         assert len(new_spans) == 100, "Should find all 100 spans as new"
-        
+
         # Test finding spans in chunks (simulating streaming)
         chunk_size = len(text) // 10
         tracker2 = CitationTracker()
         total_new_spans = 0
-        
+
         for i in range(10):
             start = i * chunk_size
             end = start + chunk_size
             if i == 9:  # Last chunk
                 end = len(text)
-            
+
             chunk = text[start:end]
             new_spans_in_chunk = find_new_citation_spans(chunk, tracker2, start_offset=start)
             total_new_spans += len(new_spans_in_chunk)
-        
+
         # We might not get exactly 100 because citations could be split across chunks
         # But we should get a reasonable number
         assert total_new_spans > 50, "Should find majority of spans even in chunks"
@@ -915,7 +915,7 @@ class TestCitationUtils:
     def test_streaming_citation_handling(self):
         """Test citation handling with simulated streaming updates."""
         tracker = CitationTracker()
-        
+
         # Simulate a streaming scenario where text comes in chunks
         chunks = [
             "This is the first chunk ",
@@ -924,14 +924,14 @@ class TestCitationUtils:
             "This is the third chunk with another citation [def5678] ",
             "and the first citation again [abc1234] in a new position."
         ]
-        
+
         all_text = ""
         total_spans_found = 0
-        
+
         for i, chunk in enumerate(chunks):
             chunk_start = len(all_text)
             all_text += chunk
-            
+
             # For streaming, we need to extract citation spans from the chunk
             # and check if they are new in the context of the accumulated text
             pattern = r'\[([\w]{7,8})\]'
@@ -939,24 +939,24 @@ class TestCitationUtils:
                 citation_id = match.group(1)
                 start = match.start() + chunk_start
                 end = match.end() + chunk_start
-                
+
                 # Check if this span is new for this citation ID
                 if tracker.is_new_span(citation_id, (start, end)):
                     total_spans_found += 1
-        
+
         # Check final state
         assert "abc1234" in tracker.processed_spans, "First citation should be tracked"
         assert "def5678" in tracker.processed_spans, "Second citation should be tracked"
         assert len(tracker.processed_spans["abc1234"]) == 2, "First citation should have 2 spans"
         assert len(tracker.processed_spans["def5678"]) == 1, "Second citation should have 1 span"
         assert total_spans_found == 3, "Should have found 3 spans in total"
-    
+
     def test_malformed_citations(self):
         """Test handling of malformed or partial citations."""
         # Various malformed citation patterns
         text = """
         This text has citations with issues:
-        - Missing end bracket [abc1234 
+        - Missing end bracket [abc1234
         - Missing start bracket def5678]
         - Wrong format [abc123] (too short)
         - Wrong format [abcdefghi] (too long)
@@ -964,17 +964,17 @@ class TestCitationUtils:
         - Empty brackets []
         - Non-alphanumeric [abc@123]
         """
-        
+
         # Extract citations
         citations = extract_citations(text)
         assert len(citations) == 1, "Should only extract the one valid citation"
         assert citations[0] == "abc1234", "Valid citation should be extracted"
-        
+
         # Extract spans
         spans = extract_citation_spans(text)
         assert len(spans) == 1, "Should only extract span for the valid citation"
         assert "abc1234" in spans, "Valid citation span should be extracted"
-        
+
         # Test with the tracker
         tracker = CitationTracker()
         new_spans = find_new_citation_spans(text, tracker)
@@ -987,24 +987,24 @@ def find_new_citation_spans(text, tracker, start_offset=0):
     """Find new citation spans in text that haven't been processed yet."""
     if text is None or text == "":
         return []
-        
+
     new_spans = []
     pattern = r'\[([\w]{7,8})\]'
-    
+
     # Get citation IDs that have already been processed
     previously_seen_ids = set(tracker.processed_spans.keys())
-    
+
     # Find all citations in the text
     for match in re.finditer(pattern, text):
         citation_id = match.group(1)
         start = match.start() + start_offset
         end = match.end() + start_offset
-        
+
         # Filter out citation IDs we've seen before
         # For this test, we only want to return entirely new citation IDs
         if citation_id not in previously_seen_ids:
             # Check if this specific span is new
             if tracker.is_new_span(citation_id, (start, end)):
                 new_spans.append((citation_id, start, end))
-            
+
     return new_spans
