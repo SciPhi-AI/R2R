@@ -1,8 +1,8 @@
 import uuid
-from typing import AsyncGenerator
 
 import pytest
 
+from typing import AsyncGenerator, Generator
 from r2r import R2RAsyncClient, R2RClient
 
 
@@ -173,26 +173,31 @@ def test_collection(client: R2RClient, test_document):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def global_cleanup(client: R2RClient) -> None:
+def global_cleanup(client: R2RClient) -> None | Generator:
     """Global cleanup fixture that runs after all tests.
+    Cleans up any remaining documents and collections.
 
     Args:
         client: R2RClient instance with active superuser session
-
-    Note:
-        - Runs automatically at end of test session
-        - Deletes all remaining documents
-        - Uses existing authenticated client from session fixture
     """
     yield  # Let all tests run first
 
     try:
         # Clean up any leftover documents
-        response = client.documents.list()
-        if response and response.results:
-            for doc in response.results:
+        doc_response = client.documents.list()
+        if doc_response and doc_response.results:
+            for doc in doc_response.results:
                 try:
                     client.documents.delete(id=doc.id)
+                except R2RException:
+                    continue
+
+        # Clean up any leftover collections
+        coll_response = client.collections.list()
+        if coll_response and coll_response.results:
+            for coll in coll_response.results:
+                try:
+                    client.collections.delete(id=coll.id)
                 except R2RException:
                     continue
     except Exception as e:
