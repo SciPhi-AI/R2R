@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from typing import Generator
+from typing import AsyncGenerator
 from r2r import R2RException, R2RClient
 
 from core.base import AppConfig, DatabaseConfig, VectorQuantizationType
@@ -222,32 +222,40 @@ async def graphs_handler(db_provider):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def global_cleanup(client: R2RClient) -> None | Generator:
+async def global_cleanup(db_provider) -> None | AsyncGenerator:
     """Global cleanup fixture that runs after all tests.
-    Cleans up any remaining documents and collections.
+    Cleans up all test data from the database.
 
     Args:
-        client: R2RClient instance with active superuser session
+        db_provider: PostgresDatabaseProvider instance
     """
     yield  # Let all tests run first
 
     try:
-        # Clean up any leftover documents
-        doc_response = client.documents.list()
-        if doc_response and doc_response.results:
-            for doc in doc_response.results:
-                try:
-                    client.documents.delete(id=doc.id)
-                except R2RException:
-                    continue
+        connection_manager = db_provider.connection_manager
+        project_name = db_provider.project_name
 
-        # Clean up any leftover collections
-        coll_response = client.collections.list()
-        if coll_response and coll_response.results:
-            for coll in coll_response.results:
-                try:
-                    client.collections.delete(id=coll.id)
-                except R2RException:
-                    continue
+        # List of tables to clean up
+        tables = [
+            "documents",
+            "collections",
+            "chunks",
+            "conversations",
+            "request_log",
+            "users",
+            "users_api_keys",
+            "graphs_entities",
+            "prompts"
+        ]
+
+        # Clean up each table
+        for table in tables:
+            try:
+                await connection_manager.execute_query(
+                    f'TRUNCATE "{project_name}"."{table}" CASCADE;'
+                )
+            except Exception as e:
+                print(f"Warning during cleanup of {table}: {e}")
+
     except Exception as e:
         print(f"Global cleanup warning: {e}")
