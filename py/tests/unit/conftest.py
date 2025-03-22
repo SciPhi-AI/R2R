@@ -1,5 +1,8 @@
 # tests/conftest.py
 import os
+import json
+from datetime import datetime
+import uuid
 
 import pytest
 
@@ -120,86 +123,6 @@ async def graphs_handler(db_provider):
     dimension = db_provider.dimension
     quantization_type = db_provider.quantization_type
 
-    # If collections_handler is needed, you can depend on the collections_handler fixture
-    # or pass None if it's optional.
-    handler = PostgresGraphsHandler(
-        project_name=project_name,
-        connection_manager=connection_manager,
-        dimension=dimension,
-        quantization_type=quantization_type,
-        collections_handler=
-        None,  # if needed, or await collections_handler fixture
-    )
-    await handler.create_tables()
-    return handler
-
-
-@pytest.fixture
-async def limits_handler(db_provider):
-    project_name = db_provider.project_name
-    connection_manager = db_provider.connection_manager
-    config = db_provider.config
-
-    handler = PostgresLimitsHandler(
-        project_name=project_name,
-        connection_manager=connection_manager,
-        config=config,
-    )
-    await handler.create_tables()
-    # Optionally truncate
-    await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('request_log')};")
-    return handler
-
-
-@pytest.fixture
-async def users_handler(db_provider, crypto_provider):
-    project_name = db_provider.project_name
-    connection_manager = db_provider.connection_manager
-
-    handler = PostgresUserHandler(
-        project_name=project_name,
-        connection_manager=connection_manager,
-        crypto_provider=crypto_provider,
-    )
-    await handler.create_tables()
-
-    # Optionally clean up users table before each test
-    await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('users')} CASCADE;")
-    await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('users_api_keys')} CASCADE;")
-
-    return handler
-
-
-@pytest.fixture
-async def prompt_handler(db_provider):
-    """Returns an instance of PostgresPromptsHandler, creating the necessary
-    tables first."""
-    # from core.providers.database.postgres_prompts import PostgresPromptsHandler
-
-    project_name = db_provider.project_name
-    connection_manager = db_provider.connection_manager
-
-    handler = PostgresPromptsHandler(
-        project_name=project_name,
-        connection_manager=connection_manager,
-        # You can specify a local prompt directory if desired
-        prompt_directory=None,
-    )
-    # Create necessary tables and do initial prompt load
-    await handler.create_tables()
-    return handler
-
-
-@pytest.fixture
-async def graphs_handler(db_provider):
-    project_name = db_provider.project_name
-    connection_manager = db_provider.connection_manager
-    dimension = db_provider.dimension
-    quantization_type = db_provider.quantization_type
-
     # Optionally ensure 'collection_ids' column exists on your table(s), e.g.:
     create_col_sql = f"""
         ALTER TABLE "{project_name}"."graphs_entities"
@@ -218,7 +141,6 @@ async def graphs_handler(db_provider):
     return handler
 
 # Citation testing fixtures and utilities
-import json
 import re
 from unittest.mock import MagicMock, AsyncMock
 from typing import Tuple, Any, AsyncGenerator
@@ -498,281 +420,389 @@ from core.utils import extract_citation_spans, find_new_citation_spans
 # Add MockPostgresConnectionManager and MockPostgresPromptsHandler for testing prompts
 class MockPostgresConnectionManager:
     """Mock connection manager for testing."""
-    
+
     def __init__(self):
-        """Initialize with in-memory database."""
-        self.db = {'prompts': {}}
-        self.next_id = 1
-    
-    async def execute_query(self, query, params=None):
-        """Mock execute query."""
-        # For simplicity, we'll just return success for all queries
-        if 'DELETE' in query and params and len(params) > 0:
-            name = params[0]
-            if name in self.db['prompts']:
-                del self.db['prompts'][name]
-        return True
-    
+        """Initialize the connection manager."""
+        self.log = []
+        self.db = {
+            "prompts": {},
+        }
+
     async def fetchrow_query(self, query, params=None):
         """Mock fetchrow query."""
-        # Parse the query to determine what to return
-        if 'INSERT INTO' in query and 'RETURNING' in query:
-            # Handle insert with returning
-            prompt_id = self.next_id
-            self.next_id += 1
+        self.log.append({"type": "fetchrow", "query": query, "params": params})
+
+        # Handle INSERT or UPDATE operations
+        if "INSERT" in query.upper() or "UPDATE" in query.upper():
+            if "prompts" in query:
+                now = datetime.now()
+                
+                # Handle different query types
+                if "INSERT" in query.upper():
+                    # Handle INSERT queries (add_prompt)
+                    name = params[0]
+                    template = params[1]
+                    input_types = params[2]
+                    
+                    # Create or update in mock DB
+                    if name not in self.db["prompts"]:
+                        self.db["prompts"][name] = {
+                            "name": name,
+                            "template": template,
+                            "input_types": input_types,
+                            "created_at": now,
+                            "updated_at": now,
+                        }
+                    else:
+                        self.db["prompts"][name]["template"] = template
+                        self.db["prompts"][name]["input_types"] = input_types
+                        self.db["prompts"][name]["updated_at"] = now
+                    
+                    return self.db["prompts"][name]
+                
+                elif "UPDATE" in query.upper():
+                    # Handle UPDATE queries (update_prompt)
+                    if "SET template" in query and "input_types" not in query:
+                        # Only updating template
+                        template = params[0]
+                        name = params[1]
+                        
+                        if name in self.db["prompts"]:
+                            self.db["prompts"][name]["template"] = template
+                            self.db["prompts"][name]["updated_at"] = now
+                            return self.db["prompts"][name]
+                    
+                    elif "SET input_types" in query and "template" not in query:
+                        # Only updating input_types
+                        input_types = params[0]
+                        name = params[1]
+                        
+                        if name in self.db["prompts"]:
+                            self.db["prompts"][name]["input_types"] = input_types
+                            self.db["prompts"][name]["updated_at"] = now
+                            return self.db["prompts"][name]
+                    
+                    elif "SET template" in query and "input_types" in query:
+                        # Updating both template and input_types
+                        template = params[0]
+                        input_types = params[1]
+                        name = params[2]
+                        
+                        if name in self.db["prompts"]:
+                            self.db["prompts"][name]["template"] = template
+                            self.db["prompts"][name]["input_types"] = input_types
+                            self.db["prompts"][name]["updated_at"] = now
+                            return self.db["prompts"][name]
             
-            # For the prompts table insert
-            if params and len(params) >= 3:
+            # Handle DELETE operations
+            elif "DELETE" in query.upper():
+                if "prompts" in query:
+                    name = params[0]
+                    if name in self.db["prompts"]:
+                        del self.db["prompts"][name]
+                    return {"deleted": True}
+
+        # Handle SELECT operations
+        elif "SELECT" in query.upper():
+            if "prompts" in query and "WHERE name" in query:
                 name = params[0]
-                template = params[1]
-                input_types = params[2]
-                
-                # Store in our mock DB
-                self.db['prompts'][name] = {
-                    'id': prompt_id,
-                    'name': name,
-                    'template': template,
-                    'input_types': input_types,
-                    'created_at': '2023-01-01T00:00:00Z',
-                    'updated_at': '2023-01-01T00:00:00Z'
-                }
-                
-                return self.db['prompts'][name]
-        
-        elif 'UPDATE' in query and 'RETURNING' in query:
-            # Handle update with returning
-            if params and len(params) >= 2:
-                # Last param is usually the name in UPDATE queries
-                name = params[-1]
-                
-                if name in self.db['prompts']:
-                    # Update the prompt
-                    prompt = self.db['prompts'][name]
-                    
-                    # Handle different parameter formats based on the query
-                    if 'template' in query.lower() and 'input_types' in query.lower():
-                        # Update both template and input_types
-                        prompt['template'] = params[0]
-                        prompt['input_types'] = params[1]
-                    elif 'template' in query.lower():
-                        # Update only template
-                        prompt['template'] = params[0]
-                    elif 'input_types' in query.lower():
-                        # Update only input_types
-                        prompt['input_types'] = params[0]
-                    
-                    prompt['updated_at'] = '2023-01-01T00:00:01Z'
-                    return prompt
-        
-        elif 'SELECT' in query:
-            # Handle select queries
-            if 'FROM' in query and 'WHERE' in query and params and len(params) > 0:
-                value = params[0]
-                
-                if value in self.db['prompts']:
-                    return self.db['prompts'][value]
+                if name in self.db["prompts"]:
+                    return self.db["prompts"][name]
             
+            # Handle listing all prompts
+            elif "prompts" in query and "WHERE name" not in query:
+                return list(self.db["prompts"].values())
+
         return None
-    
+
     async def fetch_query(self, query, params=None):
-        """Mock fetch query that returns multiple rows."""
-        if 'SELECT' in query and 'FROM' in query:
-            # Return all prompts
-            return list(self.db['prompts'].values())
+        """Mock fetch query."""
+        self.log.append({"type": "fetch", "query": query, "params": params})
+        
+        if "SELECT" in query.upper() and "prompts" in query:
+            if params and len(params) > 0:
+                # Filter by name if provided
+                name = params[0]
+                if name in self.db["prompts"]:
+                    return [self.db["prompts"][name]]
+                return []
+            else:
+                # Return all prompts
+                return list(self.db["prompts"].values())
         
         return []
+
+    async def execute_query(self, query, params=None):
+        """Mock execute query."""
+        self.log.append({"type": "execute", "query": query, "params": params})
+        
+        if "CREATE TABLE" in query.upper():
+            return {"created": True}
+        
+        elif "DELETE" in query.upper():
+            if "prompts" in query:
+                name = params[0]
+                if name in self.db["prompts"]:
+                    del self.db["prompts"][name]
+                return {"deleted": True}
+        
+        return None
+
+    async def close(self):
+        """Mock close."""
+        pass
+
+
+class MockPostgresPromptsHandler:
+    """Mock PostgreSQL prompts handler for testing."""
+
+    def __init__(self, project_name, connection_manager):
+        """Initialize the handler."""
+        self.project_name = project_name
+        self.connection_manager = connection_manager
+        self.prompts = {}  # In-memory store of prompts
+        self.cache = {}    # Cache for formatted prompts
+        self._template_cache = {}  
+        self._prompt_cache = {}    # For compatibility with existing tests
+        
+    def _get_table_name(self, table):
+        """Get table name."""
+        return f"{self.project_name}.{table}"
+        
+    async def create_tables(self):
+        """Create the necessary tables."""
+        # Simply record this was called - no actual table creation needed
+        await self.connection_manager.execute_query(
+            "CREATE TABLE IF NOT EXISTS..."
+        )
+        
+    def _cache_key(self, prompt_name, inputs):
+        """Generate a cache key for a prompt and inputs."""
+        if not inputs:
+            return prompt_name
+        inputs_str = json.dumps(inputs, sort_keys=True)
+        return f"{prompt_name}:{inputs_str}"
+    
+    async def add_prompt(self, name, template, input_types, preserve_existing=False):
+        """Add a prompt to the database."""
+        # Check if prompt exists and we should preserve it
+        if preserve_existing and name in self.prompts:
+            return
+            
+        # Insert or update in database
+        query = f"""
+            INSERT INTO {self._get_table_name('prompts')} (name, template, input_types)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (name) 
+            DO UPDATE SET template = $2, input_types = $3, updated_at = NOW()
+            RETURNING *
+        """
+        
+        result = await self.connection_manager.fetchrow_query(
+            query, [name, template, input_types]
+        )
+        
+        if result:
+            # Update in-memory state
+            self.prompts[name] = {
+                "name": name,
+                "template": template,
+                "input_types": input_types,
+                "created_at": result.get("created_at", datetime.now()),
+                "updated_at": result.get("updated_at", datetime.now()),
+            }
+            
+            # Clear any cached formatted prompts for this name
+            self._clear_prompt_from_cache(name)
+    
+    def _clear_prompt_from_cache(self, prompt_name):
+        """Clear all cached entries for a specific prompt."""
+        # Clear from cache dictionary
+        keys_to_remove = []
+        for key in self.cache:
+            if key == prompt_name or key.startswith(f"{prompt_name}:"):
+                keys_to_remove.append(key)
+        
+        for key in keys_to_remove:
+            del self.cache[key]
+            
+        # Also clear from _prompt_cache for test compatibility
+        prompt_cache_keys = []
+        for key in self._prompt_cache:
+            if key.startswith(f"{prompt_name}:"):
+                prompt_cache_keys.append(key)
+                
+        for key in prompt_cache_keys:
+            del self._prompt_cache[key]
+            
+        # Remove from _template_cache too
+        if prompt_name in self._template_cache:
+            del self._template_cache[prompt_name]
+    
+    async def update_prompt(self, name, template=None, input_types=None):
+        """Update a prompt in the database."""
+        if name not in self.prompts:
+            raise ValueError(f"Prompt template '{name}' not found")
+            
+        # Determine what to update
+        if template is not None and input_types is not None:
+            # Update both template and input_types
+            query = f"""
+                UPDATE {self._get_table_name('prompts')} 
+                SET template = $1, input_types = $2 
+                WHERE name = $3 
+                RETURNING *
+            """
+            params = [template, input_types, name]
+        elif template is not None:
+            # Update only template
+            query = f"""
+                UPDATE {self._get_table_name('prompts')} 
+                SET template = $1 
+                WHERE name = $2 
+                RETURNING *
+            """
+            params = [template, name]
+        elif input_types is not None:
+            # Update only input_types
+            query = f"""
+                UPDATE {self._get_table_name('prompts')} 
+                SET input_types = $1 
+                WHERE name = $2 
+                RETURNING *
+            """
+            params = [input_types, name]
+        else:
+            # Nothing to update
+            return
+            
+        # Execute query
+        result = await self.connection_manager.fetchrow_query(query, params)
+        
+        if result:
+            # Update in-memory state with the changes
+            if template is not None:
+                self.prompts[name]["template"] = template
+                # Update template cache for test compatibility
+                self._template_cache[name] = {"template": template}
+            if input_types is not None:
+                self.prompts[name]["input_types"] = input_types
+            self.prompts[name]["updated_at"] = datetime.now()
+            
+            # Clear cache entries for this prompt
+            self._clear_prompt_from_cache(name)
+    
+    async def delete_prompt(self, name):
+        """Delete a prompt from the database."""
+        if name not in self.prompts:
+            return False
+            
+        # Delete from database
+        query = f"""
+            DELETE FROM {self._get_table_name('prompts')} 
+            WHERE name = $1
+            RETURNING *
+        """
+        
+        result = await self.connection_manager.execute_query(query, [name])
+        
+        # Delete from in-memory state if successful
+        if result:
+            if name in self.prompts:
+                del self.prompts[name]
+            self._clear_prompt_from_cache(name)
+            return True
+        return False
+    
+    async def get_prompt(self, name):
+        """Get a prompt from the database."""
+        if name in self.prompts:
+            return self.prompts[name]
+            
+        # Try to get from database
+        query = f"""
+            SELECT * FROM {self._get_table_name('prompts')} WHERE name = $1
+        """
+        
+        result = await self.connection_manager.fetchrow_query(query, [name])
+        
+        if result:
+            # Update in-memory state
+            self.prompts[name] = result
+            return result
+            
+        raise ValueError(f"Prompt template '{name}' not found")
+        
+    async def list_prompts(self):
+        """List all prompts."""
+        # Get from database to ensure we have latest
+        query = f"""
+            SELECT * FROM {self._get_table_name('prompts')}
+        """
+        
+        results = await self.connection_manager.fetch_query(query)
+        
+        # Update in-memory state
+        for result in results:
+            self.prompts[result["name"]] = result
+            
+        return list(self.prompts.values())
+    
+    async def load_prompts_from_yaml(self, yaml_content):
+        """Load prompts from a YAML string."""
+        # Just a stub for testing
+        pass
+        
+    async def get_cached_prompt(self, prompt_name, inputs=None, bypass_cache=False):
+        """Get a formatted prompt, using cache if available."""
+        if inputs is None:
+            inputs = {}
+        
+        # Generate cache key
+        cache_key = self._cache_key(prompt_name, inputs)
+        
+        # Check cache if not bypassing
+        if not bypass_cache and cache_key in self.cache:
+            return self.cache[cache_key]
+        
+        # Get prompt data from the DB if bypassing cache
+        if bypass_cache:
+            query = f"""
+                SELECT * FROM {self._get_table_name('prompts')} WHERE name = $1
+            """
+            db_data = await self.connection_manager.fetchrow_query(query, [prompt_name])
+            if db_data:
+                template = db_data["template"]
+                # Update template cache for test compatibility
+                self._template_cache[prompt_name] = {"template": template}
+            else:
+                raise ValueError(f"Prompt template '{prompt_name}' not found")
+        else:
+            # Get from in-memory store
+            if prompt_name not in self.prompts:
+                raise ValueError(f"Prompt template '{prompt_name}' not found")
+            template = self.prompts[prompt_name]["template"]
+            # Update template cache for test compatibility
+            self._template_cache[prompt_name] = {"template": template}
+        
+        # Format the template
+        formatted = template
+        if inputs:
+            formatted = template.format(**inputs)
+        
+        # Cache the result
+        self.cache[cache_key] = formatted
+        # Also update prompt cache for test compatibility
+        self._prompt_cache[cache_key] = formatted
+        
+        return formatted
 
 
 @pytest.fixture
 async def mock_connection_manager():
-    """Returns a mock connection manager."""
+    """Returns a mock connection manager for testing."""
     return MockPostgresConnectionManager()
 
-
-from core.providers.database.prompts_handler import PostgresPromptsHandler
-
-# We extend the real handler, but override the methods that interact with the DB
-class MockPostgresPromptsHandler(PostgresPromptsHandler):
-    """Mock prompts handler for testing with in-memory storage."""
-    
-    def __init__(self, project_name, connection_manager, prompt_directory=None):
-        """Initialize the handler with mock components."""
-        super().__init__(project_name, connection_manager, prompt_directory)
-        self._template_cache = {}
-        self._prompt_cache = {}
-        self.prompts = {}
-    
-    async def create_tables(self):
-        """Mock create tables."""
-        # No need to create real tables
-        return
-    
-    async def _load_prompts(self):
-        """Mock load prompts from database."""
-        # Just initialize an empty dict
-        self.prompts = {}
-        return self.prompts
-        
-    async def add_prompt(self, name, template, input_types, preserve_existing=False):
-        """Add or update a prompt in both in-memory store and database."""
-        # Check if a prompt with the given name already exists
-        existing_prompt = self.prompts.get(name)
-        
-        if existing_prompt and preserve_existing:
-            # Skip adding if it already exists and we're preserving
-            return
-            
-        # Insert or update the prompt in the database
-        result = await self.connection_manager.fetchrow_query(
-            "INSERT INTO prompts (name, template, input_types) VALUES ($1, $2, $3) RETURNING *",
-            [name, template, input_types]
-        )
-        
-        # Update the in-memory dictionary
-        self.prompts[name] = {
-            "name": name,
-            "template": template,
-            "input_types": input_types
-        }
-        
-        # Clear any cached entries
-        if name in self._template_cache:
-            del self._template_cache[name]
-            
-        # Also clear formatted prompt cache
-        keys_to_delete = []
-        for key in self._prompt_cache:
-            if key.startswith(f"{name}:"):
-                keys_to_delete.append(key)
-                
-        for key in keys_to_delete:
-            del self._prompt_cache[key]
-    
-    async def update_prompt(self, name, template=None, input_types=None):
-        """Update a prompt in both the database and in-memory."""
-        if name not in self.prompts:
-            raise ValueError(f"Prompt template '{name}' not found")
-            
-        current = self.prompts[name]
-        update_template = template if template is not None else current["template"]
-        update_input_types = input_types if input_types is not None else current["input_types"]
-        
-        # Update the database
-        if template is not None and input_types is not None:
-            result = await self.connection_manager.fetchrow_query(
-                "UPDATE prompts SET template=$1, input_types=$2 WHERE name=$3 RETURNING *",
-                [update_template, update_input_types, name]
-            )
-        elif template is not None:
-            result = await self.connection_manager.fetchrow_query(
-                "UPDATE prompts SET template=$1 WHERE name=$2 RETURNING *",
-                [update_template, name]
-            )
-        elif input_types is not None:
-            result = await self.connection_manager.fetchrow_query(
-                "UPDATE prompts SET input_types=$1 WHERE name=$2 RETURNING *",
-                [update_input_types, name]
-            )
-            
-        # Update the in-memory dict
-        self.prompts[name] = {
-            "name": name,
-            "template": update_template,
-            "input_types": update_input_types
-        }
-        
-        # Clear any cached templates
-        if name in self._template_cache:
-            del self._template_cache[name]
-            
-        # Clear any cached formatted prompts
-        keys_to_delete = []
-        for key in self._prompt_cache:
-            if key.startswith(f"{name}:"):
-                keys_to_delete.append(key)
-                
-        for key in keys_to_delete:
-            del self._prompt_cache[key]
-    
-    async def get_prompt(self, name):
-        """Get a prompt from in-memory dictionary or raises ValueError."""
-        if name not in self.prompts:
-            raise ValueError(f"Prompt template '{name}' not found")
-        return self.prompts[name]
-    
-    async def delete_prompt(self, name):
-        """Delete a prompt from both the database and in-memory state."""
-        if name not in self.prompts:
-            raise ValueError(f"Prompt template '{name}' not found")
-            
-        # Delete from the database
-        await self.connection_manager.execute_query(
-            "DELETE FROM prompts WHERE name=$1",
-            [name]
-        )
-        
-        # Remove from in-memory dictionary
-        del self.prompts[name]
-        
-        # Clear from template cache
-        if name in self._template_cache:
-            del self._template_cache[name]
-            
-        # Clear from prompt cache
-        keys_to_delete = []
-        for key in self._prompt_cache:
-            if key.startswith(f"{name}:"):
-                keys_to_delete.append(key)
-                
-        for key in keys_to_delete:
-            del self._prompt_cache[key]
-    
-    def _cache_key(self, prompt_name, inputs):
-        """Generate a cache key for the prompt with inputs."""
-        inputs_str = ",".join(f"{k}:{v}" for k, v in sorted(inputs.items()))
-        return f"{prompt_name}:{inputs_str}"
-    
-    async def get_cached_prompt(self, prompt_name, inputs=None, bypass_cache=False):
-        """Get a cached formatted prompt or generate one."""
-        if inputs is None:
-            inputs = {}
-            
-        # Generate cache key
-        cache_key = self._cache_key(prompt_name, inputs)
-        
-        # Check prompt cache
-        if not bypass_cache and cache_key in self._prompt_cache:
-            return self._prompt_cache[cache_key]
-            
-        # Check if template is cached
-        if prompt_name not in self._template_cache or bypass_cache:
-            # If we're bypassing cache, we need to query the database directly
-            if bypass_cache:
-                # Get the template directly from the connection manager to simulate a DB query
-                db_result = self.connection_manager.db['prompts'].get(prompt_name)
-                if db_result:
-                    template = db_result['template']
-                    input_types = db_result['input_types']
-                    self._template_cache[prompt_name] = {"template": template, "input_types": input_types}
-                else:
-                    # If not found in DB, raise error
-                    raise ValueError(f"Prompt template '{prompt_name}' not found")
-            else:
-                # Load the template from our in-memory store
-                prompt_info = await self.get_prompt(prompt_name)
-                self._template_cache[prompt_name] = prompt_info
-        
-        # Get template and format it
-        template_info = self._template_cache[prompt_name]
-        template = template_info["template"]
-        
-        # Format the template with inputs
-        formatted = template.format(**inputs)
-        
-        # Cache the formatted prompt
-        self._prompt_cache[cache_key] = formatted
-        
-        return formatted
 
 @pytest.fixture
 async def mock_prompt_handler(mock_connection_manager):
@@ -780,7 +810,6 @@ async def mock_prompt_handler(mock_connection_manager):
     handler = MockPostgresPromptsHandler(
         project_name="test_project",
         connection_manager=mock_connection_manager,
-        prompt_directory=None,
     )
     # Initialize without connecting to DB
     await handler.create_tables()
