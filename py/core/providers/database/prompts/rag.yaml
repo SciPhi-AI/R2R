@@ -26,4 +26,3 @@ rag:
   input_types:
     query: str
     context: str
-  overwrite_on_diff: true

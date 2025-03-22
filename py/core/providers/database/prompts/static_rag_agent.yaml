@@ -12,5 +12,3 @@ static_rag_agent:
 
   input_types:
     date: str
-
-  overwrite_on_diff: true

@@ -141,8 +141,19 @@ class CacheablePromptHandler(Handler):
         prompt_override: Optional[str] = None,
         bypass_cache: bool = False,
     ) -> str:
+        """Get a formatted prompt with caching.
+        
+        Args:
+            prompt_name: Name of the prompt to retrieve
+            inputs: Optional dictionary of inputs to format the prompt with
+            prompt_override: Optional override for the prompt template
+            bypass_cache: If True, bypass the cache and fetch from database
+            
+        Returns:
+            Formatted prompt string
+        """
+        # Direct override case - no caching or DB lookup needed
         if prompt_override:
-            # If the user gave us a direct override, use it.
             if inputs:
                 try:
                     return prompt_override.format(**inputs)
@@ -150,31 +161,61 @@ class CacheablePromptHandler(Handler):
                     return prompt_override
             return prompt_override
 
+        # Generate cache key
         cache_key = self._cache_key(prompt_name, inputs)
 
-        # If not bypassing, try returning from the prompt-level cache
+        # Try cache first if not bypassing
         if not bypass_cache:
             cached = self._prompt_cache.get(cache_key)
             if cached is not None:
                 logger.debug(f"Prompt cache hit: {cache_key}")
                 return cached
 
-        logger.debug(
-            "Prompt cache miss or bypass. Retrieving from DB or template cache."
+        # Get template data - either from cache or DB
+        template_info = await self._get_template_info(prompt_name, bypass_template_cache=bypass_cache)
+        
+        # Format the prompt
+        result = self._format_prompt(
+            template_info["template"], 
+            inputs,
+            template_info["input_types"]
         )
-        # Notice the new parameter `bypass_template_cache` below
-        result = await self._get_prompt_impl(
-            prompt_name, inputs, bypass_template_cache=bypass_cache
-        )
+        
+        # Update cache
         self._prompt_cache.set(cache_key, result)
         return result
 
-    async def get_prompt(  # type: ignore
+    async def get_prompt(
         self,
         name: str,
         inputs: Optional[dict] = None,
         prompt_override: Optional[str] = None,
     ) -> dict:
+        """Get raw prompt data with metadata.
+        
+        Args:
+            name: Name of the prompt to retrieve
+            inputs: Optional inputs (unused in this method but kept for API consistency)
+            prompt_override: Optional override (unused in this method but kept for API consistency)
+            
+        Returns:
+            Dictionary with prompt data
+        """
+        # Check template cache first for efficiency
+        cached = self._template_cache.get(name)
+        if cached is not None and cached.get("id") is not None:
+            # If we have a complete cached prompt with all metadata, return it
+            if all(k in cached for k in ["id", "template", "input_types", "created_at", "updated_at"]):
+                return {
+                    "id": cached["id"],
+                    "name": name,
+                    "template": cached["template"],
+                    "input_types": cached["input_types"],
+                    "created_at": cached["created_at"],
+                    "updated_at": cached["updated_at"],
+                }
+        
+        # Fall back to database query
         query = f"""
         SELECT id, name, template, input_types, created_at, updated_at
         FROM {self._get_table_name("prompts")}
@@ -188,6 +229,15 @@ class CacheablePromptHandler(Handler):
         input_types = result["input_types"]
         if isinstance(input_types, str):
             input_types = json.loads(input_types)
+
+        # Cache the complete result for future use
+        self._template_cache.set(name, {
+            "id": result["id"],
+            "template": result["template"],
+            "input_types": input_types,
+            "created_at": result["created_at"],
+            "updated_at": result["updated_at"],
+        })
 
         return {
             "id": result["id"],
@@ -250,18 +300,16 @@ class CacheablePromptHandler(Handler):
         pass
 
     @abstractmethod
-    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:
-        """Get template info with caching."""
-        pass
-
-    @abstractmethod
-    async def _get_prompt_impl(
-        self,
-        prompt_name: str,
-        inputs: Optional[dict[str, Any]] = None,
-        bypass_template_cache: bool = False,
-    ) -> str:
-        """Implementation of prompt retrieval logic."""
+    async def _get_template_info(self, prompt_name: str, bypass_template_cache: bool = False) -> dict:
+        """Get template info with caching.
+        
+        Args:
+            prompt_name: Name of the prompt to retrieve
+            bypass_template_cache: If True, bypass the template cache
+            
+        Returns:
+            Dictionary with template info
+        """
         pass
 
 
@@ -321,6 +369,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                         "id": row["id"],
                         "template": row["template"],
                         "input_types": input_types,
+                        "created_at": row["created_at"],
+                        "updated_at": row["updated_at"],
                     },
                 )
             logger.debug(f"Loaded {len(results)} prompts from database")
@@ -331,11 +381,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
     async def _load_prompts_from_yaml_directory(
         self, default_overwrite_on_diff: bool = False
     ) -> None:
-        """Load prompts from YAML files in the specified directory.
-
-        :param default_overwrite_on_diff: If a YAML prompt does not specify
-            'overwrite_on_diff', we use this default.
-        """
+        """Load prompts from YAML files in the specified directory."""
         if not self.prompt_directory.is_dir():
             logger.warning(
                 f"Prompt directory not found: {self.prompt_directory}"
@@ -358,10 +404,6 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                         template = prompt_data.get("template")
                         input_types = prompt_data.get("input_types", {})
 
-                        # Decide on per-prompt overwrite behavior (or fallback)
-                        overwrite_on_diff = prompt_data.get(
-                            "overwrite_on_diff", default_overwrite_on_diff
-                        )
                         # Some logic to determine if we *should* modify
                         # For instance, preserve only if it has never been updated
                         # (i.e., created_at == updated_at).
@@ -385,8 +427,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                             name=name,
                             template=template,
                             input_types=input_types,
-                            preserve_existing=False,
-                            overwrite_on_diff=overwrite_on_diff,
+                            preserve_existing=not should_modify,
                         )
             except Exception as e:
                 logger.error(f"Error loading {yaml_file}: {e}")
@@ -396,82 +437,51 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         """Get the fully qualified table name."""
         return f"{self.project_name}.{base_name}"
 
-    # Implementation of abstract methods from CacheablePromptHandler
-    async def _get_prompt_impl(
-        self,
-        prompt_name: str,
-        inputs: Optional[dict[str, Any]] = None,
-        bypass_template_cache: bool = False,
-    ) -> str:
-        """Implementation of database prompt retrieval."""
-        # If we're bypassing the template cache, skip the cache lookup
+    async def _get_template_info(
+        self, prompt_name: str, bypass_template_cache: bool = False
+    ) -> dict:
+        """Get template info with caching.
+        
+        Args:
+            prompt_name: Name of the prompt to retrieve
+            bypass_template_cache: If True, bypass the template cache
+            
+        Returns:
+            Dictionary with template info
+        """
+        # Try cache first unless bypassing
         if not bypass_template_cache:
-            template_info = self._template_cache.get(prompt_name)
-            if template_info is not None:
-                logger.debug(f"Template cache hit: {prompt_name}")
-                # use that
-                return self._format_prompt(
-                    template_info["template"],
-                    inputs,
-                    template_info["input_types"],
-                )
+            cached = self._template_cache.get(prompt_name)
+            if cached is not None:
+                return cached
 
-        # If we get here, either no cache was found or bypass_cache is True
+        # Query database
         query = f"""
-        SELECT template, input_types
+        SELECT id, template, input_types, created_at, updated_at
         FROM {self._get_table_name("prompts")}
         WHERE name = $1;
         """
-        result = await self.connection_manager.fetchrow_query(
-            query, [prompt_name]
-        )
+
+        result = await self.connection_manager.fetchrow_query(query, [prompt_name])
 
         if not result:
             raise ValueError(f"Prompt template '{prompt_name}' not found")
 
-        template = result["template"]
+        # Ensure input_types is a dictionary
         input_types = result["input_types"]
         if isinstance(input_types, str):
             input_types = json.loads(input_types)
 
-        # Update template cache if not bypassing it
-        if not bypass_template_cache:
-            self._template_cache.set(
-                prompt_name, {"template": template, "input_types": input_types}
-            )
-
-        return self._format_prompt(template, inputs, input_types)
-
-    async def _get_template_info(self, prompt_name: str) -> Optional[dict]:  # type: ignore
-        """Get template info with caching."""
-        cached = self._template_cache.get(prompt_name)
-        if cached is not None:
-            return cached
-
-        query = f"""
-        SELECT template, input_types
-        FROM {self._get_table_name("prompts")}
-        WHERE name = $1;
-        """
-
-        result = await self.connection_manager.fetchrow_query(
-            query, [prompt_name]
-        )
-
-        if result:
-            # Ensure input_types is a dictionary
-            input_types = result["input_types"]
-            if isinstance(input_types, str):
-                input_types = json.loads(input_types)
-
-            template_info = {
-                "template": result["template"],
-                "input_types": input_types,
-            }
-            self._template_cache.set(prompt_name, template_info)
-            return template_info
-
-        return None
+        # Create and cache template info
+        template_info = {
+            "id": result["id"],
+            "template": result["template"],
+            "input_types": input_types,
+            "created_at": result["created_at"],
+            "updated_at": result["updated_at"],
+        }
+        self._template_cache.set(prompt_name, template_info)
+        return template_info
 
     async def _update_prompt_impl(
         self,
@@ -511,7 +521,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         UPDATE {self._get_table_name("prompts")}
         SET {", ".join(set_clauses)}
         WHERE name = $1
-        RETURNING id, template, input_types;
+        RETURNING id, template, input_types, created_at, updated_at;
         """
 
         try:
@@ -523,13 +533,35 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             if not result:
                 raise ValueError(f"Prompt template '{name}' not found")
 
-            # Update in-memory state
-            if name in self.prompts:
-                if template:
-                    self.prompts[name]["template"] = template
-                if input_types:
-                    self.prompts[name]["input_types"] = input_types
-                self.prompts[name]["updated_at"] = datetime.now().isoformat()
+            # Update in-memory state with all fields to ensure consistency
+            returned_input_types = result["input_types"]
+            if isinstance(returned_input_types, str):
+                returned_input_types = json.loads(returned_input_types)
+                
+            # If the prompt doesn't exist in memory yet, create it
+            if name not in self.prompts:
+                self.prompts[name] = {}
+                
+            # Update the prompt dictionary with all fields
+            self.prompts[name] = {
+                "id": result["id"],
+                "template": template if template else result["template"],
+                "input_types": input_types if input_types else returned_input_types,
+                "created_at": result["created_at"],
+                "updated_at": result["updated_at"],
+            }
+            
+            # Also update the template cache with fresh data
+            self._template_cache.set(
+                name,
+                {
+                    "id": result["id"],
+                    "template": template if template else result["template"],
+                    "input_types": input_types if input_types else returned_input_types,
+                    "created_at": result["created_at"],
+                    "updated_at": result["updated_at"],
+                },
+            )
 
         except Exception as e:
             logger.error(f"Failed to update prompt {name}: {str(e)}")
@@ -572,14 +604,10 @@ class PostgresPromptsHandler(CacheablePromptHandler):
         template: str,
         input_types: dict[str, str],
         preserve_existing: bool = False,
-        overwrite_on_diff: bool = False,  # <-- new param
     ) -> None:
         """Add or update a prompt.
 
         If `preserve_existing` is True and prompt already exists, we skip updating.
-
-        If `overwrite_on_diff` is True and an existing prompt differs from what is provided,
-        we overwrite and log a warning. Otherwise, we skip if the prompt differs.
         """
         # Check if prompt is in-memory
         existing_prompt = self.prompts.get(name)
@@ -590,26 +618,6 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                 f"Preserving existing prompt: {name}, skipping update."
             )
             return
-
-        # If an existing prompt is found, check for diffs
-        if existing_prompt:
-            existing_template = existing_prompt["template"]
-            existing_input_types = existing_prompt["input_types"]
-
-            # If there's a difference in template or input_types, decide to overwrite or skip
-            if (
-                existing_template != template
-                or existing_input_types != input_types
-            ):
-                if overwrite_on_diff:
-                    logger.warning(
-                        f"Overwriting existing prompt '{name}' due to detected diff."
-                    )
-                else:
-                    logger.info(
-                        f"Prompt '{name}' differs from existing but overwrite_on_diff=False. Skipping update."
-                    )
-                    return
 
         prompt_id = generate_default_prompt_id(name)
 
@@ -635,6 +643,7 @@ class PostgresPromptsHandler(CacheablePromptHandler):
             query, [prompt_id, name, template, input_types_json]
         )
 
+        # Update the in-memory dictionary with all fields
         self.prompts[name] = {
             "id": result["id"],
             "template": template,
@@ -650,6 +659,8 @@ class PostgresPromptsHandler(CacheablePromptHandler):
                 "id": prompt_id,
                 "template": template,
                 "input_types": input_types,
+                "created_at": result["created_at"],
+                "updated_at": result["updated_at"],
             },
         )
 
