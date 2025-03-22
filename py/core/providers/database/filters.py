@@ -1,5 +1,8 @@
 import json
-from typing import Any, Optional, Tuple
+from typing import Any
+
+# Using lowercase list, dict, etc. to comply with pre-commit check
+# and maintain backward compatibility
 
 COLUMN_VARS = [
     "id",
@@ -35,444 +38,468 @@ class FilterOperator:
     LOGICAL_OPS = {AND, OR}
 
 
-class FilterCondition:
-    def __init__(self, field: str, operator: str, value: Any):
-        self.field = field
-        self.operator = operator
-        self.value = value
+def _process_logical_operator(
+    op: str,
+    conditions: list[dict],
+    params: list[Any],
+    top_level_columns: set[str],
+    json_column: str,
+) -> tuple[str, list[Any]]:
+    """Process a logical operator ($and or $or) into SQL."""
+    if not isinstance(conditions, list):
+        raise FilterError(f"{op} value must be a list")
 
+    parts = []
+    for item in conditions:
+        if not isinstance(item, dict):
+            raise FilterError("Invalid filter format")
 
-class FilterExpression:
-    def __init__(self, logical_op: Optional[str] = None):
-        self.logical_op = logical_op
-        self.conditions: list[FilterCondition | "FilterExpression"] = []
-
-
-class FilterParser:
-    def __init__(
-        self,
-        top_level_columns: Optional[list[str]] = None,
-        json_column: str = "metadata",
-    ):
-        if top_level_columns is None:
-            self.top_level_columns = set(COLUMN_VARS)
-        else:
-            self.top_level_columns = set(top_level_columns)
-        self.json_column = json_column
-
-    def parse(self, filters: dict) -> FilterExpression:
-        if not filters:
-            raise FilterError("Empty filters are not allowed")
-        return self._parse_logical(filters)
-
-    def _parse_logical(self, dct: dict) -> FilterExpression:
-        keys = list(dct.keys())
-        expr = FilterExpression()
-        if len(keys) == 1 and keys[0] in (
-            FilterOperator.AND,
-            FilterOperator.OR,
-        ):
-            expr.logical_op = keys[0]
-            if not isinstance(dct[keys[0]], list):
-                raise FilterError(f"{keys[0]} value must be a list")
-            for item in dct[keys[0]]:
-                if isinstance(item, dict):
-                    if self._is_logical_block(item):
-                        expr.conditions.append(self._parse_logical(item))
-                    else:
-                        expr.conditions.append(
-                            self._parse_condition_dict(item)
-                        )
-                else:
-                    raise FilterError("Invalid filter format")
-        else:
-            expr.logical_op = FilterOperator.AND
-            expr.conditions.append(self._parse_condition_dict(dct))
-
-        return expr
-
-    def _is_logical_block(self, dct: dict) -> bool:
-        if len(dct.keys()) == 1:
-            k = next(iter(dct.keys()))
-            if k in FilterOperator.LOGICAL_OPS:
-                return True
-        return False
-
-    def _parse_condition_dict(self, dct: dict) -> FilterExpression:
-        expr = FilterExpression(logical_op=FilterOperator.AND)
-        for field, cond in dct.items():
-            if not isinstance(cond, dict):
-                # direct equality
-                expr.conditions.append(
-                    FilterCondition(field, FilterOperator.EQ, cond)
-                )
-            else:
-                if len(cond) != 1:
-                    raise FilterError(
-                        f"Condition for field {field} must have exactly one operator"
-                    )
-                op, val = next(iter(cond.items()))
-                self._validate_operator(op)
-                expr.conditions.append(FilterCondition(field, op, val))
-        return expr
-
-    def _validate_operator(self, op: str):
-        allowed = (
-            FilterOperator.SCALAR_OPS
-            | FilterOperator.ARRAY_OPS
-            | FilterOperator.JSON_OPS
-            | FilterOperator.LOGICAL_OPS
+        sql, params = _process_filter_dict(
+            item, params, top_level_columns, json_column
         )
-        if op not in allowed:
-            raise FilterError(f"Unsupported operator: {op}")
+        parts.append(f"({sql})")
+
+    logical_connector = " AND " if op == FilterOperator.AND else " OR "
+    return logical_connector.join(parts), params
 
 
-class SQLFilterBuilder:
-    def __init__(
-        self,
-        params: list[Any],
-        top_level_columns: Optional[list[str]] = None,
-        json_column: str = "metadata",
-        mode: str = "where_clause",
+def _process_field_condition(
+    field: str,
+    condition: dict[str, Any] | Any,
+    params: list[Any],
+    top_level_columns: set[str],
+    json_column: str,
+) -> tuple[str, list[Any]]:
+    """Process a single field condition into SQL."""
+    # Direct equality condition (shorthand)
+    if not isinstance(condition, dict):
+        return _build_operator_condition(
+            field,
+            FilterOperator.EQ,
+            condition,
+            params,
+            top_level_columns,
+            json_column,
+        )
+
+    # Operator-based condition
+    if len(condition) != 1:
+        raise FilterError(
+            f"Condition for field {field} must have exactly one operator"
+        )
+
+    op, val = next(iter(condition.items()))
+
+    # Validate operator
+    allowed_ops = (
+        FilterOperator.SCALAR_OPS
+        | FilterOperator.ARRAY_OPS
+        | FilterOperator.JSON_OPS
+    )
+    if op not in allowed_ops:
+        raise FilterError(f"Unsupported operator: {op}")
+
+    return _build_operator_condition(
+        field, op, val, params, top_level_columns, json_column
+    )
+
+
+def _process_filter_dict(
+    filters: dict[str, Any],
+    params: list[Any],
+    top_level_columns: set[str],
+    json_column: str,
+) -> tuple[str, list[Any]]:
+    """Process a filter dictionary into SQL conditions."""
+    # Check for logical operators first
+    if len(filters) == 1:
+        key = next(iter(filters.keys()))
+        if key == FilterOperator.AND or key == FilterOperator.OR:
+            return _process_logical_operator(
+                key, filters[key], params, top_level_columns, json_column
+            )
+
+    # Process individual field conditions
+    parts = []
+    for field, condition in filters.items():
+        sql, params = _process_field_condition(
+            field, condition, params, top_level_columns, json_column
+        )
+        parts.append(sql)
+
+    return " AND ".join(parts), params
+
+
+def _build_operator_condition(
+    field: str,
+    op: str,
+    value: Any,
+    params: list[Any],
+    top_level_columns: set[str],
+    json_column: str,
+) -> tuple[str, list[Any]]:
+    """Build SQL for an operator condition with proper type handling."""
+    # Special case for collection_id field
+    if field == "collection_id":
+        return _build_collection_id_condition(op, value, params)
+
+    # Special case for parent_id
+    if field == "parent_id":
+        return _build_parent_id_condition(op, value, params)
+
+    # Decide if it's a top-level column or metadata field
+    field_is_metadata = field not in top_level_columns
+
+    if field_is_metadata:
+        return _build_metadata_condition(field, op, value, params, json_column)
+    elif field == "collection_ids":
+        return _build_collection_ids_condition(op, value, params)
+    else:
+        return _build_column_condition(field, op, value, params)
+
+
+def _build_parent_id_condition(
+    op: str, value: Any, params: list[Any]
+) -> tuple[str, list[Any]]:
+    """Build SQL condition for parent_id field (single UUID)."""
+    param_idx = len(params) + 1
+
+    if op == FilterOperator.EQ:
+        if not isinstance(value, str):
+            raise FilterError("$eq for parent_id expects a single UUID string")
+        params.append(value)
+        return f"parent_id = ${param_idx}::uuid", params
+
+    elif op == FilterOperator.NE:
+        if not isinstance(value, str):
+            raise FilterError("$ne for parent_id expects a single UUID string")
+        params.append(value)
+        return f"parent_id != ${param_idx}::uuid", params
+
+    elif op == FilterOperator.IN:
+        if not isinstance(value, list):
+            raise FilterError(
+                "$in for parent_id expects a list of UUID strings"
+            )
+        params.append(value)
+        return f"parent_id = ANY(${param_idx}::uuid[])", params
+
+    elif op == FilterOperator.NIN:
+        if not isinstance(value, list):
+            raise FilterError(
+                "$nin for parent_id expects a list of UUID strings"
+            )
+        params.append(value)
+        return f"parent_id != ALL(${param_idx}::uuid[])", params
+
+    else:
+        raise FilterError(f"Unsupported operator {op} for parent_id")
+
+
+def _build_collection_id_condition(
+    op: str, value: Any, params: list[Any]
+) -> tuple[str, list[Any]]:
+    """Build SQL condition for collection_id field (shorthand for collection_ids array)."""
+    param_idx = len(params) + 1
+
+    if op == FilterOperator.EQ:
+        if not isinstance(value, str):
+            raise FilterError(
+                "$eq for collection_id expects a single UUID string"
+            )
+        params.append([value])
+        return f"collection_ids && ${param_idx}::uuid[]", params
+
+    elif op == FilterOperator.NE:
+        if not isinstance(value, str):
+            raise FilterError(
+                "$ne for collection_id expects a single UUID string"
+            )
+        params.append([value])
+        return f"NOT (collection_ids && ${param_idx}::uuid[])", params
+
+    elif op == FilterOperator.IN:
+        if not isinstance(value, list):
+            raise FilterError(
+                "$in for collection_id expects a list of UUID strings"
+            )
+        params.append(value)
+        return f"collection_ids && ${param_idx}::uuid[]", params
+
+    elif op == FilterOperator.NIN:
+        if not isinstance(value, list):
+            raise FilterError(
+                "$nin for collection_id expects a list of UUID strings"
+            )
+        params.append(value)
+        return f"NOT (collection_ids && ${param_idx}::uuid[])", params
+
+    elif op == FilterOperator.CONTAINS:
+        if isinstance(value, str):
+            params.append([value])
+        elif isinstance(value, list):
+            params.append(value)
+        else:
+            raise FilterError(
+                "$contains for collection_id expects a UUID or list of UUIDs"
+            )
+        return f"collection_ids @> ${param_idx}::uuid[]", params
+
+    elif op == FilterOperator.OVERLAP:
+        if not isinstance(value, list):
+            params.append([value])
+        else:
+            params.append(value)
+        return f"collection_ids && ${param_idx}::uuid[]", params
+
+    else:
+        raise FilterError(f"Unsupported operator {op} for collection_id")
+
+
+def _build_collection_ids_condition(
+    op: str, value: Any, params: list[Any]
+) -> tuple[str, list[Any]]:
+    """Build SQL condition for collection_ids field (array of UUIDs)."""
+    param_idx = len(params) + 1
+
+    if op == FilterOperator.EQ:
+        if not isinstance(value, list):
+            raise FilterError(
+                "$eq for collection_ids expects a list of UUID strings"
+            )
+        params.append(value)
+        return f"collection_ids = ${param_idx}::uuid[]", params
+
+    elif op == FilterOperator.CONTAINS:
+        if isinstance(value, str):
+            params.append([value])
+        elif isinstance(value, list):
+            params.append(value)
+        else:
+            raise FilterError(
+                "$contains for collection_ids expects a UUID or list of UUIDs"
+            )
+        return f"collection_ids @> ${param_idx}::uuid[]", params
+
+    elif op == FilterOperator.OVERLAP:
+        if not isinstance(value, list):
+            params.append([value])
+        else:
+            params.append(value)
+        return f"collection_ids && ${param_idx}::uuid[]", params
+
+    else:
+        return _build_collection_id_condition(op, value, params)
+
+
+def _build_column_condition(
+    field: str, op: str, value: Any, params: list[Any]
+) -> tuple[str, list[Any]]:
+    """Build SQL condition for a standard column field."""
+    param_idx = len(params) + 1
+
+    if op == FilterOperator.EQ:
+        params.append(value)
+        return f"{field} = ${param_idx}", params
+
+    elif op == FilterOperator.NE:
+        params.append(value)
+        return f"{field} != ${param_idx}", params
+
+    elif op == FilterOperator.LT:
+        params.append(value)
+        return f"{field} < ${param_idx}", params
+
+    elif op == FilterOperator.LTE:
+        params.append(value)
+        return f"{field} <= ${param_idx}", params
+
+    elif op == FilterOperator.GT:
+        params.append(value)
+        return f"{field} > ${param_idx}", params
+
+    elif op == FilterOperator.GTE:
+        params.append(value)
+        return f"{field} >= ${param_idx}", params
+
+    elif op == FilterOperator.IN:
+        if not isinstance(value, list):
+            raise FilterError("argument to $in filter must be a list")
+        params.append(value)
+        return f"{field} = ANY(${param_idx})", params
+
+    elif op == FilterOperator.NIN:
+        if not isinstance(value, list):
+            raise FilterError("argument to $nin filter must be a list")
+        params.append(value)
+        return f"{field} != ALL(${param_idx})", params
+
+    elif op == FilterOperator.LIKE:
+        params.append(value)
+        return f"{field} LIKE ${param_idx}", params
+
+    elif op == FilterOperator.ILIKE:
+        params.append(value)
+        return f"{field} ILIKE ${param_idx}", params
+
+    else:
+        raise FilterError(f"Unsupported operator {op} for column {field}")
+
+
+def _build_metadata_condition(
+    key: str, op: str, value: Any, params: list[Any], json_column: str
+) -> tuple[str, list[Any]]:
+    """Build SQL condition for a metadata field with proper JSON path handling."""
+    param_idx = len(params) + 1
+
+    # Strip "metadata." prefix if present
+    key = key.removeprefix(f"{json_column}.")
+
+    # Split on '.' to handle nested keys
+    parts = key.split(".")
+
+    # Determine if we need text extraction for scalar values
+    use_text_extraction = op in (
+        FilterOperator.LT,
+        FilterOperator.LTE,
+        FilterOperator.GT,
+        FilterOperator.GTE,
+        FilterOperator.EQ,
+        FilterOperator.NE,
+    ) and isinstance(value, (int, float, str))
+
+    if (
+        op == FilterOperator.IN
+        or op == FilterOperator.CONTAINS
+        or isinstance(value, (list, dict))
     ):
-        if top_level_columns is None:
-            self.top_level_columns = set(COLUMN_VARS)
+        use_text_extraction = False
+
+    # Build the JSON path expression
+    if len(parts) == 1:
+        if use_text_extraction:
+            path_expr = f"{json_column}->>'{parts[0]}'"
         else:
-            self.top_level_columns = set(top_level_columns)
-        self.json_column = json_column
-        self.params: list[Any] = params  # mutated during construction
-        self.mode = mode
-
-    def build(self, expr: FilterExpression) -> Tuple[str, list[Any]]:
-        where_clause = self._build_expression(expr)
-        if self.mode == "where_clause":
-            return f"WHERE {where_clause}", self.params
-
-        return where_clause, self.params
-
-    def _build_expression(self, expr: FilterExpression) -> str:
-        parts = []
-        for c in expr.conditions:
-            if isinstance(c, FilterCondition):
-                parts.append(self._build_condition(c))
-            else:
-                nested_sql = self._build_expression(c)
-                parts.append(f"({nested_sql})")
-
-        if expr.logical_op == FilterOperator.AND:
-            return " AND ".join(parts)
-        elif expr.logical_op == FilterOperator.OR:
-            return " OR ".join(parts)
+            path_expr = f"{json_column}->'{parts[0]}'"
+    else:
+        path_expr = json_column
+        for p in parts[:-1]:
+            path_expr += f"->'{p}'"
+        last_part = parts[-1]
+        if use_text_extraction:
+            path_expr += f"->>'{last_part}'"
         else:
-            return " AND ".join(parts)
+            path_expr += f"->'{last_part}'"
 
-    @staticmethod
-    def _psql_quote_literal(value: str) -> str:
-        """Simple quoting for demonstration.
+    # Convert numeric values to strings for text comparison
+    def prepare_value(v):
+        return str(v) if isinstance(v, (int, float)) else v
 
-        In production, use parameterized queries or your DB driver's quoting
-        function instead.
-        """
-        return "'" + value.replace("'", "''") + "'"
-
-    def _build_condition(self, cond: FilterCondition) -> str:
-        field_is_metadata = cond.field not in self.top_level_columns
-        key = cond.field
-        op = cond.operator
-        val = cond.value
-
-        # 1. If the filter references "parent_id", handle it as a single-UUID column for graphs:
-        if key == "parent_id":
-            return self._build_parent_id_condition(op, val)
-
-        # 2. If the filter references "collection_id", handle it as an array column (chunks)
-        if key == "collection_id":
-            return self._build_collection_id_condition(op, val)
-
-        # 3. Otherwise, decide if it's top-level or metadata:
-        if field_is_metadata:
-            return self._build_metadata_condition(key, op, val)
+    if op == FilterOperator.EQ:
+        if use_text_extraction:
+            prepared_val = prepare_value(value)
+            params.append(prepared_val)
+            return f"{path_expr} = ${param_idx}", params
         else:
-            return self._build_column_condition(key, op, val)
+            params.append(json.dumps(value))
+            return f"{path_expr} = ${param_idx}::jsonb", params
 
-    def _build_parent_id_condition(self, op: str, val: Any) -> str:
-        """For 'graphs' tables, parent_id is a single UUID (not an array).
-
-        We handle the same ops but in a simpler, single-UUID manner.
-        """
-        param_idx = len(self.params) + 1
-
-        if op == "$eq":
-            if not isinstance(val, str):
-                raise FilterError(
-                    "$eq for parent_id expects a single UUID string"
-                )
-            self.params.append(val)
-            return f"parent_id = ${param_idx}::uuid"
-
-        elif op == "$ne":
-            if not isinstance(val, str):
-                raise FilterError(
-                    "$ne for parent_id expects a single UUID string"
-                )
-            self.params.append(val)
-            return f"parent_id != ${param_idx}::uuid"
-
-        elif op == "$in":
-            # A list of UUIDs, any of which might match
-            if not isinstance(val, list):
-                raise FilterError(
-                    "$in for parent_id expects a list of UUID strings"
-                )
-            self.params.append(val)
-            return f"parent_id = ANY(${param_idx}::uuid[])"
-
-        elif op == "$nin":
-            # A list of UUIDs, none of which may match
-            if not isinstance(val, list):
-                raise FilterError(
-                    "$nin for parent_id expects a list of UUID strings"
-                )
-            self.params.append(val)
-            return f"parent_id != ALL(${param_idx}::uuid[])"
-
+    elif op == FilterOperator.NE:
+        if use_text_extraction:
+            params.append(prepare_value(value))
+            return f"{path_expr} != ${param_idx}", params
         else:
-            # You could add more (like $gt, $lt, etc.) if your schema wants them
-            raise FilterError(f"Unsupported operator {op} for parent_id")
+            params.append(json.dumps(value))
+            return f"{path_expr} != ${param_idx}::jsonb", params
 
-    def _build_collection_id_condition(self, op: str, val: Any) -> str:
-        """For the 'chunks' table, collection_ids is an array of UUIDs.
+    elif op == FilterOperator.LT:
+        params.append(prepare_value(value))
+        return f"({path_expr})::numeric < ${param_idx}::numeric", params
 
-        We need to use array operators to compare arrays correctly.
-        """
-        param_idx = len(self.params) + 1
+    elif op == FilterOperator.LTE:
+        params.append(prepare_value(value))
+        return f"({path_expr})::numeric <= ${param_idx}::numeric", params
 
-        if op == "$eq":
-            if not isinstance(val, str):
-                raise FilterError(
-                    "$eq for collection_id expects a single UUID string"
-                )
-            self.params.append(
-                [val]
-            )  # Make it a list with one element for the overlap check
-            return (
-                f"collection_ids && ${param_idx}::uuid[]"  # Use && for overlap
-            )
+    elif op == FilterOperator.GT:
+        params.append(prepare_value(value))
+        return f"({path_expr})::numeric > ${param_idx}::numeric", params
 
-        elif op == "$ne":
-            if not isinstance(val, str):
-                raise FilterError(
-                    "$ne for collection_id expects a single UUID string"
-                )
-            self.params.append([val])
-            return f"NOT (collection_ids && ${param_idx}::uuid[])"  # Negate the overlap
+    elif op == FilterOperator.GTE:
+        params.append(prepare_value(value))
+        return f"({path_expr})::numeric >= ${param_idx}::numeric", params
 
-        elif op == "$in":
-            if not isinstance(val, list):
-                raise FilterError(
-                    "$in for collection_id expects a list of UUID strings"
-                )
-            self.params.append(val)
-            return (
-                f"collection_ids && ${param_idx}::uuid[]"  # Use && for overlap
-            )
+    elif op == FilterOperator.IN:
+        if not isinstance(value, list):
+            raise FilterError("argument to $in filter must be a list")
 
-        elif op == "$nin":
-            if not isinstance(val, list):
-                raise FilterError(
-                    "$nin for collection_id expects a list of UUID strings"
-                )
-            self.params.append(val)
-            return f"NOT (collection_ids && ${param_idx}::uuid[])"  # Negate the overlap
+        if use_text_extraction:
+            str_vals = [
+                str(v) if isinstance(v, (int, float)) else v for v in value
+            ]
+            params.append(str_vals)
+            return f"{path_expr} = ANY(${param_idx}::text[])", params
 
-        elif op == "$contains":
-            if isinstance(val, str):
-                # single string -> array with one element
-                self.params.append([val])
-                return f"collection_ids @> ${param_idx}::uuid[]"
-            elif isinstance(val, list):
-                self.params.append(val)
-                return f"collection_ids @> ${param_idx}::uuid[]"
-            else:
-                raise FilterError(
-                    "$contains for collection_id expects a UUID or list of UUIDs"
-                )
+        # For JSON arrays, use containment checks with proper parameter indexing
+        conditions = []
+        for v in value:
+            params.append(json.dumps(v))
+            current_param_idx = len(params)
+            conditions.append(f"{path_expr} @> ${current_param_idx}::jsonb")
+        return f"({' OR '.join(conditions)})", params
 
-        elif op == "$overlap":
-            if not isinstance(val, list):
-                self.params.append([val])
-            else:
-                self.params.append(val)
-            return f"collection_ids && ${param_idx}::uuid[]"
+    elif op == FilterOperator.CONTAINS:
+        if isinstance(value, (str, int, float, bool)):
+            value = [value]
+        params.append(json.dumps(value))
+        return f"{path_expr} @> ${param_idx}::jsonb", params
 
-        else:
-            raise FilterError(f"Unsupported operator {op} for collection_id")
+    else:
+        raise FilterError(f"Unsupported operator {op} for metadata field")
 
-    def _build_column_condition(self, col: str, op: str, val: Any) -> str:
-        # If we're dealing with collection_ids, route to our specialized handler
-        if col == "collection_ids":
-            return self._build_collection_id_condition(op, val)
 
-        param_idx = len(self.params) + 1
-        if op == "$eq":
-            self.params.append(val)
-            return f"{col} = ${param_idx}"
-        elif op == "$ne":
-            self.params.append(val)
-            return f"{col} != ${param_idx}"
-        elif op == "$in":
-            if not isinstance(val, list):
-                raise FilterError("argument to $in filter must be a list")
-            self.params.append(val)
-            return f"{col} = ANY(${param_idx})"
-        elif op == "$nin":
-            if not isinstance(val, list):
-                raise FilterError("argument to $nin filter must be a list")
-            self.params.append(val)
-            return f"{col} != ALL(${param_idx})"
-        elif op == "$overlap":
-            self.params.append(val)
-            return f"{col} && ${param_idx}"
-        elif op == "$contains":
-            self.params.append(val)
-            return f"{col} @> ${param_idx}"
-        elif op == "$any":
-            if col == "collection_ids":
-                self.params.append(f"%{val}%")
-                return f"array_to_string({col}, ',') LIKE ${param_idx}"
-            else:
-                self.params.append(val)
-                return f"${param_idx} = ANY({col})"
-        elif op in ("$lt", "$lte", "$gt", "$gte"):
-            self.params.append(val)
-            return f"{col} {self._map_op(op)} ${param_idx}"
-        else:
-            raise FilterError(f"Unsupported operator for column {col}: {op}")
+def psql_quote_literal(value: str) -> str:
+    """Safely quote a string literal for PostgreSQL to prevent SQL injection.
 
-    def _build_metadata_condition(self, key: str, op: str, val: Any) -> str:
-        param_idx = len(self.params) + 1
-        json_col = self.json_column
-
-        # Strip "metadata." prefix if present
-        key = key.removeprefix("metadata.")
-
-        # Split on '.' to handle nested keys
-        parts = key.split(".")
-
-        # Use text extraction for scalar values, but not for arrays
-        use_text_extraction = op in (
-            "$lt",
-            "$lte",
-            "$gt",
-            "$gte",
-            "$eq",
-            "$ne",
-        ) and isinstance(val, (int, float, str))
-        if op == "$in" or op == "$contains" or isinstance(val, (list, dict)):
-            use_text_extraction = False
-
-        # Build the JSON path expression
-        if len(parts) == 1:
-            if use_text_extraction:
-                path_expr = f"{json_col}->>'{parts[0]}'"
-            else:
-                path_expr = f"{json_col}->'{parts[0]}'"
-        else:
-            path_expr = json_col
-            for p in parts[:-1]:
-                path_expr += f"->'{p}'"
-            last_part = parts[-1]
-            if use_text_extraction:
-                path_expr += f"->>'{last_part}'"
-            else:
-                path_expr += f"->'{last_part}'"
-
-        # Convert numeric values to strings for text comparison
-        def prepare_value(v):
-            return str(v) if isinstance(v, (int, float)) else v
-
-        if op == "$eq":
-            if use_text_extraction:
-                prepared_val = prepare_value(val)
-                self.params.append(prepared_val)
-                return f"{path_expr} = ${param_idx}"
-            else:
-                self.params.append(json.dumps(val))
-                return f"{path_expr} = ${param_idx}::jsonb"
-        elif op == "$ne":
-            if use_text_extraction:
-                self.params.append(prepare_value(val))
-                return f"{path_expr} != ${param_idx}"
-            else:
-                self.params.append(json.dumps(val))
-                return f"{path_expr} != ${param_idx}::jsonb"
-        elif op == "$lt":
-            self.params.append(prepare_value(val))
-            return f"({path_expr})::numeric < ${param_idx}::numeric"
-        elif op == "$lte":
-            self.params.append(prepare_value(val))
-            return f"({path_expr})::numeric <= ${param_idx}::numeric"
-        elif op == "$gt":
-            self.params.append(prepare_value(val))
-            return f"({path_expr})::numeric > ${param_idx}::numeric"
-        elif op == "$gte":
-            self.params.append(prepare_value(val))
-            return f"({path_expr})::numeric >= ${param_idx}::numeric"
-        elif op == "$in":
-            if not isinstance(val, list):
-                raise FilterError("argument to $in filter must be a list")
-
-            if use_text_extraction:
-                str_vals = [
-                    str(v) if isinstance(v, (int, float)) else v for v in val
-                ]
-                self.params.append(str_vals)
-                return f"{path_expr} = ANY(${param_idx}::text[])"
-
-            # For JSON arrays, use containment checks
-            conditions = []
-            for i, v in enumerate(val):
-                self.params.append(json.dumps(v))
-                conditions.append(f"{path_expr} @> ${param_idx + i}::jsonb")
-            return f"({' OR '.join(conditions)})"
-
-        elif op == "$contains":
-            if isinstance(val, (str, int, float, bool)):
-                val = [val]
-            self.params.append(json.dumps(val))
-            return f"{path_expr} @> ${param_idx}::jsonb"
-        else:
-            raise FilterError(f"Unsupported operator for metadata field {op}")
-
-    def _map_op(self, op: str) -> str:
-        mapping = {
-            FilterOperator.EQ: "=",
-            FilterOperator.NE: "!=",
-            FilterOperator.LT: "<",
-            FilterOperator.LTE: "<=",
-            FilterOperator.GT: ">",
-            FilterOperator.GTE: ">=",
-        }
-        return mapping.get(op, op)
+    This is a simple implementation - in production, you should use proper parameterization
+    or your database driver's quoting functions.
+    """
+    return "'" + value.replace("'", "''") + "'"
 
 
 def apply_filters(
-    filters: dict, params: list[Any], mode: str = "where_clause"
+    filters: dict[str, Any],
+    params: list[Any],
+    mode: str = "where_clause",
+    top_level_columns: list[str] | None = None,
+    json_column: str = "metadata",
 ) -> tuple[str, list[Any]]:
-    """Apply filters with consistent WHERE clause handling."""
+    """Apply filters with consistent WHERE clause handling.
+
+    Args:
+        filters: Dictionary of filter conditions
+        params: Existing parameters list to extend
+        mode: One of 'where_clause', 'condition_only', or 'append_only'
+        top_level_columns: List of column names that aren't in metadata
+        json_column: Name of the JSON column containing metadata
+
+    Returns:
+        Tuple of (SQL clause, updated parameters list)
+    """
     if not filters:
         return "", params
 
-    parser = FilterParser()
-    expr = parser.parse(filters)
-    builder = SQLFilterBuilder(params=params, mode=mode)
-    filter_clause, new_params = builder.build(expr)
+    if top_level_columns is None:
+        top_level_columns = COLUMN_VARS
+
+    sql, updated_params = _process_filter_dict(
+        filters, params, set(top_level_columns), json_column
+    )
 
     if mode == "where_clause":
-        return filter_clause, new_params  # Already includes WHERE
+        return f"WHERE {sql}", updated_params
     elif mode == "condition_only":
-        return filter_clause, new_params
+        return sql, updated_params
     elif mode == "append_only":
-        return f"AND {filter_clause}", new_params
+        return f"AND {sql}", updated_params
     else:
         raise ValueError(f"Unknown filter mode: {mode}")
