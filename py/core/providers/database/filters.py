@@ -3,7 +3,6 @@ from typing import Any
 
 # Using lowercase list, dict, etc. to comply with pre-commit check
 # and maintain backward compatibility
-from py.core.providers.database.utils import psql_quote_literal
 
 # List of column variables
 COLUMN_VARS = [

@@ -23,6 +23,7 @@ from core.base import (
     VectorTableName,
 )
 from core.base.utils import _decorate_vector_type
+
 from .base import PostgresConnectionManager
 from .filters import apply_filters
 from .utils import psql_quote_literal
