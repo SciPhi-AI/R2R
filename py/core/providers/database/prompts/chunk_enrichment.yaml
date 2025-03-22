@@ -53,4 +53,3 @@ chunk_enrichment:
     preceding_chunks: str
     succeeding_chunks: str
     chunk_size: int
-  overwrite_on_diff: true

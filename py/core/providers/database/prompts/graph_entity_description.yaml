@@ -37,4 +37,3 @@ graph_entity_description:
     document_summary: str
     entity_info: str
     relationships_txt: str
-  overwrite_on_diff: true

@@ -97,4 +97,3 @@ graph_extraction:
     input: str
     entity_types: list[str]
     relation_types: list[str]
-  overwrite_on_diff: true
