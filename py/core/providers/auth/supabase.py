@@ -306,10 +306,9 @@ class SupabaseAuthProvider(AuthProvider):
             }
         except Exception as e:
             logger.error(f"Password reset request error: {str(e)}")
-            # Return success even if email doesn't exist for security reasons
-            return {
-                "message": "If the email exists, a reset link has been sent"
-            }
+            raise R2RException(
+                status_code=400, message="Failed to send password reset email"
+            )
 
     async def confirm_password_reset(
         self, new_password: str
