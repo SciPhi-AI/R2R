@@ -24,3 +24,5 @@ dynamic_rag_agent:
     date: str
     document_context: str
     max_tool_context_length: str
+
+  overwrite_on_diff: true

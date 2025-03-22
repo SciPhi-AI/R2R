@@ -95,3 +95,5 @@ dynamic_rag_agent_xml_tooling:
     date: str
     document_context: str
     max_tool_context_length: str
+
+  overwrite_on_diff: true
