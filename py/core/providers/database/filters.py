@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Any
+from typing import Any, Optional
 
 # Using lowercase list, dict, etc. to comply with pre-commit check
 # and maintain backward compatibility
@@ -796,7 +796,7 @@ def apply_filters(
     top_level_columns=None,
     mode: str = "where_clause",
     json_column: str = "metadata",
-    params: list[Any] = None,
+    params: Optional[list[Any]] = None,
 ) -> tuple[str, list[Any]]:
     """
     Applies a set of filters to generate SQL WHERE conditions.

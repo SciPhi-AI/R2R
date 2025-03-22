@@ -6,7 +6,7 @@ but with a more streamlined structure and less code complexity.
 
 import json
 import uuid
-from typing import Any
+from typing import Any, Optional, Set
 
 # Using lowercase list, dict, etc. to comply with pre-commit check
 # and maintain backward compatibility
@@ -20,7 +20,7 @@ COLUMN_VARS = [
 ]
 
 # Default columns to treat as top-level columns in SQL queries
-DEFAULT_TOP_LEVEL_COLUMNS = {
+DEFAULT_TOP_LEVEL_COLUMNS: Set[str] = {
     "id",
     "parent_id",
     "collection_id",
@@ -70,7 +70,7 @@ def _process_logical_operator(
     op: str,
     conditions: list[dict],
     params: list[Any],
-    top_level_columns: set[str],
+    top_level_columns: Set[str],
     json_column: str,
 ) -> tuple[str, list[Any]]:
     """Process a logical operator into SQL."""
@@ -104,7 +104,7 @@ def _process_field_condition(
     field: str,
     condition: Any,
     params: list[Any],
-    top_level_columns: set[str],
+    top_level_columns: Set[str],
     json_column: str,
 ) -> tuple[str, list[Any]]:
     """Process a field condition into SQL."""
@@ -166,7 +166,7 @@ def _process_field_condition(
 def _process_filter_dict(
     filter_dict: dict,
     params: list[Any],
-    top_level_columns: set[str],
+    top_level_columns: Set[str],
     json_column: str,
 ) -> tuple[str, list[Any]]:
     """Process a filter dictionary into SQL conditions."""
@@ -225,7 +225,7 @@ def _build_operator_condition(
     op: str,
     value: Any,
     params: list[Any],
-    top_level_columns: set[str],
+    top_level_columns: Set[str],
     json_column: str,
 ) -> tuple[str, list[Any]]:
     """Build SQL for an operator condition with proper type handling."""
@@ -556,7 +556,7 @@ def _build_collection_ids_condition(
 
         # Use standard IN syntax with placeholders for array elements
         placeholder_parts = []
-        for i, collection_id in enumerate(collection_ids):
+        for _i, collection_id in enumerate(collection_ids):
             params.append(collection_id)
             placeholder_parts.append("?")
 
@@ -575,7 +575,7 @@ def _build_collection_ids_condition(
 
         # Use standard NOT IN syntax for array elements
         placeholder_parts = []
-        for i, collection_id in enumerate(collection_ids):
+        for _i, collection_id in enumerate(collection_ids):
             params.append(collection_id)
             placeholder_parts.append("?")
 
@@ -799,10 +799,10 @@ def _build_json_path_expr(json_column: str, json_path: list[str]) -> str:
 
 def apply_filters(
     filters: dict[str, Any],
-    top_level_columns: list[str] = None,
+    top_level_columns: Optional[list[str]] = None,
     mode: str = "condition_only",
     json_column: str = "metadata",
-    params: list[Any] = None,
+    params: Optional[list[Any]] = None,
 ) -> tuple[str, list[Any]]:
     """
     Apply filters to generate a SQL condition.
@@ -823,9 +823,9 @@ def apply_filters(
 
     # Normalize top_level_columns to a set
     if top_level_columns is None or len(top_level_columns) == 0:
-        top_level_columns = DEFAULT_TOP_LEVEL_COLUMNS
+        top_level_columns_set: Set[str] = DEFAULT_TOP_LEVEL_COLUMNS.copy()
     else:
-        top_level_columns = set(top_level_columns)
+        top_level_columns_set = set(top_level_columns)
 
     # Handle empty filters
     if not filters:
@@ -836,7 +836,7 @@ def apply_filters(
 
     # Process filters into SQL condition
     sql, params = _process_filter_dict(
-        filters, params, top_level_columns, json_column
+        filters, params, top_level_columns_set, json_column
     )
 
     # Format based on mode
