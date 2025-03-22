@@ -7,7 +7,6 @@ from typing import Dict, List, Any, Optional
 
 from core.base import SearchSettings
 
-
 @pytest.fixture
 def mock_providers():
     """Set up mock providers for testing search strategies."""

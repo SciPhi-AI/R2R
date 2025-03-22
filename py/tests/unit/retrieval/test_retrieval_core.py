@@ -7,7 +7,6 @@ from typing import Dict, List, Any, Optional
 
 from core.base import EmbeddingPurpose, SearchSettings
 
-
 @pytest.fixture
 def mock_providers():
     """
