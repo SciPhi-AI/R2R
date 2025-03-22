@@ -52,7 +52,7 @@ class SupabaseAuthProvider(AuthProvider):
         self.supabase: Client = create_client(
             self.supabase_url, self.supabase_key
         )
-        self.security = None  # This would need to be properly defined
+        self.security = HTTPAuthorizationCredentials
 
     async def initialize(self):
         # No initialization needed for Supabase
@@ -312,7 +312,7 @@ class SupabaseAuthProvider(AuthProvider):
             }
 
     async def confirm_password_reset(
-        self, reset_token: str, new_password: str
+        self, new_password: str
     ) -> dict[str, str]:
         # Use Supabase client to reset password with token
         try:
@@ -328,7 +328,7 @@ class SupabaseAuthProvider(AuthProvider):
                 status_code=400, message="Invalid or expired reset token"
             )
 
-    async def logout(self, token: str) -> dict[str, str]:
+    async def logout(self) -> dict[str, str]:
         # Use Supabase client to logout user and revoke token
         try:
             self.supabase.auth.sign_out()
