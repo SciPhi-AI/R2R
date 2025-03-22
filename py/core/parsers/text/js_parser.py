@@ -164,7 +164,7 @@ class JSParser(AsyncParser[str | bytes]):
 
         # Match arrow functions with explicit names
         arrow_pattern = (
-            r"(?:const|let|var)\s+(\w+)\s*=\s*(?:\([^)]*\)|[^=]*)\s*=>\s*\{?"
+            r"(?:const|let|var)\s+(\w+)\s*=\s*(?:\([^)]*\)|[^=;]*)\s*=>\s*\{?"
         )
         arrows = re.finditer(arrow_pattern, js_without_comments)
         for arrow in arrows:
