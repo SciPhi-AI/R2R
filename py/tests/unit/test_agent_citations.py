@@ -1,3 +1,14 @@
+"""
+Unit tests for citation extraction and propagation in the R2RStreamingAgent.
+
+These tests focus specifically on citation-related functionality:
+- Citation extraction from text
+- Citation tracking during streaming
+- Citation event emission
+- Citation formatting and propagation
+- Citation edge cases and validation
+"""
+
 import pytest
 import asyncio
 import json
@@ -5,9 +16,20 @@ import re
 from unittest.mock import MagicMock, patch, AsyncMock
 from typing import Dict, List, Tuple, Any, AsyncGenerator
 
+import pytest_asyncio
+
 from core.base import Message, LLMChatCompletion, LLMChatCompletionChunk, GenerationConfig
-from core.utils import CitationTracker, SearchResultsCollector, SSEFormatter, find_new_citation_spans, extract_citation_spans
+from core.utils import CitationTracker, extract_citations, extract_citation_spans
 from core.agent.base import R2RStreamingAgent
+
+# Import mock classes from conftest
+from conftest import (
+    MockDatabaseProvider,
+    MockLLMProvider,
+    MockR2RStreamingAgent,
+    MockSearchResultsCollector,
+    collect_stream_output
+)
 
 
 class MockLLMProvider:
@@ -179,7 +201,7 @@ class MockR2RStreamingAgent(R2RStreamingAgent):
                         "payload": citation_payload
                     })
 
-                    # Emit citation event in the expected format
+                    # Emit citation event
                     citation_event = {
                         "id": cid,
                         "object": "citation",
@@ -279,7 +301,6 @@ def test_extract_citations_from_response():
     response_text = "This is a response with a citation [abc1234]."
 
     # Use the utility function directly
-    from core.utils import extract_citations
     citations = extract_citations(response_text)
 
     assert "abc1234" in citations, "Citation should be extracted from response"
@@ -417,91 +438,45 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
             # Yield the message event
             yield custom_agent._format_sse_event("message", {"content": response_content})
 
-            # Define citation spans explicitly
-            first_span = (45, 54)  # Span for first [abc1234]
-            second_span = (70, 79)  # Span for second [abc1234]
+            # Manually extract and emit citation events
+            # This is a simpler approach than the character-by-character approach
+            citation_spans = extract_citation_spans(response_content)
 
-            # Process the first citation instance
-            citation_tracker.is_new_span("abc1234", first_span)
+            # Process the citations
+            for cid, spans in citation_spans.items():
+                for span in spans:
+                    # Mark as processed in the tracker
+                    citation_tracker.is_new_span(cid, span)
 
-            # Look up the source document
-            source_doc = custom_agent.search_results_collector.find_by_short_id("abc1234")
+                    # Look up the source document for this citation
+                    source_doc = custom_agent.search_results_collector.find_by_short_id(cid)
 
-            # Create citation payload
-            citation_payload = {
-                "document_id": source_doc.get("document_id", "doc_abc1234"),
-                "text": source_doc.get("text", "This is document text for abc1234"),
-                "metadata": source_doc.get("metadata", {"source": "source_abc1234"}),
-            }
+                    # Create citation payload
+                    citation_payload = {
+                        "document_id": source_doc.get("document_id", f"doc_{cid}"),
+                        "text": source_doc.get("text", f"This is document text for {cid}"),
+                        "metadata": source_doc.get("metadata", {"source": f"source_{cid}"}),
+                    }
 
-            # Store the payload
-            citation_payloads["abc1234"] = citation_payload
+                    # Store the payload
+                    citation_payloads[cid] = citation_payload
 
-            # Track for first citation
-            first_citation = {
-                "id": "abc1234",
-                "span": {"start": first_span[0], "end": first_span[1]},
-                "payload": citation_payload
-            }
-            custom_agent.streaming_citations.append(first_citation)
+                    # Track for persistence
+                    custom_agent.streaming_citations.append({
+                        "id": cid,
+                        "span": {"start": span[0], "end": span[1]},
+                        "payload": citation_payload
+                    })
 
-            # Emit first citation event
-            first_citation_event = {
-                "id": "abc1234",
-                "object": "citation",
-                "span": {"start": first_span[0], "end": first_span[1]},
-                "payload": citation_payload
-            }
+                    # Emit citation event
+                    citation_event = {
+                        "id": cid,
+                        "object": "citation",
+                        "span": {"start": span[0], "end": span[1]},
+                        "payload": citation_payload
+                    }
 
-            yield custom_agent._format_sse_event("citation", first_citation_event)
-
-            # Process the second citation instance with the same ID but different span
-            citation_tracker.is_new_span("abc1234", second_span)
-
-            # Track for second citation
-            second_citation = {
-                "id": "abc1234",
-                "span": {"start": second_span[0], "end": second_span[1]},
-                "payload": citation_payload
-            }
-            custom_agent.streaming_citations.append(second_citation)
-
-            # Emit second citation event
-            second_citation_event = {
-                "id": "abc1234",
-                "object": "citation",
-                "span": {"start": second_span[0], "end": second_span[1]},
-                "payload": citation_payload
-            }
-
-            yield custom_agent._format_sse_event("citation", second_citation_event)
-
-            # Also add a different citation ID for completeness
-            citation_tracker.is_new_span("def5678", (90, 99))
-
-            source_doc_def = custom_agent.search_results_collector.find_by_short_id("def5678")
-
-            citation_payload_def = {
-                "document_id": source_doc_def.get("document_id", "doc_def5678"),
-                "text": source_doc_def.get("text", "This is document text for def5678"),
-                "metadata": source_doc_def.get("metadata", {"source": "source_def5678"}),
-            }
-
-            citation_payloads["def5678"] = citation_payload_def
-
-            third_citation = {
-                "id": "def5678",
-                "span": {"start": 90, "end": 99},
-                "payload": citation_payload_def
-            }
-            custom_agent.streaming_citations.append(third_citation)
-
-            yield custom_agent._format_sse_event("citation", {
-                "id": "def5678",
-                "object": "citation",
-                "span": {"start": 90, "end": 99},
-                "payload": citation_payload_def
-            })
+                    yield custom_agent._format_sse_event("citation", citation_event)
 
             # Add assistant message with citation metadata to conversation
             await custom_agent.conversation.add_message(
@@ -533,7 +508,6 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
                 "citations": consolidated_citations
             }
 
-            # Emit final answer event
             yield custom_agent._format_sse_event("agent.final_answer", final_evt_payload)
 
             # Signal the end of the SSE stream
@@ -543,7 +517,7 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
         with patch.object(custom_agent, 'arun', custom_arun):
             messages = [Message(role="user", content="Test query")]
 
-            # Run the agent with the modified arun
+            # Run the agent with overlapping citations
             stream = custom_agent.arun(messages=messages)
             output = await collect_stream_output(stream)
 
@@ -650,7 +624,7 @@ async def test_citation_event_format(mock_streaming_agent):
         assert 'data: ' in event, "Event should have data payload"
 
         # Parse the data payload
-        data_part = event.split('data: ')[1] if 'data: ' in event else "{}"
+        data_part = event.split('data: ')[1] if 'data: ' in event else event
         try:
             data = json.loads(data_part)
 
@@ -693,7 +667,7 @@ async def test_final_answer_event_format(mock_streaming_agent):
         assert 'data: ' in event, "Event should have data payload"
 
         # Parse the data payload
-        data_part = event.split('data: ')[1] if 'data: ' in event else "{}"
+        data_part = event.split('data: ')[1] if 'data: ' in event else event
         try:
             data = json.loads(data_part)
 
@@ -747,7 +721,7 @@ async def test_overlapping_citation_handling():
         rag_generation_config=GenerationConfig(model="test/model")
     )
 
-    # Replace search results collector
+    # Replace the search results collector with our mock
     agent.search_results_collector = MockSearchResultsCollector({
         "abc1234": {
             "document_id": "doc_abc1234",
@@ -912,18 +886,17 @@ async def test_robustness_against_citation_variations(mock_streaming_agent):
     """
 
     # Use the extract_citations function directly to see what would be detected
-    from core.utils import extract_citations
-    extracted = extract_citations(response_text)
+    citations = extract_citations(response_text)
 
     # There should be at least two different citation IDs
-    unique_citations = set(extracted)
+    unique_citations = set(citations)
     assert len(unique_citations) >= 2, "Should extract at least two different citation IDs"
     assert "abc1234" in unique_citations, "Should extract abc1234"
     assert "def5678" in unique_citations, "Should extract def5678"
 
     # Count occurrences of each citation
     counts = {}
-    for cid in extracted:
+    for cid in citations:
         counts[cid] = counts.get(cid, 0) + 1
 
     # Each citation should be found the correct number of times based on the text
@@ -963,8 +936,6 @@ class TestCitationEdgeCases:
     ])
     def test_citation_extraction_cases(self, test_case):
         """Test citation extraction with various edge cases."""
-        from core.utils import extract_citations
-
         text = test_case["text"]
         expected = test_case["expected_citations"]
 
@@ -978,3 +949,189 @@ class TestCitationEdgeCases:
         if expected:
             for expected_citation in expected:
                 assert expected_citation in actual, f"Expected citation {expected_citation} not found"
+
+@pytest.mark.asyncio
+async def test_citation_handling_with_empty_response():
+    """Test how the agent handles responses with no citations."""
+    # Create a custom R2RStreamingAgent with no citations
+
+    # Custom agent class for testing empty citations
+    class EmptyResponseAgent(MockR2RStreamingAgent):
+        async def arun(
+            self,
+            system_instruction: str = None,
+            messages: list[Message] = None,
+            *args,
+            **kwargs,
+        ) -> AsyncGenerator[str, None]:
+            """Custom arun with no citations in the response."""
+            await self._setup(system_instruction)
+
+            if messages:
+                for m in messages:
+                    await self.conversation.add_message(m)
+
+            # Initialize citation tracker
+            citation_tracker = CitationTracker()
+
+            # Empty response with no citations
+            response_content = "This is a response with no citations."
+
+            # Yield an initial message event with the start of the text
+            yield self._format_sse_event("message", {"content": response_content})
+
+            # No citation spans to extract
+            citation_spans = extract_citation_spans(response_content)
+
+            # Should be empty
+            assert len(citation_spans) == 0, "No citation spans should be found"
+
+            # Add assistant message to conversation (with no citation metadata)
+            await self.conversation.add_message(
+                Message(
+                    role="assistant",
+                    content=response_content,
+                    metadata={"citations": []}
+                )
+            )
+
+            # Create and emit final answer event
+            final_evt_payload = {
+                "id": "msg_final",
+                "object": "agent.final_answer",
+                "generated_answer": response_content,
+                "citations": []
+            }
+
+            yield self._format_sse_event("agent.final_answer", final_evt_payload)
+            yield "event: done\ndata: {}\n\n"
+
+    # Create the agent with empty citation response
+    config = MagicMock()
+    config.stream = True
+
+    llm_provider = MockLLMProvider(
+        response_content="This is a response with no citations.",
+        citations=[]
+    )
+
+    db_provider = MockDatabaseProvider()
+
+    # Create the custom agent
+    agent = EmptyResponseAgent(
+        database_provider=db_provider,
+        llm_provider=llm_provider,
+        config=config,
+        rag_generation_config=GenerationConfig(model="test/model")
+    )
+
+    # Test a simple query
+    messages = [Message(role="user", content="Query with no citations")]
+
+    # Run the agent
+    stream = agent.arun(messages=messages)
+    output = await collect_stream_output(stream)
+
+    # Verify no citation events were emitted
+    citation_events = [line for line in output if 'event: citation' in line]
+    assert len(citation_events) == 0, "No citation events should be emitted"
+
+    # Parse the final answer event to check citations
+    final_answer_events = [line for line in output if 'event: agent.final_answer' in line]
+    assert len(final_answer_events) > 0, "Final answer event should be emitted"
+
+    data_part = final_answer_events[0].split('data: ')[1] if 'data: ' in final_answer_events[0] else ""
+
+    # Parse final answer data
+    try:
+        data = json.loads(data_part)
+        assert 'citations' in data, "Final answer event should include citations field"
+        assert len(data['citations']) == 0, "Citations list should be empty"
+    except json.JSONDecodeError:
+        assert False, "Final answer event data should be valid JSON"
+
+@pytest.mark.asyncio
+async def test_citation_sanitization():
+    """Test that citation IDs are properly sanitized before processing."""
+    # Since extract_citations uses a strict regex pattern [A-Za-z0-9]{7,8},
+    # we should test with valid citation formats
+    text = "Citation with surrounding text[abc1234]and [def5678]with no spaces."
+
+    # Extract citations
+    citations = extract_citations(text)
+
+    # Check if citations are properly extracted
+    assert "abc1234" in citations, "Citation abc1234 should be extracted"
+    assert "def5678" in citations, "Citation def5678 should be extracted"
+
+    # Test with spaces - these should NOT be extracted based on the implementation
+    text_with_spaces = "Citation with [abc1234 ] and [ def5678] spaces."
+    citations_with_spaces = extract_citations(text_with_spaces)
+
+    # The current implementation doesn't extract citations with spaces inside the brackets
+    assert len(citations_with_spaces) == 0 or "abc1234" not in citations_with_spaces, "Citations with spaces should not be extracted with current implementation"
+
+@pytest.mark.asyncio
+async def test_citation_tracking_state_persistence():
+    """Test that the CitationTracker correctly maintains state across multiple calls."""
+    tracker = CitationTracker()
+
+    # Record some initial spans
+    tracker.is_new_span("abc1234", (10, 18))
+    tracker.is_new_span("def5678", (30, 38))
+
+    # Check if spans are correctly stored
+    all_spans = tracker.get_all_spans()
+    assert "abc1234" in all_spans, "Citation abc1234 should be tracked"
+    assert "def5678" in all_spans, "Citation def5678 should be tracked"
+    assert all_spans["abc1234"] == [(10, 18)], "Span positions should match"
+
+    # Add another span for an existing citation
+    tracker.is_new_span("abc1234", (50, 58))
+
+    # Check if the new span was added
+    all_spans = tracker.get_all_spans()
+    assert len(all_spans["abc1234"]) == 2, "Citation abc1234 should have 2 spans"
+    assert (50, 58) in all_spans["abc1234"], "New span should be added"
+
+def test_citation_span_uniqueness():
+    """Test that CitationTracker correctly identifies duplicate spans."""
+    tracker = CitationTracker()
+
+    # Record a span
+    tracker.is_new_span("abc1234", (10, 18))
+
+    # Check if the same span is recognized as not new
+    assert not tracker.is_new_span("abc1234", (10, 18)), "Duplicate span should not be considered new"
+
+    # Check if different span for same citation is recognized as new
+    assert tracker.is_new_span("abc1234", (20, 28)), "Different span should be considered new"
+
+    # Check if same span for different citation is recognized as new
+    assert tracker.is_new_span("def5678", (10, 18)), "Same span for different citation should be considered new"
+
+def test_citation_with_punctuation():
+    """Test extraction of citations with surrounding punctuation."""
+    text = "Citations with punctuation: ([abc1234]), [def5678]!, and [ghi9012]."
+
+    # Extract citations
+    citations = extract_citations(text)
+
+    # Check if all citations are extracted correctly
+    assert "abc1234" in citations, "Citation abc1234 should be extracted"
+    assert "def5678" in citations, "Citation def5678 should be extracted"
+    assert "ghi9012" in citations, "Citation ghi9012 should be extracted"
+
+def test_citation_extraction_with_invalid_formats():
+    """Test that invalid citation formats are not extracted."""
+    text = "Invalid citation formats: [123], [abcdef], [abc123456789], and valid [abc1234]."
+
+    # Extract citations
+    citations = extract_citations(text)
+
+    # Check that only valid citations are extracted
+    assert len(citations) == 1, "Only one valid citation should be extracted"
+    assert "abc1234" in citations, "Only valid citation abc1234 should be extracted"
+    assert "123" not in citations, "Invalid citation [123] should not be extracted"
+    assert "abcdef" not in citations, "Invalid citation [abcdef] should not be extracted"
+    assert "abc123456789" not in citations, "Invalid citation [abc123456789] should not be extracted"

@@ -153,7 +153,7 @@ class TestFilterTypeConversions:
         filters = {"id": None}
         sql, params = simplified_apply_filters(filters, [])
         # Different implementations might handle NULL differently
-        assert ("IS NULL" in sql or "= NULL" in sql or 
+        assert ("IS NULL" in sql or "= NULL" in sql or
                 (sql.strip().endswith("= $1") and (not params or params == [None]))), "Should handle null in top-level column"
 
         # Metadata field
@@ -211,9 +211,9 @@ class TestRealWorldQueries:
                 {"metadata.score": {SimplifiedFilterOperator.GT: 80}}
             ]
         }
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Basic checks
         assert " AND " in sql, "Should use AND to combine all conditions"
         assert "collection_ids &&" in sql, "Should use overlap operator for collections"
@@ -222,13 +222,13 @@ class TestRealWorldQueries:
         assert "metadata->>'status'" in sql or "metadata->'status'" in sql, "Should compare status as text"
         assert "@>" in sql, "Should use containment for tags"
         assert "score" in sql and "numeric" in sql, "Should compare score as numeric"
-        
+
         # Check parameters
         assert ["collection1", "collection2"] in params, "Should include collection IDs"
         assert "2021-01-01" in params, "Should include date string"
         assert "active" in params, "Should include status"
         assert "80" in params, "Should include score (as string)"
-        
+
         # At least one parameter should be a JSON string for tags
         assert any(isinstance(p, str) and "important" in p for p in params), "Should include JSON-encoded tags"
 
@@ -246,15 +246,15 @@ class TestRealWorldQueries:
                 }
             ]
         }
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Basic checks
         assert " OR " in sql, "Should use OR for pagination options"
         assert " AND " in sql, "Should use AND for tie-breaker"
         assert "metadata->>'created_at'" in sql, "Should reference created_at"
         assert "id <" in sql, "Should have ID comparison"
-        
+
         # Check parameters
         assert "2023-01-01" in params, "Should include date twice"
         assert params.count("2023-01-01") == 2, "Date should appear twice (LT and EQ)"
@@ -266,9 +266,9 @@ class TestRealWorldQueries:
         filters = {
             "metadata.level1.level2.level3.value": {SimplifiedFilterOperator.GT: 100}
         }
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Check JSON path navigation
         expected_path = "metadata->'level1'->'level2'->'level3'->>'value'"
         assert expected_path in sql, "Should properly navigate nested JSON path"
@@ -285,16 +285,16 @@ class TestRealWorldQueries:
                 {"metadata.content": {SimplifiedFilterOperator.ILIKE: "%search term%"}}
             ]
         }
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Check basic structure
         assert " OR " in sql, "Should use OR to combine text search conditions"
         # Different implementations can use different JSON extraction operators
         assert "metadata" in sql and "title" in sql and "ILIKE" in sql, "Should search in title with ILIKE"
         assert "metadata" in sql and "description" in sql, "Should search in description"
         assert "metadata" in sql and "content" in sql, "Should search in content"
-        
+
         # Check parameters
         assert all("%search term%" in p for p in params), "All parameters should contain search term"
 
@@ -308,11 +308,11 @@ class TestCornerCases:
         many_conditions = []
         for i in range(50):  # 50 conditions
             many_conditions.append({"metadata.field" + str(i): "value" + str(i)})
-        
+
         filters = {SimplifiedFilterOperator.AND: many_conditions}
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Basic checks
         assert " AND " in sql, "Should use AND to combine conditions"
         assert len(params) == 50, "Should have 50 parameters"
@@ -328,15 +328,15 @@ class TestCornerCases:
                 {"metadata.score": {SimplifiedFilterOperator.LT: 100}}
             ]
         }
-        
+
         sql, params = simplified_apply_filters(filters, [])
-        
+
         # Check structure
         assert " AND " in sql, "Should use AND to combine range bounds"
         assert "metadata->>'score'" in sql, "Should reference score field"
         assert "::numeric >=" in sql, "Should have GTE comparison"
         assert "::numeric <" in sql, "Should have LT comparison"
-        
+
         # Check parameters
         assert "50" in params, "Should include lower bound"
         assert "100" in params, "Should include upper bound"
@@ -348,7 +348,7 @@ class TestCornerCases:
         sql, params = simplified_apply_filters(filters, [])
         # The behavior depends on implementation - could be "FALSE" or empty list handling
         assert "FALSE" in sql.upper() or ("ANY" in sql and "[]" in str(params)), "Should handle empty IN list"
-        
+
         # Empty CONTAINS list
         filters = {"metadata.tags": {SimplifiedFilterOperator.CONTAINS: []}}
         sql, params = simplified_apply_filters(filters, [])
@@ -363,7 +363,7 @@ class TestCornerCases:
         # Should be safe because of parameterization
         assert "id =" in sql, "Should handle value normally"
         assert params == ["value'; DROP TABLE users; --"], "Should include value as parameter"
-        
+
         # Very long string
         long_string = "x" * 1000  # 1000 character string
         filters = {"metadata.field": long_string}
@@ -378,7 +378,7 @@ class TestCornerCases:
         sql, params = simplified_apply_filters(filters, [])
         assert "metadata->>'title'" in sql, "Should handle Unicode normally"
         assert params == ["😀 Unicode 测试"], "Should include Unicode string as parameter"
-        
+
         # Unicode in field name (might not be supported in current implementation)
         try:
             filters = {"metadata.标题": "value"}
@@ -590,11 +590,11 @@ class TestMetadataFilters:
         # With prefix
         filters1 = {"metadata.key": "value"}
         sql1, params1 = main_apply_filters(filters1, [])
-        
+
         # Without prefix (should be treated as metadata)
         filters2 = {"key": "value"}
         sql2, params2 = main_apply_filters(filters2, [], top_level_columns=["id", "owner_id"])
-        
+
         # Both should produce the same SQL
         assert "metadata" in sql2, "Field not in top_level_columns should be treated as metadata"
         assert params1 == params2, "Parameters should be the same"
@@ -678,15 +678,15 @@ class TestEdgeCases:
     def test_filter_modes(self):
         """Test different filter modes (where_clause, condition_only, append_only)."""
         filters = {"id": "test-id"}
-        
+
         # Default where_clause mode
         sql1, _ = main_apply_filters(filters, [])
         assert sql1.startswith("WHERE"), "Default mode should prepend WHERE"
-        
+
         # condition_only mode
         sql2, _ = main_apply_filters(filters, [], mode="condition_only")
         assert not sql2.startswith("WHERE"), "condition_only mode should not prepend WHERE"
-        
+
         # append_only mode
         sql3, _ = main_apply_filters(filters, [], mode="append_only")
         assert sql3.startswith("AND"), "append_only mode should prepend AND"
@@ -718,13 +718,13 @@ class TestEdgeCases:
         """Test with custom top_level_columns parameter."""
         # Define a custom set of top-level columns
         custom_columns = ["id", "custom_field"]
-        
+
         # Test a field that's in custom_columns
         filters = {"custom_field": "value"}
         sql, _ = main_apply_filters(filters, [], top_level_columns=custom_columns)
         assert "custom_field =" in sql, "Should treat custom_field as a normal column"
         assert "metadata" not in sql, "Should not treat custom_field as metadata"
-        
+
         # Test a field that's not in custom_columns
         filters = {"other_field": "value"}
         sql, _ = main_apply_filters(filters, [], top_level_columns=custom_columns)
@@ -734,7 +734,7 @@ class TestEdgeCases:
         """Test with custom json_column parameter."""
         # Use a custom json column name
         custom_json = "properties"
-        
+
         filters = {"field": "value"}
         sql, _ = main_apply_filters(filters, [], top_level_columns=["id"], json_column=custom_json)
         assert custom_json in sql, f"Should use {custom_json} instead of metadata"
@@ -759,23 +759,23 @@ class TestComplexFilterCombinations:
             ]
         }
         sql, params = main_apply_filters(filters, [])
-        
+
         # Check for AND operator
         assert " AND " in sql, "SQL should contain AND operator"
-        
+
         # Check for metadata handling
         assert "metadata->>'score'" in sql, "SQL should handle metadata field"
         assert "::numeric >=" in sql, "SQL should handle numeric comparison"
-        
+
         # Check for OR operator
         assert " OR " in sql, "SQL should contain OR operator"
-        
+
         # Check for collection_id handling
         assert "collection_ids" in sql, "SQL should handle collection_id"
-        
+
         # Check for parent_id handling
         assert "parent_id = ANY" in sql, "SQL should handle parent_id IN condition"
-        
+
         # Check parameters
         assert len(params) == 4, "Should have 4 parameters"
         assert "test-id" in params, "Parameters should include test-id"
@@ -787,7 +787,7 @@ class TestComplexFilterCombinations:
         """Test filtering with deeply nested JSON fields."""
         filters = {"metadata.level1.level2.level3.deep": {MainFilterOperator.GT: 100}}
         sql, params = main_apply_filters(filters, [])
-        
+
         expected_path = (
             "metadata->'level1'->'level2'->'level3'->>'deep'"
         )
