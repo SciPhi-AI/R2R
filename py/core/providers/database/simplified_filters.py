@@ -1,10 +1,16 @@
+"""
+Simplified filter implementation for R2R's database queries.
+This implementation maintains all functionality of the original filters.py
+but with a more streamlined structure and less code complexity.
+"""
+
 import json
-from typing import Any
+from typing import Any, Optional
 
 # Using lowercase list, dict, etc. to comply with pre-commit check
 # and maintain backward compatibility
 
-# List of column variables
+# Columns that are directly on the table (not in metadata)
 COLUMN_VARS = [
     "id",
     "document_id",
@@ -14,10 +20,14 @@ COLUMN_VARS = [
 
 
 class FilterError(Exception):
+    """Exception raised for filter processing errors."""
+
     pass
 
 
 class FilterOperator:
+    """Constants for filter operations."""
+
     EQ = "$eq"
     NE = "$ne"
     LT = "$lt"
@@ -66,7 +76,7 @@ def _process_logical_operator(
 
 def _process_field_condition(
     field: str,
-    condition: dict[str, Any] | Any,
+    condition: dict[str, Any],
     params: list[Any],
     top_level_columns: set[str],
     json_column: str,
@@ -208,17 +218,16 @@ def _build_collection_id_condition(
             raise FilterError(
                 "$eq for collection_id expects a single UUID string"
             )
-        # Store the single ID directly to match test expectations
-        params.append(value)
-        return f"collection_ids && ARRAY[${param_idx}::uuid]", params
+        params.append([value])
+        return f"collection_ids && ${param_idx}::uuid[]", params
 
     elif op == FilterOperator.NE:
         if not isinstance(value, str):
             raise FilterError(
                 "$ne for collection_id expects a single UUID string"
             )
-        params.append(value)
-        return f"NOT (collection_ids && ARRAY[${param_idx}::uuid])", params
+        params.append([value])
+        return f"NOT (collection_ids && ${param_idx}::uuid[])", params
 
     elif op == FilterOperator.IN:
         if not isinstance(value, list):
@@ -274,16 +283,14 @@ def _build_collection_ids_condition(
 
     elif op == FilterOperator.CONTAINS:
         if isinstance(value, str):
-            # Pass the single ID directly for test compatibility
-            params.append(value)
-            return f"collection_ids @> ARRAY[${param_idx}::uuid]", params
+            params.append([value])
         elif isinstance(value, list):
             params.append(value)
-            return f"collection_ids @> ${param_idx}::uuid[]", params
         else:
             raise FilterError(
                 "$contains for collection_ids expects a UUID or list of UUIDs"
             )
+        return f"collection_ids @> ${param_idx}::uuid[]", params
 
     elif op == FilterOperator.OVERLAP:
         if not isinstance(value, list):
@@ -303,25 +310,11 @@ def _build_column_condition(
     param_idx = len(params) + 1
 
     if op == FilterOperator.EQ:
-        # Special handling for NULL values
-        if value is None:
-            return f"{field} IS NULL", params
-        # Convert boolean values to lowercase strings
-        if isinstance(value, bool):
-            params.append("true" if value else "false")
-        else:
-            params.append(value)
+        params.append(value)
         return f"{field} = ${param_idx}", params
 
     elif op == FilterOperator.NE:
-        # Special handling for NULL values
-        if value is None:
-            return f"{field} IS NOT NULL", params
-        # Convert boolean values to lowercase strings
-        if isinstance(value, bool):
-            params.append("true" if value else "false")
-        else:
-            params.append(value)
+        params.append(value)
         return f"{field} != ${param_idx}", params
 
     elif op == FilterOperator.LT:
@@ -384,7 +377,7 @@ def _build_metadata_condition(
         FilterOperator.GTE,
         FilterOperator.EQ,
         FilterOperator.NE,
-    ) and isinstance(value, (int, float, str, bool))
+    ) and isinstance(value, (int, float, str))
 
     if (
         op == FilterOperator.IN
@@ -411,13 +404,17 @@ def _build_metadata_condition(
 
     # Convert numeric values to strings for text comparison
     def prepare_value(v):
+        if v is None:
+            return None
         if isinstance(v, bool):
             return "true" if v else "false"
-        elif isinstance(v, (int, float)):
-            return str(v)
-        return v
+        return str(v) if isinstance(v, (int, float)) else v
 
     if op == FilterOperator.EQ:
+        # Special handling for NULL values
+        if value is None:
+            return f"{path_expr} IS NULL", params
+
         if use_text_extraction:
             prepared_val = prepare_value(value)
             params.append(prepared_val)
@@ -427,9 +424,12 @@ def _build_metadata_condition(
             return f"{path_expr} = ${param_idx}::jsonb", params
 
     elif op == FilterOperator.NE:
+        # Special handling for NULL values
+        if value is None:
+            return f"{path_expr} IS NOT NULL", params
+
         if use_text_extraction:
-            prepared_val = prepare_value(value)
-            params.append(prepared_val)
+            params.append(prepare_value(value))
             return f"{path_expr} != ${param_idx}", params
         else:
             params.append(json.dumps(value))
@@ -456,16 +456,17 @@ def _build_metadata_condition(
             raise FilterError("argument to $in filter must be a list")
 
         if use_text_extraction:
-            str_vals = [prepare_value(v) for v in value]
+            str_vals = [
+                str(v) if isinstance(v, (int, float)) else v for v in value
+            ]
             params.append(str_vals)
             return f"{path_expr} = ANY(${param_idx}::text[])", params
 
-        # For JSON arrays, use containment checks with proper parameter indexing
+        # For JSON arrays, use containment checks
         conditions = []
-        for v in value:
+        for i, v in enumerate(value):
             params.append(json.dumps(v))
-            current_param_idx = len(params)
-            conditions.append(f"{path_expr} @> ${current_param_idx}::jsonb")
+            conditions.append(f"{path_expr} @> ${param_idx + i}::jsonb")
         return f"({' OR '.join(conditions)})", params
 
     elif op == FilterOperator.CONTAINS:
@@ -490,7 +491,7 @@ def apply_filters(
     filters: dict[str, Any],
     params: list[Any],
     mode: str = "where_clause",
-    top_level_columns: list[str] | None = None,
+    top_level_columns: Optional[list[str]] = None,
     json_column: str = "metadata",
 ) -> tuple[str, list[Any]]:
     """Apply filters with consistent WHERE clause handling.
