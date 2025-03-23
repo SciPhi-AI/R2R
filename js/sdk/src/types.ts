@@ -468,26 +468,26 @@ export interface PaginatedR2RResult<T> extends R2RResults<T> {
 // ---------------------------
 
 /**
- * Full API Key model (includes the private `api_key` which is only
+ * Full API Key model (includes the private `apiKey` which is only
  * returned ONCE at creation time).
  */
 export interface ApiKey {
-  public_key: string;
+  publicKey: string;
   /** The private key, only returned during creation. */
-  api_key: string;
-  key_id: string;
+  apiKey: string;
+  keyId: string;
   name?: string;
 }
 
 /**
- * API Key model that omits the private `api_key`. Typically used
+ * API Key model that omits the private `apiKey`. Typically used
  * for listing user keys.
  */
 export interface ApiKeyNoPriv {
-  public_key: string;
-  key_id: string;
+  publicKey: string;
+  keyId: string;
   name?: string;
-  updated_at: string; // or `Date` if your code auto-parses
+  updatedAt: string; // or `Date` if your code auto-parses
 }
 
 /**

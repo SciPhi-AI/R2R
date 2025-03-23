@@ -2,8 +2,9 @@ js/sdk/**/*.js
 js/tests/*
 **/.DS_Store
 
+docker/env/*
+!docker/env/*.template
 
-docker/env/
 docker/compose.yaml
 
 paul/

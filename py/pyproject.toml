@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.5.4"
+version = "3.5.5"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,7 +17,7 @@ dependencies = [
     "alembic >=1.13.3,<2.0.0",
     "fastapi >=0.115.11,<0.116.0",
     "httpx >=0.27.0,<0.28.0",
-    "openai >=1.11.1,<2.0.0",
+    "openai >=1.11.1,<1.61.0",
     "python-dotenv >=1.0.1,<2.0.0",
     "psycopg-binary >=3.2.3,<4.0.0",
     "requests >=2.31.0,<3.0.0",
@@ -55,7 +55,7 @@ core = [
     "google-genai >=0.6.0,<0.7.0",
     "gunicorn >=21.2.0,<22.0.0",
     "hatchet-sdk ==0.47.0",
-    "litellm >=1.58.2,<2.0.0",
+    "litellm >=1.58.2,<1.63.2",
     "markdown >=3.6,<4.0",
     "msg-parser>=1.2.0",
     "networkx >=3.3,<4.0",
@@ -64,12 +64,12 @@ core = [
     "ollama >=0.3.1,<0.4.0",
     "openpyxl >=3.1.2,<4.0.0",
     "orgparse >=0.4.20231004,<0.5.0",
-    "pdf2image >=1.17.0,<2.0.0",
     "pillow >=11.1.0,<12.0.0",
     "pillow-heif >=0.21.0,<0.22.0",
     "psutil >=6.0.0,<7.0.0",
     "pydantic[email] >=2.8.2,<3.0.0",
     "pyjwt >=2.8.0,<3.0.0",
+    "pymupdf>=1.25.4",
     "pynacl >=1.5.0,<2.0.0",
     "pypdf >=4.2.0,<5.0.0",
     "pypdf2 >=3.0.1,<4.0.0",
