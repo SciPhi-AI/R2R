@@ -3,13 +3,16 @@ import axios, {
   Method,
   AxiosResponse,
   AxiosRequestConfig,
+// @ts-ignore: Ignore module declaration error for axios
 } from "axios";
-import FormData from "form-data";
+// @ts-ignore: Ignore module declaration error for axios
 import { ensureCamelCase } from "./utils";
 
 let fs: any;
-
+  // @ts-ignore: This is only for the GitHub flow build, not the dev environment
+  fs = require("fs");
 if (typeof window === "undefined") {
+  // @ts-ignore: This is only for the GitHub flow build, not the dev environment
   fs = require("fs");
 }
 
@@ -51,7 +54,8 @@ export abstract class BaseClient {
   ) {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
-    this.apiKey = process.env.R2R_API_KEY || null;
+  // @ts-ignore: This is only for the GitHub flow build, not the dev environment
+  this.apiKey = process.env.R2R_API_KEY || null;
     this.refreshToken = null;
     this.anonymousTelemetry = anonymousTelemetry;
 
