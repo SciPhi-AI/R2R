@@ -17,6 +17,7 @@ from ..config import R2RConfig
 from ..services.auth_service import AuthService  # noqa: F401
 from ..services.graph_service import GraphService  # noqa: F401
 from ..services.ingestion_service import IngestionService  # noqa: F401
+from ..services.maintenance_service import MaintenanceService  # noqa: F401
 from ..services.management_service import ManagementService  # noqa: F401
 from ..services.retrieval_service import (  # type: ignore
     RetrievalService,  # noqa: F401 # type: ignore
@@ -27,7 +28,14 @@ logger = logging.getLogger()
 
 
 class R2RBuilder:
-    _SERVICES = ["auth", "ingestion", "management", "retrieval", "graph"]
+    _SERVICES = [
+        "auth",
+        "ingestion",
+        "maintenance",
+        "management",
+        "retrieval",
+        "graph",
+    ]
 
     def __init__(self, config: R2RConfig):
         self.config = config
@@ -49,6 +57,8 @@ class R2RBuilder:
         }
 
         services = self._create_services(service_params)
+
+        await services.maintenance.initialize()
 
         routers = {
             "chunks_router": ChunksRouter(
