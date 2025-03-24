@@ -3,22 +3,17 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
+from core.base.providers.embedding import EmbeddingProvider
+from core.base.providers.llm import CompletionProvider
 from core.providers import (
-    AnthropicCompletionProvider,
     AsyncSMTPEmailProvider,
     ClerkAuthProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
-    LiteLLMCompletionProvider,
-    LiteLLMEmbeddingProvider,
     MailerSendEmailProvider,
-    OllamaEmbeddingProvider,
-    OpenAICompletionProvider,
-    OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     R2RAuthProvider,
-    R2RCompletionProvider,
     R2RIngestionProvider,
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
@@ -45,22 +40,9 @@ class R2RProviders(BaseModel):
     )
     database: PostgresDatabaseProvider
     ingestion: R2RIngestionProvider | UnstructuredIngestionProvider
-    embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    completion_embedding: (
-        LiteLLMEmbeddingProvider
-        | OpenAIEmbeddingProvider
-        | OllamaEmbeddingProvider
-    )
-    llm: (
-        AnthropicCompletionProvider
-        | LiteLLMCompletionProvider
-        | OpenAICompletionProvider
-        | R2RCompletionProvider
-    )
+    embedding: EmbeddingProvider
+    completion_embedding: EmbeddingProvider
+    llm: CompletionProvider
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     email: (
         AsyncSMTPEmailProvider
