@@ -73,7 +73,7 @@ collection_summary_prompt = "collection_summary"
     graph_communities_prompt = "graph_communities"
 
   [database.maintenance]
-    vacuum_schedule = "* 3 * * *"  # Run at 3:00 AM daily
+    vacuum_schedule = "0 3 * * *  # Run at 3:00 AM daily
 
 [embedding]
 provider = "litellm"
