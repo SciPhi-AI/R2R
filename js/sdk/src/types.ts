@@ -241,7 +241,7 @@ export interface SearchSettings {
 }
 
 export interface VectorSearchResult {
-  chunkId: string;
+  id: string;
   documentId: string;
   userId: string;
   collectionIds: string[];
@@ -267,6 +267,8 @@ export interface GraphSearchResult {
 export interface CombinedSearchResponse {
   chunkSearchResults: VectorSearchResult[];
   graphSearchResults?: GraphSearchResult[];
+  documentSearchResults: null | any[];
+  webSearchResults: null | any[];
 }
 
 // System types
