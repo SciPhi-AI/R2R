@@ -1,0 +1,163 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches:
+      - main  # Değişiklikler 'main' branch'ine geldiğinde çalışır
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Connect and Deploy to Azure VM
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          password: ${{ secrets.AZURE_VM_PASSWORD }}
+          script: |
+            set -e  # Hata oluşursa işlemi durdur
+            ENV_PATH="/home/${{ secrets.AZURE_VM_USERNAME }}/R2R/docker/env"
+            DOCKER_PATH="/home/${{ secrets.AZURE_VM_USERNAME }}/R2R/docker"
+
+            echo "Navigating to env directory..."
+            mkdir -p $ENV_PATH
+            cd $ENV_PATH
+
+            echo "Checking and creating environment files..."
+
+            # 1) hatchet.env dosyasını kontrol edip, yoksa oluşturuyoruz
+            if [ ! -f hatchet.env ]; then
+              echo "Creating hatchet.env..."
+              cat > hatchet.env <<EOF
+DATABASE_URL=${{ secrets.HATCHET_DATABASE_URL }}
+HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH=${{ secrets.HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH }}
+HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH=${{ secrets.HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH }}
+HATCHET_DATABASE_POSTGRES_DB_NAME=${{ secrets.HATCHET_DATABASE_POSTGRES_DB_NAME }}
+DATABASE_POSTGRES_PORT=${{ secrets.HATCHET_DATABASE_POSTGRES_PORT }}
+DATABASE_POSTGRES_HOST=${{ secrets.HATCHET_DATABASE_POSTGRES_HOST }}
+DATABASE_POSTGRES_USERNAME=${{ secrets.HATCHET_DATABASE_POSTGRES_USERNAME }}
+DATABASE_POSTGRES_PASSWORD=${{ secrets.HATCHET_DATABASE_POSTGRES_PASSWORD }}
+POSTGRES_DB=${{ secrets.HATCHET_POSTGRES_DB }}
+POSTGRES_USER=${{ secrets.HATCHET_POSTGRES_USER }}
+POSTGRES_PASSWORD=${{ secrets.HATCHET_POSTGRES_PASSWORD }}
+SERVER_TASKQUEUE_RABBITMQ_URL=${{ secrets.HATCHET_SERVER_TASKQUEUE_RABBITMQ_URL }}
+SERVER_AUTH_COOKIE_DOMAIN=${{ secrets.HATCHET_SERVER_AUTH_COOKIE_DOMAIN }}
+SERVER_URL=${{ secrets.HATCHET_SERVER_URL }}
+SERVER_AUTH_COOKIE_INSECURE=${{ secrets.HATCHET_SERVER_AUTH_COOKIE_INSECURE }}
+SERVER_GRPC_BIND_ADDRESS=${{ secrets.HATCHET_SERVER_GRPC_BIND_ADDRESS }}
+SERVER_GRPC_INSECURE=${{ secrets.HATCHET_SERVER_GRPC_INSECURE }}
+SERVER_GRPC_BROADCAST_ADDRESS=${{ secrets.HATCHET_SERVER_GRPC_BROADCAST_ADDRESS }}
+SERVER_GRPC_MAX_MSG_SIZE=${{ secrets.HATCHET_SERVER_GRPC_MAX_MSG_SIZE }}
+SERVER_GRPC_PORT=${{ secrets.HATCHET_SERVER_GRPC_PORT }}
+RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_DEFAULT_USER }}
+RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_DEFAULT_PASS }}
+EOF
+            fi
+
+            # 2) postgres.env dosyasını kontrol edip, yoksa oluşturuyoruz
+            if [ ! -f postgres.env ]; then
+              echo "Creating postgres.env..."
+              cat > postgres.env <<EOF
+POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
+POSTGRES_MAX_CONNECTIONS=${{ secrets.POSTGRES_MAX_CONNECTIONS }}
+PGPORT=${{ secrets.PGPORT }}
+EOF
+            fi
+
+            # 3) r2r-dashboard.env dosyasını kontrol edip, yoksa oluşturuyoruz
+            if [ ! -f r2r-dashboard.env ]; then
+              echo "Creating r2r-dashboard.env..."
+              cat > r2r-dashboard.env <<EOF
+NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${{ secrets.NEXT_PUBLIC_R2R_DEPLOYMENT_URL }}
+NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${{ secrets.NEXT_PUBLIC_HATCHET_DASHBOARD_URL }}
+NEXT_PUBLIC_R2R_DEFAULT_EMAIL=${{ secrets.NEXT_PUBLIC_R2R_DEFAULT_EMAIL }}
+NEXT_PUBLIC_R2R_DEFAULT_PASSWORD=${{ secrets.NEXT_PUBLIC_R2R_DEFAULT_PASSWORD }}
+EOF
+            fi
+
+            # 4) r2r-full.env ve r2r.env dosyalarının eksikliğini kontrol edip, eksik olanları oluşturuyoruz
+            for file in r2r-full.env r2r.env; do
+              if [ ! -f "$file" ]; then
+                echo "Creating $file..."
+                cat > "$file" <<EOF
+R2R_PORT=${{ secrets.R2R_PORT }}
+R2R_HOST=${{ secrets.R2R_HOST }}
+R2R_LOG_LEVEL=${{ secrets.R2R_LOG_LEVEL }}
+R2R_CONFIG_NAME=${{ secrets.R2R_CONFIG_NAME }}
+R2R_CONFIG_PATH=${{ secrets.R2R_CONFIG_PATH }}
+R2R_PROJECT_NAME=${{ secrets.R2R_PROJECT_NAME }}
+R2R_SECRET_KEY=${{ secrets.R2R_SECRET_KEY }}
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_KEY=${{ secrets.SUPABASE_KEY }}
+R2R_POSTGRES_USER=${{ secrets.R2R_POSTGRES_USER }}
+R2R_POSTGRES_PASSWORD=${{ secrets.R2R_POSTGRES_PASSWORD }}
+R2R_POSTGRES_HOST=${{ secrets.R2R_POSTGRES_HOST }}
+R2R_POSTGRES_PORT=${{ secrets.R2R_POSTGRES_PORT }}
+R2R_POSTGRES_DBNAME=${{ secrets.R2R_POSTGRES_DBNAME }}
+R2R_POSTGRES_MAX_CONNECTIONS=${{ secrets.R2R_POSTGRES_MAX_CONNECTIONS }}
+R2R_POSTGRES_STATEMENT_CACHE_SIZE=${{ secrets.R2R_POSTGRES_STATEMENT_CACHE_SIZE }}
+HATCHET_CLIENT_TLS_STRATEGY=${{ secrets.HATCHET_CLIENT_TLS_STRATEGY }}
+OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+OPENAI_API_BASE=${{ secrets.OPENAI_API_BASE }}
+AZURE_FOUNDRY_API_ENDPOINT=${{ secrets.AZURE_FOUNDRY_API_ENDPOINT }}
+AZURE_FOUNDRY_API_KEY=${{ secrets.AZURE_FOUNDRY_API_KEY }}
+XAI_API_KEY=${{ secrets.XAI_API_KEY }}
+ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+AZURE_API_KEY=${{ secrets.AZURE_API_KEY }}
+AZURE_API_BASE=${{ secrets.AZURE_API_BASE }}
+AZURE_API_VERSION=${{ secrets.AZURE_API_VERSION }}
+GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+VERTEX_PROJECT=${{ secrets.VERTEX_PROJECT }}
+VERTEX_LOCATION=${{ secrets.VERTEX_LOCATION }}
+GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+AWS_REGION_NAME=${{ secrets.AWS_REGION_NAME }}
+GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}
+COHERE_API_KEY=${{ secrets.COHERE_API_KEY }}
+ANYSCALE_API_KEY=${{ secrets.ANYSCALE_API_KEY }}
+OLLAMA_API_BASE=${{ secrets.OLLAMA_API_BASE }}
+LM_STUDIO_API_BASE=${{ secrets.LM_STUDIO_API_BASE }}
+LM_STUDIO_API_KEY=${{ secrets.LM_STUDIO_API_KEY }}
+HUGGINGFACE_API_BASE=${{ secrets.HUGGINGFACE_API_BASE }}
+HUGGINGFACE_API_KEY=${{ secrets.HUGGINGFACE_API_KEY }}
+UNSTRUCTURED_API_KEY=${{ secrets.UNSTRUCTURED_API_KEY }}
+UNSTRUCTURED_API_URL=${{ secrets.UNSTRUCTURED_API_URL }}
+UNSTRUCTURED_SERVICE_URL=${{ secrets.UNSTRUCTURED_SERVICE_URL }}
+UNSTRUCTURED_NUM_WORKERS=${{ secrets.UNSTRUCTURED_NUM_WORKERS }}
+CLUSTERING_SERVICE_URL=${{ secrets.CLUSTERING_SERVICE_URL }}
+GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+GITHUB_CLIENT_ID=${{ secrets.R2R_GITHUB_CLIENT_ID }}
+GITHUB_CLIENT_SECRET=${{ secrets.R2R_GITHUB_CLIENT_SECRET }}
+GITHUB_REDIRECT_URI=${{ secrets.R2R_GITHUB_REDIRECT_URI }}
+MAILERSEND_API_KEY=${{ secrets.MAILERSEND_API_KEY }}
+SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
+FIRECRAWL_API_KEY=${{ secrets.FIRECRAWL_API_KEY }}
+SERPER_API_KEY=${{ secrets.SERPER_API_KEY }}
+R2R_SENTRY_DSN=${{ secrets.R2R_SENTRY_DSN }}
+R2R_SENTRY_ENVIRONMENT=${{ secrets.R2R_SENTRY_ENVIRONMENT }}
+R2R_SENTRY_TRACES_SAMPLE_RATE=${{ secrets.R2R_SENTRY_TRACES_SAMPLE_RATE }}
+R2R_SENTRY_PROFILES_SAMPLE_RATE=${{ secrets.R2R_SENTRY_PROFILES_SAMPLE_RATE }}
+EOF
+              fi
+            done
+
+            echo "Moving to Docker directory..."
+            cd $DOCKER_PATH
+
+            echo "Restarting Docker and running containers..."
+            df -h  # Disk alanını kontrol et
+            free -m  # RAM kullanımını kontrol et
+            sudo systemctl restart docker  # Docker servisini yeniden başlat
+            docker compose -f compose.full.yaml --profile postgres down  # Var olan containerları durdur
+            docker compose -f compose.full.yaml --profile postgres up -d  # Yeni containerları başlat
