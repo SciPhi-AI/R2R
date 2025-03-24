@@ -18,6 +18,7 @@ from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.orchestration import OrchestrationConfig
+from ..base.providers.scheduler import SchedulerConfig
 from ..base.utils import deep_update
 
 logger = logging.getLogger()
@@ -64,6 +65,7 @@ class R2RConfig:
         "database": ["provider"],
         "agent": ["generation_config"],
         "orchestration": ["provider"],
+        "scheduler": ["provider"],
     }
 
     app: AppConfig
@@ -77,11 +79,11 @@ class R2RConfig:
     ingestion: IngestionConfig
     agent: RAGAgentConfig
     orchestration: OrchestrationConfig
+    scheduler: SchedulerConfig
 
     def __init__(self, config_data: dict[str, Any]):
         """
         :param config_data: dictionary of configuration parameters
-        :param base_path: base path when a relative path is specified for the prompts directory
         """
         # Load the default configuration
         default_config = self.load_default_config()
@@ -120,13 +122,14 @@ class R2RConfig:
         self.orchestration = OrchestrationConfig.create(
             **self.orchestration, app=self.app
         )  # type: ignore
+        self.scheduler = SchedulerConfig.create(**self.scheduler, app=self.app)  # type: ignore
 
-        IngestionConfig.set_default(**self.ingestion.dict())
+        IngestionConfig.set_default(**self.ingestion.model_dump())
 
         # override GenerationConfig defaults
         if self.completion.generation_config:
             GenerationConfig.set_default(
-                **self.completion.generation_config.dict()
+                **self.completion.generation_config.model_dump()
             )
 
     def _validate_config_section(

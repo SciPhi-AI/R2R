@@ -72,6 +72,9 @@ collection_summary_prompt = "collection_summary"
   [database.graph_enrichment_settings]
     graph_communities_prompt = "graph_communities"
 
+  [database.maintenance]
+    vacuum_schedule = "0 3 * * *"  # Run at 3:00 AM daily
+
 [embedding]
 provider = "litellm"
 # For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
@@ -120,3 +123,6 @@ provider = "simple"
 
 [email]
 provider = "console_mock" # `smtp` | `sendgrid` supported
+
+[scheduler]
+provider = "apscheduler"

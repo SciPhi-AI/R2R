@@ -121,6 +121,7 @@ __all__ = [
     "R2RProviderFactory",
     "AuthService",
     "IngestionService",
+    "MaintenanceService",
     "ManagementService",
     "RetrievalService",
     "GraphService",

@@ -19,6 +19,7 @@ from .ingestion import (
 )
 from .llm import CompletionConfig, CompletionProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
+from .scheduler import SchedulerConfig, SchedulerProvider
 
 __all__ = [
     # Auth provider
@@ -56,4 +57,7 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
+    # Scheduler provider
+    "SchedulerConfig",
+    "SchedulerProvider",
 ]
