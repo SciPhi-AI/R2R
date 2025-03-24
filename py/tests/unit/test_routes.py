@@ -83,11 +83,12 @@ def mock_providers():
 @pytest.fixture
 def mock_services():
     return R2RServices(
-        management=Mock(),
         auth=Mock(),
         ingestion=Mock(),
-        retrieval=Mock(),
         graph=Mock(),
+        maintenance=Mock(),
+        management=Mock(),
+        retrieval=Mock(),
     )
 
 
