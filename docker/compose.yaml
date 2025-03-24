@@ -1,0 +1,57 @@
+volumes:
+  postgres_data:
+    name: postgres_data
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    profiles: [postgres]
+    env_file:
+      - ./env/postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=1024
+
+  graph_clustering:
+    image: ragtoriches/cluster-prod
+    ports:
+      - "7276:7276"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  r2r:
+    image: sciphiai/r2r:latest
+    ports:
+      - "7272:7272"
+    env_file:
+      - ./env/r2r.env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    volumes:
+      - ./user_configs:/app/user_configs
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  r2r-dashboard:
+    image: sciphiai/r2r-dashboard:1.0.2
+    env_file:
+      - ./env/r2r-dashboard.env
+    ports:
+      - "7273:3000"

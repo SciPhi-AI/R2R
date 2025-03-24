@@ -2,15 +2,7 @@ js/sdk/**/*.js
 js/tests/*
 **/.DS_Store
 
-docker/env/*
-!docker/env/*.template
-
-docker/compose.yaml
-
-paul/
-todo_list.txt
-.pre-commit-config.yaml
-
+.env
 .gitignore
 *.log
 .DS_Store
@@ -19,7 +11,6 @@ logs/
 workspace/
 py/workspace/
 uploads/
-env/
 **/__pycache__
 **/.mypy_cache
 **/.pytest_cache
