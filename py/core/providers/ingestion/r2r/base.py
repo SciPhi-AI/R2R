@@ -133,15 +133,29 @@ class R2RIngestionProvider(IngestionProvider):
                 )
         # FIXME: This doesn't allow for flexibility for a parser that might not
         # need an llm_provider, etc.
-        for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
-                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
-                    config=self.config,
-                    database_provider=self.database_provider,
-                    llm_provider=self.llm_provider,
-                    ocr_provider=self.ocr_provider,
-                )
-            )
+        for doc_type, parser_names in self.config.extra_parsers.items():
+            if not isinstance(parser_names, list):
+                parser_names = [parser_names]
+
+            for parser_name in parser_names:
+                parser_key = f"{parser_name}_{str(doc_type)}"
+
+                try:
+                    self.parsers[parser_key] = self.EXTRA_PARSERS[doc_type][
+                        parser_name
+                    ](
+                        config=self.config,
+                        database_provider=self.database_provider,
+                        llm_provider=self.llm_provider,
+                        ocr_provider=self.ocr_provider,
+                    )
+                    logger.info(
+                        f"Initialized extra parser {parser_name} for {doc_type}"
+                    )
+                except KeyError as e:
+                    logger.error(
+                        f"Parser {parser_name} for document type {doc_type} not found: {e}"
+                    )
 
     def _build_text_splitter(
         self, ingestion_config_override: Optional[dict] = None

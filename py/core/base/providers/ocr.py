@@ -90,5 +90,31 @@ class OCRProvider(Provider):
         pass
 
     @abstractmethod
-    async def process_pdf(self, file_path: str | None = None, file_content: bytes | None = None) -> Any:
+    async def upload_file(
+        self,
+        file_path: str | None = None,
+        file_content: bytes | None = None,
+        file_name: str | None = None,
+    ) -> Any:
+        pass
+
+    @abstractmethod
+    async def process_file(
+        self, file_id: str, include_image_base64: bool = False
+    ) -> Any:
+        pass
+
+    @abstractmethod
+    async def process_url(
+        self,
+        url: str,
+        is_image: bool = False,
+        include_image_base64: bool = False,
+    ) -> Any:
+        pass
+
+    @abstractmethod
+    async def process_pdf(
+        self, file_path: str | None = None, file_content: bytes | None = None
+    ) -> Any:
         pass
