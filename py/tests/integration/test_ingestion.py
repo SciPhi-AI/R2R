@@ -236,6 +236,22 @@ def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
         )
         assert result is not None
 
+@pytest.mark.parametrize(
+    "file_type,file_path",
+    [
+        ("pdf", "core/examples/supported_file_types/pdf.pdf"),
+    ],
+)
+def test_ocr_ingestion(client: R2RClient, file_type: str, file_path: str):
+    """Test ocr ingestion for a pdf file."""
+    result = file_ingestion(
+        client=client,
+        file_path=file_path,
+        ingestion_mode="ocr",
+        cleanup=True,
+        wait_for_completion=True,
+    )
+    assert result is not None
 
 def test_custom_ingestion_config(client: R2RClient):
     """Test ingestion with custom configuration parameters."""

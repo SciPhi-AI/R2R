@@ -26,6 +26,7 @@ from core.providers.ingestion import R2RIngestionProvider
 from core.providers.llm import OpenAICompletionProvider
 from core.providers.orchestration import SimpleOrchestrationProvider
 from core.providers.scheduler import APSchedulerProvider
+from core.providers.ocr import MistralOCRProvider
 
 ROUTERS = [
     UsersRouter,
@@ -57,6 +58,8 @@ def mock_providers():
     mock_completion_embedding.config = Mock()
     mock_llm = create_autospec(OpenAICompletionProvider)
     mock_llm.config = Mock()
+    mock_ocr = create_autospec(MistralOCRProvider)
+    mock_ocr.config = Mock()
     mock_orchestration = create_autospec(SimpleOrchestrationProvider)
     mock_orchestration.config = Mock()
     mock_email = create_autospec(ConsoleMockEmailProvider)
@@ -75,6 +78,7 @@ def mock_providers():
         embedding=mock_embedding,
         ingestion=mock_ingestion,
         llm=mock_llm,
+        ocr=mock_ocr,
         orchestration=mock_orchestration,
         scheduler=mock_scheduler,
     )
