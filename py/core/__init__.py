@@ -131,6 +131,7 @@ __all__ = [
     "DOCXParser",
     "ImageParser",
     "ODTParser",
+    "MistralOCRParser",
     "VLMPDFParser",
     "BasicPDFParser",
     "PDFParserUnstructured",

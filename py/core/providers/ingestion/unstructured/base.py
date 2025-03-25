@@ -105,6 +105,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,  # type: ignore
             "zerox": parsers.VLMPDFParser,  # type: ignore
+            "mistral-ocr": parsers.MistralOCRParser,  # type: ignore
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }

@@ -23,6 +23,30 @@ from core.base.providers import (
 logger = logging.getLogger()
 
 
+class MistralOCRParser(AsyncParser[str | bytes]):
+    """
+    A parser for PDF documents using Mistral's OCR for page processing.
+
+    Mistral supports directly processing PDF files, so this parser is a simple wrapper around the Mistral OCR API.
+    """
+
+    print(f"MistralOCRParser called with {AsyncParser[str | bytes]}")
+
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+    ):
+        self.database_provider = database_provider
+
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
+        """Ingest PDF data and yield text from each page."""
+        raise NotImplementedError("Mistral OCR parser not implemented.")
+
+
 class VLMPDFParser(AsyncParser[str | bytes]):
     """A parser for PDF documents using vision models for page processing with PyMuPDF."""
 

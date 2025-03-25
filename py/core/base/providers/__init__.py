@@ -14,7 +14,6 @@ from .embedding import EmbeddingConfig, EmbeddingProvider
 from .ingestion import (
     ChunkingStrategy,
     IngestionConfig,
-    IngestionMode,
     IngestionProvider,
 )
 from .llm import CompletionConfig, CompletionProvider
@@ -30,7 +29,6 @@ __all__ = [
     "Provider",
     "ProviderConfig",
     # Ingestion provider
-    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",

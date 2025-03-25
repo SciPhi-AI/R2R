@@ -79,6 +79,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.PDF: {
             "unstructured": parsers.PDFParserUnstructured,
             "zerox": parsers.VLMPDFParser,
+            "mistral-ocr": parsers.MistralOCRParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
     }
@@ -135,6 +136,8 @@ class R2RIngestionProvider(IngestionProvider):
                     llm_provider=self.llm_provider,
                 )
             )
+
+        print(f"All parsers: {self.parsers}")
 
     def _build_text_splitter(
         self, ingestion_config_override: Optional[dict] = None
@@ -239,24 +242,32 @@ class R2RIngestionProvider(IngestionProvider):
                     f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
                 # TODO - Cleanup this approach to be less hardcoded
-                if (
-                    document.document_type != DocumentType.PDF
-                    or parser_overrides[DocumentType.PDF.value] != "zerox"
-                ):
-                    raise ValueError(
-                        "Only Zerox PDF parser override is available."
-                    )
+                # if (
+                #     document.document_type != DocumentType.PDF
+                #     or parser_overrides[DocumentType.PDF.value] != "zerox"
+                # ):
+                #     raise ValueError(
+                #         "Only Zerox PDF parser override is available."
+                #     )
 
-                # Collect content from VLMPDFParser
-                async for chunk in self.parsers[
-                    f"zerox_{DocumentType.PDF.value}"
-                ].ingest(file_content, **ingestion_config_override):
-                    if isinstance(chunk, dict) and chunk.get("content"):
-                        contents.append(chunk)
-                    elif (
-                        chunk
-                    ):  # Handle string output for backward compatibility
-                        contents.append({"content": chunk})
+                if parser_overrides[DocumentType.PDF.value] == "zerox":
+                    # Collect content from VLMPDFParser
+                    async for chunk in self.parsers[
+                        f"zerox_{DocumentType.PDF.value}"
+                    ].ingest(file_content, **ingestion_config_override):
+                        if isinstance(chunk, dict) and chunk.get("content"):
+                            contents.append(chunk)
+                        elif (
+                            chunk
+                        ):  # Handle string output for backward compatibility
+                            contents.append({"content": chunk})
+                elif parser_overrides[DocumentType.PDF.value] == "mistral-ocr":
+                    try:
+                        response = await self.parsers[
+                            f"mistral-ocr_{DocumentType.PDF.value}"
+                        ].ingest(file_content, **ingestion_config_override)
+                    except Exception as e:
+                        print(e)
 
                 if (
                     contents
