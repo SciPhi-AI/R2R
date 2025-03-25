@@ -288,7 +288,7 @@ class RawChunk(R2RSerializable):
 
 class IngestionMode(str, Enum):
     hi_res = "hi-res"
-    mistral_ocr = "mistral-ocr"
+    ocr = "ocr"
     fast = "fast"
     custom = "custom"
 
@@ -363,7 +363,7 @@ class IngestionConfig(R2RSerializable):
                 document_summary_model="",
             )
 
-        elif mode == "mistral_ocr":
+        elif mode == "ocr":
             # Use Mistral OCR for PDFs and images.
             return cls(
                 provider="r2r",

@@ -145,8 +145,8 @@ class IngestionConfig(ProviderConfig):
         """Return default ingestion configuration for a given mode."""
         if mode == "hi-res":
             return cls(app=app, parser_overrides={"pdf": "zerox"})
-        if mode == "mistral-ocr":
-            return cls(app=app, parser_overrides={"pdf": "mistral-ocr"})
+        if mode == "ocr":
+            return cls(app=app, parser_overrides={"pdf": "ocr"})
         if mode == "fast":
             return cls(app=app, skip_document_summary=True)
         else:

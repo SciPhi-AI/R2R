@@ -269,7 +269,7 @@ class DocumentsRouter(BaseRouterV3):
                 description=(
                     "Ingestion modes:\n"
                     "- `hi-res`: Thorough ingestion with full summaries and enrichment.\n"
-                    "- `mistral-ocr`: OCR via Mistral and full summaries.\n"
+                    "- `ocr`: OCR via Mistral and full summaries.\n"
                     "- `fast`: Quick ingestion with minimal enrichment and no summaries.\n"
                     "- `custom`: Full control via `ingestion_config`.\n\n"
                     "If `filters` or `limit` (in `ingestion_config`) are provided alongside `hi-res` or `fast`, "

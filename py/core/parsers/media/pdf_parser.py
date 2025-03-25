@@ -10,6 +10,7 @@ from io import BytesIO
 from typing import AsyncGenerator
 
 import pymupdf
+from mistralai.models import OCRResponse
 from pypdf import PdfReader
 
 from core.base.abstractions import GenerationConfig
@@ -18,33 +19,55 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     IngestionConfig,
+    OCRProvider,
 )
 
 logger = logging.getLogger()
 
 
-class MistralOCRParser(AsyncParser[str | bytes]):
+class OCRPDFParser(AsyncParser[str | bytes]):
     """
     A parser for PDF documents using Mistral's OCR for page processing.
 
     Mistral supports directly processing PDF files, so this parser is a simple wrapper around the Mistral OCR API.
     """
 
-    print(f"MistralOCRParser called with {AsyncParser[str | bytes]}")
-
     def __init__(
         self,
         config: IngestionConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
     ):
+        self.config = config
         self.database_provider = database_provider
+        self.ocr_provider = ocr_provider
 
     async def ingest(
         self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """Ingest PDF data and yield text from each page."""
-        raise NotImplementedError("Mistral OCR parser not implemented.")
+        try:
+            logger.info("Starting PDF ingestion using MistralOCRParser")
+
+            if isinstance(data, str):
+                response: OCRResponse = await self.ocr_provider.process_pdf(
+                    file_path=data
+                )
+            else:
+                response: OCRResponse = await self.ocr_provider.process_pdf(
+                    file_content=data
+                )
+
+            for page in response.pages:
+                yield {
+                    "content": page.markdown,
+                    "page_number": page.index + 1,  # Mistral is 0-indexed
+                }
+
+        except Exception as e:
+            logger.error(f"Error processing PDF with Mistral OCR: {str(e)}")
+            raise
 
 
 class VLMPDFParser(AsyncParser[str | bytes]):
@@ -55,6 +78,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         config: IngestionConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
     ):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
@@ -326,6 +350,7 @@ class PDFParserUnstructured(AsyncParser[str | bytes]):
         config: IngestionConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
     ):
         self.database_provider = database_provider
         self.llm_provider = llm_provider

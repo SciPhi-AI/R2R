@@ -22,6 +22,7 @@ from core.providers.llm import (
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from core.providers.ocr import MistralOCRProvider
 from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
@@ -77,9 +78,9 @@ class R2RIngestionProvider(IngestionProvider):
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
         DocumentType.PDF: {
+            "ocr": parsers.OCRPDFParser,
             "unstructured": parsers.PDFParserUnstructured,
             "zerox": parsers.VLMPDFParser,
-            "mistral-ocr": parsers.MistralOCRParser,
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},
     }
@@ -102,6 +103,7 @@ class R2RIngestionProvider(IngestionProvider):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
+        ocr_provider: MistralOCRProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config
@@ -111,6 +113,7 @@ class R2RIngestionProvider(IngestionProvider):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ) = llm_provider
+        self.ocr_provider: MistralOCRProvider = ocr_provider
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self.text_splitter = self._build_text_splitter()
         self._initialize_parsers()
@@ -128,16 +131,17 @@ class R2RIngestionProvider(IngestionProvider):
                     database_provider=self.database_provider,
                     llm_provider=self.llm_provider,
                 )
+        # FIXME: This doesn't allow for flexibility for a parser that might not
+        # need an llm_provider, etc.
         for doc_type, doc_parser_name in self.config.extra_parsers.items():
             self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
                 R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
                     config=self.config,
                     database_provider=self.database_provider,
                     llm_provider=self.llm_provider,
+                    ocr_provider=self.ocr_provider,
                 )
             )
-
-        print(f"All parsers: {self.parsers}")
 
     def _build_text_splitter(
         self, ingestion_config_override: Optional[dict] = None
@@ -261,18 +265,18 @@ class R2RIngestionProvider(IngestionProvider):
                             chunk
                         ):  # Handle string output for backward compatibility
                             contents.append({"content": chunk})
-                elif parser_overrides[DocumentType.PDF.value] == "mistral-ocr":
-                    try:
-                        response = await self.parsers[
-                            f"mistral-ocr_{DocumentType.PDF.value}"
-                        ].ingest(file_content, **ingestion_config_override)
-                    except Exception as e:
-                        print(e)
+                elif parser_overrides[DocumentType.PDF.value] == "ocr":
+                    async for chunk in self.parsers[
+                        f"ocr_{DocumentType.PDF.value}"
+                    ].ingest(file_content, **ingestion_config_override):
+                        if isinstance(chunk, dict) and chunk.get("content"):
+                            contents.append(chunk)
 
                 if (
                     contents
                     and document.document_type == DocumentType.PDF
                     and parser_overrides.get(DocumentType.PDF.value) == "zerox"
+                    or parser_overrides.get(DocumentType.PDF.value) == "ocr"
                 ):
                     text_splitter = self._build_text_splitter(
                         ingestion_config_override

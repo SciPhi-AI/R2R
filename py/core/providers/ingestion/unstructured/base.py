@@ -103,9 +103,9 @@ class UnstructuredIngestionProvider(IngestionProvider):
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},  # type: ignore
         DocumentType.PDF: {
+            "ocr": parsers.OCRPDFParser,  # type: ignore
             "unstructured": parsers.PDFParserUnstructured,  # type: ignore
             "zerox": parsers.VLMPDFParser,  # type: ignore
-            "mistral-ocr": parsers.MistralOCRParser,  # type: ignore
         },
         DocumentType.XLSX: {"advanced": parsers.XLSXParserAdvanced},  # type: ignore
     }

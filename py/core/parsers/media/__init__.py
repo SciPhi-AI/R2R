@@ -7,7 +7,7 @@ from .img_parser import ImageParser
 from .odt_parser import ODTParser
 from .pdf_parser import (
     BasicPDFParser,
-    MistralOCRParser,
+    OCRPDFParser,
     PDFParserUnstructured,
     VLMPDFParser,
 )
@@ -22,7 +22,7 @@ __all__ = [
     "DOCXParser",
     "ImageParser",
     "ODTParser",
-    "MistralOCRParser",
+    "OCRPDFParser",
     "VLMPDFParser",
     "BasicPDFParser",
     "PDFParserUnstructured",
