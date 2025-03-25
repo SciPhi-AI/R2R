@@ -34,6 +34,7 @@ from .base import (
     R2RStreamingAgent,
     R2RXMLStreamingAgent,
     R2RXMLToolsAgent,
+    R2RMemoryAgent
 )
 
 logger = logging.getLogger(__name__)
@@ -640,6 +641,51 @@ class R2RXMLToolsStreamingRAGAgent(RAGAgentMixin, R2RXMLStreamingAgent):
 
         # Initialize base R2RXMLStreamingAgent
         R2RXMLStreamingAgent.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            rag_generation_config=rag_generation_config,
+        )
+
+        # Initialize the RAGAgentMixin
+        RAGAgentMixin.__init__(
+            self,
+            database_provider=database_provider,
+            llm_provider=llm_provider,
+            config=config,
+            search_settings=search_settings,
+            rag_generation_config=rag_generation_config,
+            max_tool_context_length=max_tool_context_length,
+            knowledge_search_method=knowledge_search_method,
+            content_method=content_method,
+            file_search_method=file_search_method,
+        )
+
+class R2RMemoryAgent(RAGAgentMixin, R2RMemoryAgent):
+    """
+    A memory agent that supports search_file_knowledge, content, web_search.
+    """
+
+    def __init__(
+        self,
+        database_provider: DatabaseProvider,
+        llm_provider: (
+            AnthropicCompletionProvider
+            | LiteLLMCompletionProvider
+            | OpenAICompletionProvider
+            | R2RCompletionProvider
+        ),
+        config: RAGAgentConfig,
+        search_settings: SearchSettings,
+        rag_generation_config: GenerationConfig,
+        knowledge_search_method: Callable,
+        content_method: Callable,
+        file_search_method: Callable,
+        max_tool_context_length: int = 10_000,
+    ):
+        # Initialize base R2RMemoryAgent
+        R2RMemoryAgent.__init__(
             self,
             database_provider=database_provider,
             llm_provider=llm_provider,

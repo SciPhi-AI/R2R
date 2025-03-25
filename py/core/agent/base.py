@@ -1482,3 +1482,331 @@ class R2RXMLToolsAgent(R2RAgent):
                 tool_params = {"value": raw_params}
 
         return tool_name, tool_params
+
+
+class R2RMemoryAgent(R2RAgent):
+    """
+    R2R Agent with Mem0 integration for memory capabilities.
+    Extends the base R2RAgent with the ability to store and retrieve memories.
+    """
+
+    def __init__(self, *args, **kwargs):
+        try:
+            from mem0 import AsyncMemoryClient
+        except ImportError:
+            raise ImportError("mem0 is not installed. Please install it using 'pip install mem0'.")
+
+        self.mem0_client = AsyncMemoryClient()
+        self.user_id = kwargs.pop('user_id', None)
+        self.agent_id = kwargs.pop('agent_id', None)
+        super().__init__(*args, **kwargs)
+
+    def _prepare_mem0_params(self):
+        mem0_params = {}
+        if self.user_id:
+            mem0_params["user_id"] = self.user_id
+        if self.agent_id:
+            mem0_params["agent_id"] = self.agent_id
+        return mem0_params
+
+    async def _generate_llm_summary(self, iterations_count: int) -> str:
+        """
+        Generate a summary of the conversation using the LLM when max iterations are exceeded.
+
+        Args:
+            iterations_count: The number of iterations that were completed
+
+        Returns:
+            A string containing the LLM-generated summary
+        """
+        try:
+            # Get all messages in the conversation
+            all_messages = await self.mem0_client.get_all(**self._prepare_mem0_params())
+
+            # Create a prompt for the LLM to summarize
+            summary_prompt = {
+                "role": "user",
+                "content": (
+                    f"The conversation has reached the maximum limit of {iterations_count} iterations "
+                    f"without completing the task. Please provide a concise summary of: "
+                    f"1) The key information you've gathered that's relevant to the original query, "
+                    f"2) What you've attempted so far and why it's incomplete, and "
+                    f"3) A specific recommendation for how to proceed. "
+                    f"Keep your summary brief (3-4 sentences total) and focused on the most valuable insights. If it is possible to answer the original user query, then do so now instead."
+                    f"Start with '⚠️ **Maximum iterations exceeded**'"
+                ),
+            }
+
+            # Create a new message list with just the conversation history and summary request
+            summary_messages = all_messages + [summary_prompt]
+
+            # Get a completion for the summary
+            generation_config = self.get_generation_config(summary_prompt)
+            response = await self.llm_provider.aget_completion(
+                summary_messages,
+                generation_config,
+            )
+
+            return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error generating LLM summary: {str(e)}")
+            # Fall back to basic summary if LLM generation fails
+            return (
+                "⚠️ **Maximum iterations exceeded**\n\n"
+                "The agent reached the maximum iteration limit without completing the task. "
+                "Consider breaking your request into smaller steps or refining your query."
+            )
+
+    def _reset(self):
+        self._completed = False
+        self.mem0_client.delete_all(**self._prepare_mem0_params())
+
+    @syncable
+    async def arun(
+        self,
+        messages: list[Message],
+        system_instruction: Optional[str] = None,
+        *args,
+        **kwargs,
+    ) -> list[dict]:
+
+        # Store in Mem0
+        try:
+            mem0_messages = []
+            for msg in messages:
+                # Convert to the format expected by Mem0
+                if isinstance(msg, Message):
+                    mem0_messages.append({
+                        "role": msg.role,
+                        "content": msg.content
+                    })
+                else:
+                    mem0_messages.append({
+                        "role": msg.get("role"),
+                        "content": msg.get("content")
+                    })
+
+            # Add the conversation to memory\
+            await self.mem0_client.add(mem0_messages, **self._prepare_mem0_params(), version="v2")
+            logger.debug("Stored conversation in Mem0")
+
+            output_messages = await self.mem0_client.get_all(**self._prepare_mem0_params())
+
+        except Exception as e:
+            logger.error(f"Failed to store conversation in Mem0: {str(e)}")
+
+        return output_messages
+
+    async def process_llm_response(
+        self, response: LLMChatCompletion, *args, **kwargs
+    ) -> None:
+        """
+        Override the base process_llm_response to handle Mem0 integration.
+        """
+        try:
+            if not self._completed:
+                message = response.choices[0].message
+                finish_reason = response.choices[0].finish_reason
+
+                if finish_reason == "stop":
+                    self._completed = True
+
+                # Determine which provider we're using
+                using_anthropic = (
+                    "anthropic" in self.rag_generation_config.model.lower()
+                )
+
+                # OPENAI HANDLING
+                if not using_anthropic:
+                    if message.tool_calls:
+                        assistant_msg = {
+                            "role": "assistant",
+                            "content": ""
+                        }
+                        # Use mem0_client to add the message
+                        await self.mem0_client.add([assistant_msg], **self._prepare_mem0_params(), version="v2", metadata={"type": "tool_calls"})
+
+                        # If there are multiple tool_calls, call them sequentially here
+                        for tool_call in message.tool_calls:
+                            await self.handle_function_or_tool_call(
+                                tool_call.function.name,
+                                tool_call.function.arguments,
+                                tool_id=tool_call.id,
+                                *args,
+                                **kwargs,
+                            )
+                    else:
+                        # Use mem0_client to add the message
+                        await self.mem0_client.add(
+                            [{"role": "assistant", "content": message.content}], 
+                            **self._prepare_mem0_params(), 
+                            version="v2"
+                        )
+                        self._completed = True
+
+                else:
+                    # First handle thinking blocks if present
+                    if (
+                        hasattr(message, "structured_content")
+                        and message.structured_content
+                    ):
+                        # Check if structured_content contains any tool_use blocks
+                        has_tool_use = any(
+                            block.get("type") == "tool_use"
+                            for block in message.structured_content
+                        )
+
+                        if not has_tool_use and message.tool_calls:
+                            # If it has thinking but no tool_use, add a separate message with structured_content
+                            assistant_msg = {
+                                "role": "assistant",
+                                "content": message.structured_content,  # Use structured_content field
+                            }
+                            # Use mem0_client to add the message
+                            await self.mem0_client.add([assistant_msg], **self._prepare_mem0_params(), version="v2", metadata={"type": "structured_content"})
+
+                            # Add explicit tool_use blocks in a separate message
+                            tool_uses = []
+                            for tool_call in message.tool_calls:
+                                # Safely parse arguments if they're a string
+                                try:
+                                    if isinstance(
+                                        tool_call.function.arguments, str
+                                    ):
+                                        input_args = json.loads(
+                                            tool_call.function.arguments
+                                        )
+                                    else:
+                                        input_args = tool_call.function.arguments
+                                except json.JSONDecodeError:
+                                    logger.error(
+                                        f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                                    )
+                                    input_args = {
+                                        "_raw": tool_call.function.arguments
+                                    }
+
+                                tool_uses.append(
+                                    {
+                                        "type": "tool_use",
+                                        "id": tool_call.id,
+                                        "name": tool_call.function.name,
+                                        "input": input_args,
+                                    }
+                                )
+
+                            # Add tool_use blocks as a separate assistant message with structured content
+                            if tool_uses:
+                                await self.mem0_client.add(
+                                    [{"role": "assistant", "content": ""}],
+                                    **self._prepare_mem0_params(),
+                                    version="v2",
+                                    metadata={"type": "tool_use"}
+                                )
+                        else:
+                            # If it already has tool_use or no tool_calls, preserve original structure
+                            assistant_msg = {
+                                "role": "assistant",
+                                "content": message.structured_content,
+                            }
+                            # Use mem0_client to add the message
+                            await self.mem0_client.add([assistant_msg], **self._prepare_mem0_params(), version="v2", metadata={"type": "structured_content"})
+
+                    elif message.content:
+                        # For regular text content
+                        await self.mem0_client.add(
+                            [{"role": "assistant", "content": message.content}],
+                            **self._prepare_mem0_params(),
+                            version="v2",
+                            metadata={"type": "content"}
+                        )
+
+                        # If there are tool calls, add them as structured content
+                        if message.tool_calls:
+                            tool_uses = []
+                            for tool_call in message.tool_calls:
+                                # Same safe parsing as above
+                                try:
+                                    if isinstance(
+                                        tool_call.function.arguments, str
+                                    ):
+                                        input_args = json.loads(
+                                            tool_call.function.arguments
+                                        )
+                                    else:
+                                        input_args = tool_call.function.arguments
+                                except json.JSONDecodeError:
+                                    logger.error(
+                                        f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                                    )
+                                    input_args = {
+                                        "_raw": tool_call.function.arguments
+                                    }
+
+                                tool_uses.append(
+                                    {
+                                        "type": "tool_use",
+                                        "id": tool_call.id,
+                                        "name": tool_call.function.name,
+                                        "input": input_args,
+                                    }
+                                )
+
+                            # Use mem0_client to add the message
+                            await self.mem0_client.add(
+                                [{"role": "assistant", "content": tool_uses}],
+                                **self._prepare_mem0_params(),
+                                version="v2",
+                                metadata={"type": "tool_use"}
+                            )
+
+                    # NEW CASE: Handle tool_calls with no content or structured_content
+                    elif message.tool_calls:
+                        # Create tool_uses for the message with only tool_calls
+                        tool_uses = []
+                        for tool_call in message.tool_calls:
+                            try:
+                                if isinstance(tool_call.function.arguments, str):
+                                    input_args = json.loads(
+                                        tool_call.function.arguments
+                                    )
+                                else:
+                                    input_args = tool_call.function.arguments
+                            except json.JSONDecodeError:
+                                logger.error(
+                                    f"Failed to parse tool arguments: {tool_call.function.arguments}"
+                                )
+                                input_args = {"_raw": tool_call.function.arguments}
+
+                            tool_uses.append(
+                                {
+                                    "type": "tool_use",
+                                    "id": tool_call.id,
+                                    "name": tool_call.function.name,
+                                    "input": input_args,
+                                }
+                            )
+
+                        # Add tool_use blocks as a message before processing tools
+                        if tool_uses:
+                            # Use mem0_client to add the message
+                            await self.mem0_client.add(
+                                [{"role": "assistant", "content": tool_uses}],
+                                **self._prepare_mem0_params(),
+                                version="v2",
+                                metadata={"type": "tool_use"}
+                            )
+
+                    # Process the tool calls
+                    if message.tool_calls:
+                        for tool_call in message.tool_calls:
+                            await self.handle_function_or_tool_call(
+                                tool_call.function.name,
+                                tool_call.function.arguments,
+                                tool_id=tool_call.id,
+                                *args,
+                                **kwargs,
+                            )
+
+        except Exception as e:
+            logger.error(f"Failed to extract and store key facts in Mem0: {str(e)}")

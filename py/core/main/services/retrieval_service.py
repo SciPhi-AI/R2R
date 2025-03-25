@@ -14,6 +14,7 @@ from core import (
     R2RStreamingRAGAgent,
     R2RStreamingResearchAgent,
     R2RXMLToolsRAGAgent,
+    R2RMemoryAgent,
     R2RXMLToolsResearchAgent,
     R2RXMLToolsStreamingRAGAgent,
     R2RXMLToolsStreamingResearchAgent,
@@ -129,6 +130,9 @@ class AgentFactory:
         # Set streaming mode based on generation config
         is_streaming = generation_config.stream
 
+        # Set memory mode based on generation config
+        is_memory = generation_config.memory
+
         # Create the appropriate agent based on all factors
         if mode == "rag":
             # RAG mode agents
@@ -160,6 +164,18 @@ class AgentFactory:
             else:
                 if use_xml_format:
                     return R2RXMLToolsRAGAgent(
+                        database_provider=database_provider,
+                        llm_provider=llm_provider,
+                        config=agent_config,
+                        search_settings=search_settings,
+                        rag_generation_config=generation_config,
+                        max_tool_context_length=max_tool_context_length,
+                        knowledge_search_method=knowledge_search_method,
+                        content_method=content_method,
+                        file_search_method=file_search_method,
+                    )
+                elif is_memory:
+                    return R2RMemoryAgent(
                         database_provider=database_provider,
                         llm_provider=llm_provider,
                         config=agent_config,

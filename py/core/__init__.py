@@ -41,6 +41,7 @@ __all__ = [
     "R2RXMLToolsRAGAgent",
     "R2RStreamingRAGAgent",
     "R2RXMLToolsStreamingRAGAgent",
+    "R2RMemoryAgent",
     "AsyncSyncMeta",
     "syncable",
     "MessageType",

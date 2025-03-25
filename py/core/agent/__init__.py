@@ -3,12 +3,13 @@ from .base import (  # type: ignore
     R2RAgent,
     R2RStreamingAgent,
     R2RXMLStreamingAgent,
+    R2RMemoryAgent
 )
 from .rag import (  # type: ignore
     R2RRAGAgent,
     R2RStreamingRAGAgent,
     R2RXMLToolsRAGAgent,
-    R2RXMLToolsStreamingRAGAgent,
+    R2RXMLToolsStreamingRAGAgent
 )
 
 # Import the concrete implementations
@@ -24,6 +25,7 @@ __all__ = [
     "R2RAgent",
     "R2RStreamingAgent",
     "R2RXMLStreamingAgent",
+    "R2RMemoryAgent",
     # RAG Agents
     "R2RRAGAgent",
     "R2RXMLToolsRAGAgent",
