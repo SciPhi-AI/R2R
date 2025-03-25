@@ -21,7 +21,9 @@ class MistralOCRProvider(OCRProvider):
 
         api_key = os.environ.get("MISTRAL_API_KEY")
         if not api_key:
-            raise ValueError("MISTRAL_API_KEY environment variable is not set")
+            logger.warning(
+                "MISTRAL_API_KEY not set in environment, if you plan to use Mistral OCR, please set it."
+            )
 
         self.mistral = Mistral(api_key=api_key)
         self.model = config.model or "mistral-ocr-latest"
