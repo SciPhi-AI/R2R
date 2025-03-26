@@ -25,6 +25,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 import pytest
+import contextlib
 
 from r2r import R2RClient, R2RException
 
@@ -362,8 +363,8 @@ def test_img_ingestion(client: R2RClient):
         ingestion_config={"vision_img_model":"openai/gpt-4o"},
         run_with_orchestration=False
     )
-
-    client.documents.delete(result.results.document_id)
+    with contextlib.suppress(R2RException):
+        client.documents.delete(result.results.document_id)
 
     result = client.documents.create(
         file_path="core/examples/supported_file_types/png.png",
@@ -372,7 +373,8 @@ def test_img_ingestion(client: R2RClient):
         run_with_orchestration=False
     )
 
-    client.documents.delete(result.results.document_id)
+    with contextlib.suppress(R2RException):
+        client.documents.delete(result.results.document_id)
 
 def test_metadata_title_handling(client: R2RClient):
     """Test that document title in metadata is properly stored and retrievable."""
