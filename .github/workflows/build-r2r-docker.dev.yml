@@ -5,8 +5,8 @@ on:
     branches: [ 'dev' ]
 
 env:
-  REGISTRY_IMAGE: sciphiai/r2r
-
+  # REGISTRY_IMAGE: sciphiai/r2r
+  IMAGE_TAG : release
 jobs:
       # prepare:
       #   runs-on: ubuntu-latest
