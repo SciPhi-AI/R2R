@@ -6,7 +6,7 @@ on:
 
 env:
   # REGISTRY_IMAGE: sciphiai/r2r
-  IMAGE_TAG : release
+  IMAGE_TAG : latest
 jobs:
       # prepare:
       #   runs-on: ubuntu-latest
@@ -73,13 +73,13 @@ jobs:
           no-cache: true
           push: true
           tags: |
-            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGE_GCP_PROJECT_ID }}/brain-r2r/r2r
+            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGE_GCP_PROJECT_ID }}/brain-r2r/r2r:latest
           provenance: false
           sbom: false
         
       - name: Push Docker image to GCP Artifact registry
         run: |
-          docker push ${{ env.IMAGE_TAG }}
+          docker push ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGE_GCP_PROJECT_ID }}/brain-r2r/r2r:latest
 
   # create-manifest:
   #   needs: [prepare, build]
