@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -43,17 +42,16 @@ jobs:
       - name: Authenticate Docker to GCP Artifact registry
         run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev"
 
-      - name: Set matrix
-        id: set-matrix
-        run: |
-          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
+      # - name: Set matrix
+      #   id: set-matrix
+      #   run: |
+      #     echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -71,7 +69,7 @@ jobs:
         with:
           context: ./py
           file: ./py/Dockerfile
-          platforms: ${{ matrix.platform }}
+          platforms: amd64
           no-cache: true
           push: true
           tags: |
