@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import AsyncGenerator
 
 from shared.api.models import (
     CitationEvent,
@@ -153,7 +153,7 @@ class RetrievalSDK:
         self, **kwargs
     ) -> (
         WrappedRAGResponse
-        | Generator[
+        | AsyncGenerator[
             ThinkingEvent
             | SearchResultsEvent
             | MessageEvent
@@ -163,7 +163,6 @@ class RetrievalSDK:
             | ToolResultEvent
             | UnknownEvent
             | None,
-            None,
             None,
         ]
     ):
@@ -257,7 +256,7 @@ class RetrievalSDK:
         self, **kwargs
     ) -> (
         WrappedAgentResponse
-        | Generator[
+        | AsyncGenerator[
             ThinkingEvent
             | SearchResultsEvent
             | MessageEvent
@@ -267,7 +266,6 @@ class RetrievalSDK:
             | ToolResultEvent
             | UnknownEvent
             | None,
-            None,
             None,
         ]
     ):
