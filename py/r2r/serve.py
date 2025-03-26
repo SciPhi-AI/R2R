@@ -96,6 +96,7 @@ def run_server(
         asyncio.run(start())
     except Exception as e:
         logger.error(f"Failed to start R2R server: {e}")
+        raise e
         sys.exit(1)
 
 

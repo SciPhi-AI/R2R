@@ -34,6 +34,9 @@ from .llm import (
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from .ocr import (
+    MistralOCRProvider,
+)
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
@@ -74,6 +77,8 @@ __all__ = [
     "OpenAICompletionProvider",
     "R2RCompletionProvider",
     "LiteLLMCompletionProvider",
+    # OCR
+    "MistralOCRProvider",
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",

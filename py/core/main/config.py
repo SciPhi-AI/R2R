@@ -17,6 +17,7 @@ from ..base.providers.email import EmailConfig
 from ..base.providers.embedding import EmbeddingConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
+from ..base.providers.ocr import OCRConfig
 from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.scheduler import SchedulerConfig
 from ..base.utils import deep_update
@@ -64,6 +65,7 @@ class R2RConfig:
         "logging": ["provider", "log_table"],
         "database": ["provider"],
         "agent": ["generation_config"],
+        "ocr": [],
         "orchestration": ["provider"],
         "scheduler": ["provider"],
     }
@@ -78,6 +80,7 @@ class R2RConfig:
     email: EmailConfig
     ingestion: IngestionConfig
     agent: RAGAgentConfig
+    ocr: OCRConfig
     orchestration: OrchestrationConfig
     scheduler: SchedulerConfig
 
@@ -119,6 +122,7 @@ class R2RConfig:
         )  # type: ignore
         self.ingestion = IngestionConfig.create(**self.ingestion, app=self.app)  # type: ignore
         self.agent = RAGAgentConfig.create(**self.agent, app=self.app)  # type: ignore
+        self.ocr = OCRConfig.create(**self.ocr, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(
             **self.orchestration, app=self.app
         )  # type: ignore

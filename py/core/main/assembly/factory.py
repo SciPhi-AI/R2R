@@ -13,6 +13,7 @@ from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
     IngestionConfig,
+    OCRConfig,
     OrchestrationConfig,
     SchedulerConfig,
 )
@@ -29,6 +30,7 @@ from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     MailerSendEmailProvider,
+    MistralOCRProvider,
     NaClCryptoConfig,
     NaClCryptoProvider,
     OllamaEmbeddingProvider,
@@ -116,6 +118,18 @@ class R2RProviderFactory:
             )
 
     @staticmethod
+    def create_ocr_provider(
+        config: OCRConfig | dict, *args, **kwargs
+    ) -> MistralOCRProvider:
+        if isinstance(config, dict):
+            config = OCRConfig(**config)
+
+        if config.provider == "mistral":
+            return MistralOCRProvider(config)
+        else:
+            raise ValueError(f"OCR provider {config.provider} not supported")
+
+    @staticmethod
     def create_ingestion_provider(
         ingestion_config: IngestionConfig,
         database_provider: PostgresDatabaseProvider,
@@ -125,6 +139,7 @@ class R2RProviderFactory:
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
+        ocr_provider: MistralOCRProvider,
         *args,
         **kwargs,
     ) -> R2RIngestionProvider | UnstructuredIngestionProvider:
@@ -141,7 +156,10 @@ class R2RProviderFactory:
                 **config_dict, **extra_fields
             )
             return R2RIngestionProvider(
-                r2r_ingestion_config, database_provider, llm_provider
+                config=r2r_ingestion_config,
+                database_provider=database_provider,
+                llm_provider=llm_provider,
+                ocr_provider=ocr_provider,
             )
         elif config_dict["provider"] in [
             "unstructured_local",
@@ -337,6 +355,7 @@ class R2RProviderFactory:
             | LiteLLMCompletionProvider
             | R2RCompletionProvider
         ] = None,
+        ocr_provider_override: Optional[MistralOCRProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
         scheduler_provider_override: Optional[APSchedulerProvider] = None,
         *args,
@@ -385,12 +404,17 @@ class R2RProviderFactory:
             )
         )
 
+        ocr_provider = ocr_provider_override or self.create_ocr_provider(
+            self.config.ocr
+        )
+
         ingestion_provider = (
             ingestion_provider_override
             or self.create_ingestion_provider(
                 self.config.ingestion,
                 database_provider,
                 llm_provider,
+                ocr_provider,
                 *args,
                 **kwargs,
             )
@@ -433,6 +457,7 @@ class R2RProviderFactory:
             ingestion=ingestion_provider,
             llm=llm_provider,
             email=email_provider,
+            ocr=ocr_provider,
             orchestration=orchestration_provider,
             scheduler=scheduler_provider,
         )

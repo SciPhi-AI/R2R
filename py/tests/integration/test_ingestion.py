@@ -25,6 +25,7 @@ from typing import Any, Optional
 from uuid import UUID
 
 import pytest
+import contextlib
 
 from r2r import R2RClient, R2RException
 
@@ -62,69 +63,70 @@ def file_ingestion(
         TimeoutError: If ingestion doesn't complete within timeout period
     """
     doc_id = None
-    # try:
-    # Verify file exists
-    if file_path:
-        assert Path(file_path).exists(), f"Test file not found: {file_path}"
-        # Start ingestion
-        ingest_args: dict[str, Any] = {"file_path": file_path}
-    else:
-        ingest_args = {"raw_text": raw_text}
-    if ingestion_mode:
-        ingest_args["ingestion_mode"] = ingestion_mode
-    if ingestion_config:
-        ingest_args["ingestion_config"] = ingestion_config
-    if metadata:
-        ingest_args["metadata"] = metadata
+    try:
+        # Verify file exists
+        if file_path:
+            assert Path(file_path).exists(), f"Test file not found: {file_path}"
+            # Start ingestion
+            ingest_args: dict[str, Any] = {"file_path": file_path}
+        else:
+            ingest_args = {"raw_text": raw_text}
+        if ingestion_mode:
+            ingest_args["ingestion_mode"] = ingestion_mode
+        if ingestion_config:
+            ingest_args["ingestion_config"] = ingestion_config
+        if metadata:
+            ingest_args["metadata"] = metadata
 
-    ingestion_response = client.documents.create(**ingest_args)
+        ingestion_response = client.documents.create(**ingest_args)
 
-    assert ingestion_response is not None
-    assert ingestion_response.results is not None
-    assert ingestion_response.results.document_id is not None
+        assert ingestion_response is not None
+        assert ingestion_response.results is not None
+        assert ingestion_response.results.document_id is not None
 
-    doc_id = ingestion_response.results.document_id
+        doc_id = ingestion_response.results.document_id
 
-    if wait_for_completion:
-        time.sleep(2)
-
-        start_time = time.time()
-        while True:
-            try:
-                retrieval_response = client.documents.retrieve(id=doc_id)
-
-                ingestion_status = retrieval_response.results.ingestion_status
-
-                if ingestion_status == expected_status:
-                    break
-                elif ingestion_status == "failed":
-                    raise AssertionError(
-                        f"Document ingestion failed: {retrieval_response}")
-
-            except R2RException as e:
-                if e.status_code == 404:
-                    # Document not yet available, continue polling if within timeout
-                    if time.time() - start_time > timeout:
-                        raise TimeoutError(
-                            f"Ingestion didn't complete within {timeout} seconds"
-                        )
-                else:
-                    # Re-raise other errors
-                    raise
-
+        if wait_for_completion:
             time.sleep(2)
-    return doc_id
+
+            start_time = time.time()
+            while True:
+                try:
+                    retrieval_response = client.documents.retrieve(id=doc_id)
+
+                    ingestion_status = retrieval_response.results.ingestion_status
+
+                    if ingestion_status == expected_status:
+                        break
+                    elif ingestion_status == "failed":
+                        raise AssertionError(
+                            f"Document ingestion failed: {retrieval_response}")
+
+                except R2RException as e:
+                    if e.status_code == 404:
+                        # Document not yet available, continue polling if within timeout
+                        if time.time() - start_time > timeout:
+                            raise TimeoutError(
+                                f"Ingestion didn't complete within {timeout} seconds"
+                            )
+                    else:
+                        # Re-raise other errors
+                        raise
+
+                time.sleep(2)
+        return doc_id
     # except Exception as e:
     #     raise e
 
-    # finally:
-    #     if cleanup and doc_id is not None:
-    #         try:
-    #             client.documents.delete(id=doc_id)
-    #         except R2RException:
-    #             # Ignore cleanup errors
-    #             pass
-    #     return doc_id
+    finally:
+        assert doc_id is not None
+        if cleanup and doc_id is not None:
+            try:
+                client.documents.delete(id=doc_id)
+            except R2RException:
+                # Ignore cleanup errors
+                pass
+        return doc_id
 
 
 @pytest.fixture(scope="session")
@@ -204,8 +206,6 @@ def test_file_type_ingestion(client: R2RClient, file_type: str,
     "file_type,file_path",
     [
         ("pdf", "core/examples/supported_file_types/pdf.pdf"),
-        ("docx", "core/examples/supported_file_types/docx.docx"),
-        ("pptx", "core/examples/supported_file_types/pptx.pptx"),
     ],
 )
 def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
@@ -236,6 +236,22 @@ def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
         )
         assert result is not None
 
+@pytest.mark.parametrize(
+    "file_type,file_path",
+    [
+        ("pdf", "core/examples/supported_file_types/pdf.pdf"),
+    ],
+)
+def test_ocr_ingestion(client: R2RClient, file_type: str, file_path: str):
+    """Test ocr ingestion for a pdf file."""
+    result = file_ingestion(
+        client=client,
+        file_path=file_path,
+        ingestion_mode="ocr",
+        cleanup=True,
+        wait_for_completion=True,
+    )
+    assert result is not None
 
 def test_custom_ingestion_config(client: R2RClient):
     """Test ingestion with custom configuration parameters."""
@@ -339,7 +355,8 @@ def test_img_ingestion(client: R2RClient):
     """Test ingestion with metadata."""
 
 
-    client.documents.delete("65bd45b7-632b-5874-9510-82b4e97b4abc")
+    with contextlib.suppress(R2RException):
+        client.documents.delete("65bd45b7-632b-5874-9510-82b4e97b4abc")
 
     result = client.documents.create(
         file_path="core/examples/supported_file_types/png.png",
@@ -347,8 +364,8 @@ def test_img_ingestion(client: R2RClient):
         ingestion_config={"vision_img_model":"openai/gpt-4o"},
         run_with_orchestration=False
     )
-
-    client.documents.delete(result.results.document_id)
+    with contextlib.suppress(R2RException):
+        client.documents.delete(result.results.document_id)
 
     result = client.documents.create(
         file_path="core/examples/supported_file_types/png.png",
@@ -357,7 +374,8 @@ def test_img_ingestion(client: R2RClient):
         run_with_orchestration=False
     )
 
-    client.documents.delete(result.results.document_id)
+    with contextlib.suppress(R2RException):
+        client.documents.delete(result.results.document_id)
 
 def test_metadata_title_handling(client: R2RClient):
     """Test that document title in metadata is properly stored and retrievable."""

@@ -288,6 +288,7 @@ class RawChunk(R2RSerializable):
 
 class IngestionMode(str, Enum):
     hi_res = "hi-res"
+    ocr = "ocr"
     fast = "fast"
     custom = "custom"
 
@@ -359,6 +360,23 @@ class IngestionConfig(R2RSerializable):
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
                 chunks_for_document_summary=256,  # larger for hi-res
+                document_summary_model="",
+            )
+
+        elif mode == "ocr":
+            # Use Mistral OCR for PDFs and images.
+            return cls(
+                provider="r2r",
+                excluded_parsers=["mp4"],
+                chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
+                extra_parsers={},
+                audio_transcription_model="",
+                vision_img_prompt_name="",
+                vision_pdf_prompt_name="",
+                skip_document_summary=False,
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
+                chunks_for_document_summary=128,
                 document_summary_model="",
             )
 

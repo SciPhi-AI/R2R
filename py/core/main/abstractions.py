@@ -14,6 +14,7 @@ from core.providers import (
     LiteLLMCompletionProvider,
     LiteLLMEmbeddingProvider,
     MailerSendEmailProvider,
+    MistralOCRProvider,
     OllamaEmbeddingProvider,
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
@@ -69,6 +70,7 @@ class R2RProviders(BaseModel):
         | OpenAICompletionProvider
         | R2RCompletionProvider
     )
+    ocr: MistralOCRProvider
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
     scheduler: APSchedulerProvider
 
