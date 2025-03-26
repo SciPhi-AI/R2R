@@ -148,6 +148,7 @@ class RetrievalSDK:
             version="v3",
         )
 
+    # FIXME: Why tf are we just passing kwargs here?
     async def rag(
         self, **kwargs
     ) -> (
@@ -230,25 +231,28 @@ class RetrievalSDK:
             is_stream = True
 
         if is_stream:
-            # Return an async streaming generator
-            raw_stream = self.client._make_streaming_request(
+
+            async def generate_events():
+                raw_stream = self.client._make_streaming_request(
+                    "POST",
+                    "retrieval/rag",
+                    json=payload,
+                    version="v3",
+                )
+                async for response in raw_stream:
+                    yield parse_retrieval_event(response)
+
+            return generate_events()
+        else:
+            response_dict = await self.client._make_request(
                 "POST",
                 "retrieval/rag",
                 json=payload,
                 version="v3",
             )
-            # Wrap each raw SSE event with parse_rag_event
-            return (parse_retrieval_event(event) for event in raw_stream)
+            return WrappedRAGResponse(**response_dict)
 
-        # Otherwise, request fully and parse response
-        response_dict = await self.client._make_request(
-            "POST",
-            "retrieval/rag",
-            json=payload,
-            version="v3",
-        )
-        return WrappedRAGResponse(**response_dict)
-
+    # FIXME: Why tf are we just passing kwargs here?
     async def agent(
         self, **kwargs
     ) -> (
@@ -375,20 +379,23 @@ class RetrievalSDK:
             is_stream = True
 
         if is_stream:
-            # Return an async streaming generator
-            raw_stream = self.client._make_streaming_request(
+
+            async def generate_events():
+                raw_stream = self.client._make_streaming_request(
+                    "POST",
+                    "retrieval/agent",
+                    json=payload,
+                    version="v3",
+                )
+                async for response in raw_stream:
+                    yield parse_retrieval_event(response)
+
+            return generate_events()
+        else:
+            response_dict = await self.client._make_request(
                 "POST",
                 "retrieval/agent",
                 json=payload,
                 version="v3",
             )
-            # Parse each event in the stream
-            return (parse_retrieval_event(event) for event in raw_stream)
-
-        response_dict = await self.client._make_request(
-            "POST",
-            "retrieval/agent",
-            json=payload,
-            version="v3",
-        )
-        return WrappedAgentResponse(**response_dict)
+            return WrappedAgentResponse(**response_dict)
