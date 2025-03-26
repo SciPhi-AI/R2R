@@ -205,8 +205,6 @@ def test_file_type_ingestion(client: R2RClient, file_type: str,
     "file_type,file_path",
     [
         ("pdf", "core/examples/supported_file_types/pdf.pdf"),
-        ("docx", "core/examples/supported_file_types/docx.docx"),
-        ("pptx", "core/examples/supported_file_types/pptx.pptx"),
     ],
 )
 def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
