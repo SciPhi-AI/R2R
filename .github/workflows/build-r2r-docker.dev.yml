@@ -73,7 +73,7 @@ jobs:
           no-cache: true
           push: true
           tags: |
-            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/brain-r2r/r2r
+            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.STAGE_GCP_PROJECT_ID }}/brain-r2r/r2r
           provenance: false
           sbom: false
         
