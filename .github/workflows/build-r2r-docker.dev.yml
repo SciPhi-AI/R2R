@@ -1,4 +1,4 @@
-name: Build and Publish R2R Docker Image
+name: Staging - Build and Publish R2R Docker Image
 
 on:
   push:
@@ -31,11 +31,6 @@ jobs:
           VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['project']['version'])")
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Set matrix
-        id: set-matrix
-        run: |
-          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
-
       - name: GCP Authenticate Github
         id: auth
         uses: google-github-actions/auth@v2
@@ -47,6 +42,11 @@ jobs:
 
       - name: Authenticate Docker to GCP Artifact registry
         run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev"
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
