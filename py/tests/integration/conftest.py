@@ -38,7 +38,8 @@ class TestConfig:
         self.test_timeout = 30  # seconds
 
 
-@pytest.fixture
+# Change this to session scope to match the client fixture
+@pytest.fixture(scope="session")
 def config() -> TestConfig:
     return TestConfig()
 
@@ -63,12 +64,12 @@ async def aclient(config) -> AsyncGenerator[R2RAsyncClient, None]:
 
 @pytest.fixture
 async def superuser_client(
-        client: R2RClient,
+        mutable_client: R2RClient,
         config: TestConfig) -> AsyncGenerator[R2RClient, None]:
     """Creates a superuser client for tests requiring elevated privileges."""
-    await client.users.login(config.superuser_email, config.superuser_password)
-    yield client
-    await client.users.logout()
+    await mutable_client.users.login(config.superuser_email, config.superuser_password)
+    yield mutable_client
+    await mutable_client.users.logout()
 
 
 @pytest.fixture(scope="session")
