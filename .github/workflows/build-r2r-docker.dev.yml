@@ -76,10 +76,6 @@ jobs:
             ${{ env.IMAGE_TAG }}
           provenance: false
           sbom: false
-        
-      - name: Push Docker image to GCP Artifact registry
-        run: |
-          docker push ${{ env.IMAGE_TAG }}
 
   # create-manifest:
   #   needs: [prepare, build]
