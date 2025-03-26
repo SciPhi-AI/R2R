@@ -1,0 +1,116 @@
+name: Build and Publish R2R Docker Image
+
+on:
+  push:
+    branches: [ 'dev' ]
+
+env:
+  REGISTRY_IMAGE: sciphiai/r2r
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.version.outputs.RELEASE_VERSION }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install toml package
+        run: pip install toml
+
+      - name: Determine version
+        id: version
+        run: |
+          VERSION=$(python -c "import toml; print(toml.load('py/pyproject.toml')['project']['version'])")
+          echo "RELEASE_VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
+
+      - name: GCP Authenticate Github
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.STAGE_GCP_SA_KEY }}'
+      
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authenticate Docker to GCP Artifact registry
+        run: gcloud auth configure-docker "${{ secrets.GCP_REGION }}-docker.pkg.dev"
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Echo Commit Hash
+        run: |
+          COMMIT_HASH=$(git rev-parse HEAD)
+          echo "Building commit hash: $COMMIT_HASH"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./py
+          file: ./py/Dockerfile
+          platforms: ${{ matrix.platform }}
+          no-cache: true
+          push: true
+          tags: |
+            ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/brain-r2r/r2r
+          provenance: false
+          sbom: false
+        
+      - name: Push Docker image to GCP Artifact registry
+        run: |
+          docker push ${{ env.IMAGE_TAG }}
+
+  create-manifest:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Docker Auth
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Create and push multi-arch manifest
+        run: |
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+
+          docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+
+      - name: Verify manifests
+        run: |
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:latest
+
+  success-check:
+    needs: [create-manifest, prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Always succeed
+        run: exit 0
