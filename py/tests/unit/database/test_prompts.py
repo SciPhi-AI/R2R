@@ -196,19 +196,19 @@ async def test_yaml_loading(mock_prompt_handler):
         input_types:
           value: str
     """
-    
+
     # Load prompts from YAML
     await mock_prompt_handler.load_prompts_from_yaml(yaml_content)
-    
+
     # Verify prompts were loaded
     prompt1 = await mock_prompt_handler.get_prompt("yaml_test_prompt")
     assert prompt1["template"] == "This is a test prompt from YAML: {param}"
     assert prompt1["input_types"] == {"param": "str"}
-    
+
     prompt2 = await mock_prompt_handler.get_prompt("yaml_test_prompt2")
     assert prompt2["template"] == "Another test prompt: {value}"
     assert prompt2["input_types"] == {"value": "str"}
-    
+
     # Test formatting the loaded prompts
     formatted = await mock_prompt_handler.get_cached_prompt("yaml_test_prompt", {"param": "yaml_value"})
     assert formatted == "This is a test prompt from YAML: yaml_value"
@@ -227,20 +227,20 @@ async def test_special_character_handling(mock_prompt_handler):
     Line 5: HTML-like: <tag>{param2}</tag>
     """
     input_types = {"param1": "str", "param2": "str"}
-    
+
     # Add the prompt
     await mock_prompt_handler.add_prompt(
         name=prompt_name,
         template=template,
         input_types=input_types,
     )
-    
+
     # Get the formatted prompt
     formatted = await mock_prompt_handler.get_cached_prompt(
         prompt_name,
         {"param1": "Value 1", "param2": "Value 2"}
     )
-    
+
     # Check that special characters are preserved
     assert "Line 1: Value 1" in formatted
     assert "Line 2: {escaped_braces}" in formatted
@@ -255,52 +255,52 @@ async def test_cache_invalidation_methods(mock_prompt_handler):
     prompt_name = f"cache_invalidation_{uuid.uuid4()}"
     original_template = "Original: {param}"
     input_types = {"param": "str"}
-    
+
     # Add the prompt
     await mock_prompt_handler.add_prompt(
         name=prompt_name,
         template=original_template,
         input_types=input_types,
     )
-    
+
     # First access caches the result
     first_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"param": "test"}
     )
     assert "Original: test" in first_result
-    
+
     # Method 1: Update via update_prompt
     await mock_prompt_handler.update_prompt(
         name=prompt_name,
         template="Method1: {param}"
     )
-    
+
     method1_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"param": "test"}
     )
     assert "Method1: test" in method1_result
-    
+
     # Method 2: Update via add_prompt with same name
     await mock_prompt_handler.add_prompt(
         name=prompt_name,
         template="Method2: {param}",
         input_types=input_types,
     )
-    
+
     method2_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"param": "test"}
     )
     assert "Method2: test" in method2_result
-    
+
     # Method 3: Direct database update simulation
     mock_prompt_handler.connection_manager.db['prompts'][prompt_name]['template'] = "Method3: {param}"
-    
+
     # This should still use the cache
     cached_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"param": "test"}
     )
     assert "Method2: test" in cached_result  # Should be the previous version
-    
+
     # But with bypass_cache it should get the latest
     bypass_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"param": "test"}, bypass_cache=True
@@ -314,26 +314,26 @@ async def test_input_validation(mock_prompt_handler):
     prompt_name = f"validation_{uuid.uuid4()}"
     template = "Test with {num:d} and {text}!"
     input_types = {"num": "int", "text": "str"}
-    
+
     # Add the prompt
     await mock_prompt_handler.add_prompt(
         name=prompt_name,
         template=template,
         input_types=input_types,
     )
-    
+
     # Valid inputs
     valid_result = await mock_prompt_handler.get_cached_prompt(
         prompt_name, {"num": 42, "text": "hello"}
     )
     assert valid_result == "Test with 42 and hello!"
-    
+
     # Test with missing input (should raise KeyError)
     with pytest.raises(KeyError):
         await mock_prompt_handler.get_cached_prompt(
             prompt_name, {"num": 42}  # Missing 'text'
         )
-    
+
     # Test with incorrect type (handled by Python's format method)
     with pytest.raises(ValueError):
         await mock_prompt_handler.get_cached_prompt(
@@ -346,7 +346,7 @@ async def test_batch_operations(mock_prompt_handler):
     """Test handling multiple prompt operations in sequence."""
     # Generate 5 prompt names
     prompt_names = [f"batch_prompt_{uuid.uuid4()}" for _ in range(5)]
-    
+
     # Add all prompts in sequence
     for i, name in enumerate(prompt_names):
         await mock_prompt_handler.add_prompt(
@@ -354,13 +354,13 @@ async def test_batch_operations(mock_prompt_handler):
             template=f"Batch prompt {i}: {{param}}",
             input_types={"param": "str"},
         )
-    
+
     # Verify all were added correctly
     all_prompts = await mock_prompt_handler.list_prompts()
     all_prompt_names = [prompt["name"] for prompt in all_prompts]
     for name in prompt_names:
         assert name in all_prompt_names
-    
+
     # Format all prompts
     formatted_results = []
     for name in prompt_names:
@@ -368,30 +368,30 @@ async def test_batch_operations(mock_prompt_handler):
             name, {"param": "batch_value"}
         )
         formatted_results.append(result)
-    
+
     # Verify formatting worked for all
     for i, result in enumerate(formatted_results):
         assert f"Batch prompt {i}: batch_value" in result
-    
+
     # Update multiple prompts
     for i, name in enumerate(prompt_names[:3]):  # Update first 3
         await mock_prompt_handler.update_prompt(
             name=name,
             template=f"Updated batch {i}: {{param}}",
         )
-    
+
     # Delete the last 2 prompts
     for name in prompt_names[3:]:
         await mock_prompt_handler.delete_prompt(name)
-    
+
     # Verify updates and deletions
     remaining_prompts = await mock_prompt_handler.list_prompts()
     remaining_names = [prompt["name"] for prompt in remaining_prompts]
-    
+
     # First 3 should still exist
     for name in prompt_names[:3]:
         assert name in remaining_names
-    
+
     # Last 2 should be gone
     for name in prompt_names[3:]:
         assert name not in remaining_names

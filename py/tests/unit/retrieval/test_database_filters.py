@@ -425,7 +425,7 @@ class TestProcessFieldCondition:
         helper = ParamHelper()
         sql = _process_field_condition("status", {FilterOperator.NE: "active"}, helper, self.top_cols, self.json_col)
          # Expect it called _build_standard_column_condition
-        assert "status != $1" == sql.replace(" ", "")
+        assert "status!=$1" == sql.replace(" ", "")
         assert helper.params == ["active"]
 
     # --- Metadata Routing Tests ---
