@@ -394,16 +394,6 @@ class ChunkSearchSettings(R2RSerializable):
 class GraphSearchSettings(R2RSerializable):
     """Settings specific to knowledge graph search."""
 
-    generation_config: Optional[GenerationConfig] = Field(
-        default=None,
-        description="Configuration for text generation during graph search.",
-    )
-    max_community_description_length: int = Field(
-        default=65536,
-    )
-    max_llm_queries_for_global_search: int = Field(
-        default=250,
-    )
     limits: dict[str, int] = Field(
         default={},
     )

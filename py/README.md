@@ -43,7 +43,7 @@ results = client.retrieval.search(query="What is DeepSeek R1?")
 # RAG with citations
 response = client.retrieval.rag(query="What is DeepSeek R1?")
 
-# Agentic reasoning with RAG
+# Deep Research RAG Agent
 response = client.retrieval.agent(
   message={"role":"user", "content": "What does deepseek r1 imply? Think about market, societal implications, and more."},
   rag_generation_config={
