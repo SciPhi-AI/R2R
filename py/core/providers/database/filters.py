@@ -349,7 +349,7 @@ def _build_array_literal(
 
 def _build_standard_column_condition(
     field: str, op: str, value: Any, param_helper: ParamHelper
-) -> str:
+) -> str:  # type: ignore
     """Builds SQL condition for standard (non-array, non-JSONB) columns."""
 
     # Handle NULL comparisons
@@ -423,10 +423,10 @@ def _build_standard_column_condition(
         placeholders = [param_helper.add(item) for item in value]
         return f"{field} NOT IN ({', '.join(placeholders)})"
 
-    else:
-        raise FilterError(
-            f"Unsupported operator '{op}' for standard column '{field}'."
-        )
+    # If we get here, the operator is not supported
+    raise FilterError(
+        f"Unsupported operator '{op}' for standard column '{field}'."
+    )
 
 
 def _build_collection_ids_condition(
@@ -434,7 +434,7 @@ def _build_collection_ids_condition(
     op: str,
     value: Any,
     param_helper: ParamHelper,
-) -> str:
+) -> str:  # type: ignore
     """Builds SQL condition for the 'collection_ids' UUID[] array column."""
     if target_column != "collection_ids":
         raise FilterError(
@@ -485,10 +485,6 @@ def _build_collection_ids_condition(
             op == FilterOperator.NIN
         ):  # Check if target_column contains NONE of the elements in value
             return f"NOT ({target_column} && {array_literal})"
-        else:
-            raise FilterError(
-                f"Unsupported operator '{op}' for array column '{target_column}'."
-            )
 
     # --- Operators requiring a single UUID (Less common for arrays, interpret carefully) ---
     elif (
@@ -525,10 +521,9 @@ def _build_collection_ids_condition(
                 f"Operator '{op}' on '{target_column}' requires a single UUID string value."
             )
 
-    else:
-        raise FilterError(
-            f"Unsupported operator '{op}' for array column '{target_column}'."
-        )
+    raise FilterError(
+        f"Unsupported operator '{op}' for array column '{target_column}'."
+    )
 
 
 def _build_metadata_condition(

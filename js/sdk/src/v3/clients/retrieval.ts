@@ -97,7 +97,7 @@ export class RetrievalClient {
         rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
       }),
       ...(options.taskPrompt && {
-        task_prompt_override: options.taskPrompt,
+        task_prompt: options.taskPrompt,
       }),
       ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
@@ -312,80 +312,6 @@ export class RetrievalClient {
       "retrieval/completion",
       {
         data: ragData,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        responseType: "stream",
-      },
-    );
-  }
-  /**
-   * Engage with an intelligent reasoning agent for complex information analysis.
-   *
-   * This endpoint provides a streamlined version of the agent that focuses on
-   * reasoning capabilities without RAG integration. It's ideal for scenarios
-   * where you need complex reasoning but don't require document retrieval.
-   *
-   * Key Features:
-   *    - Multi-step reasoning for complex problems
-   *    - Tool integration for enhanced capabilities
-   *    - Conversation context management
-   *    - Streaming support for real-time responses
-   *
-   * @param options Configuration options for the reasoning agent
-   * @param options.message Current message to process
-   * @param options.ragGenerationConfig Configuration for generation
-   * @param options.conversationId ID of the conversation
-   * @param options.maxToolContextLength Maximum context length for tool replies
-   * @param options.tools List of tool configurations
-   * @returns
-   */
-  async reasoningAgent(options: {
-    message?: Message;
-    ragGenerationConfig?: GenerationConfig | Record<string, any>;
-    conversationId?: string;
-    maxToolContextLength?: number;
-    tools?: Array<Record<string, any>>;
-  }): Promise<any | AsyncGenerator<string, void, unknown>> {
-    const data: Record<string, any> = {
-      ...(options.message && {
-        message: options.message,
-      }),
-      ...(options.ragGenerationConfig && {
-        rag_generation_config: ensureSnakeCase(options.ragGenerationConfig),
-      }),
-      ...(options.conversationId && {
-        conversation_id: options.conversationId,
-      }),
-      ...(options.maxToolContextLength && {
-        max_tool_context_length: options.maxToolContextLength,
-      }),
-      ...(options.tools && {
-        tools: options.tools,
-      }),
-    };
-
-    if (options.ragGenerationConfig && options.ragGenerationConfig.stream) {
-      return this.streamReasoningAgent(data);
-    } else {
-      return await this.client.makeRequest(
-        "POST",
-        "retrieval/reasoning_agent",
-        {
-          data: data,
-        },
-      );
-    }
-  }
-
-  private async streamReasoningAgent(
-    agentData: Record<string, any>,
-  ): Promise<ReadableStream<Uint8Array>> {
-    return this.client.makeRequest<ReadableStream<Uint8Array>>(
-      "POST",
-      "retrieval/reasoning_agent",
-      {
-        data: agentData,
         headers: {
           "Content-Type": "application/json",
         },

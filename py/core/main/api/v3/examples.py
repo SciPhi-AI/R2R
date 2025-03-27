@@ -64,10 +64,6 @@ search_app_examples = {
                 # Knowledge graph enhanced search
                 results = client.retrieval.search(
                     query="What was DeepSeek R1",
-                    graph_search_settings={
-                        "use_graph_search": True,
-                        "kg_search_type": "local"
-                    }
                 )
                 """
             ),
@@ -126,11 +122,7 @@ search_app_examples = {
 
                 // Knowledge graph enhanced search
                 const kgResults = await client.retrieval.search({
-                    query: "who was aristotle?",
-                    graphSearchSettings: {
-                        useKgSearch: true,
-                        kgSearchType: "local"
-                    }
+                    query: "who was aristotle?"
                 });
                 """
             ),
@@ -171,17 +163,6 @@ search_app_examples = {
                     }
                     }'
 
-                # Knowledge graph enhanced search
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \\
-                    -H "Content-Type: application/json" \\
-                    -d '{
-                        "query": "who was aristotle?",
-                        "graph_search_settings": {
-                        "use_graph_search": true,
-                        "kg_search_type": "local"
-                        }
-                    }' \\
-                    -H "Authorization: Bearer YOUR_API_KEY"
                 """
             ),
         },
@@ -490,7 +471,7 @@ conversation = client.conversations.create()
 
 # First message in conversation
 results_1 = client.retrieval.agent(
-    query="What does DeepSeek R1 imply for the future of AI?",
+    message={"role": "user", "content": "What does DeepSeek R1 imply for the future of AI?"},
     rag_generation_config={
         "model": "anthropic/claude-3-7-sonnet-20250219",
         "extended_thinking": True,
@@ -498,14 +479,14 @@ results_1 = client.retrieval.agent(
         "temperature": 1,
         "top_p": None,
         "max_tokens": 16000,
-        "stream": True
+        "stream": False
     },
     conversation_id=conversation.results.id
 )
 
 # Follow-up query in the same conversation
 results_2 = client.retrieval.agent(
-    query="How does it compare to other reasoning models?",
+    message={"role": "user", "content": "How does it compare to other reasoning models?"},
     rag_generation_config={
         "model": "anthropic/claude-3-7-sonnet-20250219",
         "extended_thinking": True,
@@ -513,7 +494,7 @@ results_2 = client.retrieval.agent(
         "temperature": 1,
         "top_p": None,
         "max_tokens": 16000,
-        "stream": True
+        "stream": False
     },
     conversation_id=conversation.results.id
 )
@@ -625,28 +606,28 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
 
                     // First message in conversation
                     const results1 = await client.retrieval.agent({
-                        query: "What does DeepSeek R1 imply for the future of AI?",
+                        message: {"role": "user", "content": "What does DeepSeek R1 imply for the future of AI?"},
                         ragGenerationConfig: {
                             model: "anthropic/claude-3-7-sonnet-20250219",
                             extendedThinking: true,
                             thinkingBudget: 4096,
                             temperature: 1,
                             maxTokens: 16000,
-                            stream: true
+                            stream: false
                         },
                         conversationId: conversation.results.id
                     });
 
                     // Follow-up query in the same conversation
                     const results2 = await client.retrieval.agent({
-                        query: "How does it compare to other reasoning models?",
+                        message: {"role": "user", "content": "How does it compare to other reasoning models?"},
                         ragGenerationConfig: {
                             model: "anthropic/claude-3-7-sonnet-20250219",
                             extendedThinking: true,
                             thinkingBudget: 4096,
                             temperature: 1,
                             maxTokens: 16000,
-                            stream: true
+                            stream: false
                         },
                         conversationId: conversation.results.id
                     });
@@ -677,7 +658,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                         "use_semantic_search": true,
                         "filters": {"document_id": {"$eq": "e43864f5-a36f-548e-aacd-6f8d48b30c7f"}}
                     },
-                    "rag_tools": ["search_file_knowledge", "content", "web_search"]
+                    "rag_tools": ["search_file_knowledge", "get_file_content", "web_search"]
                 }'
 
                 # Advanced analysis with extended thinking
@@ -698,7 +679,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                         "temperature": 1,
                         "top_p": null,
                         "max_tokens": 16000,
-                        "stream": true
+                        "stream": False
                     }
                 }'
 
@@ -944,7 +925,7 @@ The Research mode builds on RAG capabilities and adds:
 **RAG Tools:**
 - `search_file_knowledge`: Semantic/hybrid search on your ingested documents
 - `search_file_descriptions`: Search over file-level metadata
-- `content`: Fetch entire documents or chunk structures
+- `get_file_content`: Fetch entire documents or chunk structures
 - `web_search`: Query external search APIs for up-to-date information
 - `web_scrape`: Scrape and extract content from specific web pages
 
