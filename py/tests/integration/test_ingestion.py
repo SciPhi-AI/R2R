@@ -121,11 +121,8 @@ def file_ingestion(
     finally:
         assert doc_id is not None
         if cleanup and doc_id is not None:
-            try:
+            with contextlib.suppress(R2RException):
                 client.documents.delete(id=doc_id)
-            except R2RException:
-                # Ignore cleanup errors
-                pass
         return doc_id
 
 

@@ -36,26 +36,32 @@ class RetryableR2RAsyncClient(R2RAsyncClient):
 class RetryableR2RClient(R2RClient):
     """R2RClient with automatic retry logic for timeouts"""
 
-    def _make_request(self, method, endpoint, version="v3", **kwargs):
+    async def _make_request(self, method, endpoint, version="v3", **kwargs):
         retries = 0
         max_retries = 3
         delay = 1.0
 
         while True:
             try:
-                return super()._make_request(method, endpoint, version, **kwargs)
+                return await super()._make_request(method, endpoint, version, **kwargs)
             except R2RException as e:
-                if "Request failed" in str(e) and "timed out" in str(e) and retries < max_retries:
+                error_str = str(e).lower()
+                # Simplified error detection
+                if (("request failed" in error_str) or
+                    ("timed out" in error_str) or
+                    ("timeout" in error_str) or
+                    ("connection" in error_str)) and retries < max_retries:
                     retries += 1
                     wait_time = delay * (2 ** (retries - 1))
-                    print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
-                    time.sleep(wait_time)
-                elif "429" in str(e) and retries < max_retries:
+                    print(f"Request to {endpoint} timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    await asyncio.sleep(wait_time)
+                elif "429" in error_str and retries < max_retries:
                     retries += 1
                     wait_time = delay * (3 ** (retries - 1))
-                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
-                    time.sleep(wait_time)
+                    print(f"Rate limited on {endpoint}. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    await asyncio.sleep(wait_time)
                 else:
+                    print(f"Error not eligible for retry or max retries exceeded: {error_str}")
                     raise
 
 
