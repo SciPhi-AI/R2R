@@ -25,6 +25,11 @@ class RetryableR2RAsyncClient(R2RAsyncClient):
                     wait_time = delay * (2 ** (retries - 1))
                     print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
                     await asyncio.sleep(wait_time)
+                elif "429" in str(e) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (3 ** (retries - 1))
+                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    await asyncio.sleep(wait_time)
                 else:
                     raise
 
@@ -44,6 +49,11 @@ class RetryableR2RClient(R2RClient):
                     retries += 1
                     wait_time = delay * (2 ** (retries - 1))
                     print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    time.sleep(wait_time)
+                elif "429" in str(e) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (3 ** (retries - 1))
+                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
                     time.sleep(wait_time)
                 else:
                     raise

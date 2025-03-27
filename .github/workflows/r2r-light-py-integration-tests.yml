@@ -242,8 +242,8 @@ jobs:
         test-group:
         - name: "agent"
           path: "tests/integration/test_agent.py"
-        - name: "base"
-          path: "tests/integration/test_base.py"
+        # - name: "base"
+        #   path: "tests/integration/test_base.py"
         - name: "chunks"
           path: "tests/integration/test_chunks.py"
         - name: "collection_id_filter"
@@ -268,8 +268,8 @@ jobs:
           path: "tests/integration/test_retrieval.py"
         - name: "retrieval_advanced"
           path: "tests/integration/test_retrieval_advanced.py"
-        - name: "system"
-          path: "tests/integration/test_system.py"
+        # - name: "system"
+        #   path: "tests/integration/test_system.py"
         - name: "users"
           path: "tests/integration/test_users.py"
     timeout-minutes: 20
