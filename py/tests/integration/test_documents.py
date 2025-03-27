@@ -570,7 +570,8 @@ def test_delete_by_version_metadata(client: R2RClient, cleanup_documents):
 
         # Verify deprecated doc is deleted
         with pytest.raises(R2RException) as exc:
-            client.documents.retrieve(id=docs[0])
+            doc = client.documents.retrieve(id=docs[0])
+            print('doc = ', doc)
         assert exc.value.status_code == 404
 
         # Verify current doc still exists

@@ -1678,14 +1678,14 @@ class DocumentsRouter(BaseRouterV3):
                     settings_dict=settings,  # type: ignore
                 )
 
+            workflow_input = {
+                "document_id": str(id),
+                "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
+                "user": auth_user.json(),
+            }
+
             if run_with_orchestration:
                 try:
-                    workflow_input = {
-                        "document_id": str(id),
-                        "graph_creation_settings": server_graph_creation_settings.model_dump_json(),
-                        "user": auth_user.json(),
-                    }
-
                     return await self.providers.orchestration.run_workflow(  # type: ignore
                         "graph-extraction", {"request": workflow_input}, {}
                     )

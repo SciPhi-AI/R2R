@@ -534,43 +534,89 @@ def _build_metadata_condition(
 ) -> str:
     """
     Builds SQL condition for a potentially nested field within a JSONB column.
+    This function acts as a dispatcher, figuring out if the condition_spec
+    is a direct operator application or a further nested path definition.
 
     Args:
-        relative_path (str): The path to the field *within* the JSONB column (e.g., "key", "nested.key").
-        condition_spec (Any): The condition to apply (e.g., "value", {"$gt": 5}, {"nested": "val"}).
-        param_helper (ParamHelper): The parameter helper.
-        json_column (str): The name of the JSONB column.
+        relative_path (str): The path to the field *within* the JSONB column
+                             (e.g., "key", "nested.key"). Can be empty if
+                             the top-level filter targets the json_column itself.
+        condition_spec (Any): The condition to apply (e.g., "value", {"$gt": 5},
+                              {"nested": "val"}, {"path.to.key": {"$in": [...]}}).
+        param_helper (ParamHelper): The parameter helper instance.
+        json_column (str): The name of the JSONB column (e.g., 'metadata').
 
     Returns:
-        str: The SQL condition string.
+        str: The generated SQL condition string.
+
+    Raises:
+        FilterError: If the condition specification is invalid.
     """
 
     # Handle complex condition_spec (nested paths or operators)
+    # Check if condition_spec is a dictionary containing a single key
     if isinstance(condition_spec, dict) and len(condition_spec) == 1:
         key, value = next(iter(condition_spec.items()))
-        if key.startswith("$"):
-            # It's an operator like {"$gt": 5} applied to relative_path
-            op = key
-            val = value
+
+        # Case 1: The key is a recognized operator (starts with '$')
+        if key.startswith("$") and key in vars(FilterOperator).values():
+            # Apply the operator 'key' with 'value' to the 'relative_path'
+            # Requires the helper function _build_metadata_operator_condition
+            # Ensure relative_path is valid (not empty for direct operator)
+            if not relative_path:
+                raise FilterError(
+                    f"Operator '{key}' cannot be applied directly to the root of '{json_column}'. Specify a path."
+                )
             return _build_metadata_operator_condition(
-                relative_path, op, val, param_helper, json_column
+                relative_path, key, value, param_helper, json_column
             )
+
+        # Case 2: The key is NOT an operator - assume it's a nested path segment
         else:
             # It's a nested path like {"inner": "value"} applied relative to relative_path
-            # Combine paths and recursively call
-            new_relative_path = f"{relative_path}.{key}"
+            # Combine the current relative_path with the new key
+            # Handle the case where relative_path might be initially empty (shouldn't happen if called from _process_field_condition correctly)
+            new_relative_path = (
+                f"{relative_path}.{key}" if relative_path else key
+            )
+            # Recursively call _build_metadata_condition with the combined path and the inner value
             return _build_metadata_condition(
                 new_relative_path, value, param_helper, json_column
             )
-    else:
-        # It's a direct value comparison (shorthand for EQ) like "value"
+
+    # Handle condition_spec being a direct value (shorthand for EQ)
+    elif not isinstance(condition_spec, dict):
+        # It's a direct value comparison like "value", 123, True
         # Apply EQ operator to the relative_path
+        # Requires the helper function _build_metadata_operator_condition
+        if not relative_path:
+            raise FilterError(
+                f"Direct value comparison cannot be applied to the root of '{json_column}'. Specify a path."
+            )
         return _build_metadata_operator_condition(
             relative_path,
-            FilterOperator.EQ,
-            condition_spec,
+            FilterOperator.EQ,  # Apply Equality operator
+            condition_spec,  # The value itself
             param_helper,
             json_column,
+        )
+
+    # Handle condition_spec being a dictionary but with multiple keys or zero keys (invalid structure at this level)
+    # This case usually happens when the filter is like:
+    # {"metadata": {"path1": "val1", "path2": {"$gt": 5}}}
+    # which should have been handled by the loop in _process_field_condition
+    # when the field name was just "metadata". If we reach here with such a structure,
+    # it implies an unexpected filter format deeper down.
+    else:  # It's a dict with 0 or multiple keys, or something else unexpected
+        # If relative_path is empty, it might be the multi-key dict case from the caller
+        if not relative_path and isinstance(condition_spec, dict):
+            raise FilterError(
+                f"Internal Error: Multi-key dictionary for '{json_column}' root should be handled by caller loop."
+            )
+        # Otherwise, it's an invalid structure nested under a path
+        raise FilterError(
+            f"Invalid filter structure for metadata path '{relative_path}'. "
+            f"Expected a value or a single-key dictionary with an operator or nested path. Found: {condition_spec}"
         )
 
 
@@ -583,73 +629,82 @@ def _build_metadata_operator_condition(
 ) -> str:
     """Builds the specific SQL for an operator on a JSONB path."""
 
-    # Build JSON path expression based on relative_path
     path_parts = relative_path.split(".")
-    use_text_extraction = op not in [
-        FilterOperator.JSON_CONTAINS
-    ]  # Use ->> or #>> for non-JSONB ops
 
+    # Determine accessors WITH and WITHOUT text extraction
     if len(path_parts) == 1:
-        # Top-level key within the JSONB column
-        json_accessor = (
-            f"{json_column} ->> '{path_parts[0]}'"
-            if use_text_extraction
-            else f"{json_column} -> '{path_parts[0]}'"
-        )
+        quoted_key = f"'{path_parts[0]}'"
+        json_accessor_text = f"{json_column} ->> {quoted_key}"
+        json_accessor_jsonb = f"{json_column} -> {quoted_key}"
     else:
-        # Nested path within the JSONB column
-        # Ensure path parts are quoted if they contain special chars, though unlikely with '.' split
-        # For simplicity, we assume standard identifiers here.
-        path_literal = "{" + ",".join(path_parts) + "}"
-        json_accessor = (
-            f"{json_column} #>> '{path_literal}'"
-            if use_text_extraction
-            else f"{json_column} #> '{path_literal}'"
-        )
+        quoted_path_parts = [f'"{p}"' for p in path_parts]
+        path_literal = "'{" + ",".join(quoted_path_parts) + "}'"
+        json_accessor_text = f"{json_column} #>> {path_literal}"
+        json_accessor_jsonb = f"{json_column} #> {path_literal}"
 
-    # Handle NULL comparisons against JSONB presence/value
-    if value is None:
-        # Determine the correct accessor to check for existence/JSON null
-        # Use the non-text-extracting version for NULL checks
-        null_check_accessor = (
-            f"{json_column} -> '{path_parts[0]}'"
-            if len(path_parts) == 1
-            else f"{json_column} #> '{path_literal}'"
-        )
+    # --- JSONB Specific Operators (?|, @>) ---
 
-        if op == FilterOperator.EQ:
-            # Check if path exists AND value at path is JSON null
-            return f"({null_check_accessor} IS NOT NULL AND {null_check_accessor} = 'null'::jsonb)"
-        elif op == FilterOperator.NE:
-            # Check if path does NOT exist OR if it exists and value is NOT JSON null
-            return f"({null_check_accessor} IS NULL OR {null_check_accessor} != 'null'::jsonb)"
-        else:
-            # Other operators with SQL NULL usually result in NULL/FALSE in WHERE
+    if op == FilterOperator.IN:
+        if not isinstance(value, list):
+            raise FilterError(
+                f"'{op}' requires list value for '{relative_path}'."
+            )
+        if not value:
             return "FALSE"
-
-    # --- JSONB Contains ---
-    if op == FilterOperator.JSON_CONTAINS:
         try:
-            # Value needs to be valid JSON
+            str_values = [str(item) for item in value]
+            array_literal = _build_array_literal(
+                str_values, param_helper, "text"
+            )
+            # REMOVED extra parentheses around accessor
+            return f"{json_accessor_jsonb} ?| {array_literal}"
+        except Exception as e:
+            raise FilterError(
+                f"Error processing values for '{op}' on '{relative_path}': {e}"
+            ) from e
+
+    elif op == FilterOperator.NIN:
+        if not isinstance(value, list):
+            raise FilterError(
+                f"'{op}' requires list value for '{relative_path}'."
+            )
+        if not value:
+            return "TRUE"
+        try:
+            str_values = [str(item) for item in value]
+            array_literal = _build_array_literal(
+                str_values, param_helper, "text"
+            )
+            # REMOVED extra parentheses around accessor inside NOT()
+            return f"NOT ({json_accessor_jsonb} ?| {array_literal})"
+        except Exception as e:
+            raise FilterError(
+                f"Error processing values for '{op}' on '{relative_path}': {e}"
+            ) from e
+
+    elif op == FilterOperator.JSON_CONTAINS:
+        try:
             json_value_str = json.dumps(value)
             placeholder = param_helper.add(json_value_str)
-            # Use the JSONB containment operator @>
-            # Note: json_accessor uses '->' or '#>' here based on use_text_extraction logic above
-            return f"{json_accessor} @> {placeholder}::jsonb"
+            # REMOVED extra parentheses around accessor
+            return f"{json_accessor_jsonb} @> {placeholder}::jsonb"
         except TypeError as e:
             raise FilterError(
-                f"Value for '{FilterOperator.JSON_CONTAINS}' on '{relative_path}' must be JSON serializable: {e}"
+                f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
             ) from e
 
     # --- Standard comparisons (operating on text extraction ->> or #>>) ---
-    # Ensure json_accessor uses text extraction here
-    if (
-        not use_text_extraction
-    ):  # Should not happen based on logic above, but defensive check
-        raise FilterError(
-            f"Internal Error: Text extraction required for operator '{op}'"
-        )
 
+    # Handle NULL comparisons
+    if value is None:
+        if op == FilterOperator.EQ:
+            return f"{json_accessor_text} IS NULL"
+        elif op == FilterOperator.NE:
+            return f"{json_accessor_text} IS NOT NULL"
+        else:
+            return "FALSE"
+
+    # --- Standard Scalar Comparisons ---
     sql_op_map = {
         FilterOperator.EQ: "=",
         FilterOperator.NE: "!=",
@@ -661,64 +716,63 @@ def _build_metadata_operator_condition(
 
     if op in sql_op_map:
         sql_operator = sql_op_map[op]
-        # Determine appropriate casting based on value type for comparison
         if isinstance(value, bool):
             placeholder = param_helper.add(value)
-            # Cast JSONB extracted text to boolean
-            return f"({json_accessor})::boolean {sql_operator} {placeholder}"
+            # Keep safety checks - tests will be updated
+            return f"({json_accessor_text} IS NOT NULL AND ({json_accessor_text})::boolean {sql_operator} {placeholder})"
         elif isinstance(value, (int, float)):
             placeholder = param_helper.add(value)
-            # Cast JSONB extracted text to numeric for robust comparison
-            return f"({json_accessor})::numeric {sql_operator} {placeholder}"
+            # Keep safety checks - tests will be updated
+            # Ensure public.is_numeric function exists in your DB!
+            return f"({json_accessor_text} IS NOT NULL AND ({json_accessor_text})::numeric {sql_operator} {placeholder})"
         elif isinstance(value, str):
             placeholder = param_helper.add(value)
-            # Compare text directly
-            return f"{json_accessor} {sql_operator} {placeholder}"
+            # Direct text comparison needs no extra checks usually
+            return f"{json_accessor_text} {sql_operator} {placeholder}"
         else:
-            # Fallback: Cast value to string and compare text representations
             placeholder = param_helper.add(str(value))
-            return f"{json_accessor} {sql_operator} {placeholder}"
+            return f"{json_accessor_text} {sql_operator} {placeholder}"
 
     # --- String Like ---
     elif op == FilterOperator.LIKE:
         if not isinstance(value, str):
             raise FilterError(
-                f"'{FilterOperator.LIKE}' requires a string value for metadata field '{relative_path}'."
+                f"'{op}' requires string value for '{relative_path}'."
             )
         placeholder = param_helper.add(value)
-        return f"{json_accessor} LIKE {placeholder}"
+        return f"{json_accessor_text} LIKE {placeholder}"
     elif op == FilterOperator.ILIKE:
         if not isinstance(value, str):
             raise FilterError(
-                f"'{FilterOperator.ILIKE}' requires a string value for metadata field '{relative_path}'."
+                f"'{op}' requires string value for '{relative_path}'."
             )
         placeholder = param_helper.add(value)
-        return f"{json_accessor} ILIKE {placeholder}"
+        return f"{json_accessor_text} ILIKE {placeholder}"
 
-    # --- IN / NOT IN (operating on text extraction) ---
+    # --- Fallback IN / NIN (operating on text extraction) ---
     elif op == FilterOperator.IN:
         if not isinstance(value, list):
             raise FilterError(
-                f"'{FilterOperator.IN}' requires a list value for metadata field '{relative_path}'."
+                f"Fallback '{op}' requires list value for '{relative_path}'."
             )
         if not value:
             return "FALSE"
-        # Compare extracted text against a list of text values
         placeholders = [param_helper.add(str(item)) for item in value]
-        # Wrap accessor in parentheses for IN operator
-        return f"({json_accessor}) IN ({', '.join(placeholders)})"
+        # Standard SQL IN needs parentheses around the accessor
+        return f"({json_accessor_text}) IN ({', '.join(placeholders)})"
 
     elif op == FilterOperator.NIN:
         if not isinstance(value, list):
             raise FilterError(
-                f"'{FilterOperator.NIN}' requires a list value for metadata field '{relative_path}'."
+                f"Fallback '{op}' requires list value for '{relative_path}'."
             )
         if not value:
             return "TRUE"
         placeholders = [param_helper.add(str(item)) for item in value]
-        # Wrap accessor in parentheses for NOT IN operator
-        return f"({json_accessor}) NOT IN ({', '.join(placeholders)})"
+        # Standard SQL NOT IN needs parentheses around the accessor
+        return f"({json_accessor_text}) NOT IN ({', '.join(placeholders)})"
 
+    # --- Operator Not Handled ---
     else:
         raise FilterError(
             f"Unsupported operator '{op}' for metadata field '{relative_path}'."

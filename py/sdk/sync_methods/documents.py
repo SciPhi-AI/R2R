@@ -135,7 +135,11 @@ class DocumentsSDK:
             data["run_with_orchestration"] = str(run_with_orchestration)
 
         # Always send ingestion_mode enum value
-        data["ingestion_mode"] = ingestion_mode.value
+        data["ingestion_mode"] = (
+            ingestion_mode.value
+            if isinstance(ingestion_mode, IngestionMode)
+            else ingestion_mode
+        )
 
         if file_path:
             # Check if file exists before opening
