@@ -170,7 +170,10 @@ class R2RProviderFactory:
             )
 
             return UnstructuredIngestionProvider(
-                unstructured_ingestion_config, database_provider, llm_provider
+                config=unstructured_ingestion_config,
+                database_provider=database_provider,
+                llm_provider=llm_provider,
+                ocr_provider=ocr_provider,
             )
         else:
             raise ValueError(
