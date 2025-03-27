@@ -1,13 +1,66 @@
 import uuid
+import asyncio
+import time
 from typing import AsyncGenerator
 
 import pytest
 
-from r2r import R2RAsyncClient, R2RClient
+from r2r import R2RAsyncClient, R2RClient, R2RException
+
+
+class RetryableR2RAsyncClient(R2RAsyncClient):
+    """R2RAsyncClient with automatic retry logic for timeouts"""
+
+    async def _make_request(self, method, endpoint, version="v3", **kwargs):
+        retries = 0
+        max_retries = 3
+        delay = 1.0
+
+        while True:
+            try:
+                return await super()._make_request(method, endpoint, version, **kwargs)
+            except R2RException as e:
+                if "Request failed" in str(e) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (2 ** (retries - 1))
+                    print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    await asyncio.sleep(wait_time)
+                elif "429" in str(e) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (3 ** (retries - 1))
+                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    await asyncio.sleep(wait_time)
+                else:
+                    raise
+
+class RetryableR2RClient(R2RClient):
+    """R2RClient with automatic retry logic for timeouts"""
+
+    def _make_request(self, method, endpoint, version="v3", **kwargs):
+        retries = 0
+        max_retries = 3
+        delay = 1.0
+
+        while True:
+            try:
+                return super()._make_request(method, endpoint, version, **kwargs)
+            except R2RException as e:
+                if ("Request failed" in str(e) or "timed out" in str(e)) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (2 ** (retries - 1))
+                    print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    time.sleep(wait_time)
+                elif "429" in str(e) and retries < max_retries:
+                    retries += 1
+                    wait_time = delay * (3 ** (retries - 1))
+                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    time.sleep(wait_time)
+                else:
+                    raise
+
 
 
 class TestConfig:
-
     def __init__(self):
         self.base_url = "http://localhost:7272"
         self.index_wait_time = 1.0
@@ -17,7 +70,8 @@ class TestConfig:
         self.test_timeout = 30  # seconds
 
 
-@pytest.fixture  # (scope="session")
+# Change this to session scope to match the client fixture
+@pytest.fixture(scope="session")
 def config() -> TestConfig:
     return TestConfig()
 
@@ -25,65 +79,34 @@ def config() -> TestConfig:
 @pytest.fixture(scope="session")
 async def client(config) -> AsyncGenerator[R2RClient, None]:
     """Create a shared client instance for the test session."""
-    client = R2RClient(config.base_url)
-    yield client
-    # Session cleanup if needed
+    yield RetryableR2RClient(config.base_url)
 
 
-@pytest.fixture  # scope="session")
+@pytest.fixture
 def mutable_client(config) -> R2RClient:
     """Create a shared client instance for the test session."""
-    client = R2RClient(config.base_url)
-    return client  # a client for logging in and what-not
-    # Session cleanup if needed
+    return RetryableR2RClient(config.base_url)
 
 
-@pytest.fixture  # (scope="session")
-async def aclient(config) -> AsyncGenerator[R2RClient, None]:
-    """Create a shared client instance for the test session."""
-    client = R2RAsyncClient(config.base_url)
-    yield client
-    # Session cleanup if needed
+@pytest.fixture
+async def aclient(config) -> AsyncGenerator[R2RAsyncClient, None]:
+    """Create a retryable client instance for the test session."""
+    yield RetryableR2RAsyncClient(config.base_url)
 
 
 @pytest.fixture
 async def superuser_client(
-        client: R2RClient,
+        mutable_client: R2RClient,
         config: TestConfig) -> AsyncGenerator[R2RClient, None]:
     """Creates a superuser client for tests requiring elevated privileges."""
-    await client.users.login(config.superuser_email, config.superuser_password)
-    yield client
-    await client.users.logout()
-
-
-import pytest
-
-from r2r import R2RClient, R2RException
-
-
-@pytest.fixture(scope="session")
-def config():
-
-    class TestConfig:
-        base_url = "http://localhost:7272"
-        superuser_email = "admin@example.com"
-        superuser_password = "change_me_immediately"
-
-    return TestConfig()
-
-
-@pytest.fixture(scope="session")
-def client(config):
-    """Create a client instance and log in as a superuser."""
-    client = R2RClient(config.base_url)
-    client.users.login(config.superuser_email, config.superuser_password)
-    return client
+    await mutable_client.users.login(config.superuser_email, config.superuser_password)
+    yield mutable_client
+    await mutable_client.users.logout()
 
 
 @pytest.fixture(scope="session")
 def test_document(client: R2RClient):
     """Create and yield a test document, then clean up."""
-
     random_suffix = str(uuid.uuid4())
     doc_id = client.documents.create(
         raw_text=f"{random_suffix} Test doc for collections",
