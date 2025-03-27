@@ -1,4 +1,4 @@
-![R2R Banner](https://github.com/user-attachments/assets/5c9d2801-97c3-489d-b2f6-948c5d249e7e)
+<img width="1217" alt="Screenshot 2025-03-27 at 6 35 02 AM" src="https://github.com/user-attachments/assets/10b530a6-527f-4335-b2e4-ceaa9fc1219f" />
 
 <h3 align="center">
 The most advanced AI retrieval system.
