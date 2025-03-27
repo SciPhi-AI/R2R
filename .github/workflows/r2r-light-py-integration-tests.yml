@@ -236,8 +236,43 @@ jobs:
   integration-test-azure-openai-full:
     needs: integration-test-azure-openai
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group:
+        - name: "agent"
+          path: "tests/integration/test_agent.py"
+        - name: "base"
+          path: "tests/integration/test_base.py"
+        - name: "chunks"
+          path: "tests/integration/test_chunks.py"
+        - name: "collection_id_filter"
+          path: "tests/integration/test_collection_id_filter.py"
+        - name: "collections"
+          path: "tests/integration/test_collections.py"
+        - name: "collections_users_interaction"
+          path: "tests/integration/test_collections_users_interaction.py"
+        - name: "conversations"
+          path: "tests/integration/test_conversations.py"
+        - name: "documents"
+          path: "tests/integration/test_documents.py"
+        - name: "filters"
+          path: "tests/integration/test_filters.py"
+        - name: "graphs"
+          path: "tests/integration/test_graphs.py"
+        - name: "indices"
+          path: "tests/integration/test_indices.py"
+        - name: "ingestion"
+          path: "tests/integration/test_ingestion.py"
+        - name: "retrieval"
+          path: "tests/integration/test_retrieval.py"
+        - name: "retrieval_advanced"
+          path: "tests/integration/test_retrieval_advanced.py"
+        - name: "system"
+          path: "tests/integration/test_system.py"
+        - name: "users"
+          path: "tests/integration/test_users.py"
     timeout-minutes: 20
-
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -300,14 +335,14 @@ jobs:
             timeout=$((timeout - 5))
           done
 
-      - name: Run R2R Full Python Integration Test
+      - name: Run R2R Integration Test - ${{ matrix.test-group.name }}
         run: |
-          cd py && uv run pytest tests/integration \
+          cd py && uv run pytest ${{ matrix.test-group.path }} \
             --verbose \
             --capture=no \
             --log-cli-level=INFO \
-            --junit-xml=test-results/junit.xml \
-            --html=test-results/report.html
+            --junit-xml=test-results/junit-${{ matrix.test-group.name }}.xml \
+            --html=test-results/report-${{ matrix.test-group.name }}.html
 
       - name: Upload test results
         if: always()
