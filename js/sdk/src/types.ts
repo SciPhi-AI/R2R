@@ -501,3 +501,32 @@ export type WrappedAPIKeyResponse = R2RResults<ApiKey>;
  * Wrapped response that contains a list of existing API keys (no private keys).
  */
 export type WrappedAPIKeysResponse = PaginatedR2RResult<ApiKeyNoPriv[]>;
+
+// Document Search Result type
+export interface DocumentSearchResult {
+  id: string;
+  documentId: string;
+  ownerId: string;
+  collectionIds: string[];
+  documentType: string;
+  metadata: Record<string, any>;
+  title?: string;
+  version: string;
+  sizeInBytes?: number;
+  ingestionStatus: string;
+  extractionStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  ingestionAttemptNumber?: number;
+  summary?: string;
+  score: number;
+}
+
+// Paginated results wrapper for document search
+export interface PaginatedResultsWrapper<T> {
+  results: T;
+  totalEntries: number;
+}
+
+// Wrapped Document Search Response
+export type WrappedDocumentSearchResponse = PaginatedResultsWrapper<DocumentSearchResult[]>;

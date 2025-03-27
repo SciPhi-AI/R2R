@@ -10,7 +10,7 @@ import {
   WrappedIngestionResponse,
   WrappedRelationshipsResponse,
   WrappedGenericMessageResponse,
-  WrappedDocumentSearchResponse, // Added this type
+  WrappedDocumentSearchResponse,
 } from "../../types";
 import { downloadBlob } from "../../utils";
 
@@ -940,7 +940,7 @@ export class DocumentsClient {
    * @returns Promise<WrappedIngestionResponse> The ingestion response.
    */
   async createSample(options?: {
-    ingestionMode?: "hi-res" | "fast" | "custom" | "ocr"; // Added 'ocr' based on router
+    ingestionMode?: "hi-res" | "fast" | "custom" | "ocr";
   }): Promise<WrappedIngestionResponse> {
     // Check if in Node.js environment
     if (typeof window !== "undefined" || !fs || !axios || !os || !path) {
