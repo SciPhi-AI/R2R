@@ -1,4 +1,4 @@
-![R2R Logo](https://github.com/user-attachments/assets/16d32b31-4c7d-4e84-be19-24574b33527b)
+![R2R Banner](https://github.com/user-attachments/assets/5c9d2801-97c3-489d-b2f6-948c5d249e7e)
 
 <h3 align="center">
 The most advanced AI retrieval system.
