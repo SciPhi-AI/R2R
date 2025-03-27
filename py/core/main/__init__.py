@@ -18,6 +18,7 @@ __all__ = [
     ## R2R SERVICES
     "AuthService",
     "IngestionService",
+    "MaintenanceService",
     "ManagementService",
     "RetrievalService",
     "GraphService",

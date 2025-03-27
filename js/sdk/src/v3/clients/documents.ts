@@ -49,7 +49,7 @@ export class DocumentsClient {
     ingestionConfig?: Record<string, any>;
     collectionIds?: string[];
     runWithOrchestration?: boolean;
-    ingestionMode?: "hi-res" | "fast" | "custom";
+    ingestionMode?: "hi-res" | "ocr" | "fast" | "custom";
   }): Promise<WrappedIngestionResponse> {
     const inputCount = [options.file, options.raw_text, options.chunks].filter(
       (x) => x !== undefined,

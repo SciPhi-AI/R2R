@@ -14,11 +14,12 @@ from .embedding import EmbeddingConfig, EmbeddingProvider
 from .ingestion import (
     ChunkingStrategy,
     IngestionConfig,
-    IngestionMode,
     IngestionProvider,
 )
 from .llm import CompletionConfig, CompletionProvider
+from .ocr import OCRConfig, OCRProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
+from .scheduler import SchedulerConfig, SchedulerProvider
 
 __all__ = [
     # Auth provider
@@ -29,7 +30,6 @@ __all__ = [
     "Provider",
     "ProviderConfig",
     # Ingestion provider
-    "IngestionMode",
     "IngestionConfig",
     "IngestionProvider",
     "ChunkingStrategy",
@@ -52,8 +52,14 @@ __all__ = [
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",
+    # OCR provider
+    "OCRConfig",
+    "OCRProvider",
     # Orchestration provider
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
+    # Scheduler provider
+    "SchedulerConfig",
+    "SchedulerProvider",
 ]

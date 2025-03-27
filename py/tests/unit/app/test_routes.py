@@ -25,6 +25,8 @@ from core.providers.embeddings import OpenAIEmbeddingProvider
 from core.providers.ingestion import R2RIngestionProvider
 from core.providers.llm import OpenAICompletionProvider
 from core.providers.orchestration import SimpleOrchestrationProvider
+from core.providers.scheduler import APSchedulerProvider
+from core.providers.ocr import MistralOCRProvider
 
 ROUTERS = [
     UsersRouter,
@@ -56,35 +58,41 @@ def mock_providers():
     mock_completion_embedding.config = Mock()
     mock_llm = create_autospec(OpenAICompletionProvider)
     mock_llm.config = Mock()
+    mock_ocr = create_autospec(MistralOCRProvider)
+    mock_ocr.config = Mock()
     mock_orchestration = create_autospec(SimpleOrchestrationProvider)
     mock_orchestration.config = Mock()
     mock_email = create_autospec(ConsoleMockEmailProvider)
     mock_email.config = Mock()
+    mock_scheduler = create_autospec(APSchedulerProvider)
+    mock_scheduler.config = Mock()
 
     # Set up any needed methods
     mock_auth.auth_wrapper = Mock(return_value=lambda: None)
 
-    providers = R2RProviders(
+    return R2RProviders(
         auth=mock_auth,
-        database=mock_db,
-        ingestion=mock_ingestion,
-        embedding=mock_embedding,
         completion_embedding=mock_completion_embedding,
-        llm=mock_llm,
-        orchestration=mock_orchestration,
+        database=mock_db,
         email=mock_email,
+        embedding=mock_embedding,
+        ingestion=mock_ingestion,
+        llm=mock_llm,
+        ocr=mock_ocr,
+        orchestration=mock_orchestration,
+        scheduler=mock_scheduler,
     )
-    return providers
 
 
 @pytest.fixture
 def mock_services():
     return R2RServices(
-        management=Mock(),
         auth=Mock(),
         ingestion=Mock(),
-        retrieval=Mock(),
         graph=Mock(),
+        maintenance=Mock(),
+        management=Mock(),
+        retrieval=Mock(),
     )
 
 

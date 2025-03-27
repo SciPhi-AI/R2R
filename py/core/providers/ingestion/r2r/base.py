@@ -16,14 +16,14 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.utils import generate_extraction_id
-
-from ...database import PostgresDatabaseProvider
-from ...llm import (
+from core.providers.database import PostgresDatabaseProvider
+from core.providers.llm import (
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from core.providers.ocr import MistralOCRProvider
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
 
@@ -69,11 +69,16 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.RTF: parsers.RTFParser,
         DocumentType.TIFF: parsers.ImageParser,
         DocumentType.XLS: parsers.XLSParser,
+        DocumentType.PY: parsers.PythonParser,
+        DocumentType.CSS: parsers.CSSParser,
+        DocumentType.JS: parsers.JSParser,
+        DocumentType.TS: parsers.TSParser,
     }
 
     EXTRA_PARSERS = {
         DocumentType.CSV: {"advanced": parsers.CSVParserAdvanced},
         DocumentType.PDF: {
+            "ocr": parsers.OCRPDFParser,
             "unstructured": parsers.PDFParserUnstructured,
             "zerox": parsers.VLMPDFParser,
         },
@@ -98,6 +103,7 @@ class R2RIngestionProvider(IngestionProvider):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ),
+        ocr_provider: MistralOCRProvider,
     ):
         super().__init__(config, database_provider, llm_provider)
         self.config: R2RIngestionConfig = config
@@ -107,6 +113,7 @@ class R2RIngestionProvider(IngestionProvider):
             | OpenAICompletionProvider
             | R2RCompletionProvider
         ) = llm_provider
+        self.ocr_provider: MistralOCRProvider = ocr_provider
         self.parsers: dict[DocumentType, AsyncParser] = {}
         self.text_splitter = self._build_text_splitter()
         self._initialize_parsers()
@@ -124,14 +131,31 @@ class R2RIngestionProvider(IngestionProvider):
                     database_provider=self.database_provider,
                     llm_provider=self.llm_provider,
                 )
-        for doc_type, doc_parser_name in self.config.extra_parsers.items():
-            self.parsers[f"{doc_parser_name}_{str(doc_type)}"] = (
-                R2RIngestionProvider.EXTRA_PARSERS[doc_type][doc_parser_name](
-                    config=self.config,
-                    database_provider=self.database_provider,
-                    llm_provider=self.llm_provider,
-                )
-            )
+        # FIXME: This doesn't allow for flexibility for a parser that might not
+        # need an llm_provider, etc.
+        for doc_type, parser_names in self.config.extra_parsers.items():
+            if not isinstance(parser_names, list):
+                parser_names = [parser_names]
+
+            for parser_name in parser_names:
+                parser_key = f"{parser_name}_{str(doc_type)}"
+
+                try:
+                    self.parsers[parser_key] = self.EXTRA_PARSERS[doc_type][
+                        parser_name
+                    ](
+                        config=self.config,
+                        database_provider=self.database_provider,
+                        llm_provider=self.llm_provider,
+                        ocr_provider=self.ocr_provider,
+                    )
+                    logger.info(
+                        f"Initialized extra parser {parser_name} for {doc_type}"
+                    )
+                except KeyError as e:
+                    logger.error(
+                        f"Parser {parser_name} for document type {doc_type} not found: {e}"
+                    )
 
     def _build_text_splitter(
         self, ingestion_config_override: Optional[dict] = None
@@ -236,29 +260,37 @@ class R2RIngestionProvider(IngestionProvider):
                     f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
                 # TODO - Cleanup this approach to be less hardcoded
-                if (
-                    document.document_type != DocumentType.PDF
-                    or parser_overrides[DocumentType.PDF.value] != "zerox"
-                ):
-                    raise ValueError(
-                        "Only Zerox PDF parser override is available."
-                    )
+                # if (
+                #     document.document_type != DocumentType.PDF
+                #     or parser_overrides[DocumentType.PDF.value] != "zerox"
+                # ):
+                #     raise ValueError(
+                #         "Only Zerox PDF parser override is available."
+                #     )
 
-                # Collect content from VLMPDFParser
-                async for chunk in self.parsers[
-                    f"zerox_{DocumentType.PDF.value}"
-                ].ingest(file_content, **ingestion_config_override):
-                    if isinstance(chunk, dict) and chunk.get("content"):
-                        contents.append(chunk)
-                    elif (
-                        chunk
-                    ):  # Handle string output for backward compatibility
-                        contents.append({"content": chunk})
+                if parser_overrides[DocumentType.PDF.value] == "zerox":
+                    # Collect content from VLMPDFParser
+                    async for chunk in self.parsers[
+                        f"zerox_{DocumentType.PDF.value}"
+                    ].ingest(file_content, **ingestion_config_override):
+                        if isinstance(chunk, dict) and chunk.get("content"):
+                            contents.append(chunk)
+                        elif (
+                            chunk
+                        ):  # Handle string output for backward compatibility
+                            contents.append({"content": chunk})
+                elif parser_overrides[DocumentType.PDF.value] == "ocr":
+                    async for chunk in self.parsers[
+                        f"ocr_{DocumentType.PDF.value}"
+                    ].ingest(file_content, **ingestion_config_override):
+                        if isinstance(chunk, dict) and chunk.get("content"):
+                            contents.append(chunk)
 
                 if (
                     contents
                     and document.document_type == DocumentType.PDF
                     and parser_overrides.get(DocumentType.PDF.value) == "zerox"
+                    or parser_overrides.get(DocumentType.PDF.value) == "ocr"
                 ):
                     text_splitter = self._build_text_splitter(
                         ingestion_config_override

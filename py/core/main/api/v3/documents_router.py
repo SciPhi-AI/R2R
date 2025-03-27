@@ -15,7 +15,6 @@ from pydantic import Json
 
 from core.base import (
     IngestionConfig,
-    IngestionMode,
     R2RException,
     SearchMode,
     SearchSettings,
@@ -40,6 +39,7 @@ from core.base.api.models import (
     WrappedRelationshipsResponse,
 )
 from core.utils import update_settings_from_dict
+from shared.abstractions import IngestionMode
 
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
@@ -269,6 +269,7 @@ class DocumentsRouter(BaseRouterV3):
                 description=(
                     "Ingestion modes:\n"
                     "- `hi-res`: Thorough ingestion with full summaries and enrichment.\n"
+                    "- `ocr`: OCR via Mistral and full summaries.\n"
                     "- `fast`: Quick ingestion with minimal enrichment and no summaries.\n"
                     "- `custom`: Full control via `ingestion_config`.\n\n"
                     "If `filters` or `limit` (in `ingestion_config`) are provided alongside `hi-res` or `fast`, "

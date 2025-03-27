@@ -23,12 +23,6 @@ class ChunkingStrategy(str, Enum):
     BY_TITLE = "by_title"
 
 
-class IngestionMode(str, Enum):
-    hi_res = "hi-res"
-    fast = "fast"
-    custom = "custom"
-
-
 class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
         "app": AppConfig(),
@@ -142,13 +136,17 @@ class IngestionConfig(ProviderConfig):
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
-            raise ValueError(f"Provider {self.provider} is not supported.")
+            raise ValueError(
+                f"Provider {self.provider} is not supported, must be one of {self.supported_providers}"
+            )
 
     @classmethod
     def get_default(cls, mode: str, app) -> "IngestionConfig":
         """Return default ingestion configuration for a given mode."""
         if mode == "hi-res":
             return cls(app=app, parser_overrides={"pdf": "zerox"})
+        if mode == "ocr":
+            return cls(app=app, parser_overrides={"pdf": "ocr"})
         if mode == "fast":
             return cls(app=app, skip_document_summary=True)
         else:
