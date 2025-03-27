@@ -3022,7 +3022,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.5.5"
+version = "3.5.6"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

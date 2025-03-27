@@ -3,7 +3,7 @@ Common test fixtures for retrieval tests.
 """
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Any, Optional, dict, list
+from typing import Any, Optional
 
 
 class MockSearchSettings:
