@@ -144,37 +144,34 @@ class TestBuildCollectionIdsCondition:
 class TestBuildMetadataCondition:
     json_col = JSON_COLUMN
     # Helper for safe compare SQL
-    # NOTE: Ensure public.is_numeric function exists in your test DB or adapt this
     def _expected_safe_compare_sql(self, accessor, sql_op, param_placeholder, cast_type="numeric"):
+        # Existing helper function - keep as is
         if cast_type == "numeric":
             return f"({accessor} IS NOT NULL AND ({accessor})::{cast_type} {sql_op} {param_placeholder})"
         elif cast_type == "boolean":
              return f"({accessor} IS NOT NULL AND ({accessor})::{cast_type} {sql_op} {param_placeholder})"
-        else:
+        else: # Includes string comparisons which don't need casting/null check here
             return f"{accessor} {sql_op} {param_placeholder}"
 
-    # --- Updated test_operators_simple_path ---
+    # --- Test basic operators on simple path (Keep mostly as is, ensure consistency) ---
     @pytest.mark.parametrize("op, value, expected_sql_part, expected_params", [
         (FilterOperator.EQ, "val", f"->>'key' = $1", ["val"]),
-        (FilterOperator.EQ, 123, None, [123]), # Placeholder for numeric safe compare
-        (FilterOperator.EQ, True, None, [True]), # Placeholder for boolean safe compare
+        (FilterOperator.EQ, 123, None, [123]), # Numeric safe compare
+        (FilterOperator.EQ, True, None, [True]), # Boolean safe compare
         (FilterOperator.NE, "val", f"->>'key' != $1", ["val"]),
-        (FilterOperator.NE, 123, None, [123]), # Placeholder for numeric safe compare
-        (FilterOperator.NE, False, None, [False]), # Placeholder for boolean safe compare
-        (FilterOperator.GT, 10, None, [10]), # Placeholder for numeric safe compare
-        (FilterOperator.GTE, 10.5, None, [10.5]), # Placeholder for numeric safe compare
-        (FilterOperator.LT, 10, None, [10]), # Placeholder for numeric safe compare
-        (FilterOperator.LTE, 10.5, None, [10.5]), # Placeholder for numeric safe compare
-        (FilterOperator.GT, "abc", f"->>'key' > $1", ["abc"]),
+        (FilterOperator.NE, 123, None, [123]), # Numeric safe compare
+        (FilterOperator.NE, False, None, [False]), # Boolean safe compare
+        (FilterOperator.GT, 10, None, [10]), # Numeric safe compare
+        (FilterOperator.GTE, 10.5, None, [10.5]), # Numeric safe compare
+        (FilterOperator.LT, 10, None, [10]), # Numeric safe compare
+        (FilterOperator.LTE, 10.5, None, [10.5]), # Numeric safe compare
+        (FilterOperator.GT, "abc", f"->>'key' > $1", ["abc"]), # String compare
         (FilterOperator.LIKE, "%pat%", f"->>'key' LIKE $1", ["%pat%"]),
         (FilterOperator.ILIKE, "%pat%", f"->>'key' ILIKE $1", ["%pat%"]),
-        # CORRECTED: Assume $in/$nin on metadata uses JSONB ?| operator
-        (FilterOperator.IN, ["a", "b"], f"->'key' ?| ARRAY[$1,$2]::text[]", ["a", "b"]),
+        (FilterOperator.IN, ["a", "b"], f"->'key' ?| ARRAY[$1,$2]::text[]", ["a", "b"]), # JSONB array op
         (FilterOperator.IN, [], "FALSE", []),
-        # CORRECTED: Assume $in/$nin on metadata uses JSONB ?| operator
-        (FilterOperator.NIN, ["a", "b"], f"NOT ({JSON_COLUMN}->'key' ?| ARRAY[$1,$2]::text[])", ["a", "b"]),
+        (FilterOperator.NIN, ["a", "b"], f"NOT ({JSON_COLUMN}->'key' ?| ARRAY[$1,$2]::text[])", ["a", "b"]), # JSONB array op
         (FilterOperator.NIN, [], "TRUE", []),
-        # JSON Contains (uses -> and @>, NO extra parens)
         (FilterOperator.JSON_CONTAINS, {"a": 1}, f"->'key' @> $1::jsonb", [json.dumps({"a": 1})]),
         (FilterOperator.JSON_CONTAINS, ["a", 1], f"->'key' @> $1::jsonb", [json.dumps(["a", 1])]),
         (FilterOperator.JSON_CONTAINS, "scalar", f"->'key' @> $1::jsonb", [json.dumps("scalar")]),
@@ -187,95 +184,135 @@ class TestBuildMetadataCondition:
         expected_sql_full = ""
         accessor = f"{self.json_col}->>'key'" # Base accessor for text
 
-        # --- CORRECTED Order of Checks ---
-        # 1. Handle Boolean FIRST
+        # --- Logic to determine expected_sql_full (Keep as is from your corrected version) ---
         if isinstance(value, bool) and op in [FilterOperator.EQ, FilterOperator.NE]:
              sql_op_map = {FilterOperator.EQ:"=", FilterOperator.NE:"!="}
              expected_sql_full = self._expected_safe_compare_sql(accessor, sql_op_map[op], '$1', 'boolean')
-        # 2. Then handle Numeric (explicitly excluding bool)
         elif isinstance(value, (int, float)) and not isinstance(value, bool) and op in [FilterOperator.EQ, FilterOperator.NE, FilterOperator.GT, FilterOperator.GTE, FilterOperator.LT, FilterOperator.LTE]:
              sql_op_map = {FilterOperator.EQ:"=", FilterOperator.NE:"!=", FilterOperator.GT:">", FilterOperator.GTE:">=", FilterOperator.LT:"<", FilterOperator.LTE:"<="}
              expected_sql_full = self._expected_safe_compare_sql(accessor, sql_op_map[op], '$1', 'numeric')
-        # 3. Then handle special empty lists / JSON Contains / JSONB IN/NIN
         elif value == [] and op == FilterOperator.IN: expected_sql_full = "FALSE"
         elif value == [] and op == FilterOperator.NIN: expected_sql_full = "TRUE"
         elif op == FilterOperator.JSON_CONTAINS:
+             # Uses -> accessor, not ->>
              expected_sql_full = f"{self.json_col}{expected_sql_part}"
-        elif op == FilterOperator.IN: # JSONB IN case (already matched by parametrize)
+        elif op == FilterOperator.IN: # JSONB IN uses -> accessor
              expected_sql_full = f"{self.json_col}{expected_sql_part}"
-        elif op == FilterOperator.NIN: # JSONB NIN case (already matched by parametrize)
-             expected_sql_full = expected_sql_part
-        # 4. Fallback (includes LIKE, ILIKE, GT>text, scalar EQ/NE text)
-        else:
+        elif op == FilterOperator.NIN: # JSONB NIN uses -> accessor
+             expected_sql_full = expected_sql_part # The NOT() part is already in expected_sql_part
+        else: # Fallback (LIKE, ILIKE, GT>text, EQ/NE text) uses ->> accessor
              expected_sql_full = f"{self.json_col}{expected_sql_part}"
 
         assert sql.replace(" ", "") == expected_sql_full.replace(" ", "")
         assert helper.params == expected_params
 
-    # Keep test_eq_shorthand_simple_path as is
+    # --- Keep shorthand tests ---
     def test_eq_shorthand_simple_path(self):
         helper = ParamHelper(); condition_spec = "value"
         sql = _build_metadata_condition("key", condition_spec, helper, self.json_col)
         expected_sql = f"{self.json_col}->>'key' = $1"
         assert sql.replace(" ", "") == expected_sql.replace(" ", ""); assert helper.params == ["value"]
 
-    # --- Updated test_operators_nested_path ---
-    @pytest.mark.parametrize("op, value, expected_sql_part, expected_params", [
-        # EQ (Scalar, uses double quotes in path)
-        (FilterOperator.EQ, "val", f"#>>'{{\"p1\",\"p2\"}}' = $1", ["val"]),
-        # EQ (Numeric -> Uses Safe Compare Helper, double quotes in path)
-        (FilterOperator.EQ, 123, None, [123]),
-        # Comparisons (Numeric -> Uses Safe Compare Helper, double quotes in path)
-        (FilterOperator.LT, 0, None, [0]),
-        # CORRECTED: Assume $in on nested metadata uses JSONB ?| operator
-        (FilterOperator.IN, ["x"], f"#>'{{\"p1\",\"p2\"}}' ?| ARRAY[$1]::text[]", ["x"]),
-        # JSON Contains (uses #> and @>, double quotes in path, NO extra parens)
-        (FilterOperator.JSON_CONTAINS, {"c": True}, f"#>'{{\"p1\",\"p2\"}}' @> $1::jsonb", [json.dumps({"c": True})]),
+    # --- UPDATED: Test operators on nested path (incorporating integration test patterns) ---
+    @pytest.mark.parametrize("path, op, value, expected_sql_part, expected_params", [
+        # Original nested examples (p1.p2)
+        ("p1.p2", FilterOperator.EQ, "val", f"#>>'{{\"p1\",\"p2\"}}' = $1", ["val"]),
+        ("p1.p2", FilterOperator.EQ, 123, None, [123]), # Numeric Safe Compare
+        ("p1.p2", FilterOperator.LT, 0, None, [0]),     # Numeric Safe Compare
+        ("p1.p2", FilterOperator.IN, ["x"], f"#>'{{\"p1\",\"p2\"}}' ?| ARRAY[$1]::text[]", ["x"]), # JSONB array op
+        ("p1.p2", FilterOperator.JSON_CONTAINS, {"c": True}, f"#>'{{\"p1\",\"p2\"}}' @> $1::jsonb", [json.dumps({"c": True})]),
+
+        # --- NEW: Cases inspired by integration test ---
+        # metadata.category: {$eq: "ancient"} -> Nested path, string equality
+        ("category", FilterOperator.EQ, "ancient", f"->>'category' = $1", ["ancient"]),
+        # metadata.rating: {$lt: 5} -> Nested path, numeric comparison
+        ("rating", FilterOperator.LT, 5, None, [5]), # Numeric Safe Compare
+        # metadata.tags: {$contains: ["philosophy"]} -> Nested path, JSON_CONTAINS with list
+        ("tags", FilterOperator.JSON_CONTAINS, ["philosophy"], f"->'tags' @> $1::jsonb", [json.dumps(["philosophy"])]),
+        # Example with deeper nesting matching integration test style
+        ("details.status", FilterOperator.NE, "pending", f"#>>'{{\"details\",\"status\"}}' != $1", ["pending"]),
+        ("details.metrics.score", FilterOperator.GTE, 95.5, None, [95.5]), # Deeper Numeric Safe Compare
+        ("details.flags", FilterOperator.JSON_CONTAINS, ["urgent", "review"], f"#>'{{\"details\",\"flags\"}}' @> $1::jsonb", [json.dumps(["urgent", "review"])]),
     ])
-    def test_operators_nested_path(self, op, value, expected_sql_part, expected_params):
+    def test_operators_nested_path(self, path, op, value, expected_sql_part, expected_params):
         helper = ParamHelper()
         condition_spec = {op: value}
-        sql = _build_metadata_condition("p1.p2", condition_spec, helper, self.json_col)
+        # This function should add the CORRECTLY encoded param to helper.params
+        sql = _build_metadata_condition(path, condition_spec, helper, self.json_col)
 
         expected_sql_full = ""
-        accessor = f"{self.json_col}#>>'{{\"p1\",\"p2\"}}'" # Base accessor for text
-
-        # Handle special cases first
-        if op == FilterOperator.JSON_CONTAINS:
-             expected_sql_full = f"{self.json_col}{expected_sql_part}" # Already correct structure
-        # Handle Numeric specifically using the helper
-        elif isinstance(value, (int, float)) and op in [FilterOperator.EQ, FilterOperator.NE, FilterOperator.GT, FilterOperator.GTE, FilterOperator.LT, FilterOperator.LTE]:
-             sql_op_map = {FilterOperator.EQ:"=", FilterOperator.NE:"!=", FilterOperator.GT:">", FilterOperator.GTE:">=", FilterOperator.LT:"<", FilterOperator.LTE:"<="}
-             expected_sql_full = self._expected_safe_compare_sql(accessor, sql_op_map[op], '$1', 'numeric')
-        # Handle corrected JSONB IN/NIN which use different accessor/op
-        elif op == FilterOperator.IN: # Check specifically for JSONB IN case
-             expected_sql_full = f"{self.json_col}{expected_sql_part}" # Uses #> accessor and ?|
-        # Default case (includes scalar EQ)
+        path_parts = path.split('.')
+        if len(path_parts) == 1:
+            text_accessor = f"{self.json_col}->>'{path_parts[0]}'"
+            jsonb_accessor_prefix = f"{self.json_col}->"
+            jsonb_accessor_suffix = f"'{path_parts[0]}'"
         else:
-             expected_sql_full = f"{self.json_col}{expected_sql_part}"
+            quoted_path = '{' + ','.join(f'"{p}"' for p in path_parts) + '}'
+            text_accessor = f"{self.json_col}#>>'{quoted_path}'"
+            jsonb_accessor_prefix = f"{self.json_col}#>"
+            jsonb_accessor_suffix = f"'{quoted_path}'"
 
+        # --- Logic to determine expected_sql_full ---
+        if isinstance(value, bool) and op in [FilterOperator.EQ, FilterOperator.NE]:
+             sql_op_map = {FilterOperator.EQ:"=", FilterOperator.NE:"!="}
+             expected_sql_full = self._expected_safe_compare_sql(text_accessor, sql_op_map[op], '$1', 'boolean')
+        elif isinstance(value, (int, float)) and not isinstance(value, bool) and op in [FilterOperator.EQ, FilterOperator.NE, FilterOperator.GT, FilterOperator.GTE, FilterOperator.LT, FilterOperator.LTE]:
+             sql_op_map = {FilterOperator.EQ:"=", FilterOperator.NE:"!=", FilterOperator.GT:">", FilterOperator.GTE:">=", FilterOperator.LT:"<", FilterOperator.LTE:"<="}
+             expected_sql_full = self._expected_safe_compare_sql(text_accessor, sql_op_map[op], '$1', 'numeric')
+        elif value == [] and op == FilterOperator.IN: expected_sql_full = "FALSE"
+        elif value == [] and op == FilterOperator.NIN: expected_sql_full = "TRUE"
+        elif op == FilterOperator.JSON_CONTAINS:
+             # Determine the correct SQL structure
+             expected_sql_full = f"{jsonb_accessor_prefix}{jsonb_accessor_suffix} @> $1::jsonb"
+             # !!! DO NOT MODIFY expected_params HERE !!!
+             # expected_params = [json.dumps(p) for p in expected_params] # <<<--- THIS WAS THE ERROR - REMOVED
+        elif op == FilterOperator.IN:
+             placeholders = ','.join(f'${i+1}' for i in range(len(value)))
+             expected_sql_full = f"{jsonb_accessor_prefix}{jsonb_accessor_suffix} ?| ARRAY[{placeholders}]::text[]"
+        elif op == FilterOperator.NIN:
+             placeholders = ','.join(f'${i+1}' for i in range(len(value)))
+             expected_sql_full = f"NOT ({jsonb_accessor_prefix}{jsonb_accessor_suffix} ?| ARRAY[{placeholders}]::text[])"
+        elif op in [FilterOperator.EQ, FilterOperator.NE, FilterOperator.GT, FilterOperator.GTE, FilterOperator.LT, FilterOperator.LTE, FilterOperator.LIKE, FilterOperator.ILIKE]:
+             sql_op_map = {
+                 FilterOperator.EQ: "=", FilterOperator.NE: "!=", FilterOperator.GT: ">", FilterOperator.GTE: ">=",
+                 FilterOperator.LT: "<", FilterOperator.LTE: "<=", FilterOperator.LIKE: "LIKE", FilterOperator.ILIKE: "ILIKE"
+             }
+             expected_sql_full = f"{text_accessor} {sql_op_map[op]} $1"
+        else:
+            pytest.fail(f"Unhandled operator {op} in nested path test logic")
+
+        # This comparison checks the generated SQL structure
         assert sql.replace(" ", "") == expected_sql_full.replace(" ", "")
+
+        # This comparison checks the generated parameters against the expectation from parametrize
+        # The expectation from parametrize should ALREADY be correctly formatted (e.g., json.dumps applied there)
         assert helper.params == expected_params
 
-    # --- Keep updated shorthand tests for nested path quoting ---
+
+
+    # --- Keep other nested path tests (shorthand, structure) ---
     def test_eq_shorthand_nested_path(self):
         helper = ParamHelper(); condition_spec = "value"
         sql = _build_metadata_condition("p1.p2", condition_spec, helper, self.json_col)
         expected_sql = f"{self.json_col}#>>'{{\"p1\",\"p2\"}}' = $1"; assert sql.replace(" ", "") == expected_sql.replace(" ", ""); assert helper.params == ["value"]
 
+    # Test case where the *value* defines the nested structure
     def test_nested_structure_condition(self):
         helper = ParamHelper(); condition_spec = {"p2": "value"}
         sql = _build_metadata_condition("p1", condition_spec, helper, self.json_col)
+        # This correctly resolves to filtering on p1.p2
         expected_sql = f"{self.json_col}#>>'{{\"p1\",\"p2\"}}' = $1"; assert sql.replace(" ", "") == expected_sql.replace(" ", ""); assert helper.params == ["value"]
 
     def test_nested_structure_condition_with_op(self):
         helper = ParamHelper(); condition_spec = {"p2": {FilterOperator.GT: 5}}
         sql = _build_metadata_condition("p1", condition_spec, helper, self.json_col)
+        # Correctly resolves to filtering on p1.p2 with GT
         accessor = f"{self.json_col}#>>'{{\"p1\",\"p2\"}}'"
         expected_sql = self._expected_safe_compare_sql(accessor, '>', '$1', 'numeric')
         assert sql.replace(" ", "") == expected_sql.replace(" ", ""); assert helper.params == [5]
 
-    # --- Keep updated Null Handling Tests ---
+
+    # --- Keep Null Handling Tests ---
     def test_null_handling_simple(self):
         helper_eq = ParamHelper(); sql_eq = _build_metadata_condition("key", {FilterOperator.EQ: None}, helper_eq, self.json_col)
         expected_sql_eq = f"{self.json_col}->>'key' IS NULL"; assert sql_eq.replace(" ", "") == expected_sql_eq.replace(" ",""); assert helper_eq.params == []
@@ -288,7 +325,7 @@ class TestBuildMetadataCondition:
         helper_ne = ParamHelper(); sql_ne = _build_metadata_condition("p1.p2", {FilterOperator.NE: None}, helper_ne, self.json_col)
         expected_sql_ne = f"{self.json_col}#>>'{{\"p1\",\"p2\"}}' IS NOT NULL"; assert sql_ne.replace(" ", "") == expected_sql_ne.replace(" ",""); assert helper_ne.params == []
 
-    # --- Keep JSONB Array Operator tests (already corrected) ---
+    # --- Keep JSONB Array Operator tests (already handle simple/nested) ---
     @pytest.mark.parametrize("op, value, expected_sql_part, expected_params", [
         (FilterOperator.IN, ["a", "b"], f"->'tags' ?| ARRAY[$1,$2]::text[]", ["a", "b"]),
         (FilterOperator.IN, ["single"], f"->'tags' ?| ARRAY[$1]::text[]", ["single"]),
@@ -303,8 +340,8 @@ class TestBuildMetadataCondition:
         expected_sql_full = ""
         if op == FilterOperator.IN and not value: expected_sql_full = "FALSE"
         elif op == FilterOperator.NIN and not value: expected_sql_full = "TRUE"
-        elif op == FilterOperator.NIN: expected_sql_full = expected_sql_part
-        else: expected_sql_full = f"{self.json_col}{expected_sql_part}"
+        elif op == FilterOperator.NIN: expected_sql_full = expected_sql_part # NOT is part of expected_sql_part
+        else: expected_sql_full = f"{self.json_col}{expected_sql_part}" # Uses -> accessor
         assert sql.replace(" ", "") == expected_sql_full.replace(" ", ""); assert helper.params == expected_params
 
     @pytest.mark.parametrize("op, value, expected_sql_part, expected_params", [
@@ -321,20 +358,41 @@ class TestBuildMetadataCondition:
         expected_sql_full = ""
         if op == FilterOperator.IN and not value: expected_sql_full = "FALSE"
         elif op == FilterOperator.NIN and not value: expected_sql_full = "TRUE"
-        elif op == FilterOperator.NIN: expected_sql_full = expected_sql_part
-        else: expected_sql_full = f"{self.json_col}{expected_sql_part}"
+        elif op == FilterOperator.NIN: expected_sql_full = expected_sql_part # NOT is part of expected_sql_part
+        else: expected_sql_full = f"{self.json_col}{expected_sql_part}" # Uses #> accessor
         assert sql.replace(" ", "") == expected_sql_full.replace(" ", ""); assert helper.params == expected_params
 
-    # --- Keep test_unsupported_operator, test_json_contains_non_serializable ---
+
+    # --- Keep Error Handling Tests ---
     def test_unsupported_operator(self):
-        helper = ParamHelper(); condition_spec = {FilterOperator.OVERLAP: []}
+        helper = ParamHelper(); condition_spec = {FilterOperator.OVERLAP: []} # OVERLAP not supported for general metadata
         with pytest.raises(FilterError, match="Unsupported operator"):
             _build_metadata_condition("key", condition_spec, helper, self.json_col)
 
     def test_json_contains_non_serializable(self):
-        helper = ParamHelper(); condition_spec = {FilterOperator.JSON_CONTAINS: {"a": {1, 2}}}
+        helper = ParamHelper(); condition_spec = {FilterOperator.JSON_CONTAINS: {"a": {1, 2}}} # Set is not JSON serializable
         with pytest.raises(FilterError, match="must be JSON serializable"):
              _build_metadata_condition("key", condition_spec, helper, self.json_col)
+
+    # NEW: Test specifically for $contains mapping to JSON_CONTAINS
+    def test_contains_operator_maps_to_json_contains_simple(self):
+        helper = ParamHelper()
+        # Simulate the filter structure from the integration test
+        # Note: The FilterOperator enum likely doesn't have 'CONTAINS', use JSON_CONTAINS
+        condition_spec = {FilterOperator.JSON_CONTAINS: ["philosophy"]}
+        sql = _build_metadata_condition("tags", condition_spec, helper, self.json_col)
+        expected_sql = f"{self.json_col}->'tags' @> $1::jsonb"
+        assert sql.replace(" ", "") == expected_sql.replace(" ", "")
+        assert helper.params == [json.dumps(["philosophy"])]
+
+    def test_contains_operator_maps_to_json_contains_nested(self):
+        helper = ParamHelper()
+        condition_spec = {FilterOperator.JSON_CONTAINS: ["urgent"]}
+        sql = _build_metadata_condition("details.flags", condition_spec, helper, self.json_col)
+        expected_sql = f"{self.json_col}#>'{{\"details\",\"flags\"}}' @> $1::jsonb"
+        assert sql.replace(" ", "") == expected_sql.replace(" ", "")
+        assert helper.params == [json.dumps(["urgent"])]
+
 
 # --- Corrected TestProcessFieldCondition (Keep as is from previous correction) ---
 class TestProcessFieldCondition:
