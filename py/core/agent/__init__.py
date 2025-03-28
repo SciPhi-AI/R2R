@@ -2,8 +2,7 @@
 from .base import (  # type: ignore
     R2RAgent,
     R2RStreamingAgent,
-    R2RXMLStreamingAgent,
-    R2RMemoryAgent
+    R2RXMLStreamingAgent
 )
 from .rag import (  # type: ignore
     R2RRAGAgent,
@@ -24,8 +23,7 @@ __all__ = [
     # Base
     "R2RAgent",
     "R2RStreamingAgent",
-    "R2RXMLStreamingAgent",
-    "R2RMemoryAgent",
+    "R2RXMLStreamingAgent"
     # RAG Agents
     "R2RRAGAgent",
     "R2RXMLToolsRAGAgent",

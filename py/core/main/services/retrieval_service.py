@@ -14,7 +14,6 @@ from core import (
     R2RStreamingRAGAgent,
     R2RStreamingResearchAgent,
     R2RXMLToolsRAGAgent,
-    R2RMemoryAgent,
     R2RXMLToolsResearchAgent,
     R2RXMLToolsStreamingRAGAgent,
     R2RXMLToolsStreamingResearchAgent,
@@ -174,18 +173,6 @@ class AgentFactory:
                         content_method=content_method,
                         file_search_method=file_search_method,
                     )
-                elif is_memory:
-                    return R2RMemoryAgent(
-                        database_provider=database_provider,
-                        llm_provider=llm_provider,
-                        config=agent_config,
-                        search_settings=search_settings,
-                        rag_generation_config=generation_config,
-                        max_tool_context_length=max_tool_context_length,
-                        knowledge_search_method=knowledge_search_method,
-                        content_method=content_method,
-                        file_search_method=file_search_method,
-                    )
                 else:
                     return R2RRAGAgent(
                         database_provider=database_provider,
@@ -197,6 +184,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        memory_enabled=is_memory,
                     )
         else:
             # Research mode agents
