@@ -2286,6 +2286,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pdf2image"
+version = "1.17.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pillow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/d8/b280f01045555dc257b8153c00dee3bc75830f91a744cd5f84ef3a0a64b1/pdf2image-1.17.0.tar.gz", hash = "sha256:eaa959bc116b420dd7ec415fcae49b98100dda3dd18cd2fdfa86d09f112f6d57", size = 12811 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/33/61766ae033518957f877ab246f87ca30a85b778ebaad65b7f74fa7e52988/pdf2image-1.17.0-py3-none-any.whl", hash = "sha256:ecdd58d7afb810dffe21ef2b1bbc057ef434dabbac6c33778a38a3f7744a27e2", size = 11618 },
+]
+
+[[package]]
 name = "pgvector"
 version = "0.3.6"
 source = { registry = "https://pypi.org/simple" }
@@ -2742,21 +2754,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pymupdf"
-version = "1.25.4"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/25/56/d7de0325125621a3d095eb43ce35f2e036cd4c0489ff5e8cae816f1cd8b9/pymupdf-1.25.4.tar.gz", hash = "sha256:5f189466b68901055a9ddc77dc1c91cba081a60964f0caa6ff5b9b87001a0194", size = 69792548 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/59/fa/cd82d78401bed6452ea07e2a3ffd6c30eddb635b888ea5f2f699c2968e80/pymupdf-1.25.4-cp39-abi3-macosx_10_9_x86_64.whl", hash = "sha256:b39ab5fc0cc793f2a93908cb4dc13182e61e9ace3476850ebf0e505f65355475", size = 19364290 },
-    { url = "https://files.pythonhosted.org/packages/ae/76/0757056bdcf273de4934681b84acde6e0b61a46b1755038e8d786ac6b368/pymupdf-1.25.4-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:72ac2a460e15a4b75fb22d0bdeb9eb9b3bd6ab44d5288e56f85ff9e4241d0830", size = 18604391 },
-    { url = "https://files.pythonhosted.org/packages/41/2f/7ca622fff06e879fd4adcde8b1bdbe9989ff2f36fc0607481581f4a3caa1/pymupdf-1.25.4-cp39-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.whl", hash = "sha256:bd16e264438b01bf6f6b8722deb49df20c0a9a7be2b4a8e29dcb7b5183d8b42a", size = 19464372 },
-    { url = "https://files.pythonhosted.org/packages/36/ae/9b3651d457698ff5e19c5a663c51703cc990892b35cf4a779c36a1a1bf64/pymupdf-1.25.4-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:72817aa5f5023632346eee4aad0c32018d7879cf9a72e1820054dc9d8c48150f", size = 20027724 },
-    { url = "https://files.pythonhosted.org/packages/09/f8/3ba60c9cbb01c9aacc2e1c35fc7640456306da99cdea913954f33a0c9c74/pymupdf-1.25.4-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:a8c23242d209512437187dc728001fc7c65c2dd9d37b50071f34c5cd745194a3", size = 21292722 },
-    { url = "https://files.pythonhosted.org/packages/0e/0a/3eb1fab9e788790be32d8ca43235f59652d44252168bfba457c5496948fe/pymupdf-1.25.4-cp39-abi3-win32.whl", hash = "sha256:d90e6087f9b153999fa9f2c4709488fb0355de0302ec502a76c4fc0c0a0c535e", size = 15110936 },
-    { url = "https://files.pythonhosted.org/packages/c3/9f/2872a29766dfe65fb97268233503cc9f7ba6e776eedbdb88ed47216aef84/pymupdf-1.25.4-cp39-abi3-win_amd64.whl", hash = "sha256:af8fa1f7920b3b27343b2511cb9fc44baf2bad8b948db0b0f9d5b2fa589cb305", size = 16579269 },
-]
-
-[[package]]
 name = "pynacl"
 version = "1.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3022,7 +3019,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.5.7"
+version = "3.5.8"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -3031,6 +3028,7 @@ dependencies = [
     { name = "filetype" },
     { name = "httpx" },
     { name = "openai" },
+    { name = "pdf2image" },
     { name = "psycopg-binary" },
     { name = "pydantic" },
     { name = "python-dotenv" },
@@ -3083,7 +3081,6 @@ core = [
     { name = "psutil" },
     { name = "pydantic", extra = ["email"] },
     { name = "pyjwt" },
-    { name = "pymupdf" },
     { name = "pynacl" },
     { name = "pypdf" },
     { name = "pypdf2" },
@@ -3170,6 +3167,7 @@ requires-dist = [
     { name = "openai", specifier = ">=1.11.1,<1.61.0" },
     { name = "openpyxl", marker = "extra == 'core'", specifier = ">=3.1.2,<4.0.0" },
     { name = "orgparse", marker = "extra == 'core'", specifier = ">=0.4.20231004,<0.5.0" },
+    { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pillow", marker = "extra == 'core'", specifier = ">=11.1.0,<12.0.0" },
     { name = "pillow-heif", marker = "extra == 'core'", specifier = ">=0.21.0,<0.22.0" },
     { name = "psutil", marker = "extra == 'core'", specifier = ">=6.0.0,<7.0.0" },
@@ -3177,7 +3175,6 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pydantic", extras = ["email"], marker = "extra == 'core'", specifier = ">=2.8.2,<3.0.0" },
     { name = "pyjwt", marker = "extra == 'core'", specifier = ">=2.8.0,<3.0.0" },
-    { name = "pymupdf", marker = "extra == 'core'", specifier = ">=1.25.4" },
     { name = "pynacl", marker = "extra == 'core'", specifier = ">=1.5.0,<2.0.0" },
     { name = "pypdf", marker = "extra == 'core'", specifier = ">=4.2.0,<5.0.0" },
     { name = "pypdf2", marker = "extra == 'core'", specifier = ">=3.0.1,<4.0.0" },
