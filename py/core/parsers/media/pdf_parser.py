@@ -98,7 +98,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             # Configure generation parameters
             generation_config = GenerationConfig(
-                model=self.config.app.vlm,
+                model=self.config.vlm or self.config.app.vlm,
                 stream=False,
             )
 
@@ -223,7 +223,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_pdf_prompt_name
+                    prompt_name="vision_pdf"
                 )
             )
             logger.info("Retrieved vision prompt text from database.")

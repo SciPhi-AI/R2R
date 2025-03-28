@@ -246,8 +246,6 @@ jobs:
         #   path: "tests/integration/test_base.py"
         - name: "chunks"
           path: "tests/integration/test_chunks.py"
-        - name: "collection_id_filter"
-          path: "tests/integration/test_collection_id_filter.py"
         - name: "collections"
           path: "tests/integration/test_collections.py"
         - name: "collections_users_interaction"

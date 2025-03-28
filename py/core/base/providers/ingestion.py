@@ -33,8 +33,7 @@ class IngestionConfig(ProviderConfig):
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": None,
-        "vision_img_prompt_name": "vision_img",
-        "vision_pdf_prompt_name": "vision_pdf",
+        "vlm": None,
         "skip_document_summary": False,
         "document_summary_system_prompt": "system",
         "document_summary_task_prompt": "summary",
@@ -71,15 +70,8 @@ class IngestionConfig(ProviderConfig):
             "audio_transcription_model"
         ]
     )
-    vision_img_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_img_prompt_name"
-        ]
-    )
-    vision_pdf_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_pdf_prompt_name"
-        ]
+    vlm: Optional[str] = Field(
+        default_factory=lambda: IngestionConfig._defaults["vlm"]
     )
     skip_document_summary: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[

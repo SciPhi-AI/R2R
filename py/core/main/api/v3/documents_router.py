@@ -176,7 +176,6 @@ class DocumentsRouter(BaseRouterV3):
                     effective_config, ingestion_config
                 )
         else:
-            # custom mode
             effective_config = ingestion_config or IngestionConfig(
                 app=self.providers.auth.config.app
             )

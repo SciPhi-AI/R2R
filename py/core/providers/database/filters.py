@@ -772,6 +772,17 @@ def _build_metadata_operator_condition(
         # Standard SQL NOT IN needs parentheses around the accessor
         return f"({json_accessor_text}) NOT IN ({', '.join(placeholders)})"
 
+    elif op == FilterOperator.JSON_CONTAINS:
+        try:
+            json_value_str = json.dumps(value)
+            placeholder = param_helper.add(json_value_str)
+            # REMOVED extra parentheses around accessor
+            return f"{json_accessor_jsonb} @> {placeholder}::jsonb"
+        except TypeError as e:
+            raise FilterError(
+                f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
+            ) from e
+
     # --- Operator Not Handled ---
     else:
         raise FilterError(

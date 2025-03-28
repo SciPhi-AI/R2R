@@ -101,7 +101,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.port = int(self.port)
 
         self.project_name = (
-            config.app.project_name
+            config.app
+            and config.app.project_name
             or os.getenv("R2R_PROJECT_NAME")
             or "r2r_default"
         )
