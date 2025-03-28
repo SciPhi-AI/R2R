@@ -487,6 +487,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
         content_method: Callable,
         file_search_method: Callable,
         max_tool_context_length: int = 20_000,
+        memory_enabled: bool = False,
     ):
         # Initialize base R2RAgent
         R2RAgent.__init__(
@@ -495,6 +496,7 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             llm_provider=llm_provider,
             config=config,
             rag_generation_config=rag_generation_config,
+            memory_enabled=memory_enabled,
         )
         # Initialize the RAGAgentMixin
         RAGAgentMixin.__init__(

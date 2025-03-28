@@ -43,12 +43,12 @@ class R2RAgent(Agent, metaclass=CombinedMeta):
     def __init__(self, *args, **kwargs):
         self.search_results_collector = SearchResultsCollector()
         self.memory_enabled = kwargs.get("memory_enabled", False)
-        self.user_id = kwargs.pop('user_id', None) if 'user_id' in kwargs else None
-        self.agent_id = kwargs.pop('agent_id', None) if 'agent_id' in kwargs else None
-        
+
         # Initialize mem0 client if memory is enabled
         if self.memory_enabled:
             try:
+                self.user_id = "r2r-user"
+                self.agent_id = "r2r-agent"
                 from mem0 import AsyncMemoryClient
                 self.mem0_client = AsyncMemoryClient()
             except ImportError:
