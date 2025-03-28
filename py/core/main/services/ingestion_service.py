@@ -463,6 +463,8 @@ class IngestionService:
             )
             max_chunks = (
                 self.providers.database.config.app.default_max_chunks_per_user
+                if self.providers.database.config.app
+                else 1e10
             )
             if user.limits_overrides and "max_chunks" in user.limits_overrides:
                 max_chunks = user.limits_overrides["max_chunks"]

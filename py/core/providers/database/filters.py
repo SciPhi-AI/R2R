@@ -693,6 +693,32 @@ def _build_metadata_operator_condition(
                 f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
             ) from e
 
+    elif (
+        op == FilterOperator.ARRAY_CONTAINS
+    ):  # This is equivalent to "$contains"
+        if not isinstance(value, list):
+            raise FilterError(
+                f"Operator '{op}' on JSONB path '{relative_path}' requires a list value (representing elements to check for containment)."
+            )
+        if not value:
+            # Containing all elements of an empty set is usually true
+            return "TRUE"
+        try:
+            # Convert the list of values into a JSONB array literal for the @> operator
+            json_array_value = json.dumps(value)
+            placeholder = param_helper.add(json_array_value)
+            # Use the @> operator: checks if the left JSONB (the target array)
+            # contains the right JSONB (the array of elements we're looking for)
+            return f"{json_accessor_jsonb} @> {placeholder}::jsonb"
+        except TypeError as e:
+            raise FilterError(
+                f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
+            ) from e
+        except Exception as e:
+            raise FilterError(
+                f"Error processing values for '{op}' on '{relative_path}': {e}"
+            ) from e
+
     # --- Standard comparisons (operating on text extraction ->> or #>>) ---
 
     # Handle NULL comparisons
