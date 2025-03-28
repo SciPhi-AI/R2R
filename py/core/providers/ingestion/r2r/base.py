@@ -259,15 +259,6 @@ class R2RIngestionProvider(IngestionProvider):
                 logger.info(
                     f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
                 )
-                # TODO - Cleanup this approach to be less hardcoded
-                # if (
-                #     document.document_type != DocumentType.PDF
-                #     or parser_overrides[DocumentType.PDF.value] != "zerox"
-                # ):
-                #     raise ValueError(
-                #         "Only Zerox PDF parser override is available."
-                #     )
-
                 if parser_overrides[DocumentType.PDF.value] == "zerox":
                     # Collect content from VLMPDFParser
                     async for chunk in self.parsers[
