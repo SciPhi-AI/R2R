@@ -53,6 +53,7 @@ jobs:
     timeout-minutes: 20
 
     env:
+      ANTHOPIC_API_KEY: ${{ secrets.ANTHOPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
@@ -144,6 +145,7 @@ jobs:
     timeout-minutes: 20
 
     env:
+      ANTHOPIC_API_KEY: ${{ secrets.ANTHOPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
@@ -272,6 +274,7 @@ jobs:
           path: "tests/integration/test_users.py"
     timeout-minutes: 20
     env:
+      ANTHOPIC_API_KEY: ${{ secrets.ANTHOPIC_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
