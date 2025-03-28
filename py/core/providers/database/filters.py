@@ -693,7 +693,9 @@ def _build_metadata_operator_condition(
                 f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
             ) from e
 
-    elif op == FilterOperator.ARRAY_CONTAINS: # This is equivalent to "$contains"
+    elif (
+        op == FilterOperator.ARRAY_CONTAINS
+    ):  # This is equivalent to "$contains"
         if not isinstance(value, list):
             raise FilterError(
                 f"Operator '{op}' on JSONB path '{relative_path}' requires a list value (representing elements to check for containment)."
@@ -713,7 +715,7 @@ def _build_metadata_operator_condition(
                 f"Value for '{op}' on '{relative_path}' must be JSON serializable: {e}"
             ) from e
         except Exception as e:
-             raise FilterError(
+            raise FilterError(
                 f"Error processing values for '{op}' on '{relative_path}': {e}"
             ) from e
 
