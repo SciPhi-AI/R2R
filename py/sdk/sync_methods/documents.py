@@ -62,7 +62,7 @@ class DocumentsSDK:
             dict | IngestionMode
         ] = None,  # Type hint clarifies IngestionMode enum usage
         run_with_orchestration: Optional[bool] = True,
-        ingestion_mode: IngestionMode = IngestionMode.custom,  # Added enum parameter as per router
+        ingestion_mode: IngestionMode | str = IngestionMode.custom,
     ) -> WrappedIngestionResponse:
         """Create a new document from either a file, raw text, or chunks.
 

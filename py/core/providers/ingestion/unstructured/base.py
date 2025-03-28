@@ -290,12 +290,26 @@ class UnstructuredIngestionProvider(IngestionProvider):
             logger.info(
                 f"Using parser_override for {document.document_type} with input value {parser_overrides[document.document_type.value]}"
             )
-            async for element in self.parse_fallback(
-                file_content,
-                ingestion_config=ingestion_config,
-                parser_name=f"zerox_{DocumentType.PDF.value}",
-            ):
-                elements.append(element)
+            if parser_overrides[document.document_type.value] == "zerox":
+                async for element in self.parse_fallback(
+                    file_content,
+                    ingestion_config=ingestion_config,
+                    parser_name=f"zerox_{DocumentType.PDF.value}",
+                ):
+                    logger.warning(
+                        f"Using parser_override for {document.document_type}"
+                    )
+                    elements.append(element)
+            elif parser_overrides[document.document_type.value] == "ocr":
+                async for element in self.parse_fallback(
+                    file_content,
+                    ingestion_config=ingestion_config,
+                    parser_name=f"ocr_{DocumentType.PDF.value}",
+                ):
+                    logger.warning(
+                        f"Using OCR parser_override for {document.document_type}"
+                    )
+                    elements.append(element)
 
         elif document.document_type in self.R2R_FALLBACK_PARSERS.keys():
             logger.info(

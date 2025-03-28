@@ -193,7 +193,7 @@ services:
         tag: backend
 
   r2r-dashboard:
-    image: sciphiai/r2r-dashboard:1.0.2
+    image: sciphiai/r2r-dashboard:1.0.3
     env_file:
       - ./env/r2r-dashboard.env
     ports:
