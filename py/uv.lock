@@ -3019,7 +3019,7 @@ wheels = [
 
 [[package]]
 name = "r2r"
-version = "3.5.8"
+version = "3.5.9"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -3028,7 +3028,6 @@ dependencies = [
     { name = "filetype" },
     { name = "httpx" },
     { name = "openai" },
-    { name = "pdf2image" },
     { name = "psycopg-binary" },
     { name = "pydantic" },
     { name = "python-dotenv" },
@@ -3076,6 +3075,7 @@ core = [
     { name = "ollama" },
     { name = "openpyxl" },
     { name = "orgparse" },
+    { name = "pdf2image" },
     { name = "pillow" },
     { name = "pillow-heif" },
     { name = "psutil" },
@@ -3154,7 +3154,7 @@ requires-dist = [
     { name = "google-genai", marker = "extra == 'core'", specifier = ">=0.6.0,<0.7.0" },
     { name = "gunicorn", marker = "extra == 'core'", specifier = ">=21.2.0,<22.0.0" },
     { name = "hatchet-sdk", marker = "extra == 'core'", specifier = "==0.47.0" },
-    { name = "httpx", specifier = ">=0.27.0,<0.28.0" },
+    { name = "httpx", specifier = ">=0.27.0" },
     { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<1.63.2" },
     { name = "mailersend", marker = "extra == 'core'", specifier = ">=0.5.6,<0.6.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
@@ -3167,7 +3167,7 @@ requires-dist = [
     { name = "openai", specifier = ">=1.11.1,<1.61.0" },
     { name = "openpyxl", marker = "extra == 'core'", specifier = ">=3.1.2,<4.0.0" },
     { name = "orgparse", marker = "extra == 'core'", specifier = ">=0.4.20231004,<0.5.0" },
-    { name = "pdf2image", specifier = ">=1.17.0" },
+    { name = "pdf2image", marker = "extra == 'core'", specifier = ">=1.17.0" },
     { name = "pillow", marker = "extra == 'core'", specifier = ">=11.1.0,<12.0.0" },
     { name = "pillow-heif", marker = "extra == 'core'", specifier = ">=0.21.0,<0.22.0" },
     { name = "psutil", marker = "extra == 'core'", specifier = ">=6.0.0,<7.0.0" },
