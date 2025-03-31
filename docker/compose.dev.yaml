@@ -5,14 +5,7 @@ volumes:
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    environment:
-      - R2R_POSTGRES_USER: postgres
-      - R2R_POSTGRES_PASSWORD: postgres
-      - R2R_POSTGRES_HOST: postgres
-      - R2R_POSTGRES_PORT: 5432
-      - R2R_POSTGRES_DBNAME: postgres
-      - R2R_POSTGRES_MAX_CONNECTIONS: 1024
-      - R2R_POSTGRES_STATEMENT_CACHE_SIZE: 100
+    profiles: [postgres]
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -39,32 +32,26 @@ services:
 
   r2r:
     build:
-      context: ../py
+      context: ../py/
       dockerfile: Dockerfile
-    ports:
-      - "7272:7272"
-    environment:
-      - R2R_PORT: 7272
-      - R2R_HOST: 0.0.0.0
-      - R2R_LOG_LEVEL: INFO
-      - R2R_CONFIG_NAME:
-      - R2R_PROJECT_NAME: r2r_default
-      - R2R_SECRET_KEY: changeMe
+      no_cache: true
+      pull: false
+    env_file:
+      - ./env/r2r.env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
       interval: 6s
       timeout: 5s
       retries: 5
     restart: on-failure
+    ports:
+      - "7272:7272"
     extra_hosts:
       - host.docker.internal:host-gateway
 
   r2r-dashboard:
     image: sciphiai/r2r-dashboard:1.0.3
-    environment:
-      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL: http://localhost:7272
-      - NEXT_PUBLIC_HATCHET_DASHBOARD_URL: http://localhost:7274
-      - NEXT_PUBLIC_R2R_DEFAULT_EMAIL: "admin@example.com"
-      - NEXT_PUBLIC_R2R_DEFAULT_PASSWORD: "change_me_immediately"
+    env_file:
+      - ./env/r2r-dashboard.env
     ports:
       - "7273:3000"

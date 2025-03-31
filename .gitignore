@@ -43,3 +43,6 @@ go.work.sum
 .ruff_cache/
 *.egg-info
 .venv
+
+.gitignore
+docker/env/*

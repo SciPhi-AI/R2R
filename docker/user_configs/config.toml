@@ -1,0 +1,291 @@
+################################################################################
+# Global Application Settings (AppConfig)
+################################################################################
+[app]
+# Global project name (optional)
+project_name = ""
+# Maximum number of documents per user (default from code: 100, sample: 10000)
+default_max_documents_per_user = 100
+# Maximum number of chunks per user (default: 10000)
+default_max_chunks_per_user = 10000
+# Maximum number of collections per user (default: 5)
+default_max_collections_per_user = 5
+# Maximum upload size in bytes (default: 2000000 ~2MB)
+default_max_upload_size = 2000000
+# LLM used for user‐facing output (quality)
+quality_llm = ""
+# LLM used for fast internal operations
+fast_llm = ""
+# LLM used for visual inputs
+vlm = ""
+# LLM used for audio transcription
+audio_lm = ""
+# A mapping from file extension to maximum upload size
+  [app.max_upload_size_by_type]
+    txt  = 2000000
+    md   = 2000000
+    tsv  = 2000000
+    csv  = 5000000
+    xml  = 2000000
+    html = 5000000
+    doc  = 10000000
+    docx = 10000000
+    ppt  = 20000000
+    pptx = 20000000
+    xls  = 10000000
+    xlsx = 10000000
+    odt  = 5000000
+    pdf  = 30000000
+    eml  = 5000000
+    msg  = 5000000
+    p7s  = 5000000
+    bmp  = 5000000
+    heic = 5000000
+    jpeg = 5000000
+    jpg  = 5000000
+    png  = 5000000
+    tiff = 5000000
+    epub = 10000000
+    rtf  = 5000000
+    rst  = 5000000
+    org  = 5000000
+
+
+################################################################################
+# Agent Settings (Custom configuration used by your system)
+################################################################################
+[agent]
+rag_agent_static_prompt = "static_rag_agent"
+rag_agent_dynamic_prompt = "dynamic_rag_agent"
+tools = ["search_file_knowledge", "content"]
+
+################################################################################
+# Authentication Settings (AuthConfig)
+################################################################################
+[auth]
+provider = "r2r"
+# (Optional secret key for signing tokens)
+secret_key = ""
+# Lifetime for access tokens (in minutes)
+access_token_lifetime_in_minutes = 60000
+# Lifetime for refresh tokens (in days)
+refresh_token_lifetime_in_days = 7
+# Whether authentication is required
+require_authentication = false
+# Whether email verification is required
+require_email_verification = false
+# Default admin credentials
+default_admin_email = "admin@example.com"
+default_admin_password = "change_me_immediately"
+
+################################################################################
+# Completion / LLM Generation Settings (CompletionConfig and nested GenerationConfig)
+################################################################################
+[completion]
+provider = "r2r"
+# Maximum number of concurrent requests allowed
+concurrent_request_limit = 256
+
+  [completion.generation_config]
+  # Generation parameters
+  temperature = 0.1
+  top_p = 1.0
+  max_tokens_to_sample = 4096
+  stream = false
+  # Additional generation kwargs (empty table by default)
+  add_generation_kwargs = {}
+
+################################################################################
+# Cryptography Settings (CryptoConfig)
+################################################################################
+[crypto]
+provider = "bcrypt"
+
+################################################################################
+# Database Settings (DatabaseConfig and related nested settings)
+################################################################################
+[database]
+provider = "postgres"
+user = "postgres"
+password = "postgres"
+host = "localhost"
+port = 5432
+db_name = ""
+project_name = ""
+default_collection_name = "Default"
+default_collection_description = "Your default collection."
+collection_summary_system_prompt = "system"
+collection_summary_prompt = "collection_summary"
+enable_fts = false
+batch_size = 1
+kg_store_path = ""
+
+  # PostgreSQL tuning settings
+  [database.postgres_configuration_settings]
+    checkpoint_completion_target = 0.9
+    default_statistics_target = 100
+    effective_io_concurrency = 1
+    effective_cache_size = 524288
+    huge_pages = "try"
+    maintenance_work_mem = 65536
+    max_connections = 256
+    max_parallel_workers_per_gather = 2
+    max_parallel_workers = 8
+    max_parallel_maintenance_workers = 2
+    max_wal_size = 1024
+    max_worker_processes = 8
+    min_wal_size = 80
+    shared_buffers = 16384
+    statement_cache_size = 100
+    random_page_cost = 4.0
+    wal_buffers = 512
+    work_mem = 4096
+
+  # Graph creation settings
+  [database.graph_creation_settings]
+    graph_entity_description_prompt = "graph_entity_description"
+    graph_extraction_prompt = "graph_extraction"
+    entity_types = []
+    relation_types = []
+    automatic_deduplication = true
+
+  # Graph enrichment settings
+  [database.graph_enrichment_settings]
+    graph_communities_prompt = "graph_communities"
+
+  # (Optional) Graph search settings – add fields as needed
+  [database.graph_search_settings]
+    # e.g., search_mode = "default"
+
+  # Rate limiting settings
+  [database.limits]
+    global_per_min = 60
+    route_per_min = 20
+    monthly_limit = 10000
+
+  # Route-specific limits (empty by default)
+  [database.route_limits]
+    # e.g., "/api/search" = { global_per_min = 30, route_per_min = 10, monthly_limit = 5000 }
+
+  # User-specific limits (empty by default)
+  [database.user_limits]
+    # e.g., "user_uuid_here" = { global_per_min = 20, route_per_min = 5, monthly_limit = 2000 }
+
+################################################################################
+# Embedding Settings (EmbeddingConfig)
+################################################################################
+[embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+# Optional reranking settings (leave empty if not used)
+rerank_model = ""
+rerank_url = ""
+batch_size = 1
+prefixes = {}   # Provide prefix overrides here if needed
+add_title_as_prefix = true
+concurrent_request_limit = 256
+max_retries = 3
+initial_backoff = 1.0
+max_backoff = 64.0
+# Deprecated fields (if still used)
+rerank_dimension = 0
+rerank_transformer_type = ""
+
+  # Vector quantization settings for embeddings
+  [embedding.quantization_settings]
+    quantization_type = "FP32"
+    # (Additional quantization parameters can be added here)
+
+################################################################################
+# Completion Embedding Settings
+# (Usually mirrors the embedding settings; override if needed.)
+################################################################################
+[completion_embedding]
+provider = "litellm"
+base_model = "openai/text-embedding-3-small"
+base_dimension = 512
+batch_size = 1
+add_title_as_prefix = true
+concurrent_request_limit = 256
+
+################################################################################
+# File Storage Settings
+################################################################################
+[file]
+provider = "postgres"
+
+################################################################################
+# Ingestion Settings (IngestionConfig and nested settings)
+################################################################################
+[ingestion]
+provider = "r2r"
+excluded_parsers = ["mp4"]
+chunking_strategy = "recursive"
+chunk_size = 1024
+# Extra field handled by extra_fields – not defined explicitly in IngestionConfig:
+chunk_overlap = 512
+automatic_extraction = true
+# Audio transcription and vision model settings
+audio_transcription_model = ""
+skip_document_summary = false
+document_summary_system_prompt = "system"
+document_summary_task_prompt = "summary"
+document_summary_max_length = 100000
+chunks_for_document_summary = 128
+document_summary_model = ""
+parser_overrides = {}
+
+  # Chunk enrichment settings
+  [ingestion.chunk_enrichment_settings]
+    chunk_enrichment_prompt = "chunk_enrichment"
+    enable_chunk_enrichment = false
+    n_chunks = 2
+
+  # Extra parsers (mapping from file type to parser name)
+  [ingestion.extra_parsers]
+    pdf = ["zerox", "ocr"]
+
+################################################################################
+# Logging Settings
+################################################################################
+[logging]
+provider = "r2r"
+log_table = "logs"
+log_info_table = "log_info"
+
+################################################################################
+# Orchestration Settings (OrchestrationConfig)
+################################################################################
+[orchestration]
+provider = "simple"
+max_runs = 2048
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 4
+
+################################################################################
+# Prompt Settings
+################################################################################
+[prompt]
+provider = "r2r"
+
+################################################################################
+# Email Settings (EmailConfig)
+################################################################################
+[email]
+# Supported providers: "smtp", "console", "sendgrid", etc.
+provider = "console"
+smtp_server = ""
+smtp_port = 587
+smtp_username = ""
+smtp_password = ""
+from_email = ""
+use_tls = true
+sendgrid_api_key = ""
+mailersend_api_key = ""
+verify_email_template_id = ""
+reset_password_template_id = ""
+password_changed_template_id = ""
+frontend_url = ""
+sender_name = ""

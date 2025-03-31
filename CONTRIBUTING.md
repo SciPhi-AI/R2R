@@ -1,6 +1,5 @@
 # R2R Contribution Guide
 
-
 ## Attribution
 
 This Code of Conduct adapts from the [Contributor Covenant, version 1.4](http://contributor-covenant.org/version/1/4/).
@@ -80,9 +79,21 @@ We use Docker Compose for local development. Here's how to get started:
     ```
 
 2.  **Start the services:**
+
+    NOTE: These steps are only for when one has modified the Python `r2r/py/*` contents only.
+
+    To ensure your changes are reflected, first remove the existing `r2r` image:
+
+    ```bash
+    docker image rm r2r_r2r
+    ```
+
+    Then, start & rebuild the r2r service Dockerfile and other services:
+
     ```bash
     docker compose -f compose.dev.yaml up --build
     ```
+
     This command will build the `r2r` service (if necessary) and start all services defined in `compose.dev.yaml`. The `--build` flag ensures that the `r2r` image is built from the `../py` directory.
 
 3. **Accessing the services**
@@ -107,12 +118,6 @@ We use Docker Compose for local development. Here's how to get started:
     docker compose -f compose.dev.yaml down
     ```
     This will stop all the services.
-
-    **Important:** If you've made changes to Python code in the `py` directory and want them to be reflected when restarting, you need to manually remove the r2r image:
-    ```bash
-    docker image rm r2r_r2r
-    ```
-    Then when you run `docker compose -f compose.dev.yaml up --build` again, it will rebuild the image with your latest changes.
 
 ## Pull Request Process
 
