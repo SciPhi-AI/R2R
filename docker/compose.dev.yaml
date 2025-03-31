@@ -1,0 +1,68 @@
+volumes:
+  postgres_data:
+    name: postgres_data
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      - R2R_POSTGRES_USER: postgres
+      - R2R_POSTGRES_PASSWORD: postgres
+      - R2R_POSTGRES_HOST: postgres
+      - R2R_POSTGRES_PORT: 5432
+      - R2R_POSTGRES_DBNAME: postgres
+      - R2R_POSTGRES_MAX_CONNECTIONS: 1024
+      - R2R_POSTGRES_STATEMENT_CACHE_SIZE: 100
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: >
+      postgres
+      -c max_connections=1024
+
+  graph_clustering:
+    image: ragtoriches/cluster-prod
+    ports:
+      - "7276:7276"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7276/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  r2r:
+    image: sciphiai/r2r:latest
+    ports:
+      - "7272:7272"
+    environment:
+      - R2R_PORT: 7272
+      - R2R_HOST: 0.0.0.0
+      - R2R_LOG_LEVEL: INFO
+      - R2R_CONFIG_NAME:
+      - R2R_PROJECT_NAME: r2r_default
+      - R2R_SECRET_KEY: changeMe
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
+      interval: 6s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    extra_hosts:
+      - host.docker.internal:host-gateway
+
+  r2r-dashboard:
+    image: sciphiai/r2r-dashboard:1.0.3
+    environment:
+      - NEXT_PUBLIC_R2R_DEPLOYMENT_URL: http://localhost:7272
+      - NEXT_PUBLIC_HATCHET_DASHBOARD_URL: http://localhost:7274
+      - NEXT_PUBLIC_R2R_DEFAULT_EMAIL: "admin@example.com"
+      - NEXT_PUBLIC_R2R_DEFAULT_PASSWORD: "change_me_immediately"
+    ports:
+      - "7273:3000"

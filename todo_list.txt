@@ -1,0 +1,6 @@
+Debug this error:
+     ERROR - Error in creating graph for document 55a701f9-7ada-5a8e-8c5b-2995bc6779bd: No chunks found for document
+     ERROR - Error running orchestrated extraction: No chunks found for document
+
+ Look into the UUID collection_ids issue:
+     ERROR - Error during assigning document to collection: invalid input for query argument $2: '01aeaf06-9885-4b86-90c6-c07a35c48356' (a sized iterable container expected (got type 'str'))
