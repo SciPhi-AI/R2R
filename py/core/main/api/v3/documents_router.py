@@ -138,11 +138,6 @@ class DocumentsRouter(BaseRouterV3):
                     if self.providers.orchestration.config.provider != "simple"
                     else "Chunk update completed successfully."
                 ),
-                "update-document-metadata": (
-                    "Update document metadata task queued successfully."
-                    if self.providers.orchestration.config.provider != "simple"
-                    else "Document metadata update completed successfully."
-                ),
                 "create-vector-index": (
                     "Vector index creation task queued successfully."
                     if self.providers.orchestration.config.provider != "simple"
