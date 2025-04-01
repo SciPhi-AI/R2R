@@ -49,7 +49,10 @@ audio_lm = ""
     rtf  = 5000000
     rst  = 5000000
     org  = 5000000
-
+    py   = 5000000
+    js   = 5000000
+    ts   = 5000000
+    css  = 5000000
 
 ################################################################################
 # Agent Settings (Custom configuration used by your system)
