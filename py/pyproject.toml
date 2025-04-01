@@ -124,6 +124,8 @@ r2r-serve = "r2r.serve:run_server"
 exclude = ["py/tests/*"]
 line-length = 79
 target-version = "py310"
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "B"]
 ignore = ["B008", "B024", "B026", "E501", "F402", "F403", "F405", "F841"]
 
