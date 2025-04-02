@@ -36,7 +36,7 @@ research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
 provider = "supabase"
-secret_key="+LbexRP/sX4VAy5oV+Dcagy3aHQxW/tXIhphjoJziYiFy497GkZfd4S8yeiJ8oTCBJra/cZ6YINcY9oARKMfWQ=="
+secret_key=""
 access_token_lifetime_in_minutes = 60000
 refresh_token_lifetime_in_days = 7
 require_authentication = true
