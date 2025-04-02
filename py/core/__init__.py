@@ -6,6 +6,7 @@ from .base import *
 from .main import *
 from .parsers import *
 from .providers import *
+from .utils.upload_directories_files import scan_directory
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -178,4 +179,5 @@ __all__ = [
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
+    "scan_directory",
 ]

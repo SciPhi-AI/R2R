@@ -1,0 +1,117 @@
+R2R
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── coverage.xml
+├── dirtree.txt
+├── docker
+│   ├── compose.dev.yaml
+│   ├── compose.full.swarm.yaml
+│   ├── compose.full.yaml
+│   ├── compose.yaml
+│   ├── env
+│   │   ├── hatchet.env
+│   │   ├── postgres.env
+│   │   ├── r2r-dashboard.env
+│   │   ├── r2r.env
+│   │   ├── r2r.env.backup
+│   │   ├── r2r.env.template
+│   │   ├── r2r-full.env
+│   │   ├── r2r-full.env.backup
+│   │   └── r2r-full.env.template
+│   ├── fluent-bit
+│   │   ├── fluent-bit.conf
+│   │   └── parsers.conf
+│   ├── scripts
+│   │   ├── create-hatchet-db.sh
+│   │   ├── setup-token.sh
+│   │   └── start-r2r.sh
+│   └── user_configs
+│       ├── config.toml
+│       └── README.md
+├── js
+│   ├── README.md
+│   └── sdk
+│       ├── examples
+│       ├── jest.config.js
+│       ├── package.json
+│       ├── package-lock.json
+│       ├── pnpm-lock.yaml
+│       ├── README.md
+│       ├── src
+│       ├── __tests__
+│       └── tsconfig.json
+├── LICENSE.md
+├── llms.txt
+├── MANIFEST.md
+├── py
+│   ├── all_possible_config.toml
+│   ├── core
+│   │   ├── agent
+│   │   ├── base
+│   │   ├── configs
+│   │   ├── examples
+│   │   ├── __init__.py
+│   │   ├── main
+│   │   ├── parsers
+│   │   ├── providers
+│   │   ├── __pycache__
+│   │   └── utils
+│   ├── coverage.xml
+│   ├── Dockerfile
+│   ├── migrations
+│   │   ├── alembic.ini
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   ├── pyproject.toml
+│   ├── r2r
+│   │   ├── __init__.py
+│   │   ├── mcp.py
+│   │   ├── __pycache__
+│   │   ├── r2r.toml
+│   │   └── serve.py
+│   ├── r2r.egg-info
+│   │   ├── dependency_links.txt
+│   │   ├── entry_points.txt
+│   │   ├── PKG-INFO
+│   │   ├── requires.txt
+│   │   ├── SOURCES.txt
+│   │   └── top_level.txt
+│   ├── README.md
+│   ├── sdk
+│   │   ├── asnyc_methods
+│   │   ├── async_client.py
+│   │   ├── base
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── __pycache__
+│   │   ├── README.md
+│   │   ├── sync_client.py
+│   │   └── sync_methods
+│   ├── shared
+│   │   ├── abstractions
+│   │   ├── api
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   └── utils
+│   ├── tests
+│   │   ├── integration
+│   │   ├── rateLimit.bash
+│   │   ├── scaling
+│   │   └── unit
+│   └── uv.lock
+├── README.md -> ./py/README.md
+├── SECURITY.md
+├── services
+│   ├── clustering
+│   │   ├── Dockerfile.clustering
+│   │   └── main.py
+│   ├── README.md
+│   └── unstructured
+│       ├── Dockerfile.unstructured
+│       ├── main.py
+│       └── README.md
+└── todo_list.txt
+
+44 directories, 71 files

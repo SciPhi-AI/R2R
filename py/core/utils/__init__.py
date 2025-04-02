@@ -1,3 +1,5 @@
+"""Utility functions for the R2R core package."""
+
 import re
 from typing import Set, Tuple
 
@@ -26,6 +28,8 @@ from shared.utils.splitter.text import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
+
+from .upload_directories_files import scan_directory
 
 
 def extract_citations(text: str) -> list[str]:
@@ -238,4 +242,5 @@ __all__ = [
     "extract_citation_spans",
     "CitationTracker",
     "find_new_citation_spans",
+    "scan_directory",
 ]

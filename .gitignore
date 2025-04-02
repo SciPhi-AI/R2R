@@ -46,3 +46,8 @@ go.work.sum
 
 .gitignore
 docker/env/*
+
+py/poetry.lock
+py/uv.lock
+dirtree.txt
+project_dir_layout.txt

@@ -1,5 +1,9 @@
+"""R2R package."""
+
 from importlib import metadata
 
+# Import from core
+from core.utils import scan_directory
 from sdk.async_client import R2RAsyncClient
 from sdk.sync_client import R2RClient
 from shared import *
@@ -12,6 +16,7 @@ __all__ = [
     "R2RClient",
     "__version__",
     "R2RException",
+    "scan_directory",
 ] + shared_all
 
 

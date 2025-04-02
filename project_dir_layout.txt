@@ -1,0 +1,526 @@
+.
+├── CODE_OF_CONDUCT.md
+├── CONTRIBUTING.md
+├── coverage.xml
+├── dirtree.txt
+├── docker
+│   ├── compose.dev.yaml
+│   ├── compose.full.swarm.yaml
+│   ├── compose.full.yaml
+│   ├── compose.yaml
+│   ├── env
+│   │   ├── hatchet.env
+│   │   ├── postgres.env
+│   │   ├── r2r-dashboard.env
+│   │   ├── r2r.env.backup
+│   │   ├── r2r.env.template
+│   │   ├── r2r-full.env.backup
+│   │   └── r2r-full.env.template
+│   ├── fluent-bit
+│   │   ├── fluent-bit.conf
+│   │   └── parsers.conf
+│   ├── scripts
+│   │   ├── create-hatchet-db.sh
+│   │   ├── setup-token.sh
+│   │   └── start-r2r.sh
+│   └── user_configs
+│       ├── config.toml
+│       └── README.md
+├── js
+│   ├── README.md
+│   └── sdk
+│       ├── examples
+│       │   ├── data
+│       │   │   ├── folder
+│       │   │   │   ├── karamozov.txt
+│       │   │   │   └── myshkin.txt
+│       │   │   ├── marmeladov.txt
+│       │   │   ├── raskolnikov_2.txt
+│       │   │   ├── raskolnikov.txt
+│       │   │   ├── sonia.txt
+│       │   │   └── zametov.txt
+│       │   └── hello_r2r.js
+│       ├── jest.config.js
+│       ├── pnpm-lock.yaml
+│       ├── README.md
+│       ├── src
+│       │   ├── baseClient.ts
+│       │   ├── index.ts
+│       │   ├── r2rClient.ts
+│       │   ├── types.ts
+│       │   ├── utils
+│       │   │   ├── index.ts
+│       │   │   ├── typeTransformer.ts
+│       │   │   └── utils.ts
+│       │   └── v3
+│       │       └── clients
+│       │           ├── chunks.ts
+│       │           ├── collections.ts
+│       │           ├── conversations.ts
+│       │           ├── documents.ts
+│       │           ├── graphs.ts
+│       │           ├── indices.ts
+│       │           ├── prompts.ts
+│       │           ├── retrieval.ts
+│       │           ├── system.ts
+│       │           └── users.ts
+│       └── __tests__
+│           ├── ChunksIntegrationSuperUser.test.ts
+│           ├── CollectionsIntegrationSuperUser.test.ts
+│           ├── ConversationsIntegrationSuperUser.test.ts
+│           ├── ConversationsIntegrationUser.test.ts
+│           ├── DocumentsAndCollectionsIntegrationUser.test.ts
+│           ├── DocumentsIntegrationSuperUser.test.ts
+│           ├── GraphsIntegrationSuperUser.test.ts
+│           ├── PromptsIntegrationSuperUser.test.ts
+│           ├── RetrievalIntegrationSuperUser.test.ts
+│           ├── SystemIntegrationSuperUser.test.ts
+│           ├── SystemIntegrationUser.test.ts
+│           ├── UsersIntegrationSuperUser.test.ts
+│           └── util
+│               └── typeTransformer.test.ts
+├── LICENSE.md
+├── llms.txt
+├── MANIFEST.md
+├── project_dir_layout.txt
+├── py
+│   ├── all_possible_config.toml
+│   ├── core
+│   │   ├── agent
+│   │   │   ├── base.py
+│   │   │   ├── __init__.py
+│   │   │   ├── rag.py
+│   │   │   └── research.py
+│   │   ├── base
+│   │   │   ├── abstractions
+│   │   │   │   └── __init__.py
+│   │   │   ├── agent
+│   │   │   │   ├── agent.py
+│   │   │   │   ├── base.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── api
+│   │   │   │   └── models
+│   │   │   │       └── __init__.py
+│   │   │   ├── __init__.py
+│   │   │   ├── parsers
+│   │   │   │   ├── base_parser.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── providers
+│   │   │   │   ├── auth.py
+│   │   │   │   ├── base.py
+│   │   │   │   ├── crypto.py
+│   │   │   │   ├── database.py
+│   │   │   │   ├── email.py
+│   │   │   │   ├── embedding.py
+│   │   │   │   ├── ingestion.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── llm.py
+│   │   │   │   ├── ocr.py
+│   │   │   │   ├── orchestration.py
+│   │   │   │   └── scheduler.py
+│   │   │   └── utils
+│   │   │       └── __init__.py
+│   │   ├── configs
+│   │   │   ├── full_azure.toml
+│   │   │   ├── full_lm_studio.toml
+│   │   │   ├── full_ollama.toml
+│   │   │   ├── full.toml
+│   │   │   ├── gemini.toml
+│   │   │   ├── lm_studio.toml
+│   │   │   ├── ollama.toml
+│   │   │   ├── r2r_azure.toml
+│   │   │   ├── r2r_azure_with_test_limits.toml
+│   │   │   └── r2r_with_auth.toml
+│   │   ├── examples
+│   │   │   ├── data
+│   │   │   │   ├── aristotle.txt
+│   │   │   │   ├── aristotle_v2.txt
+│   │   │   │   ├── aristotle_v3.txt
+│   │   │   │   ├── DeepSeek_R1.pdf
+│   │   │   │   ├── got.txt
+│   │   │   │   ├── graphrag.pdf
+│   │   │   │   ├── lyft_2021.pdf
+│   │   │   │   ├── pg_essay_1.html
+│   │   │   │   ├── pg_essay_2.html
+│   │   │   │   ├── pg_essay_3.html
+│   │   │   │   ├── pg_essay_4.html
+│   │   │   │   ├── pg_essay_5.html
+│   │   │   │   ├── sample2.mp3
+│   │   │   │   ├── sample.mp3
+│   │   │   │   ├── screen_shot.png
+│   │   │   │   ├── test.txt
+│   │   │   │   ├── uber_2021.pdf
+│   │   │   │   └── yc_companies.txt
+│   │   │   ├── hello_r2r.ipynb
+│   │   │   ├── hello_r2r.py
+│   │   │   ├── __init__.py
+│   │   │   └── supported_file_types
+│   │   │       ├── bmp.bmp
+│   │   │       ├── css.css
+│   │   │       ├── csv.csv
+│   │   │       ├── doc.doc
+│   │   │       ├── docx.docx
+│   │   │       ├── eml.eml
+│   │   │       ├── epub.epub
+│   │   │       ├── heic.heic
+│   │   │       ├── html.html
+│   │   │       ├── jpeg.jpeg
+│   │   │       ├── jpg.jpg
+│   │   │       ├── js.js
+│   │   │       ├── md.md
+│   │   │       ├── msg.msg
+│   │   │       ├── odt.odt
+│   │   │       ├── org.org
+│   │   │       ├── p7s.p7s
+│   │   │       ├── pdf.pdf
+│   │   │       ├── png.png
+│   │   │       ├── ppt.ppt
+│   │   │       ├── pptx.pptx
+│   │   │       ├── py.py
+│   │   │       ├── rst.rst
+│   │   │       ├── rtf.rtf
+│   │   │       ├── tiff.tiff
+│   │   │       ├── ts.ts
+│   │   │       ├── tsv.tsv
+│   │   │       ├── txt.txt
+│   │   │       ├── xls.xls
+│   │   │       ├── xlsx.xlsx
+│   │   │       └── xml.xml
+│   │   ├── __init__.py
+│   │   ├── main
+│   │   │   ├── abstractions.py
+│   │   │   ├── api
+│   │   │   │   └── v3
+│   │   │   │       ├── base_router.py
+│   │   │   │       ├── chunks_router.py
+│   │   │   │       ├── collections_router.py
+│   │   │   │       ├── conversations_router.py
+│   │   │   │       ├── documents_router.py
+│   │   │   │       ├── examples.py
+│   │   │   │       ├── graph_router.py
+│   │   │   │       ├── indices_router.py
+│   │   │   │       ├── prompts_router.py
+│   │   │   │       ├── retrieval_router.py
+│   │   │   │       ├── system_router.py
+│   │   │   │       └── users_router.py
+│   │   │   ├── app_entry.py
+│   │   │   ├── app.py
+│   │   │   ├── assembly
+│   │   │   │   ├── builder.py
+│   │   │   │   ├── factory.py
+│   │   │   │   └── __init__.py
+│   │   │   ├── config.py
+│   │   │   ├── __init__.py
+│   │   │   ├── orchestration
+│   │   │   │   ├── hatchet
+│   │   │   │   │   ├── graph_workflow.py
+│   │   │   │   │   ├── ingestion_workflow.py
+│   │   │   │   │   └── __init__.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── simple
+│   │   │   │       ├── graph_workflow.py
+│   │   │   │       ├── ingestion_workflow.py
+│   │   │   │       └── __init__.py
+│   │   │   └── services
+│   │   │       ├── auth_service.py
+│   │   │       ├── base.py
+│   │   │       ├── graph_service.py
+│   │   │       ├── ingestion_service.py
+│   │   │       ├── __init__.py
+│   │   │       ├── maintenance_service.py
+│   │   │       ├── management_service.py
+│   │   │       └── retrieval_service.py
+│   │   ├── parsers
+│   │   │   ├── __init__.py
+│   │   │   ├── media
+│   │   │   │   ├── audio_parser.py
+│   │   │   │   ├── bmp_parser.py
+│   │   │   │   ├── doc_parser.py
+│   │   │   │   ├── docx_parser.py
+│   │   │   │   ├── img_parser.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── odt_parser.py
+│   │   │   │   ├── pdf_parser.py
+│   │   │   │   ├── ppt_parser.py
+│   │   │   │   ├── pptx_parser.py
+│   │   │   │   └── rtf_parser.py
+│   │   │   ├── structured
+│   │   │   │   ├── csv_parser.py
+│   │   │   │   ├── eml_parser.py
+│   │   │   │   ├── epub_parser.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── json_parser.py
+│   │   │   │   ├── msg_parser.py
+│   │   │   │   ├── org_parser.py
+│   │   │   │   ├── p7s_parser.py
+│   │   │   │   ├── rst_parser.py
+│   │   │   │   ├── tsv_parser.py
+│   │   │   │   ├── xls_parser.py
+│   │   │   │   └── xlsx_parser.py
+│   │   │   └── text
+│   │   │       ├── css_parser.py
+│   │   │       ├── html_parser.py
+│   │   │       ├── __init__.py
+│   │   │       ├── js_parser.py
+│   │   │       ├── md_parser.py
+│   │   │       ├── python_parser.py
+│   │   │       ├── text_parser.py
+│   │   │       └── ts_parser.py
+│   │   ├── providers
+│   │   │   ├── auth
+│   │   │   │   ├── clerk.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── jwt.py
+│   │   │   │   ├── r2r_auth.py
+│   │   │   │   └── supabase.py
+│   │   │   ├── crypto
+│   │   │   │   ├── bcrypt.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── nacl.py
+│   │   │   ├── database
+│   │   │   │   ├── base.py
+│   │   │   │   ├── chunks.py
+│   │   │   │   ├── collections.py
+│   │   │   │   ├── conversations.py
+│   │   │   │   ├── documents.py
+│   │   │   │   ├── files.py
+│   │   │   │   ├── filters.py
+│   │   │   │   ├── graphs.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── limits.py
+│   │   │   │   ├── maintenance.py
+│   │   │   │   ├── postgres.py
+│   │   │   │   ├── prompts
+│   │   │   │   │   ├── chunk_enrichment.yaml
+│   │   │   │   │   ├── collection_summary.yaml
+│   │   │   │   │   ├── dynamic_rag_agent_xml_tooling.yaml
+│   │   │   │   │   ├── dynamic_rag_agent.yaml
+│   │   │   │   │   ├── graph_communities.yaml
+│   │   │   │   │   ├── graph_entity_description.yaml
+│   │   │   │   │   ├── graph_extraction.yaml
+│   │   │   │   │   ├── hyde.yaml
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── rag_fusion.yaml
+│   │   │   │   │   ├── rag.yaml
+│   │   │   │   │   ├── static_rag_agent.yaml
+│   │   │   │   │   ├── static_research_agent.yaml
+│   │   │   │   │   ├── summary.yaml
+│   │   │   │   │   ├── system.yaml
+│   │   │   │   │   ├── vision_img.yaml
+│   │   │   │   │   └── vision_pdf.yaml
+│   │   │   │   ├── prompts_handler.py
+│   │   │   │   ├── tokens.py
+│   │   │   │   ├── users.py
+│   │   │   │   └── utils.py
+│   │   │   ├── email
+│   │   │   │   ├── console_mock.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── mailersend.py
+│   │   │   │   ├── sendgrid.py
+│   │   │   │   └── smtp.py
+│   │   │   ├── embeddings
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── litellm.py
+│   │   │   │   ├── ollama.py
+│   │   │   │   └── openai.py
+│   │   │   ├── ingestion
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── r2r
+│   │   │   │   │   └── base.py
+│   │   │   │   └── unstructured
+│   │   │   │       └── base.py
+│   │   │   ├── __init__.py
+│   │   │   ├── llm
+│   │   │   │   ├── anthropic.py
+│   │   │   │   ├── azure_foundry.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── litellm.py
+│   │   │   │   ├── openai.py
+│   │   │   │   ├── r2r_llm.py
+│   │   │   │   └── utils.py
+│   │   │   ├── ocr
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── mistral.py
+│   │   │   ├── orchestration
+│   │   │   │   ├── hatchet.py
+│   │   │   │   ├── __init__.py
+│   │   │   │   └── simple.py
+│   │   │   └── scheduler
+│   │   │       ├── apscheduler.py
+│   │   │       └── __init__.py
+│   │   └── utils
+│   │       ├── __init__.py
+│   │       ├── logging_config.py
+│   │       ├── sentry.py
+│   │       ├── serper.py
+│   │       └── upload_directories_files.py
+│   ├── coverage.xml
+│   ├── dist
+│   │   ├── r2r-3.5.8-py2.py3-none-any.whl
+│   │   └── r2r-3.5.8.tar.gz
+│   ├── Dockerfile
+│   ├── migrations
+│   │   ├── alembic.ini
+│   │   ├── env.py
+│   │   ├── README
+│   │   ├── script.py.mako
+│   │   └── versions
+│   │       ├── 2fac23e4d91b_migrate_to_document_search.py
+│   │       ├── 3efc7b3b1b3d_add_total_tokens_count.py
+│   │       ├── 7eb70560f406_add_limits_overrides_to_users.py
+│   │       ├── 8077140e1e99_v3_api_database_revision.py
+│   │       ├── c45a9cf6a8a4_add_user_and_document_count_to_.py
+│   │       └── d342e632358a_migrate_to_asyncpg.py
+│   ├── pyproject.toml
+│   ├── r2r
+│   │   ├── __init__.py
+│   │   ├── mcp.py
+│   │   ├── r2r.toml
+│   │   └── serve.py
+│   ├── r2r.egg-info
+│   │   ├── dependency_links.txt
+│   │   ├── entry_points.txt
+│   │   ├── PKG-INFO
+│   │   ├── requires.txt
+│   │   ├── SOURCES.txt
+│   │   └── top_level.txt
+│   ├── README.md
+│   ├── sdk
+│   │   ├── asnyc_methods
+│   │   │   ├── chunks.py
+│   │   │   ├── collections.py
+│   │   │   ├── conversations.py
+│   │   │   ├── documents.py
+│   │   │   ├── graphs.py
+│   │   │   ├── indices.py
+│   │   │   ├── __init__.py
+│   │   │   ├── prompts.py
+│   │   │   ├── retrieval.py
+│   │   │   ├── system.py
+│   │   │   └── users.py
+│   │   ├── async_client.py
+│   │   ├── base
+│   │   │   ├── base_client.py
+│   │   │   └── __init_.py
+│   │   ├── __init__.py
+│   │   ├── models.py
+│   │   ├── README.md
+│   │   ├── sync_client.py
+│   │   └── sync_methods
+│   │       ├── chunks.py
+│   │       ├── collections.py
+│   │       ├── conversations.py
+│   │       ├── documents.py
+│   │       ├── graphs.py
+│   │       ├── indices.py
+│   │       ├── __init__.py
+│   │       ├── prompts.py
+│   │       ├── retrieval.py
+│   │       ├── system.py
+│   │       └── users.py
+│   ├── shared
+│   │   ├── abstractions
+│   │   │   ├── base.py
+│   │   │   ├── document.py
+│   │   │   ├── embedding.py
+│   │   │   ├── exception.py
+│   │   │   ├── graph.py
+│   │   │   ├── __init__.py
+│   │   │   ├── llm.py
+│   │   │   ├── prompt.py
+│   │   │   ├── search.py
+│   │   │   ├── user.py
+│   │   │   └── vector.py
+│   │   ├── api
+│   │   │   └── models
+│   │   │       ├── auth
+│   │   │       │   ├── __init__.py
+│   │   │       │   └── responses.py
+│   │   │       ├── base.py
+│   │   │       ├── graph
+│   │   │       │   ├── __init__.py
+│   │   │       │   └── responses.py
+│   │   │       ├── ingestion
+│   │   │       │   ├── __init__.py
+│   │   │       │   └── responses.py
+│   │   │       ├── __init__.py
+│   │   │       ├── management
+│   │   │       │   ├── __init__.py
+│   │   │       │   └── responses.py
+│   │   │       └── retrieval
+│   │   │           ├── __init__.py
+│   │   │           └── responses.py
+│   │   ├── __init__.py
+│   │   └── utils
+│   │       ├── base_utils.py
+│   │       ├── __init__.py
+│   │       └── splitter
+│   │           ├── __init__.py
+│   │           └── text.py
+│   ├── tests
+│   │   ├── integration
+│   │   │   ├── conftest.py
+│   │   │   ├── test_integration_agent.py
+│   │   │   ├── test_integration_base.py
+│   │   │   ├── test_integration_chunks.py
+│   │   │   ├── test_integration_collections.py
+│   │   │   ├── test_integration_collections_users_interaction.py
+│   │   │   ├── test_integration_conversations.py
+│   │   │   ├── test_integration_documents.py
+│   │   │   ├── test_integration_filters.py
+│   │   │   ├── test_integration_graphs.py
+│   │   │   ├── test_integration_indices.py
+│   │   │   ├── test_integration_ingestion.py
+│   │   │   ├── test_integration_retrieval_advanced.py
+│   │   │   ├── test_integration_retrieval.py
+│   │   │   ├── test_integration_system.py
+│   │   │   └── test_integration_users.py
+│   │   ├── rateLimit.bash
+│   │   ├── scaling
+│   │   │   ├── __init__.py
+│   │   │   └── loadTester.py
+│   │   └── unit
+│   │       ├── agent
+│   │       │   ├── test_unit_agent_citations_old.py
+│   │       │   ├── test_unit_agent_citations.py
+│   │       │   ├── test_unit_agent_old.py
+│   │       │   ├── test_unit_agent.py
+│   │       │   └── test_unit_streaming_agent.py
+│   │       ├── app
+│   │       │   ├── test_unit_config.py
+│   │       │   └── test_unit_routes.py
+│   │       ├── conftest.py
+│   │       ├── database
+│   │       │   ├── test_unit_collections.py
+│   │       │   ├── test_unit_conversations.py
+│   │       │   ├── test_unit_graphs.py
+│   │       │   └── test_unit_limits.py
+│   │       ├── document
+│   │       │   ├── test_unit_chunks.py
+│   │       │   ├── test_unit_dir_scanner.py
+│   │       │   ├── test_unit_document_processing.py
+│   │       │   └── test_unit_documents.py
+│   │       └── retrieval
+│   │           ├── conftest.py
+│   │           ├── test_unit_citations.py
+│   │           ├── test_unit_database_filters.py
+│   │           ├── test_unit_rag_processing.py
+│   │           ├── test_unit_retrieval_old.py
+│   │           └── unit__init__.py
+│   └── uv.lock
+├── README.md -> ./py/README.md
+├── SECURITY.md
+├── services
+│   ├── clustering
+│   │   ├── Dockerfile.clustering
+│   │   └── main.py
+│   ├── README.md
+│   └── unstructured
+│       ├── Dockerfile.unstructured
+│       ├── main.py
+│       └── README.md
+├── tests
+│   └── conftest.py
+└── todo_list.txt
+
+92 directories, 432 files
