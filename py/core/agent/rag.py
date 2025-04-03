@@ -645,19 +645,19 @@ class RAGAgentMixin:
             )
             
             web_search_results = []
-            for succesfulResult in extracted_content.results:
-                content = succesfulResult.raw_content
+            for successfulResult in extracted_content.results:
+                content = successfulResult.raw_content
                 if len(content) > 100_000:
                     content = (
                         content[:100_000] + "...FURTHER CONTENT TRUNCATED..."
                     )
 
                 web_result = WebPageSearchResult(
-                    title=succesfulResult.url,
-                    link=succesfulResult.url,
+                    title=successfulResult.url,
+                    link=successfulResult.url,
                     snippet=content,
                     position=0,
-                    id=generate_id(succesfulResult.url),
+                    id=generate_id(successfulResult.url),
                     type="tavily_extract",
                 )
                 web_search_results.append(web_result)
