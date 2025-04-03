@@ -327,9 +327,8 @@ class RAGAgentMixin:
         return Tool(
             name="tavily_search",
             description=(
-                "Use Tavily to perform a search and retrieve results. Useful when you need "
-                "to query Tavily's search capabilities for specific information.  The query "
-                "should be no more than 400 characters."
+                "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
+                "to search the internet for specific information.  The query should be no more than 400 characters."
             ),
             results_function=self._tavily_search_function,
             llm_format_function=self.format_search_results_for_llm,
