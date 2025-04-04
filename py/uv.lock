@@ -1549,7 +1549,7 @@ wheels = [
 
 [[package]]
 name = "litellm"
-version = "1.60.0"
+version = "1.64.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1564,9 +1564,9 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/02/dd7191498805a6a1b5577993b0e01b5edff7b934fa95fbced4b1f7e09be2/litellm-1.60.0.tar.gz", hash = "sha256:45e3d9d7c19c02b7a1adf1c86102395fc667ebf35f72033e490e8f6fae7d0f8e", size = 6437939 }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/2a/7a4d04aa0edec4c583acb78657043569741dcc4a5da6aa381ee867bacd94/litellm-1.64.1.tar.gz", hash = "sha256:73bac891b1fbd77ada4d691e967657c53f48c207d9c3ba414ad0ffe3e7ec8f89", size = 6650473 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/72/db/382c5e34025acb2a01e02d8ce3e1b675d41a29b2e5c694435272675f6fb2/litellm-1.60.0-py3-none-any.whl", hash = "sha256:e8284f5cc74ae1aed77516cdfbb2db3746d50c4ba055fb21358e6e25aea25a15", size = 6732210 },
+    { url = "https://files.pythonhosted.org/packages/88/3e/37577b8741e4afba5d3e290ba7da3258bb738990f3c1d91196b4ca8f406a/litellm-1.64.1-py3-none-any.whl", hash = "sha256:bd7cb4977dee121551f0322d48b4e51e9a508fc2ac2273e7c5405ca69354e352", size = 6974769 },
 ]
 
 [[package]]
@@ -1951,7 +1951,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.60.2"
+version = "1.70.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1963,9 +1963,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/ae/8d9706b8ff2363287b4a8807de2dd29cdbdad5424e9d05d345df724320f5/openai-1.60.2.tar.gz", hash = "sha256:a8f843e10f2855713007f491d96afb2694b11b5e02cb97c7d01a0be60bc5bb51", size = 348185 }
+sdist = { url = "https://files.pythonhosted.org/packages/87/f5/ae0f3cd226c2993b4ac1cc4b5f6ca099764689f403c14922c9356accec66/openai-1.70.0.tar.gz", hash = "sha256:e52a8d54c3efeb08cf58539b5b21a5abef25368b5432965e4de88cdf4e091b2b", size = 409640 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/5a/d5474ca67a547dde9b87b5bc8a8f90eadf29f523d410f2ba23d63c9b82ec/openai-1.60.2-py3-none-any.whl", hash = "sha256:993bd11b96900b9098179c728026f016b4982ded7ee30dfcf4555eab1171fff9", size = 456107 },
+    { url = "https://files.pythonhosted.org/packages/e2/39/c4b38317d2c702c4bc763957735aaeaf30dfc43b5b824121c49a4ba7ba0f/openai-1.70.0-py3-none-any.whl", hash = "sha256:f6438d053fd8b2e05fd6bef70871e832d9bbdf55e119d0ac5b92726f1ae6f614", size = 599070 },
 ]
 
 [[package]]
@@ -3155,7 +3155,7 @@ requires-dist = [
     { name = "gunicorn", marker = "extra == 'core'", specifier = ">=21.2.0,<22.0.0" },
     { name = "hatchet-sdk", marker = "extra == 'core'", specifier = "==0.47.0" },
     { name = "httpx", specifier = ">=0.27.0" },
-    { name = "litellm", marker = "extra == 'core'", specifier = ">=1.58.2,<1.63.2" },
+    { name = "litellm", marker = "extra == 'core'", specifier = ">=1.63.14,<1.65.0" },
     { name = "mailersend", marker = "extra == 'core'", specifier = ">=0.5.6,<0.6.0" },
     { name = "markdown", marker = "extra == 'core'", specifier = ">=3.6,<4.0" },
     { name = "mistralai", marker = "extra == 'core'", specifier = ">=1.5.2" },
@@ -3164,7 +3164,7 @@ requires-dist = [
     { name = "numpy", marker = "extra == 'core'", specifier = ">=1.22.4,<1.29.0" },
     { name = "olefile", marker = "extra == 'core'", specifier = ">=0.47,<0.48" },
     { name = "ollama", marker = "extra == 'core'", specifier = ">=0.3.1,<0.4.0" },
-    { name = "openai", specifier = ">=1.11.1,<1.61.0" },
+    { name = "openai", specifier = ">=1.61.0" },
     { name = "openpyxl", marker = "extra == 'core'", specifier = ">=3.1.2,<4.0.0" },
     { name = "orgparse", marker = "extra == 'core'", specifier = ">=0.4.20231004,<0.5.0" },
     { name = "pdf2image", marker = "extra == 'core'", specifier = ">=1.17.0" },
