@@ -214,10 +214,17 @@ class ResearchAgentMixin(RAGAgentMixin):
         # Create a copy of the current configuration for the RAG agent
         config_copy = copy(self.config)
         config_copy.max_iterations = 10  # Could be configurable
-        config_copy.rag_tools = [
-            "web_search",
-            "web_scrape",
-        ]  # HACK HACK TODO - Fix.
+
+        # Always include critical web search tools
+        default_tools = ["web_search", "web_scrape"]
+
+        # Get the configured RAG tools from the original config
+        configured_tools = set(self.config.rag_tools or default_tools)
+
+        # Combine default tools with all configured tools, ensuring no duplicates
+        config_copy.rag_tools = list(set(default_tools + list(configured_tools)))
+
+        logger.debug(f"Using RAG tools: {config_copy.rag_tools}")
 
         # Create a generation config for the RAG agent
         generation_config = GenerationConfig(
