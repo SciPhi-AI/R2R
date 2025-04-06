@@ -2,7 +2,9 @@ js/sdk/**/*.js
 js/tests/*
 **/.DS_Store
 
-.env
+
+**/.env*
+
 .gitignore
 *.log
 .DS_Store
