@@ -18,7 +18,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
 
     await superUserClient.users.login({
       email: "admin@example.com",
-      password: "change_me_immediately",
+      password: "123Neo456*",
     });
 
     if (!fs.existsSync(TEST_OUTPUT_DIR)) {
