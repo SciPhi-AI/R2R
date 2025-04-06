@@ -9,16 +9,16 @@ default_max_collections_per_user = 5_000
 default_max_upload_size = 214748364800
 
 # LLM used for internal operations, like deriving conversation names
-fast_llm = "openai/gpt-4o-mini"
+fast_llm = "gemini/gemini-2.0-flash-lite"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "openai/gpt-4o"
+quality_llm = "gemini/gemini-2.0-flash"
 
 # LLM used for ingesting visual inputs
-vlm = "openai/gpt-4o"
+vlm = "gemini/gemini-2.0-flash"
 
 # LLM used for transcription
-audio_lm = "openai/whisper-1"
+audio_lm = "gemini/gemini-2.0-flash"
 
 # Reasoning model, used for `research` agent
 reasoning_llm = "openai/o3-mini"
@@ -76,10 +76,10 @@ collection_summary_prompt = "collection_summary"
     vacuum_schedule = "0 3 * * *"  # Run at 3:00 AM daily
 
 [embedding]
-provider = "litellm"
+provider = "google"
 # For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
 # For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
-base_model = "openai/text-embedding-3-small"
+base_model = "gemini/gemini-embedding-exp-03-07"
 base_dimension = 512
 # rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
 batch_size = 128
@@ -90,8 +90,8 @@ quantization_settings = { quantization_type = "FP32" }
 
 [completion_embedding]
 # Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
-provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+provider = "google"
+base_model = "gemini/gemini-embedding-exp-03-07"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
@@ -126,3 +126,12 @@ provider = "console_mock" # `smtp` | `sendgrid` supported
 
 [scheduler]
 provider = "apscheduler"
+
+[database]
+provider = "postgres"
+user = "postgres"
+password = "postgres"
+host = "postgres"
+port = 5433
+db_name = "postgres"
+project_name = "brain_r2r"
