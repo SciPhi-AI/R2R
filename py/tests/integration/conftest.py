@@ -13,7 +13,7 @@ class TestConfig:
         self.index_wait_time = 1.0
         self.chunk_creation_wait_time = 1.0
         self.superuser_email = "admin@example.com"
-        self.superuser_password = "change_me_immediately"
+        self.superuser_password = "123Neo456*"
         self.test_timeout = 30  # seconds
 
 
