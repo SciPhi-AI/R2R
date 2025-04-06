@@ -3,7 +3,7 @@ name: R2R JS SDK Integration Tests
 on:
   push:
     branches:
-      - '**'
+      - 'main'
 
 jobs:
   setup:
