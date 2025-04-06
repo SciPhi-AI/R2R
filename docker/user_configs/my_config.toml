@@ -35,7 +35,8 @@ rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_cont
 research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
-provider = "r2r"
+provider = "supabase"
+secret_key=""
 access_token_lifetime_in_minutes = 60000
 refresh_token_lifetime_in_days = 7
 require_authentication = true
