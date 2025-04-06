@@ -14,12 +14,15 @@ from core.base import (
     EmbeddingProvider,
     IngestionConfig,
     OrchestrationConfig,
+    SchedulerConfig,
 )
 from core.providers import (
     AnthropicCompletionProvider,
+    APSchedulerProvider,
     AsyncSMTPEmailProvider,
     BcryptCryptoConfig,
     BCryptCryptoProvider,
+    ClerkAuthProvider,
     ConsoleMockEmailProvider,
     HatchetOrchestrationProvider,
     JwtAuthProvider,
@@ -66,7 +69,12 @@ class R2RProviderFactory:
         ),
         *args,
         **kwargs,
-    ) -> R2RAuthProvider | SupabaseAuthProvider | JwtAuthProvider:
+    ) -> (
+        R2RAuthProvider
+        | SupabaseAuthProvider
+        | JwtAuthProvider
+        | ClerkAuthProvider
+    ):
         if auth_config.provider == "r2r":
             r2r_auth = R2RAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
@@ -79,6 +87,10 @@ class R2RProviderFactory:
             )
         elif auth_config.provider == "jwt":
             return JwtAuthProvider(
+                auth_config, crypto_provider, database_provider, email_provider
+            )
+        elif auth_config.provider == "clerk":
+            return ClerkAuthProvider(
                 auth_config, crypto_provider, database_provider, email_provider
             )
         else:
@@ -284,6 +296,18 @@ class R2RProviderFactory:
                 f"Email provider {email_config.provider} not supported."
             )
 
+    @staticmethod
+    async def create_scheduler_provider(
+        scheduler_config: SchedulerConfig, *args, **kwargs
+    ) -> APSchedulerProvider:
+        """Creates a scheduler provider based on configuration."""
+        if scheduler_config.provider == "apscheduler":
+            return APSchedulerProvider(scheduler_config)
+        else:
+            raise ValueError(
+                f"Scheduler provider {scheduler_config.provider} not supported."
+            )
+
     async def create_providers(
         self,
         auth_provider_override: Optional[
@@ -314,6 +338,7 @@ class R2RProviderFactory:
             | R2RCompletionProvider
         ] = None,
         orchestration_provider_override: Optional[Any] = None,
+        scheduler_provider_override: Optional[APSchedulerProvider] = None,
         *args,
         **kwargs,
     ) -> R2RProviders:
@@ -395,6 +420,11 @@ class R2RProviderFactory:
             or self.create_orchestration_provider(self.config.orchestration)
         )
 
+        scheduler_provider = (
+            scheduler_provider_override
+            or await self.create_scheduler_provider(self.config.scheduler)
+        )
+
         return R2RProviders(
             auth=auth_provider,
             database=database_provider,
@@ -404,4 +434,5 @@ class R2RProviderFactory:
             llm=llm_provider,
             email=email_provider,
             orchestration=orchestration_provider,
+            scheduler=scheduler_provider,
         )

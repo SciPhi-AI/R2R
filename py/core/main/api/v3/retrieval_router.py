@@ -257,10 +257,10 @@ class RetrievalRouter(BaseRouterV3):
             Fine-tune the language model's behavior with `rag_generation_config`:
             ```json
             {
-            "model": "openai/gpt-4o-mini",  // Model to use
-            "temperature": 0.7,              // Control randomness (0-1)
-            "max_tokens": 1500,              // Maximum output length
-            "stream": true                   // Enable token streaming
+                "model": "openai/gpt-4o-mini",  // Model to use
+                "temperature": 0.7,              // Control randomness (0-1)
+                "max_tokens": 1500,              // Maximum output length
+                "stream": true                   // Enable token streaming
             }
             ```
 
@@ -424,6 +424,10 @@ class RetrievalRouter(BaseRouterV3):
                 default="rag",
                 description="Mode to use for generation: 'rag' for standard retrieval or 'research' for deep analysis with reasoning capabilities",
             ),
+            needs_initial_conversation_name: Optional[bool] = Body(
+                default=None,
+                description="If true, the system will automatically assign a conversation name if not already specified previously.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedAgentResponse:
             """
@@ -478,6 +482,7 @@ class RetrievalRouter(BaseRouterV3):
 
             Maintain context across multiple turns by including `conversation_id` in each request.
             After your first call, store the returned `conversation_id` and include it in subsequent calls.
+            If no conversation name has already been set for the conversation, the system will automatically assign one.
 
             """
             # Handle backward compatibility for task_prompt
@@ -525,6 +530,7 @@ class RetrievalRouter(BaseRouterV3):
                     rag_tools=rag_tools,  # type: ignore
                     research_tools=research_tools,  # type: ignore
                     mode=mode,
+                    needs_initial_conversation_name=needs_initial_conversation_name,
                 )
 
                 if effective_generation_config.stream:

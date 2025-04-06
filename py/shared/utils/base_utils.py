@@ -27,7 +27,7 @@ logger = logging.getLogger()
 
 
 def id_to_shorthand(id: str | UUID):
-    return str(id)[0:7]
+    return str(id)[:7]
 
 
 def format_search_results_for_llm(
@@ -319,7 +319,7 @@ class SearchResultsCollector:
     def add_aggregate_result(self, agg):
         """
         Flatten the chunk_search_results, graph_search_results, web_search_results,
-        and document_search_results into the collector.
+        and document_search_results into the collector, including nested chunks.
         """
         if hasattr(agg, "chunk_search_results") and agg.chunk_search_results:
             for c in agg.chunk_search_results:
@@ -333,12 +333,30 @@ class SearchResultsCollector:
             for w in agg.web_search_results:
                 self._results_in_order.append(("web", w))
 
+        # Add documents and extract their chunks
         if (
             hasattr(agg, "document_search_results")
             and agg.document_search_results
         ):
-            for cd in agg.document_search_results:
-                self._results_in_order.append(("doc", cd))
+            for doc in agg.document_search_results:
+                # Add the document itself
+                self._results_in_order.append(("doc", doc))
+
+                # Extract and add chunks from the document
+                chunks = None
+                if isinstance(doc, dict):
+                    chunks = doc.get("chunks", [])
+                elif hasattr(doc, "chunks") and doc.chunks is not None:
+                    chunks = doc.chunks
+
+                if chunks:
+                    for chunk in chunks:
+                        # Ensure each chunk has the minimum required attributes
+                        if isinstance(chunk, dict) and "id" in chunk:
+                            # Add the chunk directly to results for citation lookup
+                            self._results_in_order.append(("chunk", chunk))
+                        elif hasattr(chunk, "id"):
+                            self._results_in_order.append(("chunk", chunk))
 
     def add_result(self, result_obj, source_type=None):
         """
@@ -448,32 +466,20 @@ class SearchResultsCollector:
         return "unknown"
 
     def find_by_short_id(self, short_id):
-        """Find a result by its short ID prefix"""
+        """Find a result by its short ID prefix with better chunk handling"""
         if not short_id:
             return None
 
-        for source_type, result_obj in self._results_in_order:
+        # First try direct lookup using regular iteration
+        for _, result_obj in self._results_in_order:
             # Check dictionary objects
             if isinstance(result_obj, dict) and "id" in result_obj:
                 result_id = str(result_obj["id"])
-                does_match = result_id.startswith(short_id)
-
-                if does_match:
+                if result_id.startswith(short_id):
                     return result_obj
 
-            # Special handling for doc with chunks
-            elif source_type == "doc":
-                if str(result_obj.id).startswith(short_id):
-                    return result_obj
-                chunks = getattr(result_obj, "chunks", [])
-                if chunks:
-                    for chunk in chunks:
-                        chunk_id = getattr(chunk, "id", None)
-                        if chunk_id and str(chunk_id).startswith(short_id):
-                            return chunk
-
-            # Handle object with id attribute
-            else:
+            # Check object with id attribute
+            elif hasattr(result_obj, "id"):
                 obj_id = getattr(result_obj, "id", None)
                 if obj_id and str(obj_id).startswith(short_id):
                     # Convert to dict if possible
@@ -485,6 +491,31 @@ class SearchResultsCollector:
                         return result_obj.dict()
                     else:
                         return result_obj
+
+        # If not found, look for chunks inside documents that weren't extracted properly
+        for source_type, result_obj in self._results_in_order:
+            if source_type == "doc":
+                # Try various ways to access chunks
+                chunks = None
+                if isinstance(result_obj, dict) and "chunks" in result_obj:
+                    chunks = result_obj["chunks"]
+                elif (
+                    hasattr(result_obj, "chunks")
+                    and result_obj.chunks is not None
+                ):
+                    chunks = result_obj.chunks
+
+                if chunks:
+                    for chunk in chunks:
+                        # Try each chunk
+                        chunk_id = None
+                        if isinstance(chunk, dict) and "id" in chunk:
+                            chunk_id = chunk["id"]
+                        elif hasattr(chunk, "id"):
+                            chunk_id = chunk.id
+
+                        if chunk_id and str(chunk_id).startswith(short_id):
+                            return chunk
 
         return None
 

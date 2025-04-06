@@ -1,6 +1,6 @@
 {
   "name": "r2r-js",
-  "version": "0.4.32",
+  "version": "0.4.34",
   "description": "",
   "main": "dist/index.js",
   "browser": "dist/index.browser.js",
@@ -29,7 +29,7 @@
   "dependencies": {
     "@jest/globals": "^29.7.0",
     "@rrweb/types": "2.0.0-alpha.17",
-    "axios": "^1.7.9",
+    "axios": "^1.8.4",
     "form-data": "^4.0.1",
     "rrweb-snapshot": "2.0.0-alpha.4",
     "uuid": "^10.0.0"

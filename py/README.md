@@ -34,6 +34,30 @@ R2R (Reason to Retrieve) is an advanced AI retrieval system supporting Retrieval
 
 R2R also includes a **Deep Research API**, a multi-step reasoning system that fetches relevant data from your knowledgebase and/or the internet to deliver richer, context-aware answers for complex queries.
 
+# Usage
+
+```python
+# Basic search
+results = client.retrieval.search(query="What is DeepSeek R1?")
+
+# RAG with citations
+response = client.retrieval.rag(query="What is DeepSeek R1?")
+
+# Agentic reasoning with RAG
+response = client.retrieval.agent(
+  message={"role":"user", "content": "What does deepseek r1 imply? Think about market, societal implications, and more."},
+  rag_generation_config={
+    "model"="anthropic/claude-3-7-sonnet-20250219",
+    "extended_thinking": True,
+    "thinking_budget": 4096,
+    "temperature": 1,
+    "top_p": None,
+    "max_tokens_to_sample": 16000,
+  },
+)
+```
+
+
 
 ## Getting Started
 
@@ -96,29 +120,6 @@ client.documents.create_sample(hi_res=True)
 client.documents.list()
 ```
 
-### 4. Search & RAG
-
-```python
-# Basic search
-results = client.retrieval.search(query="What is DeepSeek R1?")
-
-# RAG with citations
-response = client.retrieval.rag(query="What is DeepSeek R1?")
-
-# Agentic reasoning with RAG
-response = client.retrieval.agent(
-  message={"role":"user", "content": "What does deepseek r1 imply? Think about market, societal implications, and more."},
-  rag_generation_config={
-    "model"="anthropic/claude-3-7-sonnet-20250219",
-    "extended_thinking": True,
-    "thinking_budget": 4096,
-    "temperature": 1,
-    "top_p": None,
-    "max_tokens_to_sample": 16000,
-  },
-  mode="research" # for Deep Research style output
-)
-```
 
 ## Key Features
 
@@ -133,6 +134,7 @@ response = client.retrieval.agent(
 - [Join our Discord](https://discord.gg/p6KqD2kjtB) for support and discussion
 - Submit [feature requests](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=) or [bug reports](https://github.com/SciPhi-AI/R2R/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=)
 - Open PRs for new features, improvements, or documentation
+- Book a [demo call with the SciPhi founders](https://calendly.com/owen-uzg/sciphi-demo)
 
 ### Our Contributors
 <a href="https://github.com/SciPhi-AI/R2R/graphs/contributors">

@@ -3,29 +3,34 @@ repos:
     rev: v4.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^.venv/
       - id: end-of-file-fixer
+        exclude: ^.venv/
       - id: check-added-large-files
+        exclude: ^.venv/
       - id: check-ast
+        exclude: ^.venv/
       - id: check-yaml
+        exclude: ^.venv/
 
   - repo: local
     hooks:
       - id: check-typing-imports
         name: Check for Dict, List, or Union usage
-        entry: bash -c 'echo "Checking for typing imports..." && find . -name "*.py" | grep -v "/migrations/" | grep -v "/.venv/" | xargs grep -n "from typing.*import.*[^d]Dict\\|from typing.*import.*List\\|from typing.*import.*Union" || exit 0 && echo "⚠️  Please import dict instead of Dict, list instead of List, and the logical OR operator" && exit 1'
+        entry: bash -c 'echo "Checking for typing imports..." && FOUND=$(cd "$(git rev-parse --show-toplevel)" && find . -path "*/py/*.py" | grep -v "venv" | grep -v "/.venv/" | grep -v "/site-packages/" | grep -v "test_" | grep -v "/migrations/" | xargs grep -l "from typing.*import.*[^d]Dict\\|from typing.*import.*List\\|from typing.*import.*Union" 2>/dev/null || echo "") && if [ -n "$FOUND" ]; then echo "$FOUND"; echo "  Please import dict instead of Dict, list instead of List, and the logical OR operator"; exit 1; else echo "No problematic imports found!"; exit 0; fi'
         language: system
         types: [python]
         pass_filenames: false
-        exclude: ^py/migrations/
 
   - repo: local
     hooks:
       - id: check-print-statements
         name: Check for print statements
-        entry: bash -c 'echo "Checking for print statements..." && find . -name "*.py" ! -path "./py/.venv/*" ! -path "./py/core/examples/*" ! -path "./py/migrations/*" ! -path "./py/tests/*" ! -path "**/examples.py" ! -path "**/test_*"  | xargs grep -n "print(" || exit 0 && echo "Found print statements!" && exit 1'
+        entry: bash -c 'echo "Checking for print statements..." && FOUND=$(cd "$(git rev-parse --show-toplevel)" && find . -path "*/py/*.py" | grep -v "venv" | grep -v "/.venv/" | grep -v "/site-packages/" | grep -v "test_" | grep -v "/core/examples/" | grep -v "/migrations/" | grep -v "/tests/" | grep -v "/examples.py" | xargs grep -l "print(" 2>/dev/null || echo "") && if [ -n "$FOUND" ]; then echo "$FOUND"; echo "Found print statements!"; exit 1; else echo "No print statements found!"; exit 0; fi'
         language: system
         types: [python]
         pass_filenames: false
+        exclude: ^(.venv/|py/.venv/|py/core/examples/|py/migrations/|py/tests/)
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.6
@@ -33,16 +38,17 @@ repos:
       - id: ruff
         args: [--fix]
         files: ^py/
-        exclude: ^py/tests/
+        exclude: ^(py/tests/|.venv/)
       - id: ruff-format
         files: ^py/
-        exclude: ^py/tests/
+        exclude: ^(py/tests/|.venv/)
 
   - repo: local
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'cd py && python -m mypy --exclude "migrations" .'
+        entry: bash -c 'cd "$(git rev-parse --show-toplevel)/py" && python -m mypy --exclude "migrations" --exclude "venv*" --exclude "test_*" .'
         language: system
         types: [python]
         pass_filenames: false
+        exclude: ^(.venv/|migrations/)

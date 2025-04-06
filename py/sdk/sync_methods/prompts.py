@@ -101,7 +101,7 @@ class PromptsSDK:
         if template:
             data["template"] = template
         if input_types:
-            data["input_types"] = json.dumps(input_types)
+            data["input_types"] = input_types
         response_dict = self.client._make_request(
             "PUT",
             f"prompts/{name}",

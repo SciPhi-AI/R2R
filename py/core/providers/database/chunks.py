@@ -26,17 +26,9 @@ from core.base.utils import _decorate_vector_type
 
 from .base import PostgresConnectionManager
 from .filters import apply_filters
+from .utils import psql_quote_literal
 
 logger = logging.getLogger()
-
-
-def psql_quote_literal(value: str) -> str:
-    """Safely quote a string literal for PostgreSQL to prevent SQL injection.
-
-    This is a simple implementation - in production, you should use proper parameterization
-    or your database driver's quoting functions.
-    """
-    return "'" + value.replace("'", "''") + "'"
 
 
 def index_measure_to_ops(
@@ -95,7 +87,51 @@ class PostgresChunksHandler(Handler):
         self.quantization_type = quantization_type
 
     async def create_tables(self):
-        # Check for old table name first
+        # First check if table already exists and validate dimensions
+        table_exists_query = """
+        SELECT EXISTS (
+            SELECT FROM pg_tables
+            WHERE schemaname = $1
+            AND tablename = $2
+        );
+        """
+        table_name = VectorTableName.CHUNKS
+        table_exists = await self.connection_manager.fetch_query(
+            table_exists_query, (self.project_name, table_name)
+        )
+
+        if len(table_exists) > 0 and table_exists[0]["exists"]:
+            # Table exists, check vector dimension
+            vector_dim_query = """
+            SELECT a.atttypmod as dimension
+            FROM pg_attribute a
+            JOIN pg_class c ON a.attrelid = c.oid
+            JOIN pg_namespace n ON c.relnamespace = n.oid
+            WHERE n.nspname = $1
+            AND c.relname = $2
+            AND a.attname = 'vec';
+            """
+
+            vector_dim_result = await self.connection_manager.fetch_query(
+                vector_dim_query, (self.project_name, table_name)
+            )
+
+            if vector_dim_result and len(vector_dim_result) > 0:
+                existing_dimension = vector_dim_result[0]["dimension"]
+                # In pgvector, dimension is stored as atttypmod - 4
+                if existing_dimension > 0:  # If it has a specific dimension
+                    # Compare with provided dimension
+                    if (
+                        self.dimension > 0
+                        and existing_dimension != self.dimension
+                    ):
+                        raise ValueError(
+                            f"Dimension mismatch: Table '{self.project_name}.{table_name}' was created with "
+                            f"dimension {existing_dimension}, but {self.dimension} was provided. "
+                            f"You must use the same dimension for existing tables."
+                        )
+
+        # Check for old table name
         check_query = """
         SELECT EXISTS (
             SELECT FROM pg_tables
@@ -422,7 +458,6 @@ class PostgresChunksHandler(Handler):
             OFFSET ${len(params) + 2}
             """
             params.extend([search_settings.limit, search_settings.offset])
-
         results = await self.connection_manager.fetch_query(query, params)
 
         return [

@@ -1,4 +1,9 @@
-from .auth import JwtAuthProvider, R2RAuthProvider, SupabaseAuthProvider
+from .auth import (
+    ClerkAuthProvider,
+    JwtAuthProvider,
+    R2RAuthProvider,
+    SupabaseAuthProvider,
+)
 from .crypto import (
     BcryptCryptoConfig,
     BCryptCryptoProvider,
@@ -33,12 +38,16 @@ from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+from .scheduler import (
+    APSchedulerProvider,
+)
 
 __all__ = [
     # Auth
     "R2RAuthProvider",
     "SupabaseAuthProvider",
     "JwtAuthProvider",
+    "ClerkAuthProvider",
     # Ingestion
     "R2RIngestionProvider",
     "R2RIngestionConfig",
@@ -60,12 +69,14 @@ __all__ = [
     "ConsoleMockEmailProvider",
     "SendGridEmailProvider",
     "MailerSendEmailProvider",
-    # Orchestration
-    "HatchetOrchestrationProvider",
-    "SimpleOrchestrationProvider",
     # LLM
     "AnthropicCompletionProvider",
     "OpenAICompletionProvider",
     "R2RCompletionProvider",
     "LiteLLMCompletionProvider",
+    # Orchestration
+    "HatchetOrchestrationProvider",
+    "SimpleOrchestrationProvider",
+    # Scheduler
+    "APSchedulerProvider",
 ]

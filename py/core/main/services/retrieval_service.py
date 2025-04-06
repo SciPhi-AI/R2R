@@ -1277,6 +1277,7 @@ class RetrievalService(Service):
         max_tool_context_length: int = 32_768,
         research_tools: Optional[list[str]] = None,
         research_generation_config: Optional[GenerationConfig] = None,
+        needs_initial_conversation_name: Optional[bool] = None,
         mode: Optional[Literal["rag", "research"]] = "rag",
     ):
         """
@@ -1379,14 +1380,21 @@ class RetrievalService(Service):
 
             # Process conversation data
             ids = []
-            needs_conversation_name = False
-
             if conversation_id:  # Fetch the existing conversation
                 try:
                     conversation_messages = await self.providers.database.conversations_handler.get_conversation(
                         conversation_id=conversation_id,
                     )
-                    needs_conversation_name = len(conversation_messages) == 0
+                    if needs_initial_conversation_name is None:
+                        overview = await self.providers.database.conversations_handler.get_conversations_overview(
+                            offset=0,
+                            limit=1,
+                            conversation_ids=[conversation_id],
+                        )
+                        if overview.get("total_entries", 0) > 0:
+                            needs_initial_conversation_name = (
+                                overview.get("results")[0].get("name") is None  # type: ignore
+                            )
                 except Exception as e:
                     logger.error(f"Error fetching conversation: {str(e)}")
 
@@ -1406,7 +1414,7 @@ class RetrievalService(Service):
             else:  # Create new conversation
                 conversation_response = await self.providers.database.conversations_handler.create_conversation()
                 conversation_id = conversation_response.id
-                needs_conversation_name = True
+                needs_initial_conversation_name = True
 
             if message:
                 messages.append(message)
@@ -1533,7 +1541,7 @@ class RetrievalService(Service):
                         )
 
                         # Generate conversation name if needed
-                        if needs_conversation_name:
+                        if needs_initial_conversation_name:
                             try:
                                 prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict())}"
                                 conversation_name = (
@@ -1640,7 +1648,7 @@ class RetrievalService(Service):
                 )
 
                 # Generate conversation name if needed
-                if needs_conversation_name:
+                if needs_initial_conversation_name:
                     conversation_name = None
                     try:
                         prompt = f"Generate a succinct name (3-6 words) for this conversation, given the first input mesasge here = {str(message.to_dict() if message else {})}"
@@ -1774,9 +1782,12 @@ class RetrievalService(Service):
                 ]
 
                 user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_and_then_or[1][
-                    "collection_ids"
-                ]["$overlap"]
+                collection_ids = [
+                    UUID(ele)
+                    for ele in filter_starts_with_and_then_or[1][
+                        "collection_ids"
+                    ]["$overlap"]
+                ]
                 return user_id, [str(ele) for ele in collection_ids]
             except Exception as e:
                 logger.error(
@@ -1787,8 +1798,11 @@ class RetrievalService(Service):
         elif filter_starts_with_or:
             try:
                 user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
-                collection_ids = filter_starts_with_or[1]["collection_ids"][
-                    "$overlap"
+                collection_ids = [
+                    UUID(ele)
+                    for ele in filter_starts_with_or[1]["collection_ids"][
+                        "$overlap"
+                    ]
                 ]
                 return user_id, [str(ele) for ele in collection_ids]
             except Exception as e:

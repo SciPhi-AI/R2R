@@ -1,6 +1,4 @@
-import base64
 import copy
-import io
 import json
 import logging
 import os
@@ -11,7 +9,6 @@ from typing import (
     AsyncGenerator,
     Generator,
     Optional,
-    Tuple,
 )
 
 from anthropic import Anthropic, AsyncAnthropic
@@ -28,127 +25,14 @@ from anthropic.types import (
 from core.base.abstractions import GenerationConfig, LLMChatCompletion
 from core.base.providers.llm import CompletionConfig, CompletionProvider
 
+from .utils import resize_base64_image
+
 logger = logging.getLogger(__name__)
-
-# Try to import PIL for image processing
-try:
-    from PIL import Image
-
-    PILLOW_AVAILABLE = True
-except ImportError:
-    logger.warning(
-        "PIL/Pillow not installed. Image resizing will be disabled."
-    )
-    PILLOW_AVAILABLE = False
 
 
 def generate_tool_id() -> str:
     """Generate a unique tool ID using UUID4."""
     return f"tool_{uuid.uuid4().hex[:12]}"
-
-
-def estimate_image_tokens(width: int, height: int) -> int:
-    """
-    Estimate the number of tokens an image will use based on Anthropic's formula.
-
-    Args:
-        width: Image width in pixels
-        height: Image height in pixels
-
-    Returns:
-        Estimated number of tokens
-    """
-    return int((width * height) / 750)
-
-
-def resize_base64_image(
-    base64_string: str,
-    max_size: Tuple[int, int] = (512, 512),
-    max_megapixels: float = 0.25,
-) -> str:
-    """Aggressively resize images with better error handling and debug output"""
-    logger.debug(
-        f"RESIZING NOW!!! Original length: {len(base64_string)} chars"
-    )
-
-    if not PILLOW_AVAILABLE:
-        logger.warning("PIL/Pillow not available, skipping image resize")
-        return base64_string[
-            :50000
-        ]  # Emergency truncation if PIL not available
-
-    # Decode base64 string to bytes
-    try:
-        image_data = base64.b64decode(base64_string)
-        image = Image.open(io.BytesIO(image_data))
-        logger.debug(f"Image opened successfully: {image.format} {image.size}")
-    except Exception as e:
-        logger.debug(f"Failed to decode/open image: {e}")
-        # Emergency fallback - truncate the base64 string to reduce tokens
-        if len(base64_string) > 50000:
-            return base64_string[:50000]
-        return base64_string
-
-    try:
-        width, height = image.size
-        current_megapixels = (width * height) / 1_000_000
-        logger.debug(
-            f"Original dimensions: {width}x{height} ({current_megapixels:.2f} MP)"
-        )
-
-        # MUCH more aggressive resizing for large images
-        if current_megapixels > 0.5:
-            max_size = (384, 384)
-            max_megapixels = 0.15
-            logger.debug("Large image detected! Using more aggressive limits")
-
-        # Calculate new dimensions with strict enforcement
-        # Always resize if the image is larger than we want
-        scale_factor = min(
-            max_size[0] / width,
-            max_size[1] / height,
-            (max_megapixels / current_megapixels) ** 0.5,
-        )
-
-        if scale_factor >= 1.0:
-            # No resize needed, but still compress
-            new_width, new_height = width, height
-        else:
-            # Apply scaling
-            new_width = max(int(width * scale_factor), 64)  # Min width
-            new_height = max(int(height * scale_factor), 64)  # Min height
-
-        # Always resize/recompress the image
-        logger.debug(f"Resizing to: {new_width}x{new_height}")
-        resized_image = image.resize((new_width, new_height), Image.LANCZOS)  # type: ignore
-
-        # Convert back to base64 with strong compression
-        buffer = io.BytesIO()
-        if image.format == "JPEG" or image.format is None:
-            # Apply very aggressive JPEG compression
-            quality = 50  # Very low quality to reduce size
-            resized_image.save(
-                buffer, format="JPEG", quality=quality, optimize=True
-            )
-        else:
-            # For other formats
-            resized_image.save(
-                buffer, format=image.format or "PNG", optimize=True
-            )
-
-        resized_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
-        logger.debug(
-            f"Resized base64 length: {len(resized_base64)} chars (reduction: {100 * (1 - len(resized_base64) / len(base64_string)):.1f}%)"
-        )
-        return resized_base64
-
-    except Exception as e:
-        logger.debug(f"Error during resize: {e}")
-        # If anything goes wrong, truncate the base64 to a reasonable size
-        if len(base64_string) > 50000:
-            return base64_string[:50000]
-        return base64_string
 
 
 def process_images_in_message(message: dict) -> dict:
@@ -245,7 +129,7 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
             elif image_data:
                 # Resize the image data if needed
                 resized_data = image_data.get("data", "")
-                if PILLOW_AVAILABLE and resized_data:
+                if resized_data:
                     resized_data = resize_base64_image(resized_data)
 
                 formatted_content.append(
@@ -283,17 +167,14 @@ def openai_message_to_anthropic_block(msg: dict) -> dict:
             ],
         }
 
-    # Default case - just return with string content
-    if isinstance(content, str):
-        return {"role": role, "content": content}
     return {"role": role, "content": content}
 
 
 class AnthropicCompletionProvider(CompletionProvider):
     def __init__(self, config: CompletionConfig, *args, **kwargs) -> None:
         super().__init__(config)
-        self.client = Anthropic()  # Synchronous client
-        self.async_client = AsyncAnthropic()  # Asynchronous client
+        self.client = Anthropic()
+        self.async_client = AsyncAnthropic()
         logger.debug("AnthropicCompletionProvider initialized successfully")
 
     def _get_base_args(
@@ -380,14 +261,6 @@ class AnthropicCompletionProvider(CompletionProvider):
                 "type": "enabled",
                 "budget_tokens": generation_config.thinking_budget,
             }
-        # elif generation_config.model == "anthropic/claude-3-7-sonnet-20250219":
-        #     logger.warning("Claude 3.7 selected without extended thinking enabled. Enabling extended thinking with default budget of 2048 tokens.")
-        #     generation_config.extended_thinking = True
-        #     args["thinking"] = {
-        #         "type": "enabled",
-        #         "budget_tokens": 2048,
-        #     }
-        # -----------------------------------
         return args
 
     def _preprocess_messages(self, messages: list[dict]) -> list[dict]:
@@ -844,7 +717,7 @@ class AnthropicCompletionProvider(CompletionProvider):
 
     def _execute_task_sync_nonstreaming(
         self, args: dict[str, Any]
-    ) -> LLMChatCompletion:
+    ):  # -> LLMChatCompletion:  # FIXME: LLMChatCompletion is an object from the OpenAI API, which causes a validation error
         """Non-streaming synchronous call."""
         try:
             response = self.client.messages.create(**args)
@@ -880,13 +753,11 @@ class AnthropicCompletionProvider(CompletionProvider):
                     model_name = model_name.split("anthropic/")[-1]
 
                 for event in stream:
-                    chunks = self._process_stream_event(
+                    yield from self._process_stream_event(
                         event=event,
                         buffer_data=buffer_data,
                         model_name=model_name.split("anthropic/")[-1],
                     )
-                    for chunk in chunks:
-                        yield chunk
         except Exception as e:
             logger.error(f"Anthropic sync streaming call failed: {e}")
             raise
@@ -965,11 +836,10 @@ class AnthropicCompletionProvider(CompletionProvider):
             # Handle text deltas
             elif delta_type == "text_delta" and hasattr(delta_obj, "text"):
                 text_chunk = delta_obj.text  # type: ignore
-                if not buffer_data["is_collecting_tool"]:
-                    if text_chunk:
-                        chunk = make_base_chunk()
-                        chunk["choices"][0]["delta"] = {"content": text_chunk}
-                        chunks.append(chunk)
+                if not buffer_data["is_collecting_tool"] and text_chunk:
+                    chunk = make_base_chunk()
+                    chunk["choices"][0]["delta"] = {"content": text_chunk}
+                    chunks.append(chunk)
 
             # Handle partial JSON for tools
             elif hasattr(delta_obj, "partial_json"):

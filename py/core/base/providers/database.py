@@ -114,6 +114,12 @@ class LimitSettings(BaseModel):
         )
 
 
+class MaintenanceSettings(BaseModel):
+    vacuum_schedule: str = "0 3 * * *"  # Run at 3 AM every day by default
+    vacuum_analyze: bool = True
+    vacuum_full: bool = False
+
+
 class DatabaseConfig(ProviderConfig):
     """A base database configuration class."""
 
@@ -146,6 +152,9 @@ class DatabaseConfig(ProviderConfig):
     limits: LimitSettings = LimitSettings(
         global_per_min=60, route_per_min=20, monthly_limit=10000
     )
+
+    # Maintenance settings
+    maintenance: MaintenanceSettings = MaintenanceSettings()
     route_limits: dict[str, LimitSettings] = {}
     user_limits: dict[UUID, LimitSettings] = {}
 

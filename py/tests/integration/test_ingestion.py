@@ -151,6 +151,7 @@ def client(config):
     [
         # ("bmp", "core/examples/supported_file_types/bmp.bmp"), ---> why is this failing?
         ("csv", "core/examples/supported_file_types/csv.csv"),
+        ("css", "core/examples/supported_file_types/css.css"),
         ("doc", "core/examples/supported_file_types/doc.doc"),
         # ("docx", "core/examples/supported_file_types/docx.docx"),
         ("eml", "core/examples/supported_file_types/eml.eml"),
@@ -158,6 +159,7 @@ def client(config):
         ("heic", "core/examples/supported_file_types/heic.heic"),
         ("html", "core/examples/supported_file_types/html.html"),
         ("json", "core/examples/supported_file_types/json.json"),
+        ("js", "core/examples/supported_file_types/js.js"),
         ("jpeg", "core/examples/supported_file_types/jpeg.jpeg"),
         ("jpg", "core/examples/supported_file_types/jpg.jpg"),
         ("md", "core/examples/supported_file_types/md.md"),
@@ -169,10 +171,12 @@ def client(config):
         ("png", "core/examples/supported_file_types/png.png"),
         # ("ppt", "core/examples/supported_file_types/ppt.ppt"),
         # ("pptx", "core/examples/supported_file_types/pptx.pptx"),
+        ("py", "core/examples/supported_file_types/py.py"),
         ("rst", "core/examples/supported_file_types/rst.rst"),
         ("rtf", "core/examples/supported_file_types/rtf.rtf"),
         # ("tiff", "core/examples/supported_file_types/tiff.tiff"),
         ("txt", "core/examples/supported_file_types/txt.txt"),
+        ("ts", "core/examples/supported_file_types/ts.ts"),
         ("tsv", "core/examples/supported_file_types/tsv.tsv"),
         ("xls", "core/examples/supported_file_types/xls.xls"),
         ("xlsx", "core/examples/supported_file_types/xlsx.xlsx"),
@@ -330,3 +334,131 @@ def test_metadata_handling(client: R2RClient):
         client.documents.delete(id=doc_id)
     except Exception:
         raise
+
+def test_img_ingestion(client: R2RClient):
+    """Test ingestion with metadata."""
+
+
+    client.documents.delete("65bd45b7-632b-5874-9510-82b4e97b4abc")
+
+    result = client.documents.create(
+        file_path="core/examples/supported_file_types/png.png",
+        metadata={"title": "Test Document", "author": "Test Author"},
+        ingestion_config={"vision_img_model":"openai/gpt-4o"},
+        run_with_orchestration=False
+    )
+
+    client.documents.delete(result.results.document_id)
+
+    result = client.documents.create(
+        file_path="core/examples/supported_file_types/png.png",
+        metadata={"title": "Test Document", "author": "Test Author"},
+        ingestion_config={"vision_img_model":"anthropic/anthropic/claude-3-7-sonnet-20250219"},
+        run_with_orchestration=False
+    )
+
+    client.documents.delete(result.results.document_id)
+
+def test_metadata_title_handling(client: R2RClient):
+    """Test that document title in metadata is properly stored and retrievable."""
+    # Test with raw text
+    raw_text_title = "Raw Text Title Test"
+    raw_text_metadata = {
+        "title": raw_text_title,
+        "author": "Test Author",
+        "custom_field": "custom_value",
+    }
+
+    # Create document with raw text
+    raw_text_response = client.documents.create(
+        raw_text="This is test text with title " + str(time.time()),
+        ingestion_mode="fast",
+        metadata=raw_text_metadata,
+        run_with_orchestration=False
+    )
+
+    assert raw_text_response is not None
+    assert raw_text_response.results is not None
+    raw_text_doc_id = raw_text_response.results.document_id
+
+    # Wait for ingestion to complete
+    start_time = time.time()
+    while True:
+        try:
+            retrieval_response = client.documents.retrieve(id=raw_text_doc_id)
+            if retrieval_response.results.ingestion_status == "success":
+                break
+            elif retrieval_response.results.ingestion_status == "failed":
+                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+        except R2RException:
+            if time.time() - start_time > 600:
+                raise TimeoutError("Ingestion didn't complete within timeout")
+            time.sleep(2)
+
+    # Verify document in list has correct title
+    list_response = client.documents.list()
+    raw_text_doc = next((doc for doc in list_response.results
+                        if doc.id == raw_text_doc_id), None)
+    assert raw_text_doc is not None
+    assert raw_text_doc.title == raw_text_title
+
+    # Verify retrieved document has correct title in metadata
+    raw_text_doc_detail = client.documents.retrieve(id=raw_text_doc_id)
+    # Update metadata with server assigned version
+    raw_text_metadata["version"] = "v0"
+    assert raw_text_doc_detail.results.metadata == raw_text_metadata
+
+    # Test with chunks
+    chunks_title = "Chunks Title Test"
+    chunks_metadata = {
+        "title": chunks_title,
+        "author": "Test Author",
+        "custom_field": "custom_value",
+    }
+
+    # Create document with chunks
+    chunks = ["This is chunk 1 " + str(time.time()),
+              "This is chunk 2",
+              "This is chunk 3"]
+
+    chunks_response = client.documents.create(
+        chunks=chunks,
+        ingestion_mode="fast",
+        metadata=chunks_metadata,
+        run_with_orchestration=False
+    )
+
+    assert chunks_response is not None
+    assert chunks_response.results is not None
+    chunks_doc_id = chunks_response.results.document_id
+
+    # Wait for ingestion to complete
+    start_time = time.time()
+    while True:
+        try:
+            retrieval_response = client.documents.retrieve(id=chunks_doc_id)
+            if retrieval_response.results.ingestion_status == "success":
+                break
+            elif retrieval_response.results.ingestion_status == "failed":
+                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+        except R2RException:
+            if time.time() - start_time > 600:
+                raise TimeoutError("Ingestion didn't complete within timeout")
+            time.sleep(2)
+
+    # Verify document in list has correct title
+    list_response = client.documents.list()
+    chunks_doc = next((doc for doc in list_response.results
+                      if doc.id == chunks_doc_id), None)
+    assert chunks_doc is not None
+    assert chunks_doc.title == chunks_title
+
+    # Verify retrieved document has correct title in metadata
+    chunks_doc_detail = client.documents.retrieve(id=chunks_doc_id)
+    # Update metadata with server assigned version
+    chunks_metadata["version"] = "v0"
+    assert chunks_doc_detail.results.metadata == chunks_metadata
+
+    # Clean up
+    client.documents.delete(id=raw_text_doc_id)
+    client.documents.delete(id=chunks_doc_id)

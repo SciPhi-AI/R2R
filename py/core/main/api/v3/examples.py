@@ -406,8 +406,8 @@ agent_app_examples = {
             "lang": "Python",
             "source": textwrap.dedent(
                 """
-from r2r import R2RClient
 from r2r import (
+    R2RClient,
     ThinkingEvent,
     ToolCallEvent,
     ToolResultEvent,

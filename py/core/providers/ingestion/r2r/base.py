@@ -16,14 +16,13 @@ from core.base import (
     RecursiveCharacterTextSplitter,
     TextSplitter,
 )
-from core.utils import generate_extraction_id
-
-from ...database import PostgresDatabaseProvider
-from ...llm import (
+from core.providers.database import PostgresDatabaseProvider
+from core.providers.llm import (
     LiteLLMCompletionProvider,
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from core.utils import generate_extraction_id
 
 logger = logging.getLogger()
 
@@ -67,8 +66,12 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.P7S: parsers.P7SParser,
         DocumentType.RST: parsers.RSTParser,
         DocumentType.RTF: parsers.RTFParser,
-        DocumentType.TIFF: parsers.TIFFParser,
+        DocumentType.TIFF: parsers.ImageParser,
         DocumentType.XLS: parsers.XLSParser,
+        DocumentType.PY: parsers.PythonParser,
+        DocumentType.CSS: parsers.CSSParser,
+        DocumentType.JS: parsers.JSParser,
+        DocumentType.TS: parsers.TSParser,
     }
 
     EXTRA_PARSERS = {
@@ -214,7 +217,7 @@ class R2RIngestionProvider(IngestionProvider):
                 chunk.page_content if hasattr(chunk, "page_content") else chunk
             )
 
-    async def parse(  # type: ignore
+    async def parse(
         self,
         file_content: bytes,
         document: Document,
@@ -243,6 +246,8 @@ class R2RIngestionProvider(IngestionProvider):
                     raise ValueError(
                         "Only Zerox PDF parser override is available."
                     )
+
+                # Collect content from VLMPDFParser
                 async for chunk in self.parsers[
                     f"zerox_{DocumentType.PDF.value}"
                 ].ingest(file_content, **ingestion_config_override):
@@ -252,7 +257,64 @@ class R2RIngestionProvider(IngestionProvider):
                         chunk
                     ):  # Handle string output for backward compatibility
                         contents.append({"content": chunk})
+
+                if (
+                    contents
+                    and document.document_type == DocumentType.PDF
+                    and parser_overrides.get(DocumentType.PDF.value) == "zerox"
+                ):
+                    text_splitter = self._build_text_splitter(
+                        ingestion_config_override
+                    )
+
+                    iteration = 0
+
+                    sorted_contents = [
+                        item
+                        for item in sorted(
+                            contents, key=lambda x: x.get("page_number", 0)
+                        )
+                        if isinstance(item.get("content"), str)
+                    ]
+
+                    for content_item in sorted_contents:
+                        page_num = content_item.get("page_number", 0)
+                        page_content = content_item["content"]
+
+                        page_chunks = text_splitter.create_documents(
+                            [page_content]
+                        )
+
+                        # Create document chunks for each split piece
+                        for chunk in page_chunks:
+                            metadata = {
+                                **document.metadata,
+                                "chunk_order": iteration,
+                                "page_number": page_num,
+                            }
+
+                            extraction = DocumentChunk(
+                                id=generate_extraction_id(
+                                    document.id, iteration
+                                ),
+                                document_id=document.id,
+                                owner_id=document.owner_id,
+                                collection_ids=document.collection_ids,
+                                data=chunk.page_content,
+                                metadata=metadata,
+                            )
+                            iteration += 1
+                            yield extraction
+
+                    logger.debug(
+                        f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
+                        f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
+                        f"into {iteration} extractions in t={time.time() - t0:.2f} seconds using page-by-page splitting."
+                    )
+                    return
+
             else:
+                # Standard parsing for non-override cases
                 async for text in self.parsers[document.document_type].ingest(
                     file_content, **ingestion_config_override
                 ):
