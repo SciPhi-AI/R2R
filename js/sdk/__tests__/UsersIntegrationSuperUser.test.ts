@@ -18,7 +18,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
 
     await superUserClient.users.login({
       email: "admin@example.com",
-      password: "123Neo456*",
+      password: "change_me_immediately",
     });
 
     if (!fs.existsSync(TEST_OUTPUT_DIR)) {
@@ -35,7 +35,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
   test("Register a new user", async () => {
     const response = await client.users.create({
       email: "new_user@example.com",
-      password: "123Neo456*",
+      password: "change_me_immediately",
     });
 
     userId = response.results.id;
@@ -60,7 +60,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
   test("Login as a user", async () => {
     const response = await client.users.login({
       email: "new_user@example.com",
-      password: "123Neo456*",
+      password: "change_me_immediately",
     });
     expect(response.results).toBeDefined();
   });
@@ -80,14 +80,14 @@ describe("r2rClient V3 Users Integration Tests", () => {
   test("Login as a user after logout", async () => {
     const response = await client.users.login({
       email: "new_user@example.com",
-      password: "123Neo456*",
+      password: "change_me_immediately",
     });
     expect(response.results).toBeDefined();
   });
 
   test("Change a user's password", async () => {
     const response = await client.users.changePassword({
-      current_password: "123Neo456*",
+      current_password: "change_me_immediately",
       new_password: "i_was_changed_immediately",
     });
     expect(response.results).toBeDefined();

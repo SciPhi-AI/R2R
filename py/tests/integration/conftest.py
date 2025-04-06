@@ -13,7 +13,7 @@ class TestConfig:
         self.index_wait_time = 1.0
         self.chunk_creation_wait_time = 1.0
         self.superuser_email = "admin@example.com"
-        self.superuser_password = "123Neo456*"
+        self.superuser_password = "change_me_immediately"
         self.test_timeout = 30  # seconds
 
 
@@ -67,7 +67,7 @@ def config():
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
-        superuser_password = "123Neo456*"
+        superuser_password = "change_me_immediately"
 
     return TestConfig()
 
