@@ -27,7 +27,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Register user 1", async () => {
     const response = await client.users.create({
       email: "user1@example.com",
-      password: "change_me_immediately",
+      password: "123Neo456*",
     });
 
     user1Id = response.results.id;
