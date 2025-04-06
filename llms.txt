@@ -736,7 +736,7 @@ project_name = "your_project_name"
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 batch_size = 512
 rerank_model = "BAAI/bge-reranker-v2-m3"
@@ -834,7 +834,7 @@ R2R uses **LiteLLM** to manage embedding providers, allowing flexibility in sele
 ```toml
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 batch_size = 512
 rerank_model = "BAAI/bge-reranker-v2-m3"
@@ -3669,7 +3669,7 @@ Customize the embedding system through the `embedding` section in your `r2r.toml
 ```toml
 [embedding]
 provider = "litellm"  # defaults to "litellm"
-base_model = "openai/text-embedding-3-small"  # defaults to "openai/text-embedding-3-large"
+base_model = "openai/text-embedding-3-large"  # defaults to "openai/text-embedding-3-large"
 base_dimension = 512  # defaults to 3072
 batch_size = 512  # defaults to 128
 rerank_model = "BAAI/bge-reranker-v2-m3"  # defaults to None
@@ -3759,7 +3759,7 @@ R2R supports multiple LiteLLM providers:
 ```toml
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 
 # Environment Variables
@@ -3769,7 +3769,7 @@ export OPENAI_API_KEY=your_openai_key
 
 **Supported Models:**
 
-- `openai/text-embedding-3-small`
+- `openai/text-embedding-3-large`
 - `openai/text-embedding-3-large`
 - `openai/text-embedding-ada-002`
 
@@ -11068,7 +11068,7 @@ batch_size = 256
 
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false

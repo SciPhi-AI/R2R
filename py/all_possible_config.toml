@@ -175,7 +175,7 @@ kg_store_path = ""
 ################################################################################
 [embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 # Optional reranking settings (leave empty if not used)
 rerank_model = ""
@@ -202,7 +202,7 @@ rerank_transformer_type = ""
 ################################################################################
 [completion_embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-small"
+base_model = "openai/text-embedding-3-large"
 base_dimension = 512
 batch_size = 1
 add_title_as_prefix = true

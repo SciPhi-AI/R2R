@@ -19,12 +19,12 @@ logger = logging.getLogger()
 class OpenAIEmbeddingProvider(EmbeddingProvider):
     MODEL_TO_TOKENIZER = {
         "text-embedding-ada-002": "cl100k_base",
-        "text-embedding-3-small": "cl100k_base",
+        "text-embedding-3-large": "cl100k_base",
         "text-embedding-3-large": "cl100k_base",
     }
     MODEL_TO_DIMENSIONS = {
         "text-embedding-ada-002": [1536],
-        "text-embedding-3-small": [512, 1536],
+        "text-embedding-3-large": [512, 1536],
         "text-embedding-3-large": [256, 1024, 3072],
     }
 
