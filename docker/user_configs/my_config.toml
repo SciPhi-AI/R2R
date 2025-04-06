@@ -1,5 +1,5 @@
 [app]
-# app setting are global available like `r2r_config.agent.app`
+# app settings are global available like `r2r_config.agent.app`
 # project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
 default_max_documents_per_user = 10_000
 default_max_chunks_per_user = 10_000_000
@@ -18,7 +18,7 @@ quality_llm = "azure/gpt-4o"
 vlm = "azure/gpt-4o"
 
 # LLM used for transcription
-audio_lm = "azure/whisper"
+audio_lm = "azure/whisper-1"
 
 # Reasoning model, used for `research` agent
 reasoning_llm = "azure/o3-mini"
@@ -36,7 +36,6 @@ research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
 provider = "r2r"
-secret_key=""
 access_token_lifetime_in_minutes = 60000
 refresh_token_lifetime_in_days = 7
 require_authentication = true
@@ -73,9 +72,12 @@ collection_summary_prompt = "collection_summary"
   [database.graph_enrichment_settings]
     graph_communities_prompt = "graph_communities"
 
+  [database.maintenance]
+    vacuum_schedule = "0 3 * * *"  # Run at 3:00 AM daily
+
 [embedding]
 provider = "litellm"
-# For basic applications, use `openai/text-embedding-3-large` with `base_dimension = 512`
+# For basic applications, use `azure/text-embedding-3-large` with `base_dimension = 512`
 # For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
 base_model = "azure/text-embedding-3-large"
 base_dimension = 512
@@ -109,15 +111,22 @@ automatic_extraction = true # enable automatic extraction of entities and relati
     n_chunks = 2 # the number of chunks (both preceding and succeeding) to use in enrichment
 
   [ingestion.extra_parsers]
-    pdf = "zerox"
+    pdf = ["zerox", "ocr"]
 
 [logging]
 provider = "r2r"
 log_table = "logs"
 log_info_table = "log_info"
 
+[ocr]
+provider = "mistral"
+model = "mistral-ocr-latest"
+
 [orchestration]
 provider = "simple"
 
 [email]
 provider = "console_mock" # `smtp` | `sendgrid` supported
+
+[scheduler]
+provider = "apscheduler"
