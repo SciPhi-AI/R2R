@@ -31,7 +31,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   test("Login as a user", async () => {
     const response = await client.users.login({
       email: "system_integration_test_user@example.com",
-      password: "change_me_immediately",
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
@@ -52,7 +52,7 @@ describe("r2rClient V3 System Integration Tests User", () => {
   test("Delete a user", async () => {
     const response = await client.users.delete({
       id: userId,
-      password: "change_me_immediately",
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
