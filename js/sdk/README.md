@@ -56,7 +56,7 @@ const client = new r2rClient("http://localhost:7272");
 
 ```javascript
 const EMAIL = "admin@example.com";
-const PASSWORD = "change_me_immediately";
+const PASSWORD = "123Neo456*";
 console.log("Logging in...");
 await client.login(EMAIL, PASSWORD);
 ```

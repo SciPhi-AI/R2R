@@ -12,7 +12,7 @@ def config():
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
-        superuser_password = "change_me_immediately"
+        superuser_password = "123Neo456*"
 
     return TestConfig()
 
