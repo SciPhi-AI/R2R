@@ -56,6 +56,7 @@ jobs:
           - UsersIntegrationSuperUser.test.ts
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
