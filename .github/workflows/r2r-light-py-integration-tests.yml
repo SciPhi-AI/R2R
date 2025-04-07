@@ -54,7 +54,6 @@ jobs:
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
@@ -153,7 +152,6 @@ jobs:
 
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
