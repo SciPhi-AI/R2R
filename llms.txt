@@ -747,7 +747,7 @@ provider = "r2r"
 require_authentication = true
 require_email_verification = false
 default_admin_email = "admin@example.com"
-default_admin_password = "change_me_immediately"
+default_admin_password = "123Neo456*
 access_token_lifetime_in_minutes = 60
 refresh_token_lifetime_in_days = 7
 secret_key = "your-secret-key"
@@ -872,7 +872,7 @@ provider = "r2r"
 require_authentication = true
 require_email_verification = false
 default_admin_email = "admin@example.com"
-default_admin_password = "change_me_immediately"
+default_admin_password = "123Neo456*
 access_token_lifetime_in_minutes = 60
 refresh_token_lifetime_in_days = 7
 secret_key = "your-secret-key"
@@ -2896,7 +2896,7 @@ async function main() {
     ];
 
     const EMAIL = "admin@example.com";
-    const PASSWORD = "change_me_immediately";
+    const PASSWORD = "123Neo456*;
 
     console.log("Logging in...");
     await client.users.login(EMAIL, PASSWORD);
@@ -2962,7 +2962,7 @@ Authenticate the session using default superuser credentials.
 
 ```javascript
 const EMAIL = "admin@example.com";
-const PASSWORD = "change_me_immediately";
+const PASSWORD = "123Neo456*;
 
 console.log("Logging in...");
 await client.users.login(EMAIL, PASSWORD);
@@ -3299,7 +3299,7 @@ refresh_token_lifetime_in_days = 7
 require_authentication = true
 require_email_verification = false
 default_admin_email = "admin@example.com"
-default_admin_password = "change_me_immediately"
+default_admin_password = "123Neo456*
 ```
 
 - **`require_authentication`**: Set to `false` for development/testing; `true` for production.
@@ -3317,7 +3317,7 @@ from r2r import R2RClient
 client = R2RClient("http://localhost:7272")
 
 # Login as admin
-login_result = client.users.login("admin@example.com", "change_me_immediately")
+login_result = client.users.login("admin@example.com", "123Neo456*)
 
 # Access superuser features
 users_overview = client.users.list()
@@ -11018,7 +11018,7 @@ refresh_token_lifetime_in_days = 7
 require_authentication = false
 require_email_verification = false
 default_admin_email = "admin@example.com"
-default_admin_password = "change_me_immediately"
+default_admin_password = "123Neo456*
 
 [completion]
 provider = "litellm"

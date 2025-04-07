@@ -75,7 +75,7 @@ require_authentication = false
 require_email_verification = false
 # Default admin credentials
 default_admin_email = "admin@example.com"
-default_admin_password = "change_me_immediately"
+default_admin_password = "123Neo456*
 
 ################################################################################
 # Completion / LLM Generation Settings (CompletionConfig and nested GenerationConfig)
