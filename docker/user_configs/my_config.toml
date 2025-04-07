@@ -130,4 +130,3 @@ provider = "console_mock" # `smtp` | `sendgrid` supported
 
 [scheduler]
 provider = "apscheduler"
-
