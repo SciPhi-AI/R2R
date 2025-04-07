@@ -19,7 +19,7 @@ describe("r2rClient V3 Graphs Integration Tests", () => {
     client = new r2rClient(baseUrl);
     await client.users.login({
       email: "admin@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
 
     if (!fs.existsSync(TEST_OUTPUT_DIR)) {

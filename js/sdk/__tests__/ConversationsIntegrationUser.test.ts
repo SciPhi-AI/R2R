@@ -20,14 +20,14 @@ describe("r2rClient V3 Collections Integration Tests", () => {
 
     await client.users.login({
       email: "admin@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
   });
 
   test("Register user 1", async () => {
     const response = await client.users.create({
       email: "user1@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
 
     user1Id = response.results.id;
@@ -39,7 +39,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Login as a user 1", async () => {
     const response = await user1Client.users.login({
       email: "user1@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
@@ -47,7 +47,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Register user 2", async () => {
     const response = await client.users.create({
       email: "user2@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
 
     user2Id = response.results.id;
@@ -59,7 +59,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Login as a user 2", async () => {
     const response = await user2Client.users.login({
       email: "user2@example.com",
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
@@ -245,7 +245,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Delete user 1", async () => {
     const response = await client.users.delete({
       id: user1Id,
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
@@ -253,7 +253,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Delete user 2", async () => {
     const response = await client.users.delete({
       id: user2Id,
-      password: "123Neo456*,
+      password: "123Neo456*",
     });
     expect(response.results).toBeDefined();
   });
