@@ -10,7 +10,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
     client = new r2rClient(baseUrl);
     await client.users.login({
       email: "admin@example.com",
-      password: "123Neo456*",
+      password: "change_me_immediately",
     });
   });
 

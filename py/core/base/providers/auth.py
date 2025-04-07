@@ -29,7 +29,7 @@ class AuthConfig(ProviderConfig):
     require_authentication: bool = False
     require_email_verification: bool = False
     default_admin_email: str = "admin@example.com"
-    default_admin_password: str = "123Neo456*"
+    default_admin_password: str = "change_me_immediately"
     access_token_lifetime_in_minutes: Optional[int] = None
     refresh_token_lifetime_in_days: Optional[int] = None
 
