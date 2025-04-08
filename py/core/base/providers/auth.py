@@ -130,7 +130,6 @@ class AuthProvider(Provider, ABC):
             api_key: Optional[str] = Security(api_key_header),
         ) -> User:
             # If authentication is not required and no credentials are provided, return the default admin user
-            logger.debug(f"Authentication failed: No credentials provided. Base URL: {self.config.base_url}")
             if (
                 ((not self.config.require_authentication) or public)
                 and auth is None
