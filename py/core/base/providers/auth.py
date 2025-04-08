@@ -130,6 +130,7 @@ class AuthProvider(Provider, ABC):
             api_key: Optional[str] = Security(api_key_header),
         ) -> User:
             # If authentication is not required and no credentials are provided, return the default admin user
+            logger.debug(f"Authentication failed: No credentials provided. Base URL: {self.config.base_url}")
             if (
                 ((not self.config.require_authentication) or public)
                 and auth is None
@@ -137,7 +138,6 @@ class AuthProvider(Provider, ABC):
             ):
                 return await self._get_default_admin_user()
             if not auth and not api_key:
-                logger.debug(f"Authentication failed: No credentials provided. Base URL: {self.config.base_url}")
                 raise R2RException(
                     message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
                     status_code=401,
