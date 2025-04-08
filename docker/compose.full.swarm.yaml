@@ -386,7 +386,7 @@ services:
         tag: backend
 
   r2r-dashboard:
-    image: sciphiai/r2r-dashboard:1.0.2
+    image: sciphiai/r2r-dashboard:1.0.3
     environment:
       - NEXT_PUBLIC_R2R_DEPLOYMENT_URL=${R2R_DEPLOYMENT_URL:-http://localhost:7272}
       - NEXT_PUBLIC_HATCHET_DASHBOARD_URL=${HATCHET_DASHBOARD_URL:-http://localhost:${R2R_HATCHET_DASHBOARD_PORT:-7274}}

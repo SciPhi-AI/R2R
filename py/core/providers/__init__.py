@@ -34,9 +34,15 @@ from .llm import (
     OpenAICompletionProvider,
     R2RCompletionProvider,
 )
+from .ocr import (
+    MistralOCRProvider,
+)
 from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
+)
+from .scheduler import (
+    APSchedulerProvider,
 )
 
 __all__ = [
@@ -66,12 +72,16 @@ __all__ = [
     "ConsoleMockEmailProvider",
     "SendGridEmailProvider",
     "MailerSendEmailProvider",
-    # Orchestration
-    "HatchetOrchestrationProvider",
-    "SimpleOrchestrationProvider",
     # LLM
     "AnthropicCompletionProvider",
     "OpenAICompletionProvider",
     "R2RCompletionProvider",
     "LiteLLMCompletionProvider",
+    # OCR
+    "MistralOCRProvider",
+    # Orchestration
+    "HatchetOrchestrationProvider",
+    "SimpleOrchestrationProvider",
+    # Scheduler
+    "APSchedulerProvider",
 ]

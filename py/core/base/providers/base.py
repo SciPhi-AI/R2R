@@ -84,7 +84,7 @@ class AppConfig(InnerConfig):
 class ProviderConfig(BaseModel, ABC):
     """A base provider configuration class."""
 
-    app: AppConfig  # Add an app_config field
+    app: Optional[AppConfig] = None  # Add an app_config field
     extra_fields: dict[str, Any] = {}
     provider: Optional[str] = None
 

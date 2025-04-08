@@ -9,7 +9,8 @@ import unicodedata
 from io import BytesIO
 from typing import AsyncGenerator
 
-import pymupdf
+import pdf2image
+from mistralai.models import OCRResponse
 from pypdf import PdfReader
 
 from core.base.abstractions import GenerationConfig
@@ -18,31 +19,79 @@ from core.base.providers import (
     CompletionProvider,
     DatabaseProvider,
     IngestionConfig,
+    OCRProvider,
 )
 
 logger = logging.getLogger()
 
 
-class VLMPDFParser(AsyncParser[str | bytes]):
-    """A parser for PDF documents using vision models for page processing with PyMuPDF."""
+class OCRPDFParser(AsyncParser[str | bytes]):
+    """
+    A parser for PDF documents using Mistral's OCR for page processing.
+
+    Mistral supports directly processing PDF files, so this parser is a simple wrapper around the Mistral OCR API.
+    """
 
     def __init__(
         self,
         config: IngestionConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
+    ):
+        self.config = config
+        self.database_provider = database_provider
+        self.ocr_provider = ocr_provider
+
+    async def ingest(
+        self, data: str | bytes, **kwargs
+    ) -> AsyncGenerator[str, None]:
+        """Ingest PDF data and yield text from each page."""
+        try:
+            logger.info("Starting PDF ingestion using MistralOCRParser")
+
+            if isinstance(data, str):
+                response: OCRResponse = await self.ocr_provider.process_pdf(
+                    file_path=data
+                )
+            else:
+                response: OCRResponse = await self.ocr_provider.process_pdf(
+                    file_content=data
+                )
+
+            for page in response.pages:
+                yield {
+                    "content": page.markdown,
+                    "page_number": page.index + 1,  # Mistral is 0-indexed
+                }
+
+        except Exception as e:
+            logger.error(f"Error processing PDF with Mistral OCR: {str(e)}")
+            raise
+
+
+class VLMPDFParser(AsyncParser[str | bytes]):
+    """A parser for PDF documents using vision models for page processing."""
+
+    def __init__(
+        self,
+        config: IngestionConfig,
+        database_provider: DatabaseProvider,
+        llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
     ):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
         self.config = config
         self.vision_prompt_text = None
 
-    async def process_page(
-        self, image_data: bytes, page_num: int
-    ) -> dict[str, str]:
+    async def process_page(self, image, page_num: int) -> dict[str, str]:
         """Process a single PDF page using the vision model."""
         page_start = time.perf_counter()
         try:
+            img_byte_arr = BytesIO()
+            image.save(img_byte_arr, format="JPEG")
+            image_data = img_byte_arr.getvalue()
             # Convert image bytes to base64
             image_base64 = base64.b64encode(image_data).decode("utf-8")
 
@@ -50,7 +99,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
 
             # Configure generation parameters
             generation_config = GenerationConfig(
-                model=self.config.app.vlm,
+                model=self.config.vlm or self.config.app.vlm,
                 stream=False,
             )
 
@@ -166,61 +215,66 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             }
 
     async def ingest(
-        self, data: str | bytes, maintain_order: bool = True, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[dict[str, str | int], None]:
-        """Process PDF with PyMuPDF for better performance."""
+        """Process PDF as images using pdf2image."""
         ingest_start = time.perf_counter()
-        logger.info("Starting PDF ingestion using VLMPDFParser with PyMuPDF.")
+        logger.info("Starting PDF ingestion using VLMPDFParser.")
 
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_pdf_prompt_name
+                    prompt_name="vision_pdf"
                 )
             )
             logger.info("Retrieved vision prompt text from database.")
 
         try:
-            # Use a batch approach for better performance
-            batch_size = 20
+            # TODO: We should make this configurable
+            batch_size = 5
 
-            # Open PDF document with PyMuPDF
             if isinstance(data, str):
-                doc = pymupdf.open(data)
+                pdf_info = pdf2image.pdfinfo_from_path(data)
             else:
-                doc = pymupdf.open(stream=data, filetype="pdf")
+                pdf_bytes = BytesIO(data)
+                pdf_info = pdf2image.pdfinfo_from_bytes(pdf_bytes.getvalue())
 
-            max_pages = len(doc)
+            max_pages = pdf_info["Pages"]
             logger.info(f"PDF has {max_pages} pages to process")
 
-            # Process in batches
+            # Convert and process each batch of rasterized pages
             for batch_start in range(0, max_pages, batch_size):
                 batch_end = min(batch_start + batch_size, max_pages)
                 logger.info(
                     f"Processing batch: pages {batch_start + 1}-{batch_end}/{max_pages}"
                 )
 
-                # Create tasks for this batch
+                if isinstance(data, str):
+                    batch_images = pdf2image.convert_from_path(
+                        data,
+                        dpi=150,
+                        first_page=batch_start + 1,
+                        last_page=batch_end,
+                    )
+                else:
+                    pdf_bytes = BytesIO(data)
+                    batch_images = pdf2image.convert_from_bytes(
+                        pdf_bytes.getvalue(),
+                        dpi=150,
+                        first_page=batch_start + 1,
+                        last_page=batch_end,
+                    )
+
                 batch_tasks = []
-                for page_idx in range(batch_start, batch_end):
-                    page_num = page_idx + 1  # 1-indexed page numbers
-
-                    # Get page pixmap (render the page)
-                    page = doc[page_idx]
-                    pix = page.get_pixmap(dpi=150)
-
-                    # Convert to JPEG bytes directly
-                    img_data = pix.tobytes("jpeg")
-
-                    # Create task for processing this page
-                    batch_tasks.append(self.process_page(img_data, page_num))
+                for i, image in enumerate(batch_images):
+                    page_num = batch_start + i + 1
+                    batch_tasks.append(self.process_page(image, page_num))
 
                 # Process the batch concurrently
                 batch_results = await asyncio.gather(*batch_tasks)
 
-                # Yield results
-                for page_idx, result in enumerate(batch_results):
-                    page_num = batch_start + page_idx + 1
+                for i, result in enumerate(batch_results):
+                    page_num = batch_start + i + 1
                     yield {
                         "content": result.get("content", "") or "",
                         "page_number": page_num,
@@ -230,9 +284,6 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 import gc
 
                 gc.collect()
-
-            # Close the document
-            doc.close()
 
             total_elapsed = time.perf_counter() - ingest_start
             logger.info(
@@ -302,6 +353,7 @@ class PDFParserUnstructured(AsyncParser[str | bytes]):
         config: IngestionConfig,
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
+        ocr_provider: OCRProvider,
     ):
         self.database_provider = database_provider
         self.llm_provider = llm_provider

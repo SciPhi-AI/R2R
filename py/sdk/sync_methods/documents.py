@@ -1,16 +1,18 @@
 import json
+import logging
 import os
 import tempfile
 import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional
-from urllib.parse import urlparse
+from typing import Any, Optional  # Added list, dict for clarity
+from urllib.parse import urlparse  # Added quote for export filenames
 from uuid import UUID
 
 import requests
 
+# Assuming these models are correctly defined elsewhere
 from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -24,11 +26,25 @@ from shared.api.models import (
     WrappedRelationshipsResponse,
 )
 
-from ..models import IngestionMode, SearchMode, SearchSettings
+# Assuming these models exist and are correct
+from ..models import (
+    GraphCreationSettings,
+    IngestionMode,
+    SearchMode,
+    SearchSettings,
+)
+
+logger = logging.getLogger()
 
 
 class DocumentsSDK:
-    """SDK for interacting with documents in the v3 API."""
+    """
+    SDK for interacting with documents in the v3 API.
+
+    Note: Many methods have access control restrictions based on user roles (superuser),
+    document ownership, and collection membership. Refer to specific method documentation
+    and the API documentation for details.
+    """
 
     def __init__(self, client):
         self.client = client
@@ -39,22 +55,29 @@ class DocumentsSDK:
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
         id: Optional[str | UUID] = None,
-        ingestion_mode: Optional[str] = None,
+        # ingestion_mode: Optional[str] = None, # Replaced by ingestion_mode enum below
         collection_ids: Optional[list[str | UUID]] = None,
-        metadata: Optional[dict] = None,
-        ingestion_config: Optional[dict | IngestionMode] = None,
+        metadata: Optional[dict[str, Any]] = None,
+        ingestion_config: Optional[
+            dict | IngestionMode
+        ] = None,  # Type hint clarifies IngestionMode enum usage
         run_with_orchestration: Optional[bool] = True,
+        ingestion_mode: IngestionMode | str = IngestionMode.custom,
     ) -> WrappedIngestionResponse:
-        """Create a new document from either a file or content.
+        """Create a new document from either a file, raw text, or chunks.
+
+        Note: Access control might apply based on user limits (max documents, chunks, collections).
 
         Args:
-            file_path (Optional[str]): The file to upload, if any
-            content (Optional[str]): Optional text content to upload, if no file path is provided
-            id (Optional[str | UUID]): Optional ID to assign to the document
-            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
-            metadata (Optional[dict]): Optional metadata to assign to the document
-            ingestion_config (Optional[dict]): Optional ingestion configuration to use
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            file_path (Optional[str]): The path to the file to upload, if any.
+            raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
+            chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
+            id (Optional[str | UUID]): Optional ID to assign to the document.
+            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
+            metadata (Optional[dict]): Optional metadata to assign to the document.
+            ingestion_config (Optional[dict | IngestionMode]): Optional ingestion config or preset mode enum. Used when ingestion_mode='custom'.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
+            ingestion_mode (IngestionMode): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
 
         Returns:
             WrappedIngestionResponse
@@ -79,60 +102,90 @@ class DocumentsSDK:
             data["id"] = str(id)
         if metadata:
             data["metadata"] = json.dumps(metadata)
+
+        # Handle ingestion_config (used mainly for 'custom' mode overrides)
         if ingestion_config:
+            config_dict = {}
             if isinstance(ingestion_config, IngestionMode):
-                ingestion_config = {"mode": ingestion_config.value}
-            app_config: dict[str, Any] = (
-                {}
-                if isinstance(ingestion_config, dict)
-                else ingestion_config["app"]
-            )
-            ingestion_config = dict(ingestion_config)
-            ingestion_config["app"] = app_config
-            data["ingestion_config"] = json.dumps(ingestion_config)
+                # This seems less likely usage, but handle it.
+                # Usually, the mode is set by the ingestion_mode parameter.
+                config_dict = {"mode": ingestion_config.value}
+            elif isinstance(ingestion_config, dict):
+                config_dict = ingestion_config
+            else:
+                # Handle potential pydantic model if passed directly
+                try:
+                    config_dict = ingestion_config.model_dump(
+                        exclude_unset=True
+                    )
+                except AttributeError as e:
+                    raise TypeError(
+                        "ingestion_config must be a dict or IngestionMode enum"
+                    ) from e
+
+            data["ingestion_config"] = json.dumps(config_dict)
+
         if collection_ids:
-            collection_ids = [
+            collection_ids_str = [
                 str(collection_id) for collection_id in collection_ids
-            ]  # type: ignore
-            data["collection_ids"] = json.dumps(collection_ids)
+            ]
+            data["collection_ids"] = json.dumps(collection_ids_str)
         if run_with_orchestration is not None:
+            # Send as string 'true'/'false' as expected by Form(...)
             data["run_with_orchestration"] = str(run_with_orchestration)
-        if ingestion_mode is not None:
-            data["ingestion_mode"] = ingestion_mode
+
+        # Always send ingestion_mode enum value
+        data["ingestion_mode"] = (
+            ingestion_mode.value
+            if isinstance(ingestion_mode, IngestionMode)
+            else ingestion_mode
+        )
+
         if file_path:
+            # Check if file exists before opening
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"File not found at path: {file_path}")
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
+            # Extract filename for the multipart form
+            filename = os.path.basename(file_path)
             files = [
                 (
                     "file",
-                    (file_path, file_instance, "application/octet-stream"),
+                    (
+                        filename,
+                        file_instance,
+                        "application/octet-stream",
+                    ),  # Use actual filename
                 )
             ]
             try:
+                # _make_request should handle multipart/form-data when files are present
                 response_dict = self.client._make_request(
                     "POST",
                     "documents",
-                    data=data,
-                    files=files,
+                    data=data,  # Form fields
+                    files=files,  # File part
                     version="v3",
                 )
             finally:
                 # Ensure we close the file after the request is complete
                 file_instance.close()
         elif raw_text:
-            data["raw_text"] = raw_text  # type: ignore
+            data["raw_text"] = raw_text
             response_dict = self.client._make_request(
                 "POST",
                 "documents",
-                data=data,
+                data=data,  # Form fields
                 version="v3",
             )
-        else:
+        else:  # chunks
+            # Ensure chunks is not None here, checked at the start
             data["chunks"] = json.dumps(chunks)
             response_dict = self.client._make_request(
                 "POST",
                 "documents",
-                data=data,
+                data=data,  # Form fields
                 version="v3",
             )
 
@@ -141,22 +194,24 @@ class DocumentsSDK:
     def append_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],  # More specific type hint
     ) -> WrappedDocumentResponse:
         """Append metadata to a document.
 
+        Note: Users can typically only modify metadata for documents they own. Superusers may have broader access.
+
         Args:
             id (str | UUID): ID of document to append metadata to
-            metadata (list[dict]): Metadata to append
+            metadata (list[dict]): Metadata entries (key-value pairs) to append
 
         Returns:
             WrappedDocumentResponse
         """
-        data = json.dumps(metadata)
+        # PATCH expects JSON body
         response_dict = self.client._make_request(
             "PATCH",
             f"documents/{str(id)}/metadata",
-            data=data,
+            json=metadata,  # Send as JSON body
             version="v3",
         )
 
@@ -165,19 +220,24 @@ class DocumentsSDK:
     def replace_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],  # More specific type hint
     ) -> WrappedDocumentResponse:
-        """Replace metadata for a document.
+        """Replace metadata for a document. This overwrites all existing metadata.
+
+        Note: Users can typically only replace metadata for documents they own. Superusers may have broader access.
 
         Args:
             id (str | UUID): ID of document to replace metadata for
-            metadata (list[dict]): The metadata that will replace the existing metadata
+            metadata (list[dict]): The new list of metadata entries (key-value pairs)
+
+        Returns:
+            WrappedDocumentResponse
         """
-        data = json.dumps(metadata)
+        # PUT expects JSON body
         response_dict = self.client._make_request(
             "PUT",
             f"documents/{str(id)}/metadata",
-            data=data,
+            json=metadata,  # Send as JSON body
             version="v3",
         )
 
@@ -187,7 +247,9 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> WrappedDocumentResponse:
-        """Get a specific document by ID.
+        """Get details for a specific document by ID.
+
+        Note: Users can only retrieve documents they own or have access to through collections. Superusers can retrieve any document.
 
         Args:
             id (str | UUID): ID of document to retrieve
@@ -200,6 +262,11 @@ class DocumentsSDK:
             f"documents/{str(id)}",
             version="v3",
         )
+        # TODO: Add check for non-dict response if _make_request can return raw bytes
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
 
         return WrappedDocumentResponse(**response_dict)
 
@@ -207,13 +274,35 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> BytesIO:
+        """Download a document's original file content.
+
+        Note: Users can only download documents they own or have access to through collections.
+
+        Args:
+            id (str | UUID): ID of document to download
+
+        Returns:
+            BytesIO: In-memory bytes buffer containing the document's file content.
+        """
         response = self.client._make_request(
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
+            # Add headers or params if _make_request needs hint for raw response
+            # headers={"Accept": "*/*"} # Might be needed depending on _make_request impl
         )
+        # _make_request might return dict on error, check type
         if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+            # Attempt to log or raise a more informative error
+            error_message = f"Expected BytesIO response, but received type {type(response)}."
+            if isinstance(response, dict) and "error" in response:
+                error_message += f" Content: {response.get('error')}"
+            elif isinstance(response, dict) and "message" in response:
+                error_message += f" Content: {response.get('message')}"
+
+            raise ValueError(
+                error_message, response
+            )  # Include response for debugging
         return response
 
     def download_zip(
@@ -222,197 +311,247 @@ class DocumentsSDK:
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
         output_path: Optional[str | Path] = None,
-    ) -> BytesIO | None:
-        """Download multiple documents as a zip file."""
+    ) -> Optional[BytesIO]:
+        """Download multiple documents as a zip file.
+
+        Note: Access control applies. Non-superusers might be restricted and may need to provide document_ids.
+
+        Args:
+            document_ids (Optional[list[str | UUID]]): IDs to include. May be required for non-superusers.
+            start_date (Optional[datetime]): Filter documents created on or after this date.
+            end_date (Optional[datetime]): Filter documents created on or before this date.
+            output_path (Optional[str | Path]): If provided, save the zip file to this path and return None. Otherwise, return BytesIO.
+
+        Returns:
+            Optional[BytesIO]: BytesIO object with zip content if output_path is None, else None.
+        """
         params: dict[str, Any] = {}
         if document_ids:
+            # Ensure IDs are strings for the query parameter
             params["document_ids"] = [str(doc_id) for doc_id in document_ids]
         if start_date:
             params["start_date"] = start_date.isoformat()
         if end_date:
             params["end_date"] = end_date.isoformat()
 
-        response = self.client._make_request(
+        response_bytes = self.client._make_request(
             "GET",
             "documents/download_zip",
             params=params,
             version="v3",
+            # headers={"Accept": "application/zip"} # Might be needed
         )
 
-        if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+        if not isinstance(response_bytes, BytesIO):
+            error_message = f"Expected BytesIO response for zip download, but received type {type(response_bytes)}."
+            if isinstance(response_bytes, dict):
+                error_message += f" Content: {response_bytes}"  # Log dict content if possible
+            raise ValueError(error_message, response_bytes)
 
         if output_path:
-            output_path = (
-                Path(output_path)
-                if isinstance(output_path, str)
-                else output_path
-            )
-            with open(output_path, "wb") as f:
-                f.write(response.getvalue())
-            return None
+            output_path_obj = Path(output_path)
+            # Ensure parent directory exists
+            output_path_obj.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path_obj, "wb") as f:
+                f.write(response_bytes.getvalue())
+            return None  # Return None when saving to file
 
-        return response
+        return response_bytes  # Return BytesIO otherwise
 
     def export(
         self,
         output_path: str | Path,
         columns: Optional[list[str]] = None,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, Any]] = None,
         include_header: bool = True,
     ) -> None:
-        """Export documents to a CSV file, streaming the results directly to
-        disk.
+        """Export documents metadata to a CSV file, streaming the results directly to disk.
+
+        Note: This operation is typically restricted to superusers.
 
         Args:
-            output_path (str | Path): Local path where the CSV file should be saved
-            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
-            filters (Optional[dict]): Optional filters to apply when selecting documents
-            include_header (bool): Whether to include column headers in the CSV (default: True)
+            output_path (str | Path): Local path where the CSV file should be saved.
+            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns.
+            filters (Optional[dict]): Optional filters to apply when selecting documents.
+            include_header (bool): Whether to include column headers in the CSV (default: True).
 
         Returns:
             None
         """
-        # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
+        output_path_obj = Path(output_path)
+        output_path_obj.parent.mkdir(
+            parents=True, exist_ok=True
+        )  # Ensure directory exists
 
-        data: dict[str, Any] = {"include_header": include_header}
+        request_data: dict[str, Any] = {"include_header": include_header}
         if columns:
-            data["columns"] = columns
+            request_data["columns"] = columns
         if filters:
-            data["filters"] = filters
+            request_data["filters"] = (
+                filters  # Assuming filters are already JSON-serializable dict
+            )
 
-        # Stream response directly to file
-        with open(output_path, "wb") as f:
-            response = self.client.client.post(
-                f"{self.client.base_url}/v3/documents/export",
-                json=data,
+        # Use requests directly for streaming response to file
+        # Get auth header and base URL from the client instance
+        auth_header = self.client._get_auth_header()
+        base_url = self.client.base_url
+
+        try:
+            with requests.post(
+                f"{base_url}/v3/documents/export",
+                json=request_data,  # Send options as JSON body
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_header(),
+                    **auth_header,  # Include authentication
                 },
-            )
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Export failed with status {response.status_code}",
-                    response,
-                )
+                stream=True,  # Enable streaming response
+                timeout=self.client.timeout,  # Use client timeout
+            ) as response:
+                response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
 
-            for chunk in response.iter_bytes():
-                if chunk:
-                    f.write(chunk)
+                with open(output_path_obj, "wb") as f:
+                    for chunk in response.iter_content(
+                        chunk_size=8192
+                    ):  # Stream in chunks
+                        if chunk:  # Filter out keep-alive new chunks
+                            f.write(chunk)
+
+        except requests.exceptions.RequestException as e:
+            # Handle potential network errors, timeouts, etc.
+            raise ConnectionError(f"Export request failed: {e}") from e
+        except Exception as e:
+            # Catch other potential errors during file writing etc.
+            raise RuntimeError(f"An error occurred during export: {e}") from e
 
     def export_entities(
         self,
         id: str | UUID,
         output_path: str | Path,
         columns: Optional[list[str]] = None,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, Any]] = None,
         include_header: bool = True,
     ) -> None:
-        """Export documents to a CSV file, streaming the results directly to
-        disk.
+        """Export entities for a specific document to a CSV file, streaming to disk.
+
+        Note: Access control (superuser/owner) applies.
 
         Args:
-            output_path (str | Path): Local path where the CSV file should be saved
-            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
-            filters (Optional[dict]): Optional filters to apply when selecting documents
-            include_header (bool): Whether to include column headers in the CSV (default: True)
+            id (str | UUID): The ID of the document whose entities to export.
+            output_path (str | Path): Local path where the CSV file should be saved.
+            columns (Optional[list[str]]): Specific columns to export.
+            filters (Optional[dict]): Optional filters to apply.
+            include_header (bool): Whether to include column headers (default: True).
 
         Returns:
             None
         """
-        # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
+        output_path_obj = Path(output_path)
+        output_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
-        # Prepare request data
-        data: dict[str, Any] = {"include_header": include_header}
+        request_data: dict[str, Any] = {"include_header": include_header}
         if columns:
-            data["columns"] = columns
+            request_data["columns"] = columns
         if filters:
-            data["filters"] = filters
+            request_data["filters"] = filters
 
-        # Stream response directly to file
-        with open(output_path, "wb") as f:
-            response = self.client.client.post(
-                f"{self.client.base_url}/v3/documents/{str(id)}/entities/export",
-                json=data,
+        auth_header = self.client._get_auth_header()
+        base_url = self.client.base_url
+        doc_id_str = str(id)
+
+        try:
+            # ID goes into the URL path
+            with requests.post(
+                f"{base_url}/v3/documents/{doc_id_str}/entities/export",
+                json=request_data,  # Options in JSON body
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_header(),
+                    **auth_header,
                 },
-            )
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Export failed with status {response.status_code}",
-                    response,
-                )
-
-            for chunk in response.iter_bytes():
-                if chunk:
-                    f.write(chunk)
+                stream=True,
+                timeout=self.client.timeout,
+            ) as response:
+                response.raise_for_status()
+                with open(output_path_obj, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(
+                f"Export entities request failed: {e}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(
+                f"An error occurred during entity export: {e}"
+            ) from e
 
     def export_relationships(
         self,
         id: str | UUID,
         output_path: str | Path,
         columns: Optional[list[str]] = None,
-        filters: Optional[dict] = None,
+        filters: Optional[dict[str, Any]] = None,
         include_header: bool = True,
     ) -> None:
-        """Export document relationships to a CSV file, streaming the results
-        directly to disk.
+        """Export relationships for a specific document to a CSV file, streaming to disk.
+
+        Note: Access control (superuser/owner) applies.
 
         Args:
-            output_path (str | Path): Local path where the CSV file should be saved
-            columns (Optional[list[str]]): Specific columns to export. If None, exports default columns
-            filters (Optional[dict]): Optional filters to apply when selecting documents
-            include_header (bool): Whether to include column headers in the CSV (default: True)
+            id (str | UUID): The ID of the document whose relationships to export.
+            output_path (str | Path): Local path where the CSV file should be saved.
+            columns (Optional[list[str]]): Specific columns to export.
+            filters (Optional[dict]): Optional filters to apply.
+            include_header (bool): Whether to include column headers (default: True).
 
         Returns:
             None
         """
-        # Convert path to string if it's a Path object
-        output_path = (
-            str(output_path) if isinstance(output_path, Path) else output_path
-        )
+        output_path_obj = Path(output_path)
+        output_path_obj.parent.mkdir(parents=True, exist_ok=True)
 
-        # Prepare request data
-        data: dict[str, Any] = {"include_header": include_header}
+        request_data: dict[str, Any] = {"include_header": include_header}
         if columns:
-            data["columns"] = columns
+            request_data["columns"] = columns
         if filters:
-            data["filters"] = filters
+            request_data["filters"] = filters
 
-        # Stream response directly to file
-        with open(output_path, "wb") as f:
-            response = self.client.client.post(
-                f"{self.client.base_url}/v3/documents/{str(id)}/relationships/export",
-                json=data,
+        auth_header = self.client._get_auth_header()
+        base_url = self.client.base_url
+        doc_id_str = str(id)
+
+        try:
+            # ID goes into the URL path
+            with requests.post(
+                f"{base_url}/v3/documents/{doc_id_str}/relationships/export",
+                json=request_data,  # Options in JSON body
                 headers={
                     "Accept": "text/csv",
-                    **self.client._get_auth_header(),
+                    **auth_header,
                 },
-            )
-            if response.status_code != 200:
-                raise ValueError(
-                    f"Export failed with status {response.status_code}",
-                    response,
-                )
-
-            for chunk in response.iter_bytes():
-                if chunk:
-                    f.write(chunk)
+                stream=True,
+                timeout=self.client.timeout,
+            ) as response:
+                response.raise_for_status()
+                with open(output_path_obj, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(
+                f"Export relationships request failed: {e}"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(
+                f"An error occurred during relationship export: {e}"
+            ) from e
 
     def delete(
         self,
         id: str | UUID,
     ) -> WrappedBooleanResponse:
-        """Delete a specific document.
+        """Delete a specific document by ID. This also deletes associated chunks.
+
+        Note: Users can typically only delete documents they own. Superusers may have broader access.
 
         Args:
             id (str | UUID): ID of document to delete
@@ -425,7 +564,10 @@ class DocumentsSDK:
             f"documents/{str(id)}",
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedBooleanResponse(**response_dict)
 
     def list_chunks(
@@ -437,11 +579,13 @@ class DocumentsSDK:
     ) -> WrappedChunksResponse:
         """Get chunks for a specific document.
 
+        Note: Users can only access chunks from documents they own or have access to through collections.
+
         Args:
-            id (str | UUID): ID of document to retrieve chunks for
-            include_vectors (Optional[bool]): Whether to include vector embeddings in the response
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            id (str | UUID): ID of document to retrieve chunks for.
+            include_vectors (Optional[bool]): Whether to include vector embeddings (default: False).
+            offset (int, optional): Number of objects to skip. Defaults to 0.
+            limit (int, optional): Max number of objects to return (1-1000). Defaults to 100.
 
         Returns:
             WrappedChunksResponse
@@ -449,7 +593,7 @@ class DocumentsSDK:
         params = {
             "offset": offset,
             "limit": limit,
-            "include_vectors": include_vectors,
+            "include_vectors": include_vectors,  # Use the parameter name matching the router
         }
         response_dict = self.client._make_request(
             "GET",
@@ -457,22 +601,27 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedChunksResponse(**response_dict)
 
     def list_collections(
         self,
         id: str | UUID,
-        include_vectors: Optional[bool] = False,
+        # include_vectors: Optional[bool] = False, # Removed unused parameter
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
-        """List collections for a specific document.
+        """list collections associated with a specific document.
+
+        Note: This endpoint might be restricted to superusers depending on API implementation. Check API documentation.
 
         Args:
-            id (str | UUID): ID of document to retrieve collections for
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            id (str | UUID): ID of document to retrieve collections for.
+            offset (int, optional): Number of objects to skip. Defaults to 0.
+            limit (int, optional): Max number of objects to return (1-1000). Defaults to 100.
 
         Returns:
             WrappedCollectionsResponse
@@ -480,6 +629,7 @@ class DocumentsSDK:
         params = {
             "offset": offset,
             "limit": limit,
+            # No include_vectors here
         }
 
         response_dict = self.client._make_request(
@@ -488,59 +638,83 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedCollectionsResponse(**response_dict)
 
     def delete_by_filter(
         self,
-        filters: dict,
+        filters: dict[str, Any],
     ) -> WrappedBooleanResponse:
-        """Delete documents based on filters.
+        """Delete documents based on metadata filters.
+
+        Note: For non-superusers, deletion is implicitly limited to documents owned by the user, in addition to the provided filters.
 
         Args:
-            filters (dict): Filters to apply when selecting documents to delete
+            filters (dict): Filters to apply (e.g., `{"metadata.year": {"$lt": 2020}}`).
 
         Returns:
             WrappedBooleanResponse
         """
-        filters_json = json.dumps(filters)
+        # Send filters as JSON body for DELETE request
         response_dict = self.client._make_request(
             "DELETE",
             "documents/by-filter",
-            data=filters_json,
+            json=filters,  # Use json parameter for request body
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedBooleanResponse(**response_dict)
 
     def extract(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[
+            dict | GraphCreationSettings
+        ] = None,  # Use GraphCreationSettings if defined
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """Extract entities and relationships from a document.
+        """Triggers the extraction of entities and relationships from a document.
+
+        Note: Users typically need to own the document. This is often an async process.
 
         Args:
-            id (str, UUID): ID of document to extract from
-            settings (Optional[dict]): Settings for extraction process
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            id (str | UUID): ID of document to extract from.
+            settings (Optional[dict | GraphCreationSettings]): Settings for extraction process.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
-            WrappedGenericMessageResponse
+            WrappedGenericMessageResponse: Indicating task status.
         """
         data: dict[str, Any] = {}
         if settings:
-            data["settings"] = json.dumps(settings)
+            # Convert settings model to dict if necessary
+            if hasattr(settings, "model_dump"):
+                data["settings"] = settings.model_dump(exclude_unset=True)
+            elif isinstance(settings, dict):
+                data["settings"] = settings
+            else:
+                raise TypeError("settings must be a dict or Pydantic model")
         if run_with_orchestration is not None:
-            data["run_with_orchestration"] = str(run_with_orchestration)
+            # Send boolean directly in JSON body
+            data["run_with_orchestration"] = run_with_orchestration
 
+        # POST expects JSON body for settings/orchestration flag
         response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/extract",
-            params=data,
+            json=data,  # Send data as JSON body
             version="v3",
         )
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedGenericMessageResponse(**response_dict)
 
     def list_entities(
@@ -548,15 +722,19 @@ class DocumentsSDK:
         id: str | UUID,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_embeddings: Optional[bool] = False,
+        include_embeddings: Optional[
+            bool
+        ] = False,  # Renamed from includeVectors
     ) -> WrappedEntitiesResponse:
-        """List entities extracted from a document.
+        """list entities extracted from a document.
+
+        Note: Users can only access entities from documents they own or have access to through collections.
 
         Args:
-            id (str | UUID): ID of document to get entities from
-            offset (Optional[int]): Number of items to skip
-            limit (Optional[int]): Max number of items to return
-            include_embeddings (Optional[bool]): Whether to include embeddings
+            id (str | UUID): ID of document to get entities from.
+            offset (Optional[int]): Number of items to skip (default: 0).
+            limit (Optional[int]): Max number of items to return (1-1000, default: 100).
+            include_embeddings (Optional[bool]): Whether to include embeddings (default: False).
 
         Returns:
             WrappedEntitiesResponse
@@ -564,7 +742,7 @@ class DocumentsSDK:
         params = {
             "offset": offset,
             "limit": limit,
-            "include_embeddings": include_embeddings,
+            "include_embeddings": include_embeddings,  # Use router param name
         }
         response_dict = self.client._make_request(
             "GET",
@@ -572,7 +750,10 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedEntitiesResponse(**response_dict)
 
     def list_relationships(
@@ -582,15 +763,18 @@ class DocumentsSDK:
         limit: Optional[int] = 100,
         entity_names: Optional[list[str]] = None,
         relationship_types: Optional[list[str]] = None,
+        # include_embeddings param does not exist on router for relationships
     ) -> WrappedRelationshipsResponse:
-        """List relationships extracted from a document.
+        """list relationships extracted from a document.
+
+        Note: Users can only access relationships from documents they own or have access to through collections.
 
         Args:
-            id (str | UUID): ID of document to get relationships from
-            offset (Optional[int]): Number of items to skip
-            limit (Optional[int]): Max number of items to return
-            entity_names (Optional[list[str]]): Filter by entity names
-            relationship_types (Optional[list[str]]): Filter by relationship types
+            id (str | UUID): ID of document to get relationships from.
+            offset (Optional[int]): Number of items to skip (default: 0).
+            limit (Optional[int]): Max number of items to return (1-1000, default: 100).
+            entity_names (Optional[list[str]]): Filter by entity names.
+            relationship_types (Optional[list[str]]): Filter by relationship types.
 
         Returns:
             WrappedRelationshipsResponse
@@ -610,7 +794,10 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedRelationshipsResponse(**response_dict)
 
     def list(
@@ -618,23 +805,29 @@ class DocumentsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
+        include_summary_embeddings: Optional[bool] = False,  # Added parameter
     ) -> WrappedDocumentsResponse:
-        """List documents with pagination.
+        """list documents with pagination.
+
+        Note: Regular users will only see documents they own or have access to through collections. Superusers can see all documents.
 
         Args:
-            ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by.
+            offset (int, optional): Number of objects to skip. Defaults to 0.
+            limit (int, optional): Max number of objects to return (1-1000). Defaults to 100.
+            include_summary_embeddings (Optional[bool]): Whether to include summary embeddings (default: False).
 
         Returns:
             WrappedDocumentsResponse
         """
-        params = {
+        params: dict[str, Any] = {
             "offset": offset,
             "limit": limit,
         }
         if ids:
-            params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore
+            params["ids"] = [str(doc_id) for doc_id in ids]
+        if include_summary_embeddings:  # Only add if True
+            params["include_summary_embeddings"] = True
 
         response_dict = self.client._make_request(
             "GET",
@@ -642,120 +835,175 @@ class DocumentsSDK:
             params=params,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedDocumentsResponse(**response_dict)
 
     def search(
         self,
         query: str,
-        search_mode: Optional[str | SearchMode] = "custom",
-        search_settings: Optional[dict | SearchSettings] = None,
+        search_mode: Optional[
+            str | SearchMode
+        ] = SearchMode.custom,  # Use enum
+        search_settings: Optional[
+            dict | SearchSettings
+        ] = None,  # Use SearchSettings model if defined
     ) -> WrappedDocumentSearchResponse:
-        """Conduct a vector and/or graph search.
+        """Conduct a search query on document summaries.
+
+        Note: Access control (based on user ownership/collection access) is applied to search results.
 
         Args:
-            query (str): The query to search for.
-            search_settings (Optional[dict, SearchSettings]]): Vector search settings.
+            query (str): The search query.
+            search_mode (Optional[str | SearchMode]): Search mode ('basic', 'advanced', 'custom'). Defaults to 'custom'.
+            search_settings (Optional[dict | SearchSettings]): Search settings (filters, limits, hybrid options, etc.).
 
         Returns:
             WrappedDocumentSearchResponse
         """
-        if search_settings and not isinstance(search_settings, dict):
-            search_settings = search_settings.model_dump()
-        data: dict[str, Any] = {
-            "query": query,
-            "search_settings": search_settings,
-        }
-        if search_mode:
-            data["search_mode"] = search_mode
+        settings_dict = {}
+        if search_settings:
+            if isinstance(search_settings, SearchSettings):
+                settings_dict = search_settings.model_dump(exclude_unset=True)
+            elif isinstance(search_settings, dict):
+                settings_dict = search_settings
+            else:
+                raise TypeError(
+                    "search_settings must be a dict or SearchSettings model"
+                )
 
+        request_data: dict[str, Any] = {
+            "query": query,
+            "search_mode": search_mode.value
+            if isinstance(search_mode, SearchMode)
+            else search_mode,
+            "search_settings": settings_dict,
+        }
+
+        # POST request with JSON body
         response_dict = self.client._make_request(
             "POST",
             "documents/search",
-            json=data,
+            json=request_data,
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedDocumentSearchResponse(**response_dict)
 
     def deduplicate(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[
+            dict | GraphCreationSettings
+        ] = None,  # Use GraphCreationSettings if defined
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
-        """Deduplicate entities and relationships from a document.
+        """Triggers the deduplication of entities within a document.
+
+        Note: Users typically need to own the document. This is often an async process.
 
         Args:
-            id (str, UUID): ID of document to extract from
-            settings (Optional[dict]): Settings for extraction process
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            id (str | UUID): ID of document to deduplicate entities for.
+            settings (Optional[dict | GraphCreationSettings]): Settings for deduplication process.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
-            dict: Extraction results or cost estimate
+            WrappedGenericMessageResponse: Indicating task status.
         """
         data: dict[str, Any] = {}
         if settings:
-            data["settings"] = json.dumps(settings)
-        if run_with_orchestration is not None:
-            data["run_with_orchestration"] = str(run_with_orchestration)
+            if hasattr(settings, "model_dump"):
+                data["settings"] = settings.model_dump(exclude_unset=True)
+            elif isinstance(settings, dict):
+                data["settings"] = settings
+            else:
+                raise TypeError("settings must be a dict or Pydantic model")
 
+        if run_with_orchestration is not None:
+            data["run_with_orchestration"] = run_with_orchestration
+
+        # POST expects JSON body for settings/orchestration flag
         response_dict = self.client._make_request(
             "POST",
             f"documents/{str(id)}/deduplicate",
-            params=data,
+            json=data,  # Send data as JSON body
             version="v3",
         )
-
+        if not isinstance(response_dict, dict):
+            raise ValueError(
+                f"Expected dict response, got {type(response_dict)}"
+            )
         return WrappedGenericMessageResponse(**response_dict)
 
     def create_sample(self, hi_res: bool = False) -> WrappedIngestionResponse:
-        """Ingest a sample document into R2R.
+        """Ingest a sample document (DeepSeek_R1.pdf) into R2R.
 
-        This method downloads a sample file from a predefined URL, saves it
-        as a temporary file, and ingests it using the `create` method. The
-        temporary file is removed after ingestion.
+        Downloads the file to a temporary location, ingests it, and cleans up.
+
+        Args:
+            hi_res (bool): If True, attempts to use the 'hi-res' ingestion mode. Defaults to False (uses 'custom' or server default).
 
         Returns:
             WrappedIngestionResponse: The response from the ingestion request.
         """
-        # Define the sample file URL
         sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf"
-        # Parse the URL to extract the filename
         parsed_url = urlparse(sample_file_url)
-        filename = os.path.basename(parsed_url.path)
-        # Determine whether the file is a PDF (this can affect how we write the file)
+        filename = os.path.basename(parsed_url.path) or "sample.pdf"
 
-        # Create a temporary file.
-        # We use binary mode ("wb") for both PDFs and text files because the `create`
-        # method will open the file in binary mode.
-        temp_file = tempfile.NamedTemporaryFile(
-            mode="wb", delete=False, suffix=f"_{filename}"
-        )
+        # Use a context manager for the temporary file for safer cleanup
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=f"_{filename}"
+        ) as temp_file:
+            temp_file_path = (
+                temp_file.name
+            )  # Get path before closing (in with statement)
+            try:
+                response = requests.get(
+                    sample_file_url, timeout=self.client.timeout
+                )  # Use client timeout
+                response.raise_for_status()  # Check for download errors
+                temp_file.write(response.content)
+            except requests.exceptions.RequestException as e:
+                # Clean up temp file on download error
+                os.unlink(temp_file_path)
+                raise ConnectionError(
+                    f"Failed to download sample file: {e}"
+                ) from e
+            except Exception as e:
+                os.unlink(temp_file_path)
+                raise RuntimeError(f"Failed to write sample file: {e}") from e
+
+        # File is closed here, but path still exists
         try:
-            response = requests.get(sample_file_url)
-            response.raise_for_status()
-            # Write the downloaded content to the temporary file.
-            # (For text files, using response.content avoids any potential encoding issues
-            # when the file is later opened in binary mode.)
-            temp_file.write(response.content)
-            temp_file.close()
-
-            # Prepare metadata and generate a stable document ID based on the URL
             metadata = {"title": filename}
+            # Generate a stable UUID v5 based on the URL
             doc_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, sample_file_url))
 
-            # Call the SDK's create method to ingest the file.
+            # Determine ingestion mode
+            mode = (
+                IngestionMode.hi_res if hi_res else IngestionMode.fast
+            )  # Or maybe FAST if hi_res is False? Adjust as needed.
+
+            # Call the SDK's create method
             ingestion_response = self.create(
-                file_path=temp_file.name,
+                file_path=temp_file_path,
                 metadata=metadata,
                 id=doc_id,
-                ingestion_mode="hi-res" if hi_res else None,
+                ingestion_mode=mode,
             )
             return ingestion_response
         finally:
-            # Remove the temporary file regardless of whether ingestion succeeded.
+            # Ensure the temporary file is removed
             try:
-                os.unlink(temp_file.name)
-            except Exception:
-                pass
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
+            except Exception as e:
+                # Log cleanup error but don't obscure original error
+                logger.warning(
+                    f"Warning: Failed to delete temporary file {temp_file_path}: {e}"
+                )

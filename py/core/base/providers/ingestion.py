@@ -23,12 +23,6 @@ class ChunkingStrategy(str, Enum):
     BY_TITLE = "by_title"
 
 
-class IngestionMode(str, Enum):
-    hi_res = "hi-res"
-    fast = "fast"
-    custom = "custom"
-
-
 class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
         "app": AppConfig(),
@@ -39,8 +33,7 @@ class IngestionConfig(ProviderConfig):
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": None,
-        "vision_img_prompt_name": "vision_img",
-        "vision_pdf_prompt_name": "vision_pdf",
+        "vlm": None,
         "skip_document_summary": False,
         "document_summary_system_prompt": "system",
         "document_summary_task_prompt": "summary",
@@ -77,15 +70,8 @@ class IngestionConfig(ProviderConfig):
             "audio_transcription_model"
         ]
     )
-    vision_img_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_img_prompt_name"
-        ]
-    )
-    vision_pdf_prompt_name: str = Field(
-        default_factory=lambda: IngestionConfig._defaults[
-            "vision_pdf_prompt_name"
-        ]
+    vlm: Optional[str] = Field(
+        default_factory=lambda: IngestionConfig._defaults["vlm"]
     )
     skip_document_summary: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[
@@ -142,13 +128,17 @@ class IngestionConfig(ProviderConfig):
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
-            raise ValueError(f"Provider {self.provider} is not supported.")
+            raise ValueError(
+                f"Provider {self.provider} is not supported, must be one of {self.supported_providers}"
+            )
 
     @classmethod
     def get_default(cls, mode: str, app) -> "IngestionConfig":
         """Return default ingestion configuration for a given mode."""
         if mode == "hi-res":
             return cls(app=app, parser_overrides={"pdf": "zerox"})
+        if mode == "ocr":
+            return cls(app=app, parser_overrides={"pdf": "ocr"})
         if mode == "fast":
             return cls(app=app, skip_document_summary=True)
         else:

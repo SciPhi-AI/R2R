@@ -172,7 +172,7 @@ class ImageParser(AsyncParser[str | bytes]):
         if not self.vision_prompt_text:
             self.vision_prompt_text = (
                 await self.database_provider.prompts_handler.get_cached_prompt(
-                    prompt_name=self.config.vision_img_prompt_name
+                    prompt_name="vision_img"
                 )
             )
         try:

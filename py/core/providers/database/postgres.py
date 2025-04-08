@@ -22,6 +22,7 @@ from .graphs import (
     PostgresRelationshipsHandler,
 )
 from .limits import PostgresLimitsHandler
+from .maintenance import PostgresMaintenanceHandler
 from .prompts_handler import PostgresPromptsHandler
 from .tokens import PostgresTokensHandler
 from .users import PostgresUserHandler
@@ -68,6 +69,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
     files_handler: PostgresFilesHandler
     conversations_handler: PostgresConversationsHandler
     limits_handler: PostgresLimitsHandler
+    maintenance_handler: PostgresMaintenanceHandler
 
     def __init__(
         self,
@@ -99,7 +101,8 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.port = int(self.port)
 
         self.project_name = (
-            config.app.project_name
+            config.app
+            and config.app.project_name
             or os.getenv("R2R_PROJECT_NAME")
             or "r2r_default"
         )
@@ -184,13 +187,16 @@ class PostgresDatabaseProvider(DatabaseProvider):
             dimension=self.dimension,
             quantization_type=self.quantization_type,
         )
+        self.maintenance_handler = PostgresMaintenanceHandler(
+            project_name=self.project_name,
+            connection_manager=self.connection_manager,
+        )
         self.prompts_handler = PostgresPromptsHandler(
             self.project_name, self.connection_manager
         )
         self.files_handler = PostgresFilesHandler(
             self.project_name, self.connection_manager
         )
-
         self.limits_handler = PostgresLimitsHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
@@ -229,6 +235,7 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.relationships_handler.create_tables()
         await self.conversations_handler.create_tables()
         await self.limits_handler.create_tables()
+        await self.maintenance_handler.create_tables()
 
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig

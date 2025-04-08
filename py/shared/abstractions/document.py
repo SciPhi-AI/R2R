@@ -88,6 +88,12 @@ class DocumentType(str, Enum):
     # XML
     XML = "xml"
 
+    # Code
+    PY = "py"
+    JS = "js"
+    TS = "ts"
+    CSS = "css"
+
 
 class Document(R2RSerializable):
     id: UUID = Field(default_factory=uuid4)
@@ -282,6 +288,7 @@ class RawChunk(R2RSerializable):
 
 class IngestionMode(str, Enum):
     hi_res = "hi-res"
+    ocr = "ocr"
     fast = "fast"
     custom = "custom"
 
@@ -317,10 +324,7 @@ class IngestionConfig(R2RSerializable):
     extra_parsers: dict[str, Any] = {}
 
     audio_transcription_model: str = ""
-
-    vision_img_prompt_name: str = "vision_img"
-
-    vision_pdf_prompt_name: str = "vision_pdf"
+    vlm: Optional[str] = None
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "system"
@@ -347,12 +351,25 @@ class IngestionConfig(R2RSerializable):
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="",
-                vision_img_prompt_name="vision_img",
-                vision_pdf_prompt_name="vision_pdf",
                 skip_document_summary=False,
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
                 chunks_for_document_summary=256,  # larger for hi-res
+                document_summary_model="",
+            )
+
+        elif mode == "ocr":
+            # Use Mistral OCR for PDFs and images.
+            return cls(
+                provider="r2r",
+                excluded_parsers=["mp4"],
+                chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
+                extra_parsers={},
+                audio_transcription_model="",
+                skip_document_summary=False,
+                document_summary_system_prompt="system",
+                document_summary_task_prompt="summary",
+                chunks_for_document_summary=128,
                 document_summary_model="",
             )
 
@@ -364,8 +381,6 @@ class IngestionConfig(R2RSerializable):
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="",
-                vision_img_prompt_name="vision_img",
-                vision_pdf_prompt_name="vision_pdf",
                 skip_document_summary=True,  # skip summaries
                 document_summary_system_prompt="system",
                 document_summary_task_prompt="summary",
