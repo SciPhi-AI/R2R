@@ -78,7 +78,7 @@ collection_summary_prompt = "collection_summary"
 [embedding]
 provider = "litellm"
 # For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
-# For advanced applications, use `openai/text-embedding-3-small` with `base_dimension = 3072` and binary quantization
+# For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
 base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 # rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
@@ -91,7 +91,7 @@ quantization_settings = { quantization_type = "FP32" }
 [completion_embedding]
 # Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
 provider = "litellm"
-base_model = "openai/text-embedding-3-large"
+base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
