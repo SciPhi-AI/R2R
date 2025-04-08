@@ -48,7 +48,7 @@ class R2RAsyncClient(BaseClient):
     ):
         url = self._get_full_url(endpoint, version)
         if (
-            "https://api.sciphi.ai" in url
+            "http://20.55.204.62:7272" in url
             and ("login" not in endpoint)
             and ("create" not in endpoint)
             and ("users" not in endpoint)

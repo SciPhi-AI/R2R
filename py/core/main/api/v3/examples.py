@@ -132,7 +132,7 @@ search_app_examples = {
             "source": textwrap.dedent(
                 """
                 # Basic search
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/search" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -140,7 +140,7 @@ search_app_examples = {
                 }'
 
                 # With hybrid search and filters
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/search" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -325,7 +325,7 @@ rag_app_examples = {
             "source": textwrap.dedent(
                 """
                 # Basic RAG request
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/rag" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -333,7 +333,7 @@ rag_app_examples = {
                 }'
 
                 # RAG with custom settings
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/rag" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -351,7 +351,7 @@ rag_app_examples = {
                 }'
 
                 # Hybrid search in RAG
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/rag" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -364,7 +364,7 @@ rag_app_examples = {
                 }'
 
                 # Custom model
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/rag" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -646,7 +646,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
             "source": textwrap.dedent(
                 """
                 # Basic request
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/agent" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -662,7 +662,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                 }'
 
                 # Advanced analysis with extended thinking
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                        curl -X POST "http://20.55.204.62:7272/v3/retrieval/agent" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -684,7 +684,7 @@ print(f"Follow-up response: {results_2.generated_answer[:100]}...")
                 }'
 
                 # Conversation continuation
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/agent" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -763,7 +763,7 @@ completion_examples = {
             "lang": "Shell",
             "source": textwrap.dedent(
                 """
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/completion" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/completion" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
@@ -827,7 +827,7 @@ embedding_examples = {
             "lang": "Shell",
             "source": textwrap.dedent(
                 """
-                curl -X POST "https://api.sciphi.ai/v3/retrieval/embedding" \\
+                curl -X POST "http://20.55.204.62:7272/v3/retrieval/embedding" \\
                     -H "Content-Type: application/json" \\
                     -H "Authorization: Bearer YOUR_API_KEY" \\
                     -d '{
