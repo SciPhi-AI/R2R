@@ -111,11 +111,7 @@ automatic_extraction = true # enable automatic extraction of entities and relati
     n_chunks = 2 # the number of chunks (both preceding and succeeding) to use in enrichment
 
   [ingestion.extra_parsers]
-<<<<<<< HEAD
-    pdf = ["zerox", ]
-=======
     pdf = ["zerox", "ocr"]
->>>>>>> upstream/main
 
 [logging]
 provider = "r2r"
