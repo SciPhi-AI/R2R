@@ -229,3 +229,4 @@ class AuthProvider(Provider, ABC):
     @abstractmethod
     async def send_reset_email(self, email: str) -> dict[str, str]:
         pass
+    
