@@ -29,7 +29,7 @@ class AuthConfig(ProviderConfig):
     require_authentication: bool = False
     require_email_verification: bool = False
     default_admin_email: str = "admin@example.com"
-    default_admin_password: str = "123Neo456*"
+    default_admin_password: str = "change_me_immediately"
     access_token_lifetime_in_minutes: Optional[int] = None
     refresh_token_lifetime_in_days: Optional[int] = None
 
@@ -137,6 +137,7 @@ class AuthProvider(Provider, ABC):
             ):
                 return await self._get_default_admin_user()
             if not auth and not api_key:
+                logger.debug(f"Authentication failed: No credentials provided. Base URL: {self.config.base_url}")
                 raise R2RException(
                     message="No credentials provided. Create an account at https://app.sciphi.ai and set your API key using `r2r configure key` OR change your base URL to a custom deployment.",
                     status_code=401,
