@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Configuration
-URL="http://20.55.204.62:7272/v3/health"
+URL="http://localhost:7272/v3/health"
 TOTAL_REQUESTS=60
 SLEEP_INTERVAL=0.05
 REQUIRED_503_COUNT=20
