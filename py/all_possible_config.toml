@@ -243,7 +243,7 @@ parser_overrides = {}
 
   # Extra parsers (mapping from file type to parser name)
   [ingestion.extra_parsers]
-    PDF = ["zerox", "ocr"]
+    pdf = ["zerox", "ocr"]
 
 ################################################################################
 # Logging Settings
