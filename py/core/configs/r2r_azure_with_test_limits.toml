@@ -26,12 +26,12 @@ base_model = "azure/text-embedding-3-small"
 
 [database]
   [database.limits]
-  global_per_min = 10  # Small enough to test quickly
-  monthly_limit = 20  # Small enough to test in one run
+  global_per_min = 50  # Small enough to test quickly
+  monthly_limit = 50  # Small enough to test in one run
 
   [database.route_limits]
-  "/v3/retrieval/search" = { route_per_min = 5, monthly_limit = 10 }
+  "/v3/retrieval/search" = { route_per_min = 50, monthly_limit = 50 }
 
   [database.user_limits."47e53676-b478-5b3f-a409-234ca2164de5"]
-  global_per_min = 2
-  route_per_min = 1
+  global_per_min = 50
+  route_per_min = 50
