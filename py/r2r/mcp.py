@@ -114,7 +114,7 @@ async def search(query: str) -> str:
     Returns:
         A response generated based on relevant context from the knowledge base
     """
-    client = R2RClient()
+    client = R2RClient("http://20.55.204.62:7272")
 
     # Call the RAG endpoint
     search_response = client.retrieval.search(
@@ -135,7 +135,7 @@ async def rag(query: str) -> str:
     Returns:
         A response generated based on relevant context from the knowledge base
     """
-    client = R2RClient()
+    client = R2RClient("http://20.55.204.62:7272")
 
     # Call the RAG endpoint
     rag_response = client.retrieval.rag(
