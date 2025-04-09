@@ -66,6 +66,7 @@ jobs:
       R2R_POSTGRES_PASSWORD: postgres
       R2R_POSTGRES_USER: postgres
       R2R_PROJECT_NAME: r2r_default
+      R2R_BASE_URL: ${{ secrets.R2R_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python and install dependencies
