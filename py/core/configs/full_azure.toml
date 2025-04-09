@@ -34,7 +34,7 @@ document_summary_model = "azure/gpt-4o-mini"
 automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.extra_parsers]
-    pdf = ["zerox", "ocr"]
+    PDF = ["zerox", "ocr"]
 
   [ingestion.chunk_enrichment_settings]
     generation_config = { model = "azure/gpt-4o-mini" }
