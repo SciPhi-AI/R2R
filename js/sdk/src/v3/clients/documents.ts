@@ -13,6 +13,7 @@ import {
   WrappedDocumentSearchResponse,
 } from "../../types";
 import { downloadBlob } from "../../utils";
+import { ensureSnakeCase } from "../../utils";
 
 let fs: any;
 if (typeof window === "undefined") {
@@ -144,7 +145,7 @@ export class DocumentsClient {
     if (options.ingestionConfig) {
       formData.append(
         "ingestion_config",
-        JSON.stringify(options.ingestionConfig),
+        JSON.stringify(ensureSnakeCase(options.ingestionConfig)),
       );
     }
     if (options.collectionIds?.length) {
@@ -160,8 +161,6 @@ export class DocumentsClient {
       formData.append("ingestion_mode", options.ingestionMode);
     }
 
-    // Removed sending file_names
-
     return this.client.makeRequest("POST", "documents", {
       data: formData,
       headers: formData.getHeaders?.() ?? {
@@ -169,10 +168,6 @@ export class DocumentsClient {
       },
       transformRequest: [
         (data: any, headers: Record<string, string>) => {
-          // Axios might automatically set Content-Type for FormData,
-          // but if boundary issues occur, removing it here might be needed.
-          // Keep it as is unless issues arise.
-          // delete headers["Content-Type"];
           return data;
         },
       ],
@@ -956,7 +951,10 @@ export class DocumentsClient {
 
     // Create a temporary file path using Node.js 'os' and 'path'
     const tmpDir = os.tmpdir();
-    const tmpFilePath = path.join(tmpDir, `r2r_sample_${Date.now()}_${filename}`);
+    const tmpFilePath = path.join(
+      tmpDir,
+      `r2r_sample_${Date.now()}_${filename}`,
+    );
 
     let ingestionResponse: WrappedIngestionResponse;
 
@@ -991,7 +989,10 @@ export class DocumentsClient {
         await fs.promises.unlink(tmpFilePath);
       } catch (unlinkError) {
         // Log unlink error but don't overwrite original error if one occurred
-        console.error(`Failed to delete temporary file ${tmpFilePath}:`, unlinkError);
+        console.error(
+          `Failed to delete temporary file ${tmpFilePath}:`,
+          unlinkError,
+        );
       }
     }
     return ingestionResponse;

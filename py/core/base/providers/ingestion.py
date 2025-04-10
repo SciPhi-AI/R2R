@@ -30,6 +30,7 @@ class IngestionConfig(ProviderConfig):
         "excluded_parsers": ["mp4"],
         "chunking_strategy": "recursive",
         "chunk_size": 1024,
+        "chunk_overlap": 512,
         "chunk_enrichment_settings": ChunkEnrichmentSettings(),
         "extra_parsers": {},
         "audio_transcription_model": None,
@@ -56,6 +57,9 @@ class IngestionConfig(ProviderConfig):
     )
     chunk_size: int = Field(
         default_factory=lambda: IngestionConfig._defaults["chunk_size"]
+    )
+    chunk_overlap: int = Field(
+        default_factory=lambda: IngestionConfig._defaults["chunk_overlap"]
     )
     chunk_enrichment_settings: ChunkEnrichmentSettings = Field(
         default_factory=lambda: IngestionConfig._defaults[
