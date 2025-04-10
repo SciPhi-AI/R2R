@@ -65,7 +65,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
       query: "Sonia",
-      searchSettings: { limit: 25 },
       ragGenerationConfig: {
         stream: true,
       },
