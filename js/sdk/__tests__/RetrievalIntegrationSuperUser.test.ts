@@ -66,6 +66,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     const stream = await client.retrieval.rag({
       query: "What is DeepSeek R1?",
       ragGenerationConfig: {
+        model: "azure/gpt-4o-mini",
         stream: true,
       },
       searchSettings: {
