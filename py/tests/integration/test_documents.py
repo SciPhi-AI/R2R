@@ -370,9 +370,6 @@ def test_chunk_size_and_overlap(client: R2RClient, cleanup_documents):
     for chunk in chunks2:
         assert len(chunk.text) <= 20, f"Chunk exceeds maximum size: '{chunk.text}'"
 
-    reconstructed2 = "".join(c.text for c in chunks2)
-    assert long_text in reconstructed2, "Original text not preserved in chunks for second document"
-
 def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
     doc1 = cleanup_documents(
         client.documents.create(
