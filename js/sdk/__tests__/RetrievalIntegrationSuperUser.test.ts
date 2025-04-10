@@ -64,9 +64,12 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
-      query: "Sonia",
+      query: "What is DeepSeek R1?",
       ragGenerationConfig: {
         stream: true,
+      },
+      searchSettings: {
+        limit: 25,
       },
     });
 
