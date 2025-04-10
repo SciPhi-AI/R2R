@@ -302,7 +302,7 @@ def test_ingest_invalid_chunks(client):
     ], "Expected validation error for invalid chunks"
 
 
-def test_ingest_too_many_chunks(client):
+def test_ingest_too_many_chunks(client: R2RClient):
     excessive_chunks = ["Chunk"] * (1024 * 100 + 1)  # Just over the limit
     with pytest.raises(R2RException) as exc_info:
         client.documents.create(chunks=excessive_chunks,
@@ -310,6 +310,68 @@ def test_ingest_too_many_chunks(client):
     assert exc_info.value.status_code == 400, (
         "Wrong error code for exceeding max chunks")
 
+def test_chunk_size_and_overlap(client: R2RClient, cleanup_documents):
+    test_text = "This is a test document with chunk size and overlap settings that we want to verify."
+    document_id = cleanup_documents(
+        client.documents.create(
+            raw_text=test_text,
+            ingestion_config={
+                "chunk_size": 10,
+                "chunk_overlap": 2,
+            },
+            run_with_orchestration=False
+        ).results.document_id
+    )
+
+    time.sleep(1)
+
+    chunks = client.documents.list_chunks(id=document_id).results
+
+    assert len(chunks) > 0, "No chunks were created"
+
+    # Verify each chunk respects the maximum size
+    for chunk in chunks:
+        assert len(chunk.text) <= 10, f"Chunk exceeds maximum size: '{chunk.text}'"
+
+    # Check for overlaps
+    for i in range(len(chunks) - 1):
+        current_chunk = chunks[i].text
+        next_chunk = chunks[i + 1].text
+
+        overlap_found = False
+
+        # Try different possible overlap lengths
+        for overlap_size in range(1, 5):
+            if len(current_chunk) >= overlap_size and len(next_chunk) >= overlap_size:
+                if current_chunk[-overlap_size:] == next_chunk[:overlap_size]:
+                    overlap_found = True
+                    break
+
+        if not overlap_found:
+            reconstructed = "".join(c.text for c in chunks)
+            assert test_text in reconstructed, "Original text not preserved in chunks"
+
+    long_text = "Here is a longer document that we can use to test larger chunk sizes and overlaps to ensure the chunking algorithm works properly across different configurations."
+    document_id2 = cleanup_documents(
+        client.documents.create(
+            raw_text=long_text,
+            ingestion_config={
+                "chunk_size": 20,
+                "chunk_overlap": 5,
+            },
+            run_with_orchestration=False
+        ).results.document_id
+    )
+
+    chunks2 = client.documents.list_chunks(id=document_id2).results
+
+    assert len(chunks2) > 0, "No chunks were created for the second document"
+
+    for chunk in chunks2:
+        assert len(chunk.text) <= 20, f"Chunk exceeds maximum size: '{chunk.text}'"
+
+    reconstructed2 = "".join(c.text for c in chunks2)
+    assert long_text in reconstructed2, "Original text not preserved in chunks for second document"
 
 def test_delete_by_complex_filter(client: R2RClient, cleanup_documents):
     doc1 = cleanup_documents(

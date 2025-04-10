@@ -529,4 +529,6 @@ export interface PaginatedResultsWrapper<T> {
 }
 
 // Wrapped Document Search Response
-export type WrappedDocumentSearchResponse = PaginatedResultsWrapper<DocumentSearchResult[]>;
+export type WrappedDocumentSearchResponse = PaginatedResultsWrapper<
+  DocumentSearchResult[]
+>;

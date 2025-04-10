@@ -174,11 +174,14 @@ class R2RIngestionProvider(IngestionProvider):
 
         chunk_size = (
             ingestion_config_override.get("chunk_size")
-            or self.config.chunk_size
+            if ingestion_config_override.get("chunk_size") is not None
+            else self.config.chunk_size
         )
+
         chunk_overlap = (
             ingestion_config_override.get("chunk_overlap")
-            or self.config.chunk_overlap
+            if ingestion_config_override.get("chunk_overlap") is not None
+            else self.config.chunk_overlap
         )
 
         if chunking_strategy == ChunkingStrategy.RECURSIVE:
