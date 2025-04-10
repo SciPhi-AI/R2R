@@ -8,7 +8,7 @@ graph_extraction:
 
     # Steps
     1. Identify all entities given the full text, grounding and contextualizing them based on the summary. For each identified entity, extract:
-      - entit: Name of the entity, capitalized
+      - entity: Name of the entity, capitalized
       - entity_type: Type of the entity (constrained to {entity_types} if provided, otherwise all types)
       - entity_description: Comprehensive description incorporating context from both summary and full text
 
