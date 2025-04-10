@@ -68,10 +68,7 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       ragGenerationConfig: {
         model: "azure/gpt-4o-mini",
         stream: true,
-      },
-      searchSettings: {
-        limit: 25,
-      },
+      }
     });
 
     expect(stream).toBeInstanceOf(ReadableStream);
