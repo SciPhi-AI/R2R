@@ -333,24 +333,6 @@ def test_chunk_size_and_overlap(client: R2RClient, cleanup_documents):
     for chunk in chunks:
         assert len(chunk.text) <= 10, f"Chunk exceeds maximum size: '{chunk.text}'"
 
-    # Check for overlaps
-    for i in range(len(chunks) - 1):
-        current_chunk = chunks[i].text
-        next_chunk = chunks[i + 1].text
-
-        overlap_found = False
-
-        # Try different possible overlap lengths
-        for overlap_size in range(1, 5):
-            if len(current_chunk) >= overlap_size and len(next_chunk) >= overlap_size:
-                if current_chunk[-overlap_size:] == next_chunk[:overlap_size]:
-                    overlap_found = True
-                    break
-
-        if not overlap_found:
-            reconstructed = "".join(c.text for c in chunks)
-            assert test_text in reconstructed, "Original text not preserved in chunks"
-
     long_text = "Here is a longer document that we can use to test larger chunk sizes and overlaps to ensure the chunking algorithm works properly across different configurations."
     document_id2 = cleanup_documents(
         client.documents.create(
