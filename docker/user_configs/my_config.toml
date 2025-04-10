@@ -12,7 +12,7 @@ default_max_upload_size = 214748364800
 fast_llm = "azure/gpt-4o-mini"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "azure/gpt-4o"
+quality_llm = "azure/gpt-4o-mini"
 
 # LLM used for ingesting visual inputs
 vlm = "azure/gpt-4o"
