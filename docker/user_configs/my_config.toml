@@ -51,7 +51,7 @@ concurrent_request_limit = 64
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096
-  stream = false
+  stream = true
   add_generation_kwargs = { }
 
 [crypto]
