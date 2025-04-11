@@ -257,7 +257,7 @@ class RetrievalRouter(BaseRouterV3):
             Fine-tune the language model's behavior with `rag_generation_config`:
             ```json
             {
-                "model": "openai/gpt-4o-mini",  // Model to use
+                "model": "azure/gpt-4o-mini",  // Model to use
                 "temperature": 0.7,              // Control randomness (0-1)
                 "max_tokens": 1500,              // Maximum output length
                 "stream": true                   // Enable token streaming
@@ -587,7 +587,7 @@ class RetrievalRouter(BaseRouterV3):
                 default_factory=GenerationConfig,
                 description="Configuration for text generation",
                 example={
-                    "model": "openai/gpt-4o-mini",
+                    "model": "azure/gpt-4o-mini",
                     "temperature": 0.7,
                     "max_tokens": 150,
                     "stream": False,
