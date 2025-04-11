@@ -108,7 +108,8 @@ def test_rag_stream_query(client: R2RClient):
         },
         search_settings={
             "use_semantic_search": True,
-            "limit": 2
+            "limit": 2,
+            "use_hybrid_search": True,
         },
     )
 
