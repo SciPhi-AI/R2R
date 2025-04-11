@@ -1,6 +1,6 @@
 [app]
 # app settings are global available like `r2r_config.agent.app`
-# project_name = "r2r_default" # optional can also set with `R2R_PROJECT_NAME` env var
+# project_name = "r2r_default" # optional, can also set with `R2R_PROJECT_NAME` env var
 default_max_documents_per_user = 10_000
 default_max_chunks_per_user = 10_000_000
 default_max_collections_per_user = 5_000
@@ -12,7 +12,7 @@ default_max_upload_size = 214748364800
 fast_llm = "azure/gpt-4o-mini"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "azure/gpt-4o-mini"
+quality_llm = "azure/gpt-4o"
 
 # LLM used for ingesting visual inputs
 vlm = "azure/gpt-4o"
@@ -23,7 +23,7 @@ audio_lm = "azure/whisper"
 # Reasoning model, used for `research` agent
 reasoning_llm = "azure/o3-mini"
 # Planning model, used for `research` agent
-planning_llm = "anthropic/claude-3-7-sonnet-20250219"
+planning_llm = "azure/o3-mini"
 
 
 [agent]
@@ -51,7 +51,7 @@ concurrent_request_limit = 64
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096
-  stream = true
+  stream = false
   add_generation_kwargs = { }
 
 [crypto]
@@ -79,8 +79,8 @@ collection_summary_prompt = "collection_summary"
 provider = "litellm"
 # For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
 # For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
-base_model = "azure/text-embedding-3-large"
-base_dimension = 3072
+base_model = "azure/text-embedding-3-small"
+base_dimension = 512
 # rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
 batch_size = 128
 add_title_as_prefix = false
@@ -91,8 +91,8 @@ quantization_settings = { quantization_type = "FP32" }
 [completion_embedding]
 # Generally this should be the same as the embedding config, but advanced users may want to run with a different provider to reduce latency
 provider = "litellm"
-base_model = "azure/text-embedding-3-large"
-base_dimension = 3072
+base_model = "azure/text-embedding-3-small"
+base_dimension = 512
 batch_size = 128
 add_title_as_prefix = false
 concurrent_request_limit = 256

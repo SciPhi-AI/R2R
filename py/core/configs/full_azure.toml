@@ -3,7 +3,7 @@
 fast_llm = "azure/gpt-4o-mini"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "azure/gpt-4o-mini"
+quality_llm = "azure/gpt-4o"
 
 # LLM used for ingesting visual inputs
 vlm = "azure/gpt-4o"
@@ -17,10 +17,10 @@ reasoning_llm = "azure/o3-mini"
 planning_llm = "azure/o3-mini"
 
 [embedding]
-base_model = "azure/text-embedding-3-large"
+base_model = "azure/text-embedding-3-small"
 
 [completion_embedding]
-base_model = "azure/text-embedding-3-large"
+base_model = "azure/text-embedding-3-small"
 
 [ingestion]
 provider = "unstructured_local"
