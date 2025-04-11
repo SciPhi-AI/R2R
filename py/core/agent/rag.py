@@ -81,12 +81,16 @@ class RAGAgentMixin:
                 self._tools.append(self.content())
             elif tool_name == "web_scrape":
                 self._tools.append(self.web_scrape())
+            elif tool_name == "tavily_extract":
+                self._tools.append(self.tavily_extract())
             elif tool_name == "search_file_knowledge":
                 self._tools.append(self.search_file_knowledge())
             elif tool_name == "search_file_descriptions":
                 self._tools.append(self.search_files())
             elif tool_name == "web_search":
                 self._tools.append(self.web_search())
+            elif tool_name == "tavily_search":
+                self._tools.append(self.tavily_search())
             else:
                 raise ValueError(f"Unknown tool requested: {tool_name}")
         logger.debug(f"Registered {len(self._tools)} RAG tools.")
@@ -316,6 +320,114 @@ class RAGAgentMixin:
         self.search_results_collector.add_aggregate_result(agg)
         return agg
 
+    def tavily_search(self) -> Tool:
+        """
+        A new Tool that uses Tavily to perform a search and retrieve results.
+        """
+        return Tool(
+            name="tavily_search",
+            description=(
+                "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
+                "to search the internet for specific information.  The query should be no more than 400 characters."
+            ),
+            results_function=self._tavily_search_function,
+            llm_format_function=self.format_search_results_for_llm,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The query to search using Tavily that should be no more than 400 characters.",
+                    },
+                    "kwargs": {
+                            "type": "object",
+                            "description": (
+                                "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
+                                '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
+                            ),
+                        },                    
+                },
+                "required": ["query"],
+            },
+        )
+
+    async def _tavily_search_function(
+        self,
+        query: str,
+        *args,
+        **kwargs,
+    ) -> AggregateSearchResult:
+        """
+        Calls Tavily's search API asynchronously and returns results in an AggregateSearchResult.
+        
+        Note: For efficient processing, keep queries concise (under 400 characters).
+        Think of them as search engine queries, not long-form prompts.
+        """
+        import asyncio
+        import os
+        
+        # Check if query is too long (Tavily recommends under 400 chars)
+        if len(query) > 400:
+            logger.warning(f"Tavily query is {len(query)} characters long, which exceeds the recommended 400 character limit. Consider breaking into smaller queries for better results.")
+            # Truncate the query to improve performance
+            query = query[:400]
+        
+        # Check if Tavily is installed
+        try:
+            from tavily import TavilyClient
+        except ImportError:
+            logger.error("The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'")
+            # Return empty results in case Tavily is not installed
+            return AggregateSearchResult(web_search_results=[])
+
+        # Get API key from environment variables
+        api_key = os.environ.get("TAVILY_API_KEY")
+        if not api_key:
+            logger.warning("TAVILY_API_KEY environment variable not set")
+            return AggregateSearchResult(web_search_results=[])
+            
+        # Initialize Tavily client
+        tavily_client = TavilyClient(api_key=api_key)
+
+        try:
+            # Perform the search asynchronously
+            raw_results = await asyncio.get_event_loop().run_in_executor(
+                None,  # Uses the default executor
+                lambda: tavily_client.search(query=query,
+                                             search_depth="advanced",
+                                             include_raw_content=False,
+                                             include_domains=kwargs.get("include_domains", []),
+                                             exclude_domains=kwargs.get("exclude_domains", []),
+                                             max_results=kwargs.get("max_results", 10))
+
+            )
+
+            # Extract the results from the response
+            results = raw_results.get("results", [])
+
+            # Process the raw results into a format compatible with AggregateSearchResult
+            search_results = [
+                WebSearchResult(
+                    title=result.get("title", "Untitled"),
+                    link=result.get("url", ""),
+                    snippet=result.get("content", ""),
+                    position=index,
+                    id=generate_id(result.get("url", "")),
+                    type="tavily_search",
+                )
+                for index, result in enumerate(results)
+            ]
+
+            agg = AggregateSearchResult(web_search_results=search_results)
+
+            # Add results to the collector
+            self.search_results_collector.add_aggregate_result(agg)
+
+            return agg
+        except Exception as e:
+            logger.error(f"Error during Tavily search: {e}")
+            return AggregateSearchResult(web_search_results=[])
+
     def search_files(self) -> Tool:
         """
         A tool to search over file-level metadata (titles, doc-level descriptions, etc.)
@@ -464,6 +576,100 @@ class RAGAgentMixin:
             self.search_results_collector.add_aggregate_result(agg)
 
         return agg
+
+    def tavily_extract(self) -> Tool:
+        """
+        A Tool that uses Tavily to extract content from a specific URL.
+        Similar to web_scrape but using Tavily's extraction capabilities.
+        """
+        return Tool(
+            name="tavily_extract",
+            description=(
+                "Use Tavily to extract and retrieve the contents of a specific webpage. "
+                "This is useful when you want to get clean, structured content from a URL. "
+                "Use this when you need to analyze the full content of a specific webpage."
+            ),
+            results_function=self._tavily_extract_function,
+            llm_format_function=self.format_search_results_for_llm,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": (
+                            "The absolute URL of the webpage you want to extract content from. "
+                            "Example: 'https://www.example.com/article'"
+                        ),
+                    }
+                },
+                "required": ["url"],
+            },
+        )
+
+    async def _tavily_extract_function(
+        self,
+        url: str,
+        *args,
+        **kwargs,
+    ) -> AggregateSearchResult:
+        """
+        Calls Tavily's extract API asynchronously to retrieve the content from a specific URL
+        and returns results in an AggregateSearchResult.
+        """
+        import asyncio
+        import os
+        
+        # Check if Tavily is installed
+        try:
+            from tavily import TavilyClient
+        except ImportError:
+            logger.error("The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'")
+            # Return empty results in case Tavily is not installed
+            return AggregateSearchResult(web_search_results=[])
+
+        # Get API key from environment variables
+        api_key = os.environ.get("TAVILY_API_KEY")
+        if not api_key:
+            logger.warning("TAVILY_API_KEY environment variable not set")
+            return AggregateSearchResult(web_search_results=[])
+            
+        # Initialize Tavily client
+        tavily_client = TavilyClient(api_key=api_key)
+
+        try:
+            # Perform the URL extraction asynchronously
+            extracted_content = await asyncio.get_event_loop().run_in_executor(
+                None,  # Uses the default executor
+                lambda: tavily_client.extract(url, extract_depth="advanced"),
+            )
+            
+            web_search_results = []
+            for successfulResult in extracted_content.results:
+                content = successfulResult.raw_content
+                if len(content) > 100_000:
+                    content = (
+                        content[:100_000] + "...FURTHER CONTENT TRUNCATED..."
+                    )
+
+                web_result = WebPageSearchResult(
+                    title=successfulResult.url,
+                    link=successfulResult.url,
+                    snippet=content,
+                    position=0,
+                    id=generate_id(successfulResult.url),
+                    type="tavily_extract",
+                )
+                web_search_results.append(web_result)
+
+            agg = AggregateSearchResult(web_search_results=web_search_results)
+
+            # Add results to the collector
+            self.search_results_collector.add_aggregate_result(agg)
+
+            return agg
+        except Exception as e:
+            logger.error(f"Error during Tavily URL extraction: {e}")
+            return AggregateSearchResult(web_search_results=[])
 
 
 class R2RRAGAgent(RAGAgentMixin, R2RAgent):

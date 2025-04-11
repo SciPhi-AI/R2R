@@ -266,6 +266,11 @@ class RAGAgentConfig(AgentConfig):
         "search_file_descriptions",
         "search_file_knowledge",
         "get_file_content",
+        # Web search tools - disabled by default
+        # "web_search",
+        # "web_scrape",
+        # "tavily_search",
+        # "tavily_extract",
     ]
 
     # Default Research tools
