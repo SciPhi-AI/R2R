@@ -64,10 +64,15 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
-      query: "What is DeepSeek R1?",
+      query: "Sonia",
       ragGenerationConfig: {
         stream: true,
-      }
+        maxTokens: 200,
+      },
+      searchSettings: {
+        useSemanticSearch: true,
+        limit: 2,
+      },
     });
 
     expect(stream).toBeInstanceOf(ReadableStream);
