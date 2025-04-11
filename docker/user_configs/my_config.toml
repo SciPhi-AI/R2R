@@ -48,7 +48,6 @@ provider = "r2r"
 concurrent_request_limit = 64
 
   [completion.generation_config]
-  model = "azure/gpt-4o-mini"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096

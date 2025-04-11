@@ -4,7 +4,7 @@ inputs:
   config-name:
     description: 'The R2R configuration name to use'
     required: false
-    default: 'r2r_azure_with_test_limits'
+    default: 'full_azure'
 runs:
   using: "composite"
   steps:
