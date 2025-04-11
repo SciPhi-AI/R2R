@@ -121,21 +121,21 @@ def test_agent_respects_max_tokens(client, test_collection):
     """Test agent respects max_tokens configuration."""
     # Very small max_tokens
     short_response = client.retrieval.agent(
-        message={"role": "user", "content": "Write a detailed essay about Aristotle's life and works."},
-        rag_generation_config={"stream": False, "max_tokens_to_sample": 200},
+        message={"role": "user", "content": "Write a detailed essay about Aristotle's philosophy."},
+        rag_generation_config={"stream": False, "max_tokens_to_sample": 50},
     )
 
     # Larger max_tokens
     long_response = client.retrieval.agent(
-        message={"role": "user", "content": "Write a detailed essay about Aristotle's life and works."},
-        rag_generation_config={"stream": False, "max_tokens_to_sample": 500},
+        message={"role": "user", "content": "Write a detailed essay about Aristotle's philosophy."},
+        rag_generation_config={"stream": False, "max_tokens_to_sample": 1000},
     )
 
     short_content = short_response.results.messages[-1].content
     long_content = long_response.results.messages[-1].content
 
     assert len(short_content) < len(long_content), "Short max_tokens should produce shorter response"
-    assert len(short_content.split()) < 200, "Short response should be very brief"
+    assert len(short_content.split()) < 100, "Short response should be very brief"
 
 def test_agent_model_selection(client, test_collection):
     """Test agent works with different LLM models."""
