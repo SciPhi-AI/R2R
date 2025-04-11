@@ -104,7 +104,7 @@ def test_rag_stream_query(client: R2RClient):
         query="Detail the philosophical schools Aristotle influenced",
         rag_generation_config={
             "stream": True,
-            "max_tokens": 200
+            "max_tokens": 50
         },
         search_settings={
             "use_semantic_search": True,

@@ -67,11 +67,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       query: "Sonia",
       ragGenerationConfig: {
         stream: true,
-        maxTokens: 200,
-      },
-      searchSettings: {
-        useSemanticSearch: true,
-        limit: 2,
       },
     });
 
