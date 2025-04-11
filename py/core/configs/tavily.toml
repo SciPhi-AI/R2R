@@ -1,0 +1,30 @@
+[completion]
+provider = "r2r"
+concurrent_request_limit = 128
+
+[ingestion]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 2_048
+max_characters = 4_096
+combine_under_n_chars = 1_024
+overlap = 1_024
+    [ingestion.extra_parsers]
+    pdf = "zerox"
+
+[orchestration]
+provider = "hatchet"
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 8
+
+[agent]
+# Enable the Tavily search and extraction tools
+rag_tools = [
+    "search_file_descriptions",
+    "search_file_knowledge",
+    "get_file_content",
+    "tavily_search",
+    "tavily_extract"
+]

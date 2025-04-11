@@ -1,6 +1,5 @@
 import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect, afterAll } from "@jest/globals";
-import exp from "constants";
 import fs from "fs";
 import path from "path";
 
@@ -19,6 +18,8 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   let documentId2: string;
   let documentId3: string;
   let documentId4: string;
+  let documentId5: string;
+  let documentId6: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -406,6 +407,93 @@ describe("r2rClient V3 Documents Integration Tests", () => {
         },
       }),
     );
+  });
+
+  test("Create a document with raw text and a chunkSize of 10", async () => {
+    const response = await client.documents.create({
+      raw_text:
+        "One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin",
+      ingestionConfig: {
+        chunkSize: 10,
+        chunkOverlap: 0,
+      },
+    });
+
+    expect(response.results.documentId).toBeDefined();
+    documentId5 = response.results.documentId;
+  });
+
+  test("Assert that the chunk size is 10", async () => {
+    const response = await client.documents.listChunks({
+      id: documentId5,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(17);
+
+    response.results.forEach((chunk) => {
+      expect(chunk.text.length).toBeLessThanOrEqual(10);
+    });
+  });
+
+  test("Delete document with chunk size of 10", async () => {
+    const response = await client.documents.delete({
+      id: documentId5,
+    });
+
+    expect(response.results).toBeDefined();
+  });
+
+  test("Create a document with raw text and a chunkSize of 100 and chunkOverlap of 20", async () => {
+    const response = await client.documents.create({
+      raw_text:
+        "One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin",
+      ingestionConfig: {
+        chunkSize: 100,
+        chunkOverlap: 20,
+      },
+    });
+
+    expect(response.results.documentId).toBeDefined();
+    documentId6 = response.results.documentId;
+  });
+
+  test("Assert that the chunk size is 100 and chunk overlap is present", async () => {
+    const response = await client.documents.listChunks({
+      id: documentId6,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(2);
+
+    const overlap = findOverlap(
+      response.results[0].text,
+      response.results[1].text,
+    );
+    expect(overlap.length).toBeGreaterThan(0);
+
+    response.results.forEach((chunk) => {
+      expect(chunk.text.length).toBeLessThanOrEqual(100);
+    });
+  });
+
+  function findOverlap(str1: string, str2: string): string {
+    for (let i = Math.min(str1.length, 30); i >= 1; i--) {
+      const end = str1.slice(str1.length - i);
+      const start = str2.slice(0, i);
+      if (end === start) {
+        return end;
+      }
+    }
+    return "";
+  }
+
+  test("Delete document with chunk size of 100", async () => {
+    const response = await client.documents.delete({
+      id: documentId6,
+    });
+
+    expect(response.results).toBeDefined();
   });
 
   test("Delete marmeladov.txt", async () => {
