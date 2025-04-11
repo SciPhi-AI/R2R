@@ -35,7 +35,7 @@ rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_cont
 research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
 [auth]
-provider = "supabase"
+provider = "r2r"
 access_token_lifetime_in_minutes = 60000
 refresh_token_lifetime_in_days = 7
 require_authentication = false
@@ -111,7 +111,7 @@ automatic_extraction = true # enable automatic extraction of entities and relati
     n_chunks = 2 # the number of chunks (both preceding and succeeding) to use in enrichment
 
   [ingestion.extra_parsers]
-    pdf = "ocr"
+    pdf = ["zerox"]
 
 [logging]
 provider = "r2r"
