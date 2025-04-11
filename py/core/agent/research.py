@@ -222,7 +222,9 @@ class ResearchAgentMixin(RAGAgentMixin):
         configured_tools = set(self.config.rag_tools or default_tools)
 
         # Combine default tools with all configured tools, ensuring no duplicates
-        config_copy.rag_tools = list(set(default_tools + list(configured_tools)))
+        config_copy.rag_tools = list(
+            set(default_tools + list(configured_tools))
+        )
 
         logger.debug(f"Using RAG tools: {config_copy.rag_tools}")
 

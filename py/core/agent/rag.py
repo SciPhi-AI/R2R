@@ -322,7 +322,7 @@ class RAGAgentMixin:
 
     def tavily_search(self) -> Tool:
         """
-        A new Tool that uses Tavily to perform a search and retrieve results.
+        Use Tavily to perform a search and retrieve results.
         """
         return Tool(
             name="tavily_search",
@@ -340,12 +340,12 @@ class RAGAgentMixin:
                         "description": "The query to search using Tavily that should be no more than 400 characters.",
                     },
                     "kwargs": {
-                            "type": "object",
-                            "description": (
-                                "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
-                                '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
-                            ),
-                        },                    
+                        "type": "object",
+                        "description": (
+                            "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
+                            '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
+                        ),
+                    },
                 },
                 "required": ["query"],
             },
@@ -359,24 +359,28 @@ class RAGAgentMixin:
     ) -> AggregateSearchResult:
         """
         Calls Tavily's search API asynchronously and returns results in an AggregateSearchResult.
-        
+
         Note: For efficient processing, keep queries concise (under 400 characters).
         Think of them as search engine queries, not long-form prompts.
         """
         import asyncio
         import os
-        
+
         # Check if query is too long (Tavily recommends under 400 chars)
         if len(query) > 400:
-            logger.warning(f"Tavily query is {len(query)} characters long, which exceeds the recommended 400 character limit. Consider breaking into smaller queries for better results.")
+            logger.warning(
+                f"Tavily query is {len(query)} characters long, which exceeds the recommended 400 character limit. Consider breaking into smaller queries for better results."
+            )
             # Truncate the query to improve performance
             query = query[:400]
-        
+
         # Check if Tavily is installed
         try:
             from tavily import TavilyClient
         except ImportError:
-            logger.error("The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'")
+            logger.error(
+                "The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'"
+            )
             # Return empty results in case Tavily is not installed
             return AggregateSearchResult(web_search_results=[])
 
@@ -385,7 +389,7 @@ class RAGAgentMixin:
         if not api_key:
             logger.warning("TAVILY_API_KEY environment variable not set")
             return AggregateSearchResult(web_search_results=[])
-            
+
         # Initialize Tavily client
         tavily_client = TavilyClient(api_key=api_key)
 
@@ -393,13 +397,14 @@ class RAGAgentMixin:
             # Perform the search asynchronously
             raw_results = await asyncio.get_event_loop().run_in_executor(
                 None,  # Uses the default executor
-                lambda: tavily_client.search(query=query,
-                                             search_depth="advanced",
-                                             include_raw_content=False,
-                                             include_domains=kwargs.get("include_domains", []),
-                                             exclude_domains=kwargs.get("exclude_domains", []),
-                                             max_results=kwargs.get("max_results", 10))
-
+                lambda: tavily_client.search(
+                    query=query,
+                    search_depth="advanced",
+                    include_raw_content=False,
+                    include_domains=kwargs.get("include_domains", []),
+                    exclude_domains=kwargs.get("exclude_domains", []),
+                    max_results=kwargs.get("max_results", 10),
+                ),
             )
 
             # Extract the results from the response
@@ -618,12 +623,14 @@ class RAGAgentMixin:
         """
         import asyncio
         import os
-        
+
         # Check if Tavily is installed
         try:
             from tavily import TavilyClient
         except ImportError:
-            logger.error("The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'")
+            logger.error(
+                "The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'"
+            )
             # Return empty results in case Tavily is not installed
             return AggregateSearchResult(web_search_results=[])
 
@@ -632,7 +639,7 @@ class RAGAgentMixin:
         if not api_key:
             logger.warning("TAVILY_API_KEY environment variable not set")
             return AggregateSearchResult(web_search_results=[])
-            
+
         # Initialize Tavily client
         tavily_client = TavilyClient(api_key=api_key)
 
@@ -642,7 +649,7 @@ class RAGAgentMixin:
                 None,  # Uses the default executor
                 lambda: tavily_client.extract(url, extract_depth="advanced"),
             )
-            
+
             web_search_results = []
             for successfulResult in extracted_content.results:
                 content = successfulResult.raw_content
