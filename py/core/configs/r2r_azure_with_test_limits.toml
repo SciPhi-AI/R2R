@@ -24,8 +24,8 @@ base_dimension = 3072
 
 [completion_embedding]
 provider = "litellm"
-base_model = "openai/text-embedding-3-large"
-base_dimension = 512
+base_model = "azure/text-embedding-3-large"
+base_dimension = 3072
 batch_size = 1
 add_title_as_prefix = true
 concurrent_request_limit = 256

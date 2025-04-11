@@ -65,7 +65,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
   test("Streaming RAG", async () => {
     const stream = await client.retrieval.rag({
       query: "What is DeepSeek R1?",
-      searchMode: "basic",
       ragGenerationConfig: {
         stream: true,
       }
@@ -145,7 +144,6 @@ describe("r2rClient V3 Documents Integration Tests", () => {
 
     const germanWords = ["Die", "Hauptstadt", "von", "Frankreich", "ist"];
     const responseText = response.results.messages[0].content;
-    console.log("responseText", responseText);
     expect(germanWords.some((word) => responseText.includes(word))).toBe(true);
   }, 30000);
 
