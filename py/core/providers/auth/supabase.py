@@ -112,7 +112,7 @@ class SupabaseAuthProvider(AuthProvider):
 
     async def login(self, email: str, password: str) -> dict[str, Token]:
         # Use Supabase client to authenticate user and get tokens
-        if response := self.supabase.auth.sign_in(
+        if response := self.supabase.auth.sign_in_with_password(
             email=email, password=password
         ):
             access_token = response.access_token
