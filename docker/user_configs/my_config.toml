@@ -77,8 +77,8 @@ collection_summary_prompt = "collection_summary"
 
 [embedding]
 provider = "litellm"
-# For basic applications, use `openai/text-embedding-3-small` with `base_dimension = 512`
-# For advanced applications, use `openai/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
+# For basic applications, use `azure/text-embedding-3-small` with `base_dimension = 512`
+# For advanced applications, use `azure/text-embedding-3-large` with `base_dimension = 3072` and binary quantization
 base_model = "azure/text-embedding-3-small"
 base_dimension = 512
 # rerank_model = "huggingface/mixedbread-ai/mxbai-rerank-large-v1" # reranking model
