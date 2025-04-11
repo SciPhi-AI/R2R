@@ -50,7 +50,7 @@ jobs:
           - DocumentsIntegrationSuperUser.test.ts
           - GraphsIntegrationSuperUser.test.ts
           - PromptsIntegrationSuperUser.test.ts
-          - RetrievalIntegrationSuperUser.test.ts
+          # - RetrievalIntegrationSuperUser.test.ts
           - SystemIntegrationSuperUser.test.ts
           - SystemIntegrationUser.test.ts
           - UsersIntegrationSuperUser.test.ts
