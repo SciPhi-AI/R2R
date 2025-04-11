@@ -116,7 +116,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Error during registration: {str(e)}")
             raise R2RException(
                 status_code=400, message=f"User registration failed: {str(e)}"
-            )
+            ) from e
 
     async def send_verification_email(
         self, email: str, user: Optional[User] = None
@@ -129,7 +129,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Error sending verification email: {str(e)}")
             raise R2RException(
                 status_code=400, message=f"Failed to send verification email: {str(e)}"
-            )
+            ) from e
 
     async def verify_email(
         self, email: str, verification_code: str
@@ -165,7 +165,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Login error: {str(e)}")
             raise R2RException(
                 status_code=401, message="Invalid email or password"
-            )
+            ) from e
 
     async def refresh_access_token(
         self, refresh_token: str
@@ -196,7 +196,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Token refresh error: {str(e)}")
             raise R2RException(
                 status_code=401, message="Invalid refresh token"
-            )
+            ) from e
 
     async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         try:
@@ -226,7 +226,7 @@ class SupabaseAuthProvider(AuthProvider):
             )
         except Exception as e:
             logger.error(f"Error getting user: {str(e)}")
-            raise R2RException(status_code=401, message="Invalid token")
+            raise R2RException(status_code=401, message="Invalid token") from e
 
     def get_current_active_user(
         self, current_user: User = Depends(user)
@@ -256,7 +256,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Password change error: {str(e)}")
             raise R2RException(
                 status_code=400, message="Failed to change password"
-            )
+            ) from e
 
     async def request_password_reset(self, email: str) -> dict[str, str]:
         try:
@@ -286,7 +286,7 @@ class SupabaseAuthProvider(AuthProvider):
             logger.error(f"Password reset confirmation error: {str(e)}")
             raise R2RException(
                 status_code=400, message="Invalid or expired reset token"
-            )
+            ) from e
 
     async def logout(self, token: str) -> dict[str, str]:
         try:
