@@ -12,7 +12,7 @@ combine_under_n_chars = 1_024
 overlap = 1_024
 
   [ingestion.extra_parsers]
-    pdf = ["zerox"]
+    pdf = ["zerox", "ocr"]
 
 [orchestration]
 provider = "hatchet"
