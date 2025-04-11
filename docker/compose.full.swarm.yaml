@@ -236,7 +236,7 @@ services:
         condition: on-failure
 
   r2r:
-    image: sciphiai/r2r:latest
+    image: sciphiai/r2r:3.5.11
     ports:
       - "${R2R_PORT:-7272}:${R2R_PORT:-7272}"
     environment:

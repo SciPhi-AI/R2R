@@ -20,7 +20,7 @@ jobs:
           username: "${{ secrets.AZURE_VM_USERNAME }}"
           password: "${{ secrets.AZURE_VM_PASSWORD }}"
           script: |
-            set -e  # Hata oluşursa işlemi durdur
+            set -e  # Stop execution if an error occurs
             ENV_PATH="/home/${{ secrets.AZURE_VM_USERNAME }}/R2R/docker/env"
             DOCKER_PATH="/home/${{ secrets.AZURE_VM_USERNAME }}/R2R/docker"
 
@@ -49,7 +49,7 @@ jobs:
             done
 
             # -------------------------------
-            # Repoyu güncelleme adımı eklendi
+            # Repository update step added
             echo "Navigating to repository directory..."
             cd "/home/${{ secrets.AZURE_VM_USERNAME }}/R2R"
             echo "Pulling latest changes from GitHub..."
@@ -60,8 +60,9 @@ jobs:
             cd "$DOCKER_PATH"
 
             echo "Restarting Docker and running containers..."
-            df -h  # Disk alanını kontrol et
-            free -m  # RAM kullanımını kontrol et
-            sudo systemctl restart docker  # Docker servisini yeniden başlat
-            docker compose -f compose.full.yaml --profile postgres down  # Var olan containerları durdur
-            docker compose -f compose.full.yaml --profile postgres up -d  # Yeni containerları başlat
+            df -h  # Check disk space
+            free -m  # Check RAM usage
+            sudo systemctl restart docker  # Restart Docker service
+            docker compose -f compose.full.yaml --profile postgres down  # Stop existing containers
+            docker pull sciphiai/r2r:3.5.11  # Pull new image
+            docker compose -f compose.full.yaml --profile postgres up -d  # Start new containers
