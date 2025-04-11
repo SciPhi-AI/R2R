@@ -84,8 +84,8 @@ class SupabaseAuthProvider(AuthProvider):
             if bio:
                 data["bio"] = bio
             if profile_picture:
-                data["profile_picture"] = profile_picture
-                
+                data["profile_picture"]=profile_picture
+            
             response = self.supabase.auth.sign_up({
                 "email": email,
                 "password": password,
@@ -145,13 +145,13 @@ class SupabaseAuthProvider(AuthProvider):
                 "email": email,
                 "password": password
             })
-            
+
             session = response.session
             if not session:
                 raise R2RException(
                     status_code=401, message="Invalid email or password"
                 )
-                
+            
             access_token = session.access_token
             refresh_token = session.refresh_token
             
@@ -180,7 +180,7 @@ class SupabaseAuthProvider(AuthProvider):
                 raise R2RException(
                     status_code=401, message="Invalid refresh token"
                 )
-                
+            
             new_access_token = session.access_token
             new_refresh_token = session.refresh_token
             
@@ -209,7 +209,7 @@ class SupabaseAuthProvider(AuthProvider):
             
             if not user_data:
                 raise R2RException(status_code=401, message="Invalid token")
-                
+            
             user_metadata = user_data.user_metadata or {}
             
             return User(
