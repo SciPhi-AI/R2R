@@ -9,7 +9,7 @@ quality_llm = "azure/gpt-4o-mini"
 vlm = "azure/gpt-4o"
 
 # LLM used for transcription
-audio_lm = "azure/whisper-1"
+audio_lm = "azure/whisper"
 
 # Reasoning model, used for `research` agent
 reasoning_llm = "azure/o3-mini"
