@@ -286,7 +286,7 @@ class SupabaseAuthProvider(AuthProvider):
         self, reset_token: str, new_password: str
     ) -> dict[str, str]:
         raise NotImplementedError(
-            "API key management is not supported with Supabase authentication"
+            "Password reset confirmation is not implemented with Supabase authentication"
         )
 
     async def logout(self, token: str = None) -> dict[str, str]:
