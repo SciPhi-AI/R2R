@@ -2,6 +2,14 @@
 provider = "r2r"
 concurrent_request_limit = 128
 
+[embedding]
+base_model = "azure/text-embedding-3-large"
+base_dimension = 3072
+
+[completion_embedding]
+base_model = "azure/text-embedding-3-large"
+base_dimension = 3072
+
 [ingestion]
 provider = "unstructured_local"
 strategy = "auto"
