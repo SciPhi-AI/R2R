@@ -10,8 +10,8 @@ new_after_n_chars = 2_048
 max_characters = 4_096
 combine_under_n_chars = 1_024
 overlap = 1_024
-    [ingestion.extra_parsers]
-    pdf = "zerox"
+  [ingestion.extra_parsers]
+    pdf = ["zerox", "ocr"]
 
 [orchestration]
 provider = "hatchet"
