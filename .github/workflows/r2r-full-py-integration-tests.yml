@@ -10,7 +10,7 @@ jobs:
 
     env:
       TELEMETRY_ENABLED: 'false'
-      R2R_PROJECT_NAME: r2r_default
+      R2R_PROJECT_NAME: ${{ secrets.R2R_PROJECT_NAME }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
