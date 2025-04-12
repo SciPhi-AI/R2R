@@ -30,7 +30,7 @@ planning_llm = "azure/o3-mini"
 rag_agent_static_prompt = "static_rag_agent"
 rag_agent_dynamic_prompt = "dynamic_rag_agent"
 # The following tools are available to the `rag` agent
-rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_content"] # can add  "web_search" | "web_scrape"
+rag_tools = ["search_file_descriptions", "search_file_knowledge", "get_file_content", "web_search", "web_scrape"] # can add  "web_search" | "web_scrape"
 # The following tools are available to the `research` agent
 research_tools = ["rag", "reasoning", "critique", "python_executor"]
 
@@ -51,7 +51,7 @@ concurrent_request_limit = 64
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 4_096
-  stream = false
+  stream = true
   add_generation_kwargs = { }
 
 [crypto]
