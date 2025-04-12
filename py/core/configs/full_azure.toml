@@ -17,10 +17,12 @@ reasoning_llm = "azure/o3-mini"
 planning_llm = "azure/o3-mini"
 
 [embedding]
-base_model = "azure/text-embedding-3-small"
+base_model = "azure/text-embedding-3-large"
+base_dimension = 3072
 
 [completion_embedding]
-base_model = "azure/text-embedding-3-small"
+base_model = "azure/text-embedding-3-large"
+base_dimension = 3072
 
 [ingestion]
 provider = "unstructured_local"
