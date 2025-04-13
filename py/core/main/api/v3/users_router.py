@@ -817,7 +817,7 @@ class UsersRouter(BaseRouterV3):
                             const client = new r2rClient();
 
                             function main() {
-                                const response = await client.users.retrieve();
+                                const response = await client.users.me();
                             }
 
                             main();
