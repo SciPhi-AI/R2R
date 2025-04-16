@@ -209,9 +209,9 @@ export interface GenerationConfig {
 }
 
 export interface HybridSearchSettings {
-  fullTextWeight?: number;
+  fulltextWeight?: number;
   semanticWeight?: number;
-  fullTextLimit?: number;
+  fulltextLimit?: number;
   rrfK?: number;
 }
 
