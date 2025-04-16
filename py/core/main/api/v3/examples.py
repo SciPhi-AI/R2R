@@ -98,9 +98,9 @@ search_app_examples = {
                         indexMeasure: "l2_distance",
                         useHybridSearch: true,
                         hybridSettings: {
-                            fullTextWeight: 1.0,
+                            fulltextWeight: 1.0,
                             semanticWeight: 5.0,
-                            fullTextLimit: 200,
+                            fulltextLimit: 200,
                         },
                         filters: {"title": {"$in": ["DeepSeek_R1.pdf"]}},
                     }

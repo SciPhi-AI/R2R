@@ -241,7 +241,9 @@ export abstract class BaseClient {
   }
 
   setApiKey(apiKey: string): void {
-    if (!apiKey) throw new Error("API key is required");
+    if (!apiKey) {
+      throw new Error("API key is required");
+    }
     this.apiKey = apiKey;
   }
 }
