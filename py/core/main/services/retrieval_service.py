@@ -1783,7 +1783,7 @@ class RetrievalService(Service):
 
                 user_id = filter_starts_with_and_then_or[0]["owner_id"]["$eq"]
                 collection_ids = [
-                    UUID(ele)
+                    str(ele)
                     for ele in filter_starts_with_and_then_or[1][
                         "collection_ids"
                     ]["$overlap"]
@@ -1797,9 +1797,9 @@ class RetrievalService(Service):
                 return None, []
         elif filter_starts_with_or:
             try:
-                user_id = filter_starts_with_or[0]["owner_id"]["$eq"]
+                user_id = str(filter_starts_with_or[0]["owner_id"]["$eq"])
                 collection_ids = [
-                    UUID(ele)
+                    str(ele)
                     for ele in filter_starts_with_or[1]["collection_ids"][
                         "$overlap"
                     ]
@@ -1808,6 +1808,7 @@ class RetrievalService(Service):
             except Exception as e:
                 logger.error(
                     """Error parsing filters: expected format {'$or': [{'owner_id': {'$eq': 'uuid-string-here'}, 'collection_ids': {'$overlap': ['uuid-of-some-collection']}}]}, if you are a superuser then this error can be ignored."""
+                    f"\n Instead, got: {filters}.\n\n Error: {e}"
                 )
                 return None, []
         else:
