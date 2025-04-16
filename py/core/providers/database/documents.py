@@ -560,7 +560,7 @@ class PostgresDocumentsHandler(Handler):
             if filter_condition:
                 conditions.append(filter_condition)
             # Make sure we keep adding to the same params list
-            # params.extend(filter_params)
+            params.extend(filter_params)
             param_index += len(filter_params)
 
         # -------------------------------------------
