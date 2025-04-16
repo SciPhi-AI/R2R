@@ -228,7 +228,7 @@ export interface GraphSearchSettings {
 export interface SearchSettings {
   useHybridSearch?: boolean;
   useSemanticSearch?: boolean;
-  useFullTextSearch?: boolean;
+  useFulltextSearch?: boolean;
   filters?: Record<string, any>;
   limit?: number;
   offset?: number;
