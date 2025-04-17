@@ -141,7 +141,6 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 ]
 
             logger.debug(f"Sending page {page_num} to vision model.")
-            req_start = time.perf_counter()
 
             if is_anthropic:
                 response = await self.llm_provider.aget_completion(
