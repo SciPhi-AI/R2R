@@ -174,6 +174,7 @@ class GenerationConfig(R2RSerializable):
         "extended_thinking": False,
         "thinking_budget": None,
         "reasoning_effort": None,
+        "memory": False,
     }
 
     model: Optional[str] = Field(
@@ -225,6 +226,10 @@ class GenerationConfig(R2RSerializable):
             "Effort level for internal reasoning when extended thinking mode is enabled, `low`, `medium`, or `high`."
             "Only applicable to OpenAI providers."
         ),
+    )
+    memory: bool = Field(
+        default=False,
+        description="Flag to enable memory mode to use Mem0 for context.",
     )
 
     @classmethod
