@@ -35,6 +35,7 @@ class IngestionConfig(ProviderConfig):
         "extra_parsers": {},
         "audio_transcription_model": None,
         "vlm": None,
+        "vlm_batch_size": 5,
         "skip_document_summary": False,
         "document_summary_system_prompt": "system",
         "document_summary_task_prompt": "summary",
@@ -76,6 +77,9 @@ class IngestionConfig(ProviderConfig):
     )
     vlm: Optional[str] = Field(
         default_factory=lambda: IngestionConfig._defaults["vlm"]
+    )
+    vlm_batch_size: int = Field(
+        default_factory=lambda: IngestionConfig._defaults["vlm_batch_size"]
     )
     skip_document_summary: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[

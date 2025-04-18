@@ -229,8 +229,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             logger.info("Retrieved vision prompt text from database.")
 
         try:
-            # TODO: We should make this configurable
-            batch_size = 5
+            batch_size = self.config.vlm_batch_size or 5
 
             if isinstance(data, str):
                 pdf_info = pdf2image.pdfinfo_from_path(data)
