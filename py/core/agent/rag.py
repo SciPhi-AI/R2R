@@ -193,10 +193,6 @@ class RAGAgentMixin:
         *args,
         **kwargs,
     ) -> AggregateSearchResult:
-        print(
-            f"Content function called with document_id: {document_id} and options: {options}"
-        )
-
         """Calls the passed-in `content_method(filters, options)` to fetch
         doc+chunk structures.
 
@@ -224,8 +220,6 @@ class RAGAgentMixin:
 
         # Actually call your data retrieval
         content = await self.content_method(filters, options)
-        print(f"Content function returned: {content}")
-        # raw_context presumably is a list[dict], each with 'document' + 'chunks'.
 
         # Return them in the new aggregator field
         agg = AggregateSearchResult(

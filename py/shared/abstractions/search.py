@@ -2,7 +2,7 @@
 
 from copy import copy
 from enum import Enum
-from typing import Any, Optional, Set
+from typing import Any, Optional
 from uuid import NAMESPACE_DNS, UUID, uuid5
 
 from pydantic import Field
@@ -570,115 +570,35 @@ class SearchMode(str, Enum):
 
 
 def select_search_filters(
-    auth_user: Any,  # Replace Any with your actual User type hint
+    auth_user: Any,
     search_settings: SearchSettings,
 ) -> dict[str, Any]:
-    """
-    Constructs the final search filters, applying access control for non-superusers.
+    filters = copy(search_settings.filters)
+    selected_collections = None
+    if not auth_user.is_superuser:
+        user_collections = set(auth_user.collection_ids)
+        for key in filters.keys():
+            if "collection_ids" in key:
+                selected_collections = set(map(UUID, filters[key]["$overlap"]))
+                break
 
-    - Superusers: Returns the original filters.
-    - Non-superusers:
-        - If filtering explicitly by 'collection_ids':
-            - Restricts results to the intersection of requested and accessible collections.
-            - Ownership does NOT bypass this filter.
-            - Other filters are ANDed.
-        - If NOT filtering explicitly by 'collection_ids':
-            - Returns documents owned by the user OR documents in any accessible collection.
-            - Other filters are ANDed.
-    """
-    input_filters = copy(search_settings.filters)
-
-    if auth_user.is_superuser:
-        # Superusers bypass access control modifications
-        return input_filters
-
-    # Non-superuser logic
-    user_collections: Set[UUID] = set(auth_user.collection_ids)
-    final_filters: dict[str, Any] = {}
-    other_filters: dict[str, Any] = {}
-    requested_collections_raw: list | None = None
-    collection_filter_key: str | None = None
-
-    # --- Identify if an explicit collection_ids filter exists ---
-    # This simple check looks for a top-level key.
-    # A more robust implementation might need to parse the filter tree
-    # for nested collection_ids filters within $and/$or clauses.
-    if "collection_ids" in input_filters and isinstance(
-        input_filters["collection_ids"], dict
-    ):
-        filter_clause = input_filters["collection_ids"]
-        if "$overlap" in filter_clause:
-            collection_filter_key = "collection_ids"
-            requested_collections_raw = filter_clause["$overlap"]
-        # Add checks for other potential collection filter operators if needed (e.g., $in)
-
-    # Separate other filters from the identified collection filter
-    for key, value in input_filters.items():
-        if key != collection_filter_key:
-            other_filters[key] = value
-
-    # --- Construct the final filter based on whether collections were specified ---
-    if collection_filter_key and requested_collections_raw is not None:
-        # Case A: User explicitly filtered by collection_ids
-
-        try:
-            # Ensure raw values are strings/UUIDs before converting
-            requested_collections = set(
-                UUID(str(cid)) for cid in requested_collections_raw
-            )
-        except (TypeError, ValueError, AttributeError) as e:
-            # Handle invalid format gracefully. Options:
-            # 1. Raise an error (e.g., HTTPException for API)
-            # 2. Log a warning and return empty results for the collection filter
-            # 3. Log a warning and ignore the collection filter (fall back to Case B)
-            # Choosing option 2: effectively filter for zero allowed collections.
-            print(
-                f"Warning: Invalid collection_ids format in filter: {e}. Applying empty collection filter."
-            )
-            allowed_collections = set()
-        else:
-            # Calculate the intersection of requested and user's accessible collections
+        if selected_collections:
             allowed_collections = user_collections.intersection(
-                requested_collections
+                selected_collections
             )
-
-        # The primary access filter is *only* based on these allowed collections
-        access_filter = {
-            "collection_ids": {"$overlap": list(allowed_collections)}
-        }
-
-        # Combine the specific collection access filter with any other filters
-        if other_filters:
-            final_filters = {"$and": [access_filter, other_filters]}
         else:
-            final_filters = access_filter
-
-    else:
-        # Case B: User did *not* explicitly filter by collection_ids
-        # Apply default visibility: owned OR in *any* accessible collection
-        access_filter = {
+            allowed_collections = user_collections
+        # for non-superusers, we filter by user_id and selected & allowed collections
+        collection_filters = {
             "$or": [
                 {"owner_id": {"$eq": auth_user.id}},
-                # Ensure user_collections is not empty before adding overlap,
-                # though overlap with empty list is usually handled ok by DBs.
-                {"collection_ids": {"$overlap": list(user_collections)}}
-                if user_collections
-                else {},
-                # Remove empty dict from $or if user_collections is empty
-            ]
+                {"collection_ids": {"$overlap": list(allowed_collections)}},
+            ]  # type: ignore
         }
-        # Clean up the $or if one clause is empty
-        if not user_collections:
-            access_filter = {"owner_id": {"$eq": auth_user.id}}
-        elif not auth_user.id:  # Should not happen, but defensive
-            access_filter = {
-                "collection_ids": {"$overlap": list(user_collections)}
-            }
 
-        # Combine the base visibility filter with any other filters provided
-        if other_filters:  # Use the separated other_filters
-            final_filters = {"$and": [access_filter, other_filters]}
+        filters.pop("collection_ids", None)
+        if filters != {}:
+            filters = {"$and": [collection_filters, filters]}  # type: ignore
         else:
-            final_filters = access_filter  # Use the original input_filters if no collection filter was found
-
-    return final_filters
+            filters = collection_filters
+    return filters

@@ -325,6 +325,7 @@ class IngestionConfig(R2RSerializable):
 
     audio_transcription_model: str = ""
     vlm: Optional[str] = None
+    vlm_batch_size: int = 5
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "system"

@@ -1717,9 +1717,6 @@ class RetrievalService(Service):
         filters: dict[str, Any],
         options: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        print(
-            f"get_context called with filters: {filters} and options: {options}"
-        )
         """
         Return an ordered list of documents (with minimal overview fields),
         plus all associated chunks in ascending chunk order.
