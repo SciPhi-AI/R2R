@@ -26,6 +26,7 @@ class CompletionConfig(ProviderConfig):
     max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
+    request_timeout: float = 15.0
 
     def validate_config(self) -> None:
         if not self.provider:
@@ -57,8 +58,18 @@ class CompletionProvider(Provider):
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
             try:
+                # A semaphore allows us to limit concurrent requests
                 async with self.semaphore:
-                    return await self._execute_task(task)
+                    # And we use asyncio.wait_for to set a timeout for the request
+                    try:
+                        return await asyncio.wait_for(
+                            self._execute_task(task),
+                            timeout=self.config.request_timeout,
+                        )
+                    except asyncio.TimeoutError as e:
+                        raise Exception(
+                            f"Request timed out after {self.config.request_timeout} seconds"
+                        ) from e
             except AuthenticationError:
                 raise
             except Exception as e:
@@ -99,7 +110,12 @@ class CompletionProvider(Provider):
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
             try:
-                return self._execute_task_sync(task)
+                future = self.thread_pool.submit(self._execute_task_sync, task)
+                return future.result(timeout=self.config.request_timeout)
+            except TimeoutError as e:
+                raise Exception(
+                    f"Request timed out after {self.config.request_timeout} seconds"
+                ) from e
             except Exception as e:
                 logger.warning(
                     f"Request failed (attempt {retries + 1}): {str(e)}"

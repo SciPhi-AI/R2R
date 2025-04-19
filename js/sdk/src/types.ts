@@ -209,9 +209,9 @@ export interface GenerationConfig {
 }
 
 export interface HybridSearchSettings {
-  fullTextWeight?: number;
+  fulltextWeight?: number;
   semanticWeight?: number;
-  fullTextLimit?: number;
+  fulltextLimit?: number;
   rrfK?: number;
 }
 
@@ -228,7 +228,7 @@ export interface GraphSearchSettings {
 export interface SearchSettings {
   useHybridSearch?: boolean;
   useSemanticSearch?: boolean;
-  useFullTextSearch?: boolean;
+  useFulltextSearch?: boolean;
   filters?: Record<string, any>;
   limit?: number;
   offset?: number;

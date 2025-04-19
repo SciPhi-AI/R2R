@@ -8,22 +8,6 @@ import {
 } from "../../types";
 import { ensureSnakeCase } from "../../utils";
 
-function parseSseEvent(raw: { event: string; data: string }) {
-  // Some SSE servers send a "done" event at the end:
-  if (raw.event === "done") return null;
-
-  try {
-    const parsedJson = JSON.parse(raw.data);
-    return {
-      event: raw.event,
-      data: parsedJson,
-    };
-  } catch (err) {
-    console.error("Failed to parse SSE line:", raw.data, err);
-    return null;
-  }
-}
-
 export class RetrievalClient {
   constructor(private client: r2rClient) {}
 

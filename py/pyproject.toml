@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.5.11"
+version = "3.5.14"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}

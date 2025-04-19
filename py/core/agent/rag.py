@@ -1,6 +1,7 @@
 # type: ignore
 import logging
 from typing import Any, Callable, Optional
+from uuid import UUID
 
 from core.base import (
     format_search_results_for_llm,
@@ -163,63 +164,31 @@ class RAGAgentMixin:
         Typically used if the agent needs deeper or more structured context
         from documents, not just chunk-level hits.
         """
-        if "gemini" in self.rag_generation_config.model:
-            tool = Tool(
-                name="get_file_content",
-                description=(
-                    "Fetches the complete contents of all user documents from the local database. "
-                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
-                    "For instance, a single document can be returned with a filter like so:"
-                    "{'document_id': {'$eq': '...'}}."
-                    "Be sure to use the full 32 character hexidecimal document ID, and not the shortened 8 character ID."
-                ),
-                results_function=self._content_function,
-                llm_format_function=self.format_search_results_for_llm,
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "filters": {
-                            "type": "string",
-                            "description": (
-                                "Dictionary with filter criteria, such as "
-                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
-                            ),
-                        },
+        return Tool(
+            name="get_file_content",
+            description=(
+                "Fetches the complete contents of all user documents from the local database. "
+                "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
+                "For instance, a single document can be returned with a filter like so:"
+                "{'document_id': {'$eq': '...'}}."
+            ),
+            results_function=self._content_function,
+            llm_format_function=self.format_search_results_for_llm,
+            parameters={
+                "type": "object",
+                "properties": {
+                    "document_id": {
+                        "type": "string",
+                        "description": "The unique UUID of the document to fetch.",
                     },
-                    "required": ["filters"],
                 },
-            )
-
-        else:
-            tool = Tool(
-                name="get_file_content",
-                description=(
-                    "Fetches the complete contents of all user documents from the local database. "
-                    "Can be used alongside filter criteria (e.g. doc IDs, collection IDs, etc.) to restrict the query."
-                    "For instance, a single document can be returned with a filter like so:"
-                    "{'document_id': {'$eq': '...'}}."
-                ),
-                results_function=self._content_function,
-                llm_format_function=self.format_search_results_for_llm,
-                parameters={
-                    "type": "object",
-                    "properties": {
-                        "filters": {
-                            "type": "object",
-                            "description": (
-                                "Dictionary with filter criteria, such as "
-                                '{"$and": [{"document_id": {"$eq": "6c9d1c39..."}, {"collection_ids": {"$overlap": [...]}]}'
-                            ),
-                        },
-                    },
-                    "required": ["filters"],
-                },
-            )
-        return tool
+                "required": ["document_id"],
+            },
+        )
 
     async def _content_function(
         self,
-        filters: Optional[dict[str, Any]] = None,
+        document_id: str,
         options: Optional[dict[str, Any]] = None,
         *args,
         **kwargs,
@@ -238,19 +207,19 @@ class RAGAgentMixin:
         if not self.content_method:
             raise ValueError("No content_method provided to RAGAgentMixin.")
 
-        if filters:
-            if "document_id" in filters:
-                filters["id"] = filters.pop("document_id")
-            if self.search_settings.filters != {}:
-                filters = {"$and": [filters, self.search_settings.filters]}
-        else:
-            filters = self.search_settings.filters
+        try:
+            doc_uuid = UUID(document_id)
+            filters = {"id": {"$eq": doc_uuid}}
+        except ValueError:
+            # Handle invalid UUID format passed by LLM
+            logger.error(f"Invalid document_id format received: {document_id}")
+            # Return empty result or raise specific error
+            return AggregateSearchResult(document_search_results=[])
 
         options = options or {}
 
         # Actually call your data retrieval
         content = await self.content_method(filters, options)
-        # raw_context presumably is a list[dict], each with 'document' + 'chunks'.
 
         # Return them in the new aggregator field
         agg = AggregateSearchResult(
