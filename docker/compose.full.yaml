@@ -160,7 +160,7 @@ services:
       retries: 5
 
   r2r:
-    image: sciphiai/r2r:latest
+    image: sciphiai/r2r:3.5.13
     ports:
       - "7272:7272"
     env_file:
