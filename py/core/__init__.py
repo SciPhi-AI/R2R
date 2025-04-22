@@ -51,8 +51,6 @@ __all__ = [
     "GraphExtractionStatus",
     "GraphConstructionStatus",
     "DocumentType",
-    "EmbeddingPurpose",
-    "default_embedding_prefixes",
     "R2RDocumentProcessingError",
     "R2RException",
     "Entity",

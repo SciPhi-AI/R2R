@@ -12,10 +12,6 @@ from shared.abstractions.document import (
     UnprocessedChunk,
     UpdateChunk,
 )
-from shared.abstractions.embedding import (
-    EmbeddingPurpose,
-    default_embedding_prefixes,
-)
 from shared.abstractions.exception import (
     R2RDocumentProcessingError,
     R2RException,
@@ -91,9 +87,6 @@ __all__ = [
     "RawChunk",
     "UnprocessedChunk",
     "UpdateChunk",
-    # Embedding abstractions
-    "EmbeddingPurpose",
-    "default_embedding_prefixes",
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",

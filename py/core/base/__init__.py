@@ -25,9 +25,6 @@ __all__ = [
     "GraphExtractionStatus",
     "GraphConstructionStatus",
     "DocumentType",
-    # Embedding abstractions
-    "EmbeddingPurpose",
-    "default_embedding_prefixes",
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",

@@ -187,9 +187,6 @@ concurrent_request_limit = 256
 max_retries = 3
 initial_backoff = 1.0
 max_backoff = 64.0
-# Deprecated fields (if still used)
-rerank_dimension = 0
-rerank_transformer_type = ""
 
   # Vector quantization settings for embeddings
   [embedding.quantization_settings]
