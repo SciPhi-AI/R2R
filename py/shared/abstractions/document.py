@@ -322,10 +322,11 @@ class IngestionConfig(R2RSerializable):
         ChunkEnrichmentSettings()
     )
     extra_parsers: dict[str, Any] = {}
-
     audio_transcription_model: str = ""
+
     vlm: Optional[str] = None
     vlm_batch_size: int = 5
+    vlm_ocr_one_page_per_chunk: bool = True
 
     skip_document_summary: bool = False
     document_summary_system_prompt: str = "system"

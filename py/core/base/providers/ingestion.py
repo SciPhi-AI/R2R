@@ -36,6 +36,7 @@ class IngestionConfig(ProviderConfig):
         "audio_transcription_model": None,
         "vlm": None,
         "vlm_batch_size": 5,
+        "vlm_ocr_one_page_per_chunk": True,
         "skip_document_summary": False,
         "document_summary_system_prompt": "system",
         "document_summary_task_prompt": "summary",
@@ -80,6 +81,11 @@ class IngestionConfig(ProviderConfig):
     )
     vlm_batch_size: int = Field(
         default_factory=lambda: IngestionConfig._defaults["vlm_batch_size"]
+    )
+    vlm_ocr_one_page_per_chunk: bool = Field(
+        default_factory=lambda: IngestionConfig._defaults[
+            "vlm_ocr_one_page_per_chunk"
+        ]
     )
     skip_document_summary: bool = Field(
         default_factory=lambda: IngestionConfig._defaults[
