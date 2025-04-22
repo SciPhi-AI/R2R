@@ -12,8 +12,6 @@ from core.base.abstractions import VectorQuantizationSettings
 
 from ..abstractions import (
     ChunkSearchResult,
-    EmbeddingPurpose,
-    default_embedding_prefixes,
 )
 from .base import Provider, ProviderConfig
 
@@ -36,10 +34,6 @@ class EmbeddingConfig(ProviderConfig):
     quantization_settings: VectorQuantizationSettings = (
         VectorQuantizationSettings()
     )
-
-    ## deprecated
-    rerank_dimension: Optional[int] = None
-    rerank_transformer_type: Optional[str] = None
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
@@ -116,12 +110,10 @@ class EmbeddingProvider(Provider):
         self,
         text: str,
         stage: Step = Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
             "text": text,
             "stage": stage,
-            "purpose": purpose,
         }
         return await self._execute_with_backoff_async(task)
 
@@ -129,12 +121,10 @@ class EmbeddingProvider(Provider):
         self,
         text: str,
         stage: Step = Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
             "text": text,
             "stage": stage,
-            "purpose": purpose,
         }
         return self._execute_with_backoff_sync(task)
 
@@ -142,12 +132,10 @@ class EmbeddingProvider(Provider):
         self,
         texts: list[str],
         stage: Step = Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
         }
         return await self._execute_with_backoff_async(task)
 
@@ -155,12 +143,10 @@ class EmbeddingProvider(Provider):
         self,
         texts: list[str],
         stage: Step = Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
     ) -> list[list[float]]:
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
         }
         return self._execute_with_backoff_sync(task)
 
@@ -183,15 +169,3 @@ class EmbeddingProvider(Provider):
         limit: int = 10,
     ):
         pass
-
-    def set_prefixes(self, config_prefixes: dict[str, str], base_model: str):
-        self.prefixes = {}
-
-        for t, p in config_prefixes.items():
-            purpose = EmbeddingPurpose(t.lower())
-            self.prefixes[purpose] = p
-
-        if base_model in default_embedding_prefixes:
-            for t, p in default_embedding_prefixes[base_model].items():
-                if t not in self.prefixes:
-                    self.prefixes[t] = p

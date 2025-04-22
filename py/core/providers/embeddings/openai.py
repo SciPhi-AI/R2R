@@ -10,7 +10,6 @@ from core.base import (
     ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
-    EmbeddingPurpose,
 )
 
 logger = logging.getLogger()
@@ -138,7 +137,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -149,7 +147,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = await self._execute_with_backoff_async(task)
@@ -159,7 +156,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -170,7 +166,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = self._execute_with_backoff_sync(task)
@@ -180,7 +175,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -191,7 +185,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return await self._execute_with_backoff_async(task)
@@ -200,7 +193,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -211,7 +203,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return self._execute_with_backoff_sync(task)

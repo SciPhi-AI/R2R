@@ -1,11 +1,6 @@
-from unittest.mock import AsyncMock, patch
-from uuid import uuid4
+from unittest.mock import AsyncMock
 
 import pytest
-
-# Import your classes
-# from your_module import RetrievalService, SearchSettings, R2RConfig, R2RProviders, ...
-from core.base import EmbeddingPurpose, SearchSettings
 
 
 @pytest.fixture
