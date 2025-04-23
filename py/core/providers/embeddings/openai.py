@@ -12,7 +12,8 @@ from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
 )
-from core.utils import truncate_texts_to_token_limit
+
+from .utils import truncate_texts_to_token_limit
 
 logger = logging.getLogger()
 
