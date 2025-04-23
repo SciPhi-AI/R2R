@@ -217,6 +217,7 @@ class R2RAuthProvider(AuthProvider):
         email: str,
         password: Optional[str] = None,
         is_superuser: bool = False,
+        is_verified: bool = False,
         account_type: str = "password",
         github_id: Optional[str] = None,
         google_id: Optional[str] = None,
@@ -271,7 +272,7 @@ class R2RAuthProvider(AuthProvider):
             new_user.id
         )
 
-        if self.config.require_email_verification:
+        if self.config.require_email_verification and not is_verified:
             verification_code, _ = await self.send_verification_email(
                 email=normalize_email(email), user=new_user
             )

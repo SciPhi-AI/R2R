@@ -29,6 +29,7 @@ class AuthService(Service):
         self,
         email: str,
         password: str,
+        is_verified: bool = False,
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
@@ -36,6 +37,7 @@ class AuthService(Service):
         return await self.providers.auth.register(
             email=email,
             password=password,
+            is_verified=is_verified,
             name=name,
             bio=bio,
             profile_picture=profile_picture,
