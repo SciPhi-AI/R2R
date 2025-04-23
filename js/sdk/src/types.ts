@@ -435,6 +435,7 @@ export type WrappedRelationshipsResponse = PaginatedResultsWrapper<
 // Retrieval Responses
 export type WrappedVectorSearchResponse = ResultsWrapper<VectorSearchResult[]>;
 export type WrappedSearchResponse = ResultsWrapper<CombinedSearchResponse>;
+export type WrappedEmbeddingResponse = ResultsWrapper<number[]>;
 
 // System Responses
 export type WrappedSettingsResponse = ResultsWrapper<SettingsResponse>;

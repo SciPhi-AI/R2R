@@ -4,6 +4,7 @@ import {
   GenerationConfig,
   Message,
   SearchSettings,
+  WrappedEmbeddingResponse,
   WrappedSearchResponse,
 } from "../../types";
 import { ensureSnakeCase } from "../../utils";
@@ -312,9 +313,11 @@ export class RetrievalClient {
    * @param text Text to generate embeddings for
    * @returns Vector embedding of the input text
    */
-  async embedding(text: string): Promise<number[]> {
+  async embedding(options: {
+    text: string;
+  }): Promise<WrappedEmbeddingResponse> {
     return await this.client.makeRequest("POST", "retrieval/embedding", {
-      data: { text },
+      data: { text: options.text },
     });
   }
 }

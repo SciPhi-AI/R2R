@@ -166,4 +166,15 @@ describe("r2rClient V3 Documents Integration Tests", () => {
     const response = await client.documents.delete({ id: documentId });
     expect(response.results).toBeDefined();
   });
+
+  test("Get an embedding that exceeds the context window", async () => {
+    const longText = "Hello world! ".repeat(8192);
+
+    const response = await client.retrieval.embedding({
+      text: longText,
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBeGreaterThan(0);
+  }, 30000);
 });
