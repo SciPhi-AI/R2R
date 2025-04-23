@@ -317,7 +317,7 @@ export class RetrievalClient {
     text: string;
   }): Promise<WrappedEmbeddingResponse> {
     return await this.client.makeRequest("POST", "retrieval/embedding", {
-      data: { text: options.text },
+      data: options.text,
     });
   }
 }
