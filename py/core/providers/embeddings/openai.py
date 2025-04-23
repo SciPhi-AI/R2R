@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 from typing import Any
@@ -11,6 +12,7 @@ from core.base import (
     EmbeddingConfig,
     EmbeddingProvider,
 )
+from core.utils import truncate_texts_to_token_limit
 
 logger = logging.getLogger()
 
@@ -101,6 +103,13 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = await self.async_client.embeddings.create(
                 input=texts,
                 **kwargs,
@@ -119,6 +128,13 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = self.client.embeddings.create(
                 input=texts,
                 **kwargs,

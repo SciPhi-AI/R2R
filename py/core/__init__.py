@@ -111,6 +111,7 @@ __all__ = [
     "convert_nonserializable_objects",
     "num_tokens",
     "num_tokens_from_messages",
+    "truncate_texts_to_token_limit",
     "SearchResultsCollector",
     "R2RProviders",
     "R2RApp",
