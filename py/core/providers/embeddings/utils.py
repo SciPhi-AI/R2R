@@ -1,7 +1,9 @@
-from litellm import get_model_info, token_counter
 import logging
 
+from litellm import get_model_info, token_counter
+
 logger = logging.getLogger(__name__)
+
 
 def truncate_texts_to_token_limit(texts: list[str], model: str) -> list[str]:
     """
