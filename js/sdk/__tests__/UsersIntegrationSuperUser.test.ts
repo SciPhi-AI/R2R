@@ -224,7 +224,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results.isSuperuser).toBe(false);
     expect(response.results.createdAt).toBeDefined();
     expect(response.results.updatedAt).toBeDefined();
-    expect(response.results.isVerified).toBe(false);
+    expect(response.results.isVerified).toBe(true);
     expect(response.results.collectionIds).toBeDefined();
     expect(response.results.hashedPassword).toBeDefined();
     expect(response.results.verificationCodeExpiry).toBeNull();

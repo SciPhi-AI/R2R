@@ -246,6 +246,7 @@ class R2RAuthProvider(AuthProvider):
             email=normalize_email(email),
             password=password,
             is_superuser=is_superuser,
+            is_verified=is_verified,
             account_type=account_type,
             github_id=github_id,
             google_id=google_id,
@@ -275,16 +276,6 @@ class R2RAuthProvider(AuthProvider):
         if self.config.require_email_verification and not is_verified:
             verification_code, _ = await self.send_verification_email(
                 email=normalize_email(email), user=new_user
-            )
-        elif is_verified:
-            expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
-            await self.database_provider.users_handler.store_verification_code(
-                id=new_user.id,
-                verification_code=str(-1),
-                expiry=expiry,
-            )
-            await self.database_provider.users_handler.mark_user_as_verified(
-                id=new_user.id
             )
 
         return new_user

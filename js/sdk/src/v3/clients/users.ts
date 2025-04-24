@@ -28,6 +28,7 @@ export class UsersClient {
    * @param name The name for the new user
    * @param bio The bio for the new user
    * @param profilePicture The profile picture for the new user
+   * @param isVerified Whether the user is verified
    * @returns WrappedUserResponse
    */
   async create(options: {
