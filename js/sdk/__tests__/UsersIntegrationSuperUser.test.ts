@@ -10,6 +10,7 @@ describe("r2rClient V3 Users Integration Tests", () => {
   let client: r2rClient;
   let superUserClient: r2rClient;
   let userId: string;
+  let userId2: string;
   let name: string | undefined;
 
   beforeAll(async () => {
@@ -48,10 +49,10 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results.isSuperuser).toBe(false);
     expect(response.results.createdAt).toBeDefined();
     expect(response.results.updatedAt).toBeDefined();
-    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.isVerified).toBe(false);
     expect(response.results.collectionIds).toBeDefined();
-    // expect(response.results.hashed_password).toBeUndefined();
-    // expect(response.results.verification_code_expiry).toBeUndefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
     expect(response.results.name).toBe(null);
     expect(response.results.bio).toBe(null);
     expect(response.results.profilePicture).toBe(null);
@@ -70,11 +71,13 @@ describe("r2rClient V3 Users Integration Tests", () => {
   });
 
   test("Request verification email", async () => {
-    await expect(
-      client.users.sendVerificationEmail({
-        email: "new_user@example.com",
-      }),
-    ).rejects.toThrow(/Status 400/);
+    const response = await client.users.sendVerificationEmail({
+      email: "new_user@example.com",
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.message).toBe(
+      "A verification email has been sent.",
+    );
   });
 
   test("Login as a user after logout", async () => {
@@ -127,10 +130,10 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results.isSuperuser).toBe(false);
     expect(response.results.createdAt).toBeDefined();
     expect(response.results.updatedAt).toBeDefined();
-    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.isVerified).toBe(false);
     expect(response.results.collectionIds).toBeDefined();
-    // expect(response.results.hashed_password).toBeUndefined();
-    // expect(response.results.verification_code_expiry).toBeUndefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
     expect(response.results.name).toBe("New Name");
     expect(response.results.bio).toBe("New Bio");
     expect(response.results.profilePicture).toBe(null);
@@ -146,10 +149,10 @@ describe("r2rClient V3 Users Integration Tests", () => {
     expect(response.results.isSuperuser).toBe(false);
     expect(response.results.createdAt).toBeDefined();
     expect(response.results.updatedAt).toBeDefined();
-    // expect(response.results.is_verified).toBe(false);
+    expect(response.results.isVerified).toBe(false);
     expect(response.results.collectionIds).toBeDefined();
-    // expect(response.results.hashed_password).toBeUndefined();
-    // expect(response.results.verification_code_expiry).toBeUndefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
     expect(response.results.name).toBe("New Name");
     expect(response.results.bio).toBe("New Bio");
     expect(response.results.profilePicture).toBe(null);
@@ -201,6 +204,134 @@ describe("r2rClient V3 Users Integration Tests", () => {
   test("Delete a user", async () => {
     const response = await client.users.delete({
       id: userId,
+      password: "i_was_changed_immediately",
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Create a second user who is verified at registration", async () => {
+    const response = await superUserClient.users.create({
+      email: "another_new_user@example.com",
+      password: "change_me_immediately",
+      isVerified: true,
+    });
+    userId2 = response.results.id;
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("another_new_user@example.com");
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.isVerified).toBe(false);
+    expect(response.results.collectionIds).toBeDefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
+    expect(response.results.name).toBe(null);
+    expect(response.results.bio).toBe(null);
+    expect(response.results.profilePicture).toBe(null);
+  });
+
+  test("Login as the second user", async () => {
+    const response = await client.users.login({
+      email: "another_new_user@example.com",
+      password: "change_me_immediately",
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Logout as the second user", async () => {
+    await client.users.logout();
+  });
+
+  test("Request verification email for the second user", async () => {
+    expect(
+      async () =>
+        await client.users.sendVerificationEmail({
+          email: "another_new_user@example.com",
+        }),
+    ).rejects.toThrow(
+      "Status 400: This email is already verified. Please log in.",
+    );
+  });
+
+  test("Login as the second user after logout", async () => {
+    const response = await client.users.login({
+      email: "another_new_user@example.com",
+      password: "change_me_immediately",
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Change the second user's password", async () => {
+    const response = await client.users.changePassword({
+      current_password: "change_me_immediately",
+      new_password: "i_was_changed_immediately",
+    });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Logout and login with new password for the second user", async () => {
+    await client.users.logout();
+
+    const login_response = await client.users.login({
+      email: "another_new_user@example.com",
+      password: "i_was_changed_immediately",
+    });
+    expect(login_response.results).toBeDefined();
+  });
+
+  test("Retrieve the second user", async () => {
+    const response = await client.users.retrieve({ id: userId2 });
+    expect(response.results).toBeDefined();
+  });
+
+  test("Update the second user", async () => {
+    const response = await client.users.update({
+      id: userId2,
+      name: "Another New Name",
+      bio: "Another New Bio",
+    });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("another_new_user@example.com");
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.isVerified).toBe(true);
+    expect(response.results.collectionIds).toBeDefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
+    expect(response.results.name).toBe("Another New Name");
+    expect(response.results.bio).toBe("Another New Bio");
+    expect(response.results.profilePicture).toBe(null);
+  });
+
+  test("Retrieve the second user after update", async () => {
+    const response = await client.users.retrieve({ id: userId2 });
+
+    expect(response.results).toBeDefined();
+    expect(response.results.id).toBeDefined();
+    expect(response.results.email).toBe("another_new_user@example.com");
+    expect(response.results.isActive).toBeDefined();
+    expect(response.results.isSuperuser).toBe(false);
+    expect(response.results.createdAt).toBeDefined();
+    expect(response.results.updatedAt).toBeDefined();
+    expect(response.results.isVerified).toBe(true);
+    expect(response.results.collectionIds).toBeDefined();
+    expect(response.results.hashedPassword).toBeDefined();
+    expect(response.results.verificationCodeExpiry).toBeNull();
+    expect(response.results.name).toBe("Another New Name");
+    expect(response.results.bio).toBe("Another New Bio");
+    expect(response.results.profilePicture).toBe(null);
+  });
+
+  test("Delete the second user", async () => {
+    const response = await client.users.delete({
+      id: userId2,
       password: "i_was_changed_immediately",
     });
     expect(response.results).toBeDefined();

@@ -36,6 +36,7 @@ export class UsersClient {
     name?: string;
     bio?: string;
     profilePicture?: string;
+    isVerified?: boolean;
   }): Promise<WrappedUserResponse> {
     const data = {
       ...(options.email && { email: options.email }),
@@ -44,6 +45,9 @@ export class UsersClient {
       ...(options.bio && { bio: options.bio }),
       ...(options.profilePicture && {
         profile_picture: options.profilePicture,
+      }),
+      ...(options.isVerified !== undefined && {
+        is_verified: options.isVerified,
       }),
     };
 

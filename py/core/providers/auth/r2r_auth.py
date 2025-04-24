@@ -276,7 +276,7 @@ class R2RAuthProvider(AuthProvider):
             verification_code, _ = await self.send_verification_email(
                 email=normalize_email(email), user=new_user
             )
-        else:
+        elif is_verified:
             expiry = datetime.now(timezone.utc) + timedelta(hours=366 * 10)
             await self.database_provider.users_handler.store_verification_code(
                 id=new_user.id,
