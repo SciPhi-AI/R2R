@@ -28,6 +28,7 @@ export class UsersClient {
    * @param name The name for the new user
    * @param bio The bio for the new user
    * @param profilePicture The profile picture for the new user
+   * @param isVerified Whether the user is verified
    * @returns WrappedUserResponse
    */
   async create(options: {
@@ -36,6 +37,7 @@ export class UsersClient {
     name?: string;
     bio?: string;
     profilePicture?: string;
+    isVerified?: boolean;
   }): Promise<WrappedUserResponse> {
     const data = {
       ...(options.email && { email: options.email }),
@@ -44,6 +46,9 @@ export class UsersClient {
       ...(options.bio && { bio: options.bio }),
       ...(options.profilePicture && {
         profile_picture: options.profilePicture,
+      }),
+      ...(options.isVerified !== undefined && {
+        is_verified: options.isVerified,
       }),
     };
 

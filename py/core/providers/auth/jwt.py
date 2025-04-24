@@ -124,6 +124,7 @@ class JwtAuthProvider(AuthProvider):
         self,
         email: str,
         password: str,
+        is_verified: bool = False,
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
