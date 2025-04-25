@@ -326,6 +326,7 @@ class IngestionConfig(R2RSerializable):
 
     vlm: Optional[str] = None
     vlm_batch_size: int = 5
+    max_concurrent_vlm_tasks: int = 5
     vlm_ocr_one_page_per_chunk: bool = True
 
     skip_document_summary: bool = False

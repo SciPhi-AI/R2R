@@ -84,6 +84,11 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         self.llm_provider = llm_provider
         self.config = config
         self.vision_prompt_text = None
+        self.vlm_batch_size = self.config.vlm_batch_size or 5
+        self.max_concurrent_vlm_tasks = (
+            self.config.max_concurrent_vlm_tasks or 5
+        )
+        self.semaphore = None
 
     async def process_page(self, image, page_num: int) -> dict[str, str]:
         """Process a single PDF page using the vision model."""
@@ -213,6 +218,15 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 "content": f"Error processing page: {str(e)}",
             }
 
+    async def process_and_yield(self, image, page_num: int):
+        """Process a page and yield the result."""
+        async with self.semaphore:
+            result = await self.process_page(image, page_num)
+            return {
+                "content": result.get("content", "") or "",
+                "page_number": page_num,
+            }
+
     async def ingest(
         self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[dict[str, str | int], None]:
@@ -228,9 +242,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             )
             logger.info("Retrieved vision prompt text from database.")
 
-        try:
-            batch_size = self.config.vlm_batch_size or 5
+        self.semaphore = asyncio.Semaphore(self.max_concurrent_vlm_tasks)
 
+        try:
             if isinstance(data, str):
                 pdf_info = pdf2image.pdfinfo_from_path(data)
             else:
@@ -240,52 +254,95 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             max_pages = pdf_info["Pages"]
             logger.info(f"PDF has {max_pages} pages to process")
 
-            # Convert and process each batch of rasterized pages
-            for batch_start in range(0, max_pages, batch_size):
-                batch_end = min(batch_start + batch_size, max_pages)
-                logger.info(
-                    f"Processing batch: pages {batch_start + 1}-{batch_end}/{max_pages}"
+            # Create a task queue to process pages in order
+            pending_tasks = []
+            completed_tasks = []
+            next_page_to_yield = 1
+
+            # Process pages with a sliding window, in batches
+            for batch_start in range(1, max_pages + 1, self.vlm_batch_size):
+                batch_end = min(
+                    batch_start + self.vlm_batch_size - 1, max_pages
+                )
+                logger.debug(
+                    f"Preparing batch of pages {batch_start}-{batch_end}/{max_pages}"
                 )
 
+                # Convert the batch of pages to images
                 if isinstance(data, str):
-                    batch_images = pdf2image.convert_from_path(
+                    images = pdf2image.convert_from_path(
                         data,
                         dpi=150,
-                        first_page=batch_start + 1,
+                        first_page=batch_start,
                         last_page=batch_end,
                     )
                 else:
                     pdf_bytes = BytesIO(data)
-                    batch_images = pdf2image.convert_from_bytes(
+                    images = pdf2image.convert_from_bytes(
                         pdf_bytes.getvalue(),
                         dpi=150,
-                        first_page=batch_start + 1,
+                        first_page=batch_start,
                         last_page=batch_end,
                     )
 
-                batch_tasks = []
-                for i, image in enumerate(batch_images):
-                    page_num = batch_start + i + 1
-                    batch_tasks.append(self.process_page(image, page_num))
+                # Create tasks for each page in the batch
+                for i, image in enumerate(images):
+                    page_num = batch_start + i
+                    task = asyncio.create_task(
+                        self.process_and_yield(image, page_num)
+                    )
+                    task.page_num = page_num  # Store page number for sorting
+                    pending_tasks.append(task)
 
-                # Process the batch concurrently
-                batch_results = await asyncio.gather(*batch_tasks)
+                # Check if any tasks have completed and yield them in order
+                while pending_tasks:
+                    # Get the first done task without waiting
+                    done_tasks, pending_tasks_set = await asyncio.wait(
+                        pending_tasks,
+                        timeout=0.01,
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
 
-                for i, result in enumerate(batch_results):
-                    page_num = batch_start + i + 1
-                    yield {
-                        "content": result.get("content", "") or "",
-                        "page_number": page_num,
-                    }
+                    if not done_tasks:
+                        break
 
-                # Force garbage collection after each batch
-                import gc
+                    # Add completed tasks to our completed list
+                    pending_tasks = list(pending_tasks_set)
+                    completed_tasks.extend(iter(done_tasks))
 
-                gc.collect()
+                    # Sort completed tasks by page number
+                    completed_tasks.sort(key=lambda t: t.page_num)
+
+                    # Yield results in order
+                    while (
+                        completed_tasks
+                        and completed_tasks[0].page_num == next_page_to_yield
+                    ):
+                        task = completed_tasks.pop(0)
+                        yield await task
+                        next_page_to_yield += 1
+
+            # Wait for and yield any remaining tasks in order
+            while pending_tasks:
+                done_tasks, _ = await asyncio.wait(pending_tasks)
+                completed_tasks.extend(done_tasks)
+                pending_tasks = []
+
+                # Sort and yield remaining completed tasks
+                completed_tasks.sort(key=lambda t: t.page_num)
+
+                # Yield results in order
+                while (
+                    completed_tasks
+                    and completed_tasks[0].page_num == next_page_to_yield
+                ):
+                    task = completed_tasks.pop(0)
+                    yield await task
+                    next_page_to_yield += 1
 
             total_elapsed = time.perf_counter() - ingest_start
             logger.info(
-                f"Completed PDF ingestion in {total_elapsed:.2f} seconds"
+                f"Completed PDF conversion in {total_elapsed:.2f} seconds"
             )
 
         except Exception as e:
