@@ -138,6 +138,7 @@ class DatabaseConfig(ProviderConfig):
     collection_summary_system_prompt: str = "system"
     collection_summary_prompt: str = "collection_summary"
     enable_fts: bool = False
+    disable_create_extension: bool = False
 
     # Graph settings
     batch_size: Optional[int] = 1

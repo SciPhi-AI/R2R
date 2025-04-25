@@ -116,6 +116,7 @@ default_collection_description = "Your default collection."
 collection_summary_system_prompt = "system"
 collection_summary_prompt = "collection_summary"
 enable_fts = false
+disable_create_extension = false
 batch_size = 1
 kg_store_path = ""
 
