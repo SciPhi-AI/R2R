@@ -1181,7 +1181,22 @@ class PostgresRelationshipsHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row["id"],
+                                "subject": row["subject"],
+                                "predicate": row["predicate"],
+                                "object": row["object"],
+                                "description": row["description"],
+                                "subject_id": row["subject_id"],
+                                "object_id": row["object_id"],
+                                "weight": row["weight"],
+                                "chunk_ids": row["chunk_ids"],
+                                "parent_id": row["parent_id"],
+                                "metadata": row["metadata"],
+                                "created_at": row["created_at"],
+                                "updated_at": row["updated_at"],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
@@ -1586,7 +1601,21 @@ class PostgresCommunitiesHandler(Handler):
                         if not rows:
                             break
                         for row in rows:
-                            writer.writerow(row)
+                            row_dict = {
+                                "id": row[0],
+                                "collection_id": row[1],
+                                "community_id": row[2],
+                                "level": row[3],
+                                "name": row[4],
+                                "summary": row[5],
+                                "findings": row[6],
+                                "rating": row[7],
+                                "rating_explanation": row[8],
+                                "created_at": row[9],
+                                "updated_at": row[10],
+                                "metadata": row[11],
+                            }
+                            writer.writerow([row_dict[col] for col in columns])
 
             temp_file.flush()
             return temp_file.name, temp_file
