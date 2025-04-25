@@ -234,7 +234,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
     async def ingest(
         self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[dict[str, str | int], None]:
-        """Process PDF as images using pdf2imag."""
+        """Process PDF as images using pdf2image."""
         ingest_start = time.perf_counter()
         logger.info("Starting PDF ingestion using VLMPDFParser.")
 
