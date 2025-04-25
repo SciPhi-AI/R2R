@@ -254,7 +254,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
                     metadata["page_number"] = content_item["page_number"]
 
                 yield FallbackElement(
-                    text=text,
+                    text=text or "No content extracted.",
                     metadata=metadata,
                 )
                 iteration += 1
@@ -432,10 +432,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 data=text,
                 metadata=metadata,
             )
-
-        # TODO: explore why this is throwing inadvertedly
-        # if iteration == 0:
-        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
