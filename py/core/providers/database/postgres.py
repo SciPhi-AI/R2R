@@ -213,10 +213,14 @@ class PostgresDatabaseProvider(DatabaseProvider):
 
         async with self.pool.get_connection() as conn:
             if not self.config.disable_create_extension:
-                await conn.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+                await conn.execute(
+                    'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+                )
                 await conn.execute("CREATE EXTENSION IF NOT EXISTS vector;")
                 await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
-                await conn.execute("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;")
+                await conn.execute(
+                    "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"
+                )
 
             # Create schema if it doesn't exist
             await conn.execute(
