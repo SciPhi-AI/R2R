@@ -217,10 +217,6 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 "page": str(page_num),
                 "content": f"Error processing page: {str(e)}",
             }
-        finally:
-            import gc
-
-            gc.collect()
 
     async def process_and_yield(self, image, page_num: int):
         """Process a page and yield the result."""
