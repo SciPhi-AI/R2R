@@ -64,5 +64,5 @@ jobs:
             free -m  # Check RAM usage
             sudo systemctl restart docker  # Restart Docker service
             docker compose -f compose.full.yaml --profile postgres down  # Stop existing containers
-            docker pull sciphiai/r2r:3.5.13  # Pull new image
+            docker pull sciphiai/r2r:3.5.16  # Pull new image
             docker compose -f compose.full.yaml --profile postgres up -d  # Start new containers
