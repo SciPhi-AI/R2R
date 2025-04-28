@@ -43,6 +43,7 @@ automatic_extraction = true # enable automatic extraction of entities and relati
 
 [orchestration]
 provider = "hatchet"
+max_runs = 2048
 kg_creation_concurrency_limit = 32
-ingestion_concurrency_limit = 4
+ingestion_concurrency_limit = 16
 kg_concurrency_limit = 8

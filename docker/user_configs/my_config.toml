@@ -123,7 +123,11 @@ provider = "mistral"
 model = "mistral-ocr-latest"
 
 [orchestration]
-provider = "simple"
+provider = "hatchet"
+max_runs = 2048
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 8
 
 [email]
 provider = "console_mock" # `smtp` | `sendgrid` supported
