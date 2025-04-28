@@ -223,6 +223,10 @@ chunk_size = 1024
 # Extra field handled by extra_fields – not defined explicitly in IngestionConfig:
 chunk_overlap = 512
 automatic_extraction = true
+vlm_batch_size=20
+vlm_max_tokens_to_sample=1024
+max_concurrent_vlm_tasks=20
+vlm_ocr_one_page_per_chunk = true
 # Audio transcription and vision model settings
 audio_transcription_model = ""
 skip_document_summary = false

@@ -85,6 +85,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         self.config = config
         self.vision_prompt_text = None
         self.vlm_batch_size = self.config.vlm_batch_size or 5
+        self.vlm_max_tokens_to_sample = (
+            self.config.vlm_max_tokens_to_sample or 1024
+        )
         self.max_concurrent_vlm_tasks = (
             self.config.max_concurrent_vlm_tasks or 5
         )
@@ -106,6 +109,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             generation_config = GenerationConfig(
                 model=self.config.vlm or self.config.app.vlm,
                 stream=False,
+                max_tokens_to_sample=self.vlm_max_tokens_to_sample,
             )
 
             is_anthropic = model and "anthropic/" in model
