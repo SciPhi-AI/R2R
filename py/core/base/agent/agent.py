@@ -16,7 +16,7 @@ from core.base.abstractions import (
 )
 from core.base.providers import CompletionProvider, DatabaseProvider
 
-from .base import Tool, ToolResult
+from .tools.base import Tool, ToolResult
 
 logger = logging.getLogger()
 
