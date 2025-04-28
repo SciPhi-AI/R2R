@@ -21,9 +21,14 @@ from ..base.providers.ocr import OCRConfig
 from ..base.providers.orchestration import OrchestrationConfig
 from ..base.providers.scheduler import SchedulerConfig
 from ..base.utils import deep_update
+from os import getenv
+
+logging.basicConfig(
+    level=logging.getLevelName(getenv("LOG_LEVEL", "INFO")),
+    format=getenv("LOG_FORMAT")
+)
 
 logger = logging.getLogger()
-
 
 class R2RConfig:
     current_file_path = os.path.dirname(__file__)
