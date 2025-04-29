@@ -116,6 +116,7 @@ default_collection_description = "Your default collection."
 collection_summary_system_prompt = "system"
 collection_summary_prompt = "collection_summary"
 enable_fts = false
+disable_create_extension = false
 batch_size = 1
 kg_store_path = ""
 
@@ -187,9 +188,6 @@ concurrent_request_limit = 256
 max_retries = 3
 initial_backoff = 1.0
 max_backoff = 64.0
-# Deprecated fields (if still used)
-rerank_dimension = 0
-rerank_transformer_type = ""
 
   # Vector quantization settings for embeddings
   [embedding.quantization_settings]
@@ -225,6 +223,10 @@ chunk_size = 1024
 # Extra field handled by extra_fields – not defined explicitly in IngestionConfig:
 chunk_overlap = 512
 automatic_extraction = true
+vlm_batch_size=20
+vlm_max_tokens_to_sample=1024
+max_concurrent_vlm_tasks=20
+vlm_ocr_one_page_per_chunk = true
 # Audio transcription and vision model settings
 audio_transcription_model = ""
 skip_document_summary = false

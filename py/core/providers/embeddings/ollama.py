@@ -8,7 +8,6 @@ from core.base import (
     ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
-    EmbeddingPurpose,
     R2RException,
 )
 
@@ -41,7 +40,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.client = Client(host=self.base_url)
         self.aclient = AsyncClient(host=self.base_url)
 
-        self.set_prefixes(config.prefixes or {}, self.base_model)
         self.batch_size = config.batch_size or 32
 
     def _get_embedding_kwargs(self, **kwargs):
@@ -53,19 +51,13 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
     async def _execute_task(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
-        purpose = task.get("purpose", EmbeddingPurpose.INDEX)
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
             embeddings = []
             for i in range(0, len(texts), self.batch_size):
                 batch = texts[i : i + self.batch_size]
-                prefixed_batch = [
-                    self.prefixes.get(purpose, "") + text for text in batch
-                ]
-                response = await self.aclient.embed(
-                    input=prefixed_batch, **kwargs
-                )
+                response = await self.aclient.embed(input=batch, **kwargs)
                 embeddings.extend(response["embeddings"])
             return embeddings
         except Exception as e:
@@ -75,17 +67,13 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
 
     def _execute_task_sync(self, task: dict[str, Any]) -> list[list[float]]:
         texts = task["texts"]
-        purpose = task.get("purpose", EmbeddingPurpose.INDEX)
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
             embeddings = []
             for i in range(0, len(texts), self.batch_size):
                 batch = texts[i : i + self.batch_size]
-                prefixed_batch = [
-                    self.prefixes.get(purpose, "") + text for text in batch
-                ]
-                response = self.client.embed(input=prefixed_batch, **kwargs)
+                response = self.client.embed(input=batch, **kwargs)
                 embeddings.extend(response["embeddings"])
             return embeddings
         except Exception as e:
@@ -97,7 +85,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -108,7 +95,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = await self._execute_with_backoff_async(task)
@@ -118,7 +104,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -129,7 +114,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = self._execute_with_backoff_sync(task)
@@ -139,7 +123,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -150,7 +133,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return await self._execute_with_backoff_async(task)
@@ -159,7 +141,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -170,7 +151,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return self._execute_with_backoff_sync(task)

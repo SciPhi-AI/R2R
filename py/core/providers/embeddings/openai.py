@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import os
 from typing import Any
@@ -10,8 +11,9 @@ from core.base import (
     ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
-    EmbeddingPurpose,
 )
+
+from .utils import truncate_texts_to_token_limit
 
 logger = logging.getLogger()
 
@@ -102,6 +104,13 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
 
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = await self.async_client.embeddings.create(
                 input=texts,
                 **kwargs,
@@ -120,6 +129,13 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = self.client.embeddings.create(
                 input=texts,
                 **kwargs,
@@ -138,7 +154,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -149,7 +164,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = await self._execute_with_backoff_async(task)
@@ -159,7 +173,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -170,7 +183,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         result = self._execute_with_backoff_sync(task)
@@ -180,7 +192,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -191,7 +202,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return await self._execute_with_backoff_async(task)
@@ -200,7 +210,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -211,7 +220,6 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return self._execute_with_backoff_sync(task)

@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import math
 import os
@@ -13,9 +14,10 @@ from core.base import (
     ChunkSearchResult,
     EmbeddingConfig,
     EmbeddingProvider,
-    EmbeddingPurpose,
     R2RException,
 )
+
+from .utils import truncate_texts_to_token_limit
 
 logger = logging.getLogger()
 
@@ -49,16 +51,16 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
                     "LiteLLMEmbeddingProvider only supports re-ranking via the HuggingFace text-embeddings-inference API"
                 )
 
-            url = os.getenv("HUGGINGFACE_API_BASE") or config.rerank_url
-            if not url:
+            if url := os.getenv("HUGGINGFACE_API_BASE") or config.rerank_url:
+                self.rerank_url = url
+            else:
                 raise ValueError(
                     "LiteLLMEmbeddingProvider requires a valid reranking API url to be set via `embedding.rerank_url` in the r2r.toml, or via the environment variable `HUGGINGFACE_API_BASE`."
                 )
-            self.rerank_url = url
 
         self.base_model = config.base_model
         if "amazon" in self.base_model:
-            logger.warn("Amazon embedding model detected, dropping params")
+            logger.warning("Amazon embedding model detected, dropping params")
             litellm.drop_params = True
         self.base_dimension = config.base_dimension
 
@@ -79,6 +81,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             logger.warning("Dropping nan dimensions from kwargs")
 
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = await self.litellm_aembedding(
                 input=texts,
                 **kwargs,
@@ -99,6 +108,13 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         texts = task["texts"]
         kwargs = self._get_embedding_kwargs(**task.get("kwargs", {}))
         try:
+            # Truncate text if it exceeds the model's max input tokens. Some providers do this by default, others do not.
+            if kwargs.get("model"):
+                with contextlib.suppress(Exception):
+                    texts = truncate_texts_to_token_limit(
+                        texts, kwargs["model"]
+                    )
+
             response = self.litellm_embedding(
                 input=texts,
                 **kwargs,
@@ -118,7 +134,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -129,7 +144,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return (await self._execute_with_backoff_async(task))[0]
@@ -138,7 +152,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         text: str,
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[float]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -149,7 +162,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": [text],
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return self._execute_with_backoff_sync(task)[0]
@@ -158,7 +170,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -169,7 +180,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return await self._execute_with_backoff_async(task)
@@ -178,7 +188,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         self,
         texts: list[str],
         stage: EmbeddingProvider.Step = EmbeddingProvider.Step.BASE,
-        purpose: EmbeddingPurpose = EmbeddingPurpose.INDEX,
         **kwargs,
     ) -> list[list[float]]:
         if stage != EmbeddingProvider.Step.BASE:
@@ -189,7 +198,6 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
         task = {
             "texts": texts,
             "stage": stage,
-            "purpose": purpose,
             "kwargs": kwargs,
         }
         return self._execute_with_backoff_sync(task)

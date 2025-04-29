@@ -251,6 +251,7 @@ class PostgresUserHandler(Handler):
         google_id: Optional[str] = None,
         github_id: Optional[str] = None,
         is_superuser: bool = False,
+        is_verified: bool = False,
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
@@ -310,7 +311,7 @@ class PostgresUserHandler(Handler):
                     # !!WARNING - Upstream checks are required to treat oauth differently from password!!
                     "google_id": google_id,
                     "github_id": github_id,
-                    "is_verified": account_type != "password",
+                    "is_verified": is_verified or (account_type != "password"),
                     "name": name,
                     "bio": bio,
                     "profile_picture": profile_picture,

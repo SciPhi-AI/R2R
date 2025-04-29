@@ -112,33 +112,24 @@ class UsersRouter(BaseRouterV3):
             profile_picture: str | None = Body(
                 None, description="Updated user profile picture"
             ),
-            # auth_user=Depends(self.providers.auth.auth_wrapper()),
+            is_verified: bool = Body(
+                False,
+                description="Whether to verify the user immediately",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUserResponse:
             """Register a new user with the given email and password."""
 
-            # TODO: Do we really want this validation? The default password for the superuser would not pass...
-            def validate_password(password: str) -> bool:
-                if len(password) < 10:
-                    return False
-                if not any(c.isupper() for c in password):
-                    return False
-                if not any(c.islower() for c in password):
-                    return False
-                if not any(c.isdigit() for c in password):
-                    return False
-                if not any(c in "!@#$%^&*" for c in password):
-                    return False
-                return True
-
-            # if not validate_password(password):
-            #     raise R2RException(
-            #         f"Password must be at least 10 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character from '!@#$%^&*'.",
-            #         400,
-            #     )
+            if is_verified and not auth_user.is_superuser:
+                raise R2RException(
+                    "Non-superuser cannot verify users during registration.",
+                    403,
+                )
 
             registration_response = await self.services.auth.register(
                 email=email,
                 password=password,
+                is_verified=is_verified,
                 name=name,
                 bio=bio,
                 profile_picture=profile_picture,

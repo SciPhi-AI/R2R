@@ -11,7 +11,6 @@ from .document import (
     RawChunk,
     UnprocessedChunk,
 )
-from .embedding import EmbeddingPurpose, default_embedding_prefixes
 from .exception import (
     PDFParsingError,
     PopplerNotFoundError,
@@ -85,9 +84,6 @@ __all__ = [
     "DocumentType",
     "RawChunk",
     "UnprocessedChunk",
-    # Embedding abstractions
-    "EmbeddingPurpose",
-    "default_embedding_prefixes",
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",

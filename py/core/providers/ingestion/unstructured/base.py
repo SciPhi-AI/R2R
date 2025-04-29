@@ -237,30 +237,50 @@ class UnstructuredIngestionProvider(IngestionProvider):
 
         logging.info(f"Fallback ingestion with config = {ingestion_config}")
 
+        vlm_ocr_one_page_per_chunk = ingestion_config.get(
+            "vlm_ocr_one_page_per_chunk", True
+        )
+
         iteration = 0
         for content_item in contents:
             text = content_item["content"]
 
-            loop = asyncio.get_event_loop()
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=ingestion_config["new_after_n_chars"],
-                chunk_overlap=ingestion_config["overlap"],
-            )
-            chunks = await loop.run_in_executor(
-                None, splitter.create_documents, [text]
-            )
-
-            for text_chunk in chunks:
+            if vlm_ocr_one_page_per_chunk and parser_name.startswith(
+                ("zerox_", "ocr_")
+            ):
+                # Use one page per chunk for OCR/VLM
                 metadata = {"chunk_id": iteration}
                 if "page_number" in content_item:
                     metadata["page_number"] = content_item["page_number"]
 
                 yield FallbackElement(
-                    text=text_chunk.page_content,
+                    text=text or "No content extracted.",
                     metadata=metadata,
                 )
                 iteration += 1
                 await asyncio.sleep(0)
+            else:
+                # Use regular text splitting
+                loop = asyncio.get_event_loop()
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=ingestion_config["new_after_n_chars"],
+                    chunk_overlap=ingestion_config["overlap"],
+                )
+                chunks = await loop.run_in_executor(
+                    None, splitter.create_documents, [text]
+                )
+
+                for text_chunk in chunks:
+                    metadata = {"chunk_id": iteration}
+                    if "page_number" in content_item:
+                        metadata["page_number"] = content_item["page_number"]
+
+                    yield FallbackElement(
+                        text=text_chunk.page_content,
+                        metadata=metadata,
+                    )
+                    iteration += 1
+                    await asyncio.sleep(0)
 
     async def parse(
         self,
@@ -412,10 +432,6 @@ class UnstructuredIngestionProvider(IngestionProvider):
                 data=text,
                 metadata=metadata,
             )
-
-        # TODO: explore why this is throwing inadvertedly
-        # if iteration == 0:
-        #     raise ValueError(f"No chunks found for document {document.id}")
 
         logger.debug(
             f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "

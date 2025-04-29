@@ -290,7 +290,7 @@ class RetrievalService(Service):
         ):
             query_vector = (
                 await self.providers.completion_embedding.async_get_embedding(
-                    query  # , EmbeddingPurpose.QUERY
+                    text=query
                 )
             )
 
@@ -620,7 +620,7 @@ class RetrievalService(Service):
         """
         # Precompute the embedding of alt_text
         vec = await self.providers.completion_embedding.async_get_embedding(
-            alt_text  # , EmbeddingPurpose.QUERY
+            text=alt_text
         )
 
         # chunk search
@@ -666,7 +666,7 @@ class RetrievalService(Service):
         ):
             query_vector = (
                 await self.providers.completion_embedding.async_get_embedding(
-                    query_text  # , EmbeddingPurpose.QUERY
+                    text=query_text
                 )
             )
 

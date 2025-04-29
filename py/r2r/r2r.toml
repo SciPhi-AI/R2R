@@ -46,7 +46,7 @@ default_admin_password = "change_me_immediately"
 [completion]
 provider = "r2r"
 concurrent_request_limit = 64
-request_timeout = 15
+request_timeout = 60
 
   [completion.generation_config]
   temperature = 1.0
@@ -106,6 +106,8 @@ chunk_overlap = 512
 excluded_parsers = ["mp4"]
 automatic_extraction = true # enable automatic extraction of entities and relations
 vlm_batch_size=20
+max_concurrent_vlm_tasks=20
+vlm_ocr_one_page_per_chunk = true
 
   [ingestion.chunk_enrichment_settings]
     chunk_enrichment_prompt = "chunk_enrichment"

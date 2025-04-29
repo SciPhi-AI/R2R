@@ -286,30 +286,27 @@ class R2RIngestionProvider(IngestionProvider):
                     and parser_overrides.get(DocumentType.PDF.value) == "zerox"
                     or parser_overrides.get(DocumentType.PDF.value) == "ocr"
                 ):
-                    text_splitter = self._build_text_splitter(
-                        ingestion_config_override
+                    vlm_ocr_one_page_per_chunk = ingestion_config_override.get(
+                        "vlm_ocr_one_page_per_chunk", True
                     )
 
-                    iteration = 0
+                    if vlm_ocr_one_page_per_chunk:
+                        # Use one page per chunk for OCR/VLM
+                        iteration = 0
 
-                    sorted_contents = [
-                        item
-                        for item in sorted(
-                            contents, key=lambda x: x.get("page_number", 0)
-                        )
-                        if isinstance(item.get("content"), str)
-                    ]
+                        sorted_contents = [
+                            item
+                            for item in sorted(
+                                contents, key=lambda x: x.get("page_number", 0)
+                            )
+                            if isinstance(item.get("content"), str)
+                        ]
 
-                    for content_item in sorted_contents:
-                        page_num = content_item.get("page_number", 0)
-                        page_content = content_item["content"]
+                        for content_item in sorted_contents:
+                            page_num = content_item.get("page_number", 0)
+                            page_content = content_item["content"]
 
-                        page_chunks = text_splitter.create_documents(
-                            [page_content]
-                        )
-
-                        # Create document chunks for each split piece
-                        for chunk in page_chunks:
+                            # Create a document chunk directly from the page content
                             metadata = {
                                 **document.metadata,
                                 "chunk_order": iteration,
@@ -323,18 +320,69 @@ class R2RIngestionProvider(IngestionProvider):
                                 document_id=document.id,
                                 owner_id=document.owner_id,
                                 collection_ids=document.collection_ids,
-                                data=chunk.page_content,
+                                data=page_content,
                                 metadata=metadata,
                             )
                             iteration += 1
                             yield extraction
 
-                    logger.debug(
-                        f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
-                        f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
-                        f"into {iteration} extractions in t={time.time() - t0:.2f} seconds using page-by-page splitting."
-                    )
-                    return
+                        logger.debug(
+                            f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
+                            f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
+                            f"into {iteration} extractions in t={time.time() - t0:.2f} seconds using one-page-per-chunk."
+                        )
+                        return
+                    else:
+                        # Text splitting
+                        text_splitter = self._build_text_splitter(
+                            ingestion_config_override
+                        )
+
+                        iteration = 0
+
+                        sorted_contents = [
+                            item
+                            for item in sorted(
+                                contents, key=lambda x: x.get("page_number", 0)
+                            )
+                            if isinstance(item.get("content"), str)
+                        ]
+
+                        for content_item in sorted_contents:
+                            page_num = content_item.get("page_number", 0)
+                            page_content = content_item["content"]
+
+                            page_chunks = text_splitter.create_documents(
+                                [page_content]
+                            )
+
+                            # Create document chunks for each split piece
+                            for chunk in page_chunks:
+                                metadata = {
+                                    **document.metadata,
+                                    "chunk_order": iteration,
+                                    "page_number": page_num,
+                                }
+
+                                extraction = DocumentChunk(
+                                    id=generate_extraction_id(
+                                        document.id, iteration
+                                    ),
+                                    document_id=document.id,
+                                    owner_id=document.owner_id,
+                                    collection_ids=document.collection_ids,
+                                    data=chunk.page_content,
+                                    metadata=metadata,
+                                )
+                                iteration += 1
+                                yield extraction
+
+                        logger.debug(
+                            f"Parsed document with id={document.id}, title={document.metadata.get('title', None)}, "
+                            f"user_id={document.metadata.get('user_id', None)}, metadata={document.metadata} "
+                            f"into {iteration} extractions in t={time.time() - t0:.2f} seconds using page-by-page splitting."
+                        )
+                        return
 
             else:
                 # Standard parsing for non-override cases

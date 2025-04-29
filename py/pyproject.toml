@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.5.14"
+version = "3.5.17"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}
@@ -83,7 +83,7 @@ core = [
     "sentry-sdk >=2.20.0,<3.0.0",
     "sqlalchemy >=2.0.30,<3.0.0",
     "striprtf >=0.0.28,<0.0.29",
-    "supabase >=2.7.4,<3.0.0",
+    "supabase >=2.15.0,<3.0.0",
     "tokenizers ==0.19",
     "unstructured-client ==0.25.5",
     "uvicorn >=0.27.0.post1,<0.28.0",

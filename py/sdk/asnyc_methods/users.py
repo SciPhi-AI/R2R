@@ -26,6 +26,7 @@ class UsersSDK:
         name: Optional[str] = None,
         bio: Optional[str] = None,
         profile_picture: Optional[str] = None,
+        is_verified: Optional[bool] = None,
     ) -> WrappedUserResponse:
         """Register a new user.
 
@@ -48,6 +49,8 @@ class UsersSDK:
             data["bio"] = bio
         if profile_picture is not None:
             data["profile_picture"] = profile_picture
+        if is_verified is not None:
+            data["is_verified"] = is_verified
 
         response_dict = await self.client._make_request(
             "POST",
