@@ -36,6 +36,7 @@ from core.base import (
     WebSearchResult,
     format_search_results_for_llm,
 )
+from core.base.agent.tools.registry import ToolRegistry
 from core.base.api.models import RAGResponse, User
 from core.utils import (
     CitationTracker,
@@ -103,6 +104,7 @@ class AgentFactory:
         """
         # Create a deep copy of the config to avoid modifying the original
         agent_config = deepcopy(config)
+        tool_registry = ToolRegistry()
 
         # Handle tool specifications based on mode
         if mode == "rag":
@@ -156,6 +158,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
             else:
                 if use_xml_format:
@@ -169,6 +172,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
                 else:
                     return R2RRAGAgent(
@@ -181,6 +185,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
         else:
             # Research mode agents
