@@ -1,11 +1,12 @@
-# User Configs Directory
+# User-Defined Tools Directory
 
 ## Overview
 This directory is mounted inside the R2R Docker container and is intended for custom tool files. Any files placed here will be accessible to the application running in the container.
 
 ## Usage
 1. Place your custom tool definitions in this directory. Utilize the template structure demonstrated here.
-2. Include the tool in your your agent configuration.
+2. Add any additional dependencies that you may need to the user_requirements.txt file in this directory.
+3. Include the tool in your your agent configuration.
 
 ## Creating a tool
 ```python
@@ -56,10 +57,5 @@ class ToolNameTool(Tool):
 ```
 
 ## Troubleshooting
-If you encounter configuration errors, check:
-1. Your configuration file exists in this directory
-2. The filename matches what's specified in `R2R_CONFIG_PATH`
-3. The file has proper permissions (readable)
-4. The file contains valid TOML syntax
 
 For more detailed configuration information, see the main documentation.

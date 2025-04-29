@@ -3,6 +3,7 @@ import inspect
 import logging
 import os
 import pkgutil
+import subprocess
 import sys
 from typing import Callable, Optional, Type
 
@@ -39,6 +40,16 @@ class ToolRegistry:
             logger.warning(
                 f"User tools directory not found: {self.user_tools_path}"
             )
+
+    # TODO: Do this within the factory, not here
+    def _install_user_requirements(self, path: str):
+        if os.path.exists(path):
+            logger.info(f"Installing user requirements from {path}")
+            subprocess.check_call(
+                ["pip", "install", "-r", f"{path}/user_requirements.txt"]
+            )
+        else:
+            logger.warning(f"User requirements file not found: {path}")
 
     def _discover_built_in_tools(self):
         """Load all built-in tools from the built_in directory."""
@@ -96,6 +107,8 @@ class ToolRegistry:
         # Add user_tools directory to Python path if needed
         if self.user_tools_path not in sys.path:
             sys.path.append(os.path.dirname(self.user_tools_path))
+
+        self._install_user_requirements(self.user_tools_path)
 
         user_tools_pkg_name = os.path.basename(self.user_tools_path)
 

@@ -46,6 +46,7 @@ services:
     restart: on-failure
     volumes:
       - ./user_configs:/app/user_configs
+      - ./user_tools:/app/user_tools
     extra_hosts:
       - host.docker.internal:host-gateway
 
