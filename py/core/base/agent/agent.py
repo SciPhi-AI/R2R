@@ -73,7 +73,7 @@ class Agent(ABC):
         self._tools: list[Tool] = []
         self.tool_calls: list[dict] = []
         self.rag_generation_config = rag_generation_config
-        self._register_tools()
+        # self._register_tools()
 
     @abstractmethod
     def _register_tools(self):
@@ -209,9 +209,7 @@ class Agent(ABC):
 
             merged_kwargs = {**kwargs, **function_args}
             try:
-                raw_result = await tool.results_function(
-                    *args, **merged_kwargs
-                )
+                raw_result = await tool.execute(*args, **merged_kwargs)
                 llm_formatted_result = tool.llm_format_function(raw_result)
             except Exception as e:
                 raw_result = f"Calling the requested tool '{function_name}' with arguments {function_arguments} failed with an exception: {e}."

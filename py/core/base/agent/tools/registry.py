@@ -173,18 +173,36 @@ class ToolRegistry:
         self, tool_name: str, format_function: Callable, context=None
     ) -> Optional[Tool]:
         """
-        Create and return a Tool instance for the specified tool.
-        Returns None if the tool doesn't exist.
+        Create, configure, and return an instance of the specified tool.
+        Returns None if the tool doesn't exist or instantiation fails.
         """
         tool_class = self.get_tool_class(tool_name)
         if not tool_class:
+            logger.warning(f"Tool class not found for '{tool_name}'")
             return None
 
         try:
+            # 1. Instantiate the SPECIFIC tool class
             tool_instance = tool_class()
-            tool = tool_instance.create_tool(format_function)
-            tool.set_context(context)
-            return tool
+
+            # 2. Set the LLM formatting function if the tool uses it
+            #    (Assuming it's an attribute named 'llm_format_function')
+            #    Check if your specific tools actually need this set here.
+            #    If format_function is passed TO execute, this might not be needed.
+            if hasattr(tool_instance, "llm_format_function"):
+                tool_instance.llm_format_function = format_function
+
+            # 3. Set the context DIRECTLY on the specific tool instance
+            tool_instance.set_context(
+                context
+            )  # Uses the Tool base class's set_context
+
+            # 4. Return the configured specific tool instance
+            return tool_instance
+
         except Exception as e:
-            logger.error(f"Error creating tool instance for {tool_name}: {e}")
+            # Log detailed error including stack trace
+            logger.error(
+                f"Error creating or setting context for tool instance '{tool_name}': {e}"
+            )
             return None

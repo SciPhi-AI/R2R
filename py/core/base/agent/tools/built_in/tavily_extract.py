@@ -1,5 +1,4 @@
 import logging
-from typing import Callable
 
 from core.base.agent.tools.base import Tool
 from core.utils import (
@@ -9,37 +8,39 @@ from core.utils import (
 logger = logging.getLogger(__name__)
 
 
-class TavilyExtractTool:
+class TavilyExtractTool(Tool):
     """
     Uses the Tavily Search API, to extract content from a specific URL.
     """
 
     def __init__(self):
-        self.name = ("tavily_extract",)
-        self.description = (
-            (
+        super().__init__(
+            name="tavily_extract",
+            description=(
                 "Use Tavily to extract and retrieve the contents of a specific webpage. "
                 "This is useful when you want to get clean, structured content from a URL. "
                 "Use this when you need to analyze the full content of a specific webpage."
             ),
-        )
-        self.parameters = (
-            {
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": (
-                            "The absolute URL of the webpage you want to extract content from. "
-                            "Example: 'https://www.example.com/article'"
-                        ),
-                    }
+            parameters=(
+                {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": (
+                                "The absolute URL of the webpage you want to extract content from. "
+                                "Example: 'https://www.example.com/article'"
+                            ),
+                        }
+                    },
+                    "required": ["url"],
                 },
-                "required": ["url"],
-            },
+            ),
+            results_function=self.execute,
+            llm_format_function=None,
         )
 
-    async def execute(self, url: str, context=None, *args, **kwargs):
+    async def execute(self, url: str, *args, **kwargs):
         """
         Calls Tavily's extract API asynchronously.
         """
@@ -50,6 +51,8 @@ class TavilyExtractTool:
             AggregateSearchResult,
             WebPageSearchResult,
         )
+
+        context = self.context
 
         try:
             from tavily import TavilyClient
@@ -106,15 +109,3 @@ class TavilyExtractTool:
             logger.error(f"Error during Tavily search: {e}")
             # Return empty results in case of any other error
             return AggregateSearchResult(web_search_results=[])
-
-    def create_tool(self, format_function: Callable) -> Tool:
-        """
-        Create and configure a Tool instance with the provided format function.
-        """
-        return Tool(
-            name=self.name,
-            description=self.description,
-            parameters=self.parameters,
-            results_function=self.execute,
-            llm_format_function=format_function,
-        )

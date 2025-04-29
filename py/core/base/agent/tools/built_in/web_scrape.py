@@ -1,5 +1,4 @@
 import logging
-from typing import Callable
 
 from core.base.agent.tools.base import Tool
 from core.utils import (
@@ -9,36 +8,40 @@ from core.utils import (
 logger = logging.getLogger(__name__)
 
 
-class WebScrapeTool:
+class WebScrapeTool(Tool):
     """
     A web scraping tool that uses Firecrawl to to scrape a single URL and return
     its contents in an LLM-friendly format (e.g. markdown).
     """
 
     def __init__(self):
-        self.name = "web_scrape"
-        self.description = (
-            "Use Firecrawl to scrape a single webpage and retrieve its contents "
-            "as clean markdown. Useful when you need the entire body of a page, "
-            "not just a quick snippet or standard web search result."
-        )
-        self.parameters = (
-            {
-                "type": "object",
-                "properties": {
-                    "url": {
-                        "type": "string",
-                        "description": (
-                            "The absolute URL of the webpage you want to scrape. "
-                            "Example: 'https://docs.firecrawl.dev/getting-started'"
-                        ),
-                    }
+        super().__init__(
+            name="web_scrape",
+            description=(
+                "Use Firecrawl to scrape a single webpage and retrieve its contents "
+                "as clean markdown. Useful when you need the entire body of a page, "
+                "not just a quick snippet or standard web search result."
+            ),
+            parameters=(
+                {
+                    "type": "object",
+                    "properties": {
+                        "url": {
+                            "type": "string",
+                            "description": (
+                                "The absolute URL of the webpage you want to scrape. "
+                                "Example: 'https://docs.firecrawl.dev/getting-started'"
+                            ),
+                        }
+                    },
+                    "required": ["url"],
                 },
-                "required": ["url"],
-            },
+            ),
+            results_function=self.execute,
+            llm_format_function=None,
         )
 
-    async def execute(self, url: str, context=None, *args, **kwargs):
+    async def execute(self, url: str, *args, **kwargs):
         """
         Performs the Firecrawl scrape asynchronously.
         """
@@ -50,6 +53,8 @@ class WebScrapeTool:
             AggregateSearchResult,
             WebPageSearchResult,
         )
+
+        context = self.context
 
         app = FirecrawlApp()
         logger.debug(f"[Firecrawl] Scraping URL={url}")
@@ -88,15 +93,3 @@ class WebScrapeTool:
             context.search_results_collector.add_aggregate_result(result)
 
         return result
-
-    def create_tool(self, format_function: Callable) -> Tool:
-        """
-        Create and configure a Tool instance with the provided format function.
-        """
-        return Tool(
-            name=self.name,
-            description=self.description,
-            parameters=self.parameters,
-            results_function=self.execute,
-            llm_format_function=format_function,
-        )

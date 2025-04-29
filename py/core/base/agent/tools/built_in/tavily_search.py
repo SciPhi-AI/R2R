@@ -1,6 +1,4 @@
-# type: ignore
 import logging
-from typing import Callable
 
 from core.base.agent.tools.base import Tool
 from core.utils import (
@@ -10,41 +8,45 @@ from core.utils import (
 logger = logging.getLogger(__name__)
 
 
-class TavilySearchTool:
+class TavilySearchTool(Tool):
     """
     Uses the Tavily Search API, a specialized search engine designed for
     Large Language Models (LLMs) and AI agents.
     """
 
     def __init__(self):
-        self.name = ("tavily_search",)
-        self.description = (
-            (
-                "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
-                "to search the internet for specific information.  The query should be no more than 400 characters."
+        super().__init__(
+            name="tavily_search",
+            description=(
+                (
+                    "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
+                    "to search the internet for specific information.  The query should be no more than 400 characters."
+                ),
             ),
-        )
-        self.parameters = (
-            {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The query to search using Tavily that should be no more than 400 characters.",
+            parameters=(
+                {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": "The query to search using Tavily that should be no more than 400 characters.",
+                        },
+                        "kwargs": {
+                            "type": "object",
+                            "description": (
+                                "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
+                                '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
+                            ),
+                        },
                     },
-                    "kwargs": {
-                        "type": "object",
-                        "description": (
-                            "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
-                            '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
-                        ),
-                    },
+                    "required": ["query"],
                 },
-                "required": ["query"],
-            },
+            ),
+            results_function=self.execute,
+            llm_format_function=None,
         )
 
-    async def execute(self, query: str, context=None, *args, **kwargs):
+    async def execute(self, query: str, *args, **kwargs):
         """
         Calls Tavily's search API asynchronously.
         """
@@ -55,6 +57,8 @@ class TavilySearchTool:
             AggregateSearchResult,
             WebSearchResult,
         )
+
+        context = self.context
 
         # Check if query is too long and truncate if necessary. Tavily recommends under 400 chars.
         if len(query) > 400:
@@ -125,15 +129,3 @@ class TavilySearchTool:
             logger.error(f"Error during Tavily search: {e}")
             # Return empty results in case of any other error
             return AggregateSearchResult(web_search_results=[])
-
-    def create_tool(self, format_function: Callable) -> Tool:
-        """
-        Create and configure a Tool instance with the provided format function.
-        """
-        return Tool(
-            name=self.name,
-            description=self.description,
-            parameters=self.parameters,
-            results_function=self.execute,
-            llm_format_function=format_function,
-        )

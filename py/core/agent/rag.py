@@ -161,6 +161,8 @@ class R2RRAGAgent(RAGAgentMixin, R2RAgent):
             tool_registry=tool_registry,
         )
 
+        self._register_tools()
+
 
 class R2RXMLToolsRAGAgent(RAGAgentMixin, R2RXMLToolsAgent):
     """
@@ -208,6 +210,8 @@ class R2RXMLToolsRAGAgent(RAGAgentMixin, R2RXMLToolsAgent):
             content_method=content_method,
             tool_registry=tool_registry,
         )
+
+        self._register_tools()
 
 
 class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
@@ -260,6 +264,8 @@ class R2RStreamingRAGAgent(RAGAgentMixin, R2RStreamingAgent):
             file_search_method=file_search_method,
             tool_registry=tool_registry,
         )
+
+        self._register_tools()
 
 
 class R2RXMLToolsStreamingRAGAgent(RAGAgentMixin, R2RXMLStreamingAgent):
@@ -318,3 +324,5 @@ class R2RXMLToolsStreamingRAGAgent(RAGAgentMixin, R2RXMLStreamingAgent):
             file_search_method=file_search_method,
             tool_registry=tool_registry,
         )
+
+        self._register_tools()

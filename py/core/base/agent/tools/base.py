@@ -7,7 +7,7 @@ class Tool(R2RSerializable):
     name: str
     description: str
     results_function: Callable
-    llm_format_function: Callable
+    llm_format_function: Optional[Callable] = None
     stream_function: Optional[Callable] = None
     parameters: Optional[dict[str, Any]] = None
     context: Optional[Any] = None
@@ -20,7 +20,7 @@ class Tool(R2RSerializable):
         """Set the context for this tool."""
         self.context = context
 
-    async def execute(self, **kwargs):
+    async def execute(self, *args, **kwargs):
         """
         Execute the tool with context awareness.
         This wraps the results_function to ensure context is available.

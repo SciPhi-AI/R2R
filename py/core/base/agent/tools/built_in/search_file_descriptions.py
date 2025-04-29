@@ -1,25 +1,24 @@
 import logging
-from typing import Callable
 
 from core.base.agent.tools.base import Tool
 
 logger = logging.getLogger(__name__)
 
 
-class SearchFileDescriptionTool:
+class SearchFileDescriptionsTool(Tool):
     """
     A tool to search over high-level document data (titles, descriptions, etc.)
     """
 
     def __init__(self):
-        self.name = "search_file_descriptions"
-        self.description = (
-            "Semantic search over the stored documents over AI generated summaries of input documents. "
-            "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
-            "Use this when you need a broad overview of which documents (files) might be relevant."
-        )
-        self.parameters = (
-            {
+        super().__init__(
+            name="search_file_descriptions",
+            description=(
+                "Semantic search over the stored documents over AI generated summaries of input documents. "
+                "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
+                "Use this when you need a broad overview of which documents (files) might be relevant."
+            ),
+            parameters={
                 "type": "object",
                 "properties": {
                     "query": {
@@ -29,13 +28,17 @@ class SearchFileDescriptionTool:
                 },
                 "required": ["query"],
             },
+            results_function=self.execute,
+            llm_format_function=None,
         )
 
-    async def execute(self, query: str, context=None, *args, **kwargs):
+    async def execute(self, query: str, *args, **kwargs):
         """
         Calls the file_search_method from context.
         """
         from core.base.abstractions import AggregateSearchResult
+
+        context = self.context
 
         # Check if context has necessary method
         if not context or not hasattr(context, "file_search_method"):
@@ -73,15 +76,3 @@ class SearchFileDescriptionTool:
             context.search_results_collector.add_aggregate_result(result)
 
         return result
-
-    def create_tool(self, format_function: Callable) -> Tool:
-        """
-        Create and configure a Tool instance with the provided format function.
-        """
-        return Tool(
-            name=self.name,
-            description=self.description,
-            parameters=self.parameters,
-            results_function=self.execute,
-            llm_format_function=format_function,
-        )

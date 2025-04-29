@@ -1,24 +1,23 @@
 import logging
-from typing import Callable
 
 from core.base.agent.tools.base import Tool
 
 logger = logging.getLogger(__name__)
 
 
-class SearchFileDescriptionTool:
+class SearchFileKnowledgeTool(Tool):
     """
     A tool to do a semantic/hybrid search on the local knowledge base.
     """
 
     def __init__(self):
-        self.name = "search_file_knowledge"
-        self.description = (
-            "Search your local knowledge base using the R2R system. "
-            "Use this when you want relevant text chunks or knowledge graph data."
-        )
-        self.parameters = (
-            {
+        super().__init__(
+            name="search_file_knowledge",
+            description=(
+                "Search your local knowledge base using the R2R system. "
+                "Use this when you want relevant text chunks or knowledge graph data."
+            ),
+            parameters={
                 "type": "object",
                 "properties": {
                     "query": {
@@ -28,13 +27,17 @@ class SearchFileDescriptionTool:
                 },
                 "required": ["query"],
             },
+            results_function=self.execute,
+            llm_format_function=None,
         )
 
-    async def execute(self, query: str, context=None, *args, **kwargs):
+    async def execute(self, query: str, *args, **kwargs):
         """
         Calls the knowledge_search_method from context.
         """
         from core.base.abstractions import AggregateSearchResult
+
+        context = self.context
 
         # Check if context has necessary method
         if not context or not hasattr(context, "knowledge_search_method"):
@@ -77,15 +80,3 @@ class SearchFileDescriptionTool:
             context.search_results_collector.add_aggregate_result(agg)
 
         return agg
-
-    def create_tool(self, format_function: Callable) -> Tool:
-        """
-        Create and configure a Tool instance with the provided format function.
-        """
-        return Tool(
-            name=self.name,
-            description=self.description,
-            parameters=self.parameters,
-            results_function=self.execute,
-            llm_format_function=format_function,
-        )
