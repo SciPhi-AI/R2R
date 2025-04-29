@@ -1,14 +1,16 @@
-from core.base.agent.tools.base import Tool
-from typing import Callable
 import logging
+from typing import Callable
+
+from core.base.agent.tools.base import Tool
 
 logger = logging.getLogger(__name__)
+
 
 class SearchFileDescriptionTool:
     """
     A tool to search over high-level document data (titles, descriptions, etc.)
     """
-    
+
     def __init__(self):
         self.name = "search_file_descriptions"
         self.description = (
@@ -16,28 +18,30 @@ class SearchFileDescriptionTool:
             "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
             "Use this when you need a broad overview of which documents (files) might be relevant."
         )
-        self.parameters={
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "Query string to semantic search over available files 'list documents about XYZ'.",
-                }
+        self.parameters = (
+            {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Query string to semantic search over available files 'list documents about XYZ'.",
+                    }
+                },
+                "required": ["query"],
             },
-            "required": ["query"],
-        },
-    
+        )
+
     async def execute(self, query: str, context=None, *args, **kwargs):
         """
         Calls the file_search_method from context.
         """
         from core.base.abstractions import AggregateSearchResult
-        
+
         # Check if context has necessary method
-        if not context or not hasattr(context, 'file_search_method'):
+        if not context or not hasattr(context, "file_search_method"):
             logger.error("No file_search_method provided in context")
             return AggregateSearchResult(document_search_results=[])
-        
+
         # Get the content_method from context
         file_search_method = context.file_search_method
 
@@ -65,11 +69,11 @@ class SearchFileDescriptionTool:
         )
 
         # Add to results collector if context has it
-        if hasattr(context, 'search_results_collector'):
+        if hasattr(context, "search_results_collector"):
             context.search_results_collector.add_aggregate_result(result)
-            
+
         return result
-    
+
     def create_tool(self, format_function: Callable) -> Tool:
         """
         Create and configure a Tool instance with the provided format function.

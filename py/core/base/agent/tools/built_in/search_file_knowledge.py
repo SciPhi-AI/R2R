@@ -1,42 +1,46 @@
-from core.base.agent.tools.base import Tool
-from typing import Callable
 import logging
+from typing import Callable
+
+from core.base.agent.tools.base import Tool
 
 logger = logging.getLogger(__name__)
+
 
 class SearchFileDescriptionTool:
     """
     A tool to do a semantic/hybrid search on the local knowledge base.
     """
-    
+
     def __init__(self):
         self.name = "search_file_knowledge"
         self.description = (
             "Search your local knowledge base using the R2R system. "
             "Use this when you want relevant text chunks or knowledge graph data."
         )
-        self.parameters={
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "User query to search in the local DB.",
+        self.parameters = (
+            {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "User query to search in the local DB.",
+                    },
                 },
+                "required": ["query"],
             },
-            "required": ["query"],
-        },
-    
+        )
+
     async def execute(self, query: str, context=None, *args, **kwargs):
         """
         Calls the knowledge_search_method from context.
         """
         from core.base.abstractions import AggregateSearchResult
-        
+
         # Check if context has necessary method
-        if not context or not hasattr(context, 'knowledge_search_method'):
+        if not context or not hasattr(context, "knowledge_search_method"):
             logger.error("No knowledge_search_method provided in context")
             return AggregateSearchResult(document_search_results=[])
-        
+
         # Get the content_method from context
         knowledge_search_method = context.knowledge_search_method
 
@@ -52,7 +56,7 @@ class SearchFileDescriptionTool:
                 settings=context.search_settings,
             )
 
-            #FIXME: This is slop
+            # FIXME: This is slop
             if isinstance(results, AggregateSearchResult):
                 agg = results
             else:
@@ -69,11 +73,11 @@ class SearchFileDescriptionTool:
             return AggregateSearchResult(document_search_results=[])
 
         # Add to results collector if context has it
-        if hasattr(context, 'search_results_collector'):
+        if hasattr(context, "search_results_collector"):
             context.search_results_collector.add_aggregate_result(agg)
-            
+
         return agg
-    
+
     def create_tool(self, format_function: Callable) -> Tool:
         """
         Create and configure a Tool instance with the provided format function.

@@ -1,53 +1,61 @@
 # type: ignore
-from core.base.agent.tools.base import Tool
+import logging
 from typing import Callable
 
+from core.base.agent.tools.base import Tool
 from core.utils import (
     generate_id,
 )
 
-import logging
-
 logger = logging.getLogger(__name__)
+
 
 class TavilySearchTool:
     """
     Uses the Tavily Search API, a specialized search engine designed for
     Large Language Models (LLMs) and AI agents.
     """
-    
+
     def __init__(self):
-        self.name = "tavily_search",
-        self.description=(
-            "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
-            "to search the internet for specific information.  The query should be no more than 400 characters."
-        ),
-        self.parameters={
-            "type": "object",
-            "properties": {
-                "query": {
-                    "type": "string",
-                    "description": "The query to search using Tavily that should be no more than 400 characters.",
+        self.name = ("tavily_search",)
+        self.description = (
+            (
+                "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
+                "to search the internet for specific information.  The query should be no more than 400 characters."
+            ),
+        )
+        self.parameters = (
+            {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The query to search using Tavily that should be no more than 400 characters.",
+                    },
+                    "kwargs": {
+                        "type": "object",
+                        "description": (
+                            "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
+                            '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
+                        ),
+                    },
                 },
-                "kwargs": {
-                    "type": "object",
-                    "description": (
-                        "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
-                        '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
-                    ),
-                },
+                "required": ["query"],
             },
-            "required": ["query"],
-        },
-    
+        )
+
     async def execute(self, query: str, context=None, *args, **kwargs):
         """
         Calls Tavily's search API asynchronously.
         """
         import asyncio
         import os
-        from core.base.abstractions import WebSearchResult, AggregateSearchResult
-        
+
+        from core.base.abstractions import (
+            AggregateSearchResult,
+            WebSearchResult,
+        )
+
         # Check if query is too long and truncate if necessary. Tavily recommends under 400 chars.
         if len(query) > 400:
             logger.warning(
@@ -85,7 +93,7 @@ class TavilySearchTool:
 
             # Process the raw results into a format compatible with AggregateSearchResult
             search_results = [
-                WebSearchResult( # type: ignore
+                WebSearchResult(  # type: ignore
                     title=result.get("title", "Untitled"),
                     link=result.get("url", ""),
                     snippet=result.get("content", ""),
@@ -99,11 +107,11 @@ class TavilySearchTool:
             result = AggregateSearchResult(
                 chunk_search_results=None,
                 graph_search_results=None,
-                web_search_results=search_results
+                web_search_results=search_results,
             )
 
             # Add to results collector if context is provided
-            if context and hasattr(context, 'search_results_collector'):
+            if context and hasattr(context, "search_results_collector"):
                 context.search_results_collector.add_aggregate_result(result)
 
             return result
@@ -117,7 +125,7 @@ class TavilySearchTool:
             logger.error(f"Error during Tavily search: {e}")
             # Return empty results in case of any other error
             return AggregateSearchResult(web_search_results=[])
-    
+
     def create_tool(self, format_function: Callable) -> Tool:
         """
         Create and configure a Tool instance with the provided format function.

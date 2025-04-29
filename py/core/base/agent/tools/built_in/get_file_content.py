@@ -1,9 +1,11 @@
-from core.base.agent.tools.base import Tool
-from typing import Callable, Optional, Any
 import logging
+from typing import Any, Callable, Optional
 from uuid import UUID
 
+from core.base.agent.tools.base import Tool
+
 logger = logging.getLogger(__name__)
+
 
 class FileContentTool:
     """
@@ -12,7 +14,7 @@ class FileContentTool:
     Typically used if the agent needs deeper or more structured context
     from documents, not just chunk-level hits.
     """
-    
+
     def __init__(self):
         self.name = "get_file_content"
         self.description = (
@@ -31,21 +33,28 @@ class FileContentTool:
             },
             "required": ["document_id"],
         }
-    
-    async def execute(self, document_id: str, context=None, options: Optional[dict[str, Any]] = None, *args, **kwargs):
+
+    async def execute(
+        self,
+        document_id: str,
+        context=None,
+        options: Optional[dict[str, Any]] = None,
+        *args,
+        **kwargs,
+    ):
         """
         Calls the content_method from context to fetch doc+chunk structures.
         """
         from core.base.abstractions import AggregateSearchResult
-        
+
         # Check if context has necessary method
-        if not context or not hasattr(context, 'content_method'):
+        if not context or not hasattr(context, "content_method"):
             logger.error("No content_method provided in context")
             return AggregateSearchResult(document_search_results=[])
-        
+
         # Get the content_method from context
         content_method = context.content_method
-        
+
         try:
             doc_uuid = UUID(document_id)
             filters = {"id": {"$eq": doc_uuid}}
@@ -73,11 +82,11 @@ class FileContentTool:
         )
 
         # Add to results collector if context has it
-        if hasattr(context, 'search_results_collector'):
+        if hasattr(context, "search_results_collector"):
             context.search_results_collector.add_aggregate_result(result)
-            
+
         return result
-    
+
     def create_tool(self, format_function: Callable) -> Tool:
         """
         Create and configure a Tool instance with the provided format function.
