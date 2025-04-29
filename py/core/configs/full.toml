@@ -24,7 +24,6 @@ overlap = 1_024
 
 [orchestration]
 provider = "hatchet"
-max_runs = 2048
 kg_creation_concurrency_limit = 32
 ingestion_concurrency_limit = 16
 kg_concurrency_limit = 8
