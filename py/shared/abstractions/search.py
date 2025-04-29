@@ -260,12 +260,15 @@ class AggregateSearchResult(R2RSerializable):
     web_page_search_results: Optional[list[WebPageSearchResult]] = None
     web_search_results: Optional[list[WebSearchResult]] = None
     document_search_results: Optional[list[DocumentResponse]] = None
+    generic_tool_result: Optional[Any] = (
+        None  # FIXME: Give this a proper generic type
+    )
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)}, generic_tool_result={self.generic_tool_result})"
 
     def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)})"
+        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)}, generic_tool_result={self.generic_tool_result})"
 
     def as_dict(self) -> dict:
         return {
@@ -292,6 +295,11 @@ class AggregateSearchResult(R2RSerializable):
             "document_search_results": (
                 [cdr.to_dict() for cdr in self.document_search_results]
                 if self.document_search_results
+                else []
+            ),
+            "generic_tool_result": (
+                [result.to_dict() for result in self.generic_tool_result]
+                if self.generic_tool_result
                 else []
             ),
         }
@@ -367,6 +375,12 @@ class AggregateSearchResult(R2RSerializable):
                             "chunks": ["Chunk 1", "Chunk 2"],
                             "metadata": {},
                         },
+                    }
+                ],
+                "generic_tool_result": [
+                    {
+                        "result": "Generic tool result",
+                        "metadata": {"key": "value"},
                     }
                 ],
             }

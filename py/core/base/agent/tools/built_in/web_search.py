@@ -1,4 +1,4 @@
-from core.base.agent.tools.base import Tool
+from shared.abstractions.tool import Tool
 
 
 class WebSearchTool(Tool):

@@ -1,6 +1,6 @@
 import logging
 
-from core.base.agent.tools.base import Tool
+from shared.abstractions.tool import Tool
 
 logger = logging.getLogger(__name__)
 

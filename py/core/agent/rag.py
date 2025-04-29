@@ -90,7 +90,7 @@ class RAGAgentMixin:
             if tool_instance := self.tool_registry.create_tool_instance(
                 tool_name, format_function, context=self
             ):
-                logger.info(
+                logger.debug(
                     f"Successfully registered tool from registry: {tool_name}"
                 )
                 self._tools.append(tool_instance)

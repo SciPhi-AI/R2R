@@ -117,6 +117,12 @@ def format_search_results_for_llm(
                         f"\nChunk ID {id_to_shorthand(chunk['id'])}:\n{chunk['text']}"
                     )
 
+    if results.generic_tool_result:
+        lines.extend(
+            (f"Generic Tool Results: {tool_result}" or "")
+            for tool_result in results.generic_tool_result
+        )
+
     return "\n".join(lines)
 
 

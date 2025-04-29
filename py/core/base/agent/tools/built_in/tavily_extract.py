@@ -1,9 +1,9 @@
 import logging
 
-from core.base.agent.tools.base import Tool
 from core.utils import (
     generate_id,
 )
+from shared.abstractions.tool import Tool
 
 logger = logging.getLogger(__name__)
 

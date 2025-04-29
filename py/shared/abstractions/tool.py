@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional
 
-from ...abstractions import R2RSerializable
+from ..abstractions import R2RSerializable
 
 
 class Tool(R2RSerializable):

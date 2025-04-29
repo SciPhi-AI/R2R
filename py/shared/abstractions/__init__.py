@@ -52,6 +52,7 @@ from .search import (
     WebPageSearchResult,
     select_search_filters,
 )
+from .tool import Tool, ToolResult
 from .user import Token, TokenData, User
 from .vector import (
     IndexArgsHNSW,
@@ -124,6 +125,9 @@ __all__ = [
     "GraphEnrichmentSettings",
     "GraphExtraction",
     "GraphCommunitySettings",
+    # Tool abstractions
+    "Tool",
+    "ToolResult",
     # User abstractions
     "Token",
     "TokenData",
