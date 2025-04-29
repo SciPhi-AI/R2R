@@ -951,14 +951,14 @@ class RetrievalService(Service):
                     query
                 )
             )
-        result = (
+
+        return (
             await self.providers.database.documents_handler.search_documents(
                 query_text=query,
                 settings=settings,
                 query_embedding=query_embedding,
             )
         )
-        return result
 
     async def completion(
         self,

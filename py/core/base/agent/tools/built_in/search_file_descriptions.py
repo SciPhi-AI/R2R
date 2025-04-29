@@ -50,11 +50,6 @@ class SearchFileDescriptionsTool(Tool):
 
         # Call the content_method from the context
         try:
-            """
-            FIXME: This is going to fail, as it requires an embedding NOT a query.
-            I've moved 'search_settings' to 'settings' which had been causing a silent failure
-            causing null content in the Message object.
-            """
             doc_results = await file_search_method(
                 query=query,
                 settings=context.search_settings,
@@ -63,7 +58,6 @@ class SearchFileDescriptionsTool(Tool):
             logger.error(f"Error calling content_method: {e}")
             return AggregateSearchResult(document_search_results=[])
 
-        # Return them in the new aggregator field
         result = AggregateSearchResult(document_search_results=doc_results)
 
         # Add to results collector if context has it

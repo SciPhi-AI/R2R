@@ -18,30 +18,26 @@ class TavilySearchTool(Tool):
         super().__init__(
             name="tavily_search",
             description=(
-                (
-                    "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
-                    "to search the internet for specific information.  The query should be no more than 400 characters."
-                ),
+                "Use the Tavily search engine to perform an internet-based search and retrieve results. Useful when you need "
+                "to search the internet for specific information.  The query should be no more than 400 characters."
             ),
-            parameters=(
-                {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The query to search using Tavily that should be no more than 400 characters.",
-                        },
-                        "kwargs": {
-                            "type": "object",
-                            "description": (
-                                "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
-                                '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
-                            ),
-                        },
+            parameters={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The query to search using Tavily that should be no more than 400 characters.",
                     },
-                    "required": ["query"],
+                    "kwargs": {
+                        "type": "object",
+                        "description": (
+                            "Dictionary for additional parameters to pass to Tavily, such as max_results, include_domains and exclude_domains."
+                            '{"max_results": 10, "include_domains": ["example.com"], "exclude_domains": ["example2.com"]}'
+                        ),
+                    },
                 },
-            ),
+                "required": ["query"],
+            },
             results_function=self.execute,
             llm_format_function=None,
         )

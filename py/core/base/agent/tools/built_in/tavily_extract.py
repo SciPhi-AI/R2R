@@ -21,21 +21,19 @@ class TavilyExtractTool(Tool):
                 "This is useful when you want to get clean, structured content from a URL. "
                 "Use this when you need to analyze the full content of a specific webpage."
             ),
-            parameters=(
-                {
-                    "type": "object",
-                    "properties": {
-                        "url": {
-                            "type": "string",
-                            "description": (
-                                "The absolute URL of the webpage you want to extract content from. "
-                                "Example: 'https://www.example.com/article'"
-                            ),
-                        }
-                    },
-                    "required": ["url"],
+            parameters={
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": (
+                            "The absolute URL of the webpage you want to extract content from. "
+                            "Example: 'https://www.example.com/article'"
+                        ),
+                    }
                 },
-            ),
+                "required": ["url"],
+            },
             results_function=self.execute,
             llm_format_function=None,
         )

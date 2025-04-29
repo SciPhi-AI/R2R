@@ -84,7 +84,7 @@ class ToolRegistry:
                         try:
                             tool_instance = obj()
                             self._built_in_tools[tool_instance.name] = obj
-                            logger.info(
+                            logger.debug(
                                 f"Loaded built-in tool: {tool_instance.name}"
                             )
                         except Exception as e:

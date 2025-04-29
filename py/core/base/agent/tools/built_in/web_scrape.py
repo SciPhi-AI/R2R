@@ -22,21 +22,19 @@ class WebScrapeTool(Tool):
                 "as clean markdown. Useful when you need the entire body of a page, "
                 "not just a quick snippet or standard web search result."
             ),
-            parameters=(
-                {
-                    "type": "object",
-                    "properties": {
-                        "url": {
-                            "type": "string",
-                            "description": (
-                                "The absolute URL of the webpage you want to scrape. "
-                                "Example: 'https://docs.firecrawl.dev/getting-started'"
-                            ),
-                        }
-                    },
-                    "required": ["url"],
+            parameters={
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": (
+                            "The absolute URL of the webpage you want to scrape. "
+                            "Example: 'https://docs.firecrawl.dev/getting-started'"
+                        ),
+                    }
                 },
-            ),
+                "required": ["url"],
+            },
             results_function=self.execute,
             llm_format_function=None,
         )
