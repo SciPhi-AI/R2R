@@ -257,7 +257,8 @@ class AggregateSearchResult(R2RSerializable):
 
     chunk_search_results: Optional[list[ChunkSearchResult]] = None
     graph_search_results: Optional[list[GraphSearchResult]] = None
-    web_search_results: Optional[list[WebPageSearchResult]] = None
+    web_page_search_results: Optional[list[WebPageSearchResult]] = None
+    web_search_results: Optional[list[WebSearchResult]] = None
     document_search_results: Optional[list[DocumentResponse]] = None
 
     def __str__(self) -> str:
@@ -276,6 +277,11 @@ class AggregateSearchResult(R2RSerializable):
             "graph_search_results": (
                 [result.to_dict() for result in self.graph_search_results]
                 if self.graph_search_results
+                else []
+            ),
+            "web_page_search_results": (
+                [result.to_dict() for result in self.web_page_search_results]
+                if self.web_page_search_results
                 else []
             ),
             "web_search_results": (
@@ -321,6 +327,21 @@ class AggregateSearchResult(R2RSerializable):
                         "metadata": {
                             "associated_query": "What is the capital of France?"
                         },
+                    }
+                ],
+                "web_page_search_results": [
+                    {
+                        "title": "Page Title",
+                        "link": "https://example.com/page",
+                        "snippet": "Page snippet",
+                        "position": 1,
+                        "date": "2021-01-01",
+                        "sitelinks": [
+                            {
+                                "title": "Sitelink Title",
+                                "link": "https://example.com/sitelink",
+                            }
+                        ],
                     }
                 ],
                 "web_search_results": [

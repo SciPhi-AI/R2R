@@ -64,12 +64,7 @@ class SearchFileDescriptionsTool(Tool):
             return AggregateSearchResult(document_search_results=[])
 
         # Return them in the new aggregator field
-        result = AggregateSearchResult(
-            chunk_search_results=None,
-            graph_search_results=None,
-            web_search_results=None,
-            document_search_results=doc_results,
-        )
+        result = AggregateSearchResult(document_search_results=doc_results)
 
         # Add to results collector if context has it
         if hasattr(context, "search_results_collector"):

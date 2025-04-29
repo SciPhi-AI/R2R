@@ -86,7 +86,7 @@ class WebScrapeTool(Tool):
             type="firecrawl",
         )
 
-        result = AggregateSearchResult(web_search_results=[web_result])
+        result = AggregateSearchResult(web_page_search_results=[web_result])
 
         # Add to results collector if context is provided
         if context and hasattr(context, "search_results_collector"):

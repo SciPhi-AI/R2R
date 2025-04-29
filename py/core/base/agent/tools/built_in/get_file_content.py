@@ -74,12 +74,7 @@ class GetFileContentTool(Tool):
             logger.error(f"Error calling content_method: {e}")
             return AggregateSearchResult(document_search_results=[])
 
-        result = AggregateSearchResult(
-            chunk_search_results=None,
-            graph_search_results=None,
-            web_search_results=None,
-            document_search_results=content,
-        )
+        result = AggregateSearchResult(document_search_results=content)
 
         if hasattr(context, "search_results_collector"):
             context.search_results_collector.add_aggregate_result(result)

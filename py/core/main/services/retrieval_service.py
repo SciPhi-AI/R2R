@@ -1965,10 +1965,9 @@ class RetrievalService(Service):
             web_response = WebSearchResult.from_serper_results(raw_results)
 
             # Create an AggregateSearchResult with the web search results
+            # FIXME: Need to understand why we would have had this referencing only web_response.organic_results
             agg_result = AggregateSearchResult(
-                chunk_search_results=None,
-                graph_search_results=None,
-                web_search_results=web_response.organic_results,
+                web_search_results=[web_response]
             )
 
             # Log the search for monitoring purposes

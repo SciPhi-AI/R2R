@@ -72,14 +72,29 @@ def format_search_results_for_llm(
                 )
             # Add metadata if needed
 
+    # Web page search results
+    if results.web_page_search_results:
+        lines.append("Web Page Search Results:")
+        for w in results.web_page_search_results:
+            lines.extend(
+                (
+                    f"Source ID [{id_to_shorthand(w.id)}]:",
+                    f"Title: {w.title}",
+                    f"Link: {w.link}",
+                    f"Snippet: {w.snippet}",
+                )
+            )
+
+    # TODO: Review how this is being used; there seemed to be a mismatch
+    # between the web search results and the web page search results.
     # 3) Web search
-    if results.web_search_results:
-        lines.append("Web Search Results:")
-        for w in results.web_search_results:
-            lines.append(f"Source ID [{id_to_shorthand(w.id)}]:")
-            lines.append(f"Title: {w.title}")
-            lines.append(f"Link: {w.link}")
-            lines.append(f"Snippet: {w.snippet}")
+    # if results.web_search_results:
+    #     lines.append("Web Search Results:")
+    #     for w in results.web_search_results:
+    #         lines.append(f"Source ID [{id_to_shorthand(w.id)}]:")
+    #         lines.append(f"Title: {w.title}")
+    #         lines.append(f"Link: {w.link}")
+    #         lines.append(f"Snippet: {w.snippet}")
 
     # 4) Local context docs
     if results.document_search_results:
@@ -102,8 +117,7 @@ def format_search_results_for_llm(
                         f"\nChunk ID {id_to_shorthand(chunk['id'])}:\n{chunk['text']}"
                     )
 
-    result = "\n".join(lines)
-    return result
+    return "\n".join(lines)
 
 
 def _generate_id_from_label(label) -> UUID:

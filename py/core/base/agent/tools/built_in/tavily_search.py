@@ -74,7 +74,7 @@ class TavilySearchTool(Tool):
             api_key = os.environ.get("TAVILY_API_KEY")
             if not api_key:
                 logger.warning("TAVILY_API_KEY environment variable not set")
-                return AggregateSearchResult(web_search_results=[])
+                return AggregateSearchResult()
 
             # Initialize Tavily client
             tavily_client = TavilyClient(api_key=api_key)
@@ -108,11 +108,7 @@ class TavilySearchTool(Tool):
                 for index, result in enumerate(results)
             ]
 
-            result = AggregateSearchResult(
-                chunk_search_results=None,
-                graph_search_results=None,
-                web_search_results=search_results,
-            )
+            result = AggregateSearchResult(web_search_results=search_results)
 
             # Add to results collector if context is provided
             if context and hasattr(context, "search_results_collector"):
@@ -124,8 +120,8 @@ class TavilySearchTool(Tool):
                 "The 'tavily-python' package is not installed. Please install it with 'pip install tavily-python'"
             )
             # Return empty results in case Tavily is not installed
-            return AggregateSearchResult(web_search_results=[])
+            return AggregateSearchResult()
         except Exception as e:
             logger.error(f"Error during Tavily search: {e}")
             # Return empty results in case of any other error
-            return AggregateSearchResult(web_search_results=[])
+            return AggregateSearchResult()
