@@ -258,6 +258,80 @@ describe("r2rClient V3 System Integration Tests User", () => {
   //   expect(response.results.documentCount).toBe(1);
   // });
 
+  test("Add user 1's document to user 2's collection", async () => {
+    const response = await user2Client.collections.addDocument({
+      id: user2CollectionId,
+      documentId: user1DocumentId,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.message).toBeDefined();
+  });
+
+  test("List documents as user 1", async () => {
+    const response = await user1Client.documents.list();
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    expect(response.results.length).toBeGreaterThanOrEqual(1);
+    expect(response.results.some((doc) => doc.id === user1DocumentId)).toBe(
+      true,
+    );
+  });
+
+  test("List documents as user 1 with ownerOnly set to true", async () => {
+    const response = await user1Client.documents.list({ ownerOnly: true });
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    expect(response.results.length).toBeGreaterThanOrEqual(1);
+    expect(response.results.some((doc) => doc.id === user1DocumentId)).toBe(
+      true,
+    );
+    expect(response.results.some((doc) => doc.id === user2DocumentId)).toBe(
+      false,
+    );
+  });
+
+  test("Add user 2's document to user 1's collection", async () => {
+    const response = await user1Client.collections.addDocument({
+      id: user1CollectionId,
+      documentId: user2DocumentId,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.message).toBeDefined();
+  });
+
+  test("List documents as user 2", async () => {
+    const response = await user2Client.documents.list();
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    expect(response.results.length).toBeGreaterThanOrEqual(1);
+    expect(response.results.some((doc) => doc.id === user2DocumentId)).toBe(
+      true,
+    );
+  });
+
+  test("List documents as user 2 with ownerOnly set to true", async () => {
+    const response = await user2Client.documents.list({ ownerOnly: true });
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    expect(response.results.length).toBeGreaterThanOrEqual(1);
+    expect(response.results.some((doc) => doc.id === user2DocumentId)).toBe(
+      true,
+    );
+    expect(response.results.some((doc) => doc.id === user1DocumentId)).toBe(
+      false,
+    );
+  });
+
+  test("List documents as superuser with ownerOnly set to true", async () => {
+    const response = await client.documents.list({ ownerOnly: true });
+    expect(response.results).toBeDefined();
+    expect(Array.isArray(response.results)).toBe(true);
+    const superuserId = (await client.users.me()).results.id;
+    for (const doc of response.results) {
+      expect(doc.ownerId).toBe(superuserId);
+    }
+  });
+
   test("Delete document as user 1", async () => {
     const response = await user1Client.documents.delete({
       id: user1DocumentId,

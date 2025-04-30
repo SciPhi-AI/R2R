@@ -978,6 +978,10 @@ class DocumentsRouter(BaseRouterV3):
                 False,
                 description="Specifies whether or not to include embeddings of each document summary.",
             ),
+            owner_only: bool = Query(
+                False,
+                description="If true, only returns documents owned by the user, not all accessible documents.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
             """Returns a paginated list of documents the authenticated user has
@@ -990,12 +994,13 @@ class DocumentsRouter(BaseRouterV3):
             The documents are returned in order of last modification, with most
             recent first.
             """
-            requesting_user_id = (
-                None if auth_user.is_superuser else [auth_user.id]
-            )
-            filter_collection_ids = (
-                None if auth_user.is_superuser else auth_user.collection_ids
-            )
+
+            if auth_user.is_superuser:
+                requesting_user_id = [auth_user.id] if owner_only else None
+                filter_collection_ids = None
+            else:
+                requesting_user_id = [auth_user.id]
+                filter_collection_ids = auth_user.collection_ids
 
             document_uuids = [UUID(document_id) for document_id in ids]
             documents_overview_response = (
@@ -1005,6 +1010,7 @@ class DocumentsRouter(BaseRouterV3):
                     document_ids=document_uuids,
                     offset=offset,
                     limit=limit,
+                    owner_only=owner_only,
                 )
             )
             if not include_summary_embeddings:

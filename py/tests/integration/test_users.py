@@ -678,3 +678,130 @@ def test_collection_filter_invalid_parameters(client: R2RClient):
         "Expected validation error for invalid owner_only parameter"
 
     client.users.logout()
+
+
+def test_document_ownership_filtering(client: R2RClient):
+    """Test the ownerOnly filter parameter in documents list endpoint."""
+    # Create two test users
+    user1_email = f"user1_doc_{uuid.uuid4()}@test.com"
+    user1_password = "password123"
+    user2_email = f"user2_doc_{uuid.uuid4()}@test.com"
+    user2_password = "password123"
+
+    # Register users
+    client.users.create(user1_email, user1_password)
+    client.users.create(user2_email, user2_password)
+
+    # Login as user1 and create a document and collection
+    client.users.login(user1_email, user1_password)
+    user1_id = client.users.me().results.id
+    user1_collection = client.collections.create(name="User1 Doc Collection").results
+    user1_collection_id = user1_collection.id
+
+    user1_document = client.documents.create(
+        raw_text="User 1 document content",
+        metadata={"title": "User 1 Document"}
+    ).results
+    user1_document_id = user1_document.document_id
+
+    # Wait for processing
+    import time
+    time.sleep(5)
+
+    # Login as user2 and create a document and collection
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+    user2_id = client.users.me().results.id
+    user2_collection = client.collections.create(name="User2 Doc Collection").results
+    user2_collection_id = user2_collection.id
+
+    user2_document = client.documents.create(
+        raw_text="User 2 document content",
+        metadata={"title": "User 2 Document"}
+    ).results
+    user2_document_id = user2_document.document_id
+
+    # Wait for processing
+    time.sleep(5)
+
+    # Add user1's document to user2's collection
+    client.collections.add_document(user2_collection_id, user1_document_id)
+
+    # Login as user1 and check documents
+    client.users.logout()
+    client.users.login(user1_email, user1_password)
+
+    # List all documents
+    all_documents = client.documents.list().results
+    all_document_ids = [str(doc.id) for doc in all_documents]
+
+    # Verify user1 can see their own document
+    assert str(user1_document_id) in all_document_ids, "User1 can't see their own document"
+
+    # List only owned documents
+    owned_documents = client.documents.list(owner_only=True).results
+    owned_document_ids = [str(doc.id) for doc in owned_documents]
+
+    # Verify user1's document is in the owned list
+    assert str(user1_document_id) in owned_document_ids, "User1's document not in owned list"
+
+    # Add user2's document to user1's collection
+    client.collections.add_document(user1_collection_id, user2_document_id)
+
+    # Login as user2 and check documents
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+
+    # List all documents
+    all_documents = client.documents.list().results
+    all_document_ids = [str(doc.id) for doc in all_documents]
+
+    # Verify user2 can see their own document
+    assert str(user2_document_id) in all_document_ids, "User2 can't see their own document"
+
+    # Verify user2 can see user1's shared document
+    assert str(user1_document_id) in all_document_ids, "User2 can't see shared document"
+
+    # List only owned documents
+    owned_documents = client.documents.list(owner_only=True).results
+    owned_document_ids = [str(doc.id) for doc in owned_documents]
+
+    # Verify user2's document is in the owned list
+    assert str(user2_document_id) in owned_document_ids, "User2's document not in owned list"
+
+    # Verify user1's document is NOT in the owned list
+    assert str(user1_document_id) not in owned_document_ids, "Shared document should not be in owned list"
+
+    # Cleanup - login as the right user first
+    client.users.logout()
+    client.users.login(user1_email, user1_password)
+    try:
+        client.documents.delete(user1_document_id)
+    except Exception as e:
+        print(f"Failed to delete user1's document: {e}")
+
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+    try:
+        client.documents.delete(user2_document_id)
+    except Exception as e:
+        print(f"Failed to delete user2's document: {e}")
+
+    client.users.logout()
+
+
+def test_document_filter_invalid_parameters(client: R2RClient):
+    """Test error handling for invalid filter parameters in documents endpoint."""
+    # Create a test user
+    user_email = f"test_doc_{uuid.uuid4()}@test.com"
+    user_password = "password123"
+    client.users.create(user_email, user_password)
+    client.users.login(user_email, user_password)
+
+    # Test with invalid owner_only parameter type (should be bool, not string)
+    with pytest.raises(R2RException) as exc_info:
+        client.documents.list(owner_only="not-a-bool")
+    assert exc_info.value.status_code in [400, 422], \
+        "Expected validation error for invalid owner_only parameter"
+
+    client.users.logout()
