@@ -349,19 +349,23 @@ class PostgresCollectionsHandler(Handler):
         filter_user_ids: Optional[list[UUID]] = None,
         filter_document_ids: Optional[list[UUID]] = None,
         filter_collection_ids: Optional[list[UUID]] = None,
+        owner_only: bool = False,
     ) -> dict[str, list[CollectionResponse] | int]:
         conditions = []
         params: list[Any] = []
         param_index = 1
 
         if filter_user_ids:
-            conditions.append(f"""
-                c.id IN (
-                    SELECT unnest(collection_ids)
-                    FROM {self.project_name}.users
-                    WHERE id = ANY(${param_index})
-                )
-            """)
+            if owner_only:
+                conditions.append(f"c.owner_id = ANY(${param_index})")
+            else:
+                conditions.append(f"""
+                    c.id IN (
+                        SELECT unnest(collection_ids)
+                        FROM {self.project_name}.users
+                        WHERE id = ANY(${param_index})
+                    )
+                """)
             params.append(filter_user_ids)
             param_index += 1
 

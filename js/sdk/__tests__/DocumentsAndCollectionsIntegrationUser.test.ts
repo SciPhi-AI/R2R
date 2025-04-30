@@ -294,6 +294,48 @@ describe("r2rClient V3 System Integration Tests User", () => {
   //   expect(response.results.documentCount).toBe(0);
   // });
 
+  test("Add user 1 to user 2's collection", async () => {
+    const response = await user2Client.collections.addUser({
+      id: user2CollectionId,
+      userId: user1Id,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
+  });
+
+  test("List collections as user 1", async () => {
+    const response = await user1Client.collections.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(2);
+  });
+
+  test("List collections as user 1 with ownerOnly set to true", async () => {
+    const response = await user1Client.collections.list({ ownerOnly: true });
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(1);
+  });
+
+  test("Add user 2 to user 1's collection", async () => {
+    const response = await user1Client.collections.addUser({
+      id: user1CollectionId,
+      userId: user2Id,
+    });
+    expect(response.results).toBeDefined();
+    expect(response.results.success).toBe(true);
+  });
+
+  test("List collections as user 2", async () => {
+    const response = await user2Client.collections.list();
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(2);
+  });
+
+  test("List collections as user 2 with ownerOnly set to true", async () => {
+    const response = await user2Client.collections.list({ ownerOnly: true });
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBe(1);
+  });
+
   test("Delete user 1", async () => {
     const response = await client.users.delete({
       id: user1Id,
