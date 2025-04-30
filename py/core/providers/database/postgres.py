@@ -14,7 +14,6 @@ from .chunks import PostgresChunksHandler
 from .collections import PostgresCollectionsHandler
 from .conversations import PostgresConversationsHandler
 from .documents import PostgresDocumentsHandler
-from .files import PostgresFilesHandler
 from .graphs import (
     PostgresCommunitiesHandler,
     PostgresEntitiesHandler,
@@ -66,7 +65,6 @@ class PostgresDatabaseProvider(DatabaseProvider):
     relationships_handler: PostgresRelationshipsHandler
     graphs_handler: PostgresGraphsHandler
     prompts_handler: PostgresPromptsHandler
-    files_handler: PostgresFilesHandler
     conversations_handler: PostgresConversationsHandler
     limits_handler: PostgresLimitsHandler
     maintenance_handler: PostgresMaintenanceHandler
@@ -194,9 +192,6 @@ class PostgresDatabaseProvider(DatabaseProvider):
         self.prompts_handler = PostgresPromptsHandler(
             self.project_name, self.connection_manager
         )
-        self.files_handler = PostgresFilesHandler(
-            self.project_name, self.connection_manager
-        )
         self.limits_handler = PostgresLimitsHandler(
             project_name=self.project_name,
             connection_manager=self.connection_manager,
@@ -233,7 +228,6 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.users_handler.create_tables()
         await self.chunks_handler.create_tables()
         await self.prompts_handler.create_tables()
-        await self.files_handler.create_tables()
         await self.graphs_handler.create_tables()
         await self.communities_handler.create_tables()
         await self.entities_handler.create_tables()

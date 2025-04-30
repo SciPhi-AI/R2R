@@ -222,9 +222,7 @@ class ManagementService(Service):
     async def download_file(
         self, document_id: UUID
     ) -> Optional[Tuple[str, BinaryIO, int]]:
-        if result := await self.providers.database.files_handler.retrieve_file(
-            document_id
-        ):
+        if result := await self.providers.file.retrieve_file(document_id):
             return result
         return None
 
@@ -234,12 +232,10 @@ class ManagementService(Service):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> tuple[str, BinaryIO, int]:
-        return (
-            await self.providers.database.files_handler.retrieve_files_as_zip(
-                document_ids=document_ids,
-                start_date=start_date,
-                end_date=end_date,
-            )
+        return await self.providers.file.retrieve_files_as_zip(
+            document_ids=document_ids,
+            start_date=start_date,
+            end_date=end_date,
         )
 
     async def export_collections(

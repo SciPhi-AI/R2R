@@ -517,7 +517,7 @@ class DocumentsRouter(BaseRouterV3):
             }
 
             file_name = file_data["filename"]
-            await self.providers.database.files_handler.store_file(
+            await self.providers.file.store_file(
                 document_id,
                 file_name,
                 file_content,

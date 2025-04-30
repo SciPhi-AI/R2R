@@ -58,6 +58,9 @@ request_timeout = 60
 [crypto]
 provider = "bcrypt"
 
+[file]
+provider = "postgres"
+
 [database]
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
