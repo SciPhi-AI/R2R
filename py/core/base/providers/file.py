@@ -9,10 +9,12 @@ from .base import Provider, ProviderConfig
 
 logger = logging.getLogger()
 
+
 class FileConfig(ProviderConfig):
     """
     Configuration for file storage providers.
     """
+
     provider: Optional[str] = None
 
     @property
@@ -30,7 +32,7 @@ class FileProvider(Provider, ABC):
     """
     Base abstract class for file storage providers.
     """
-    
+
     def __init__(self, config: FileConfig):
         if not isinstance(config, FileConfig):
             raise ValueError(
@@ -54,14 +56,14 @@ class FileProvider(Provider, ABC):
     ) -> None:
         """Store a file."""
         pass
-        
+
     @abstractmethod
     async def retrieve_file(
         self, document_id: UUID
     ) -> Optional[tuple[str, BinaryIO, int]]:
         """Retrieve a file."""
         pass
-        
+
     @abstractmethod
     async def retrieve_files_as_zip(
         self,
@@ -71,12 +73,12 @@ class FileProvider(Provider, ABC):
     ) -> tuple[str, BinaryIO, int]:
         """Retrieve multiple files as a zip."""
         pass
-        
+
     @abstractmethod
     async def delete_file(self, document_id: UUID) -> bool:
         """Delete a file."""
         pass
-        
+
     @abstractmethod
     async def get_files_overview(
         self,

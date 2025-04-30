@@ -27,7 +27,7 @@ class S3FileProvider(FileProvider):
 
     def _get_table_name(self):
         pass
-        
+
     def _get_s3_key(self):
         pass
 

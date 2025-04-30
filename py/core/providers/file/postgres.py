@@ -9,7 +9,7 @@ from zipfile import ZipFile
 import asyncpg
 from fastapi import HTTPException
 
-from core.base import FileProvider, FileConfig, R2RException
+from core.base import FileConfig, FileProvider, R2RException
 
 logger = logging.getLogger()
 
