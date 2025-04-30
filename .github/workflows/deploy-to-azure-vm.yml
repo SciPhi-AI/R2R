@@ -3,7 +3,7 @@ name: Deploy to Azure VM
 on:
   push:
     branches:
-      - main  # Değişiklikler 'main' branch'ine geldiğind çalışr
+      - main  # Değişiklikler 'main' branch'ine geldiğinde çalışr
 
 jobs:
   deploy:
