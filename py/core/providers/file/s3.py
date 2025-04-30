@@ -1,16 +1,12 @@
-import io
 import logging
-import os
 from datetime import datetime
 from io import BytesIO
 from typing import BinaryIO, Optional
 from uuid import UUID
-import zipfile
 
 # import boto3
 # from botocore.exceptions import ClientError
-
-from core.base import FileProvider, FileConfig, R2RException
+from core.base import FileConfig, FileProvider
 
 logger = logging.getLogger()
 
