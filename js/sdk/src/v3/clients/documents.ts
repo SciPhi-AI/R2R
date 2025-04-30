@@ -235,23 +235,28 @@ export class DocumentsClient {
    * @param offset Specifies the number of objects to skip. Defaults to 0.
    * @param limit Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.
    * @param includeSummaryEmbeddings Specifies whether or not to include embeddings of each document summary. Defaults to false.
+   * @param ownerOnly If true, only returns documents owned by the user, not all accessible documents
    * @returns Promise<WrappedDocumentsResponse>
    */
   async list(options?: {
     ids?: string[];
     offset?: number;
     limit?: number;
-    includeSummaryEmbeddings?: boolean; // Added parameter
+    includeSummaryEmbeddings?: boolean;
+    ownerOnly?: boolean;
   }): Promise<WrappedDocumentsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
       limit: options?.limit ?? 100,
-      include_summary_embeddings: options?.includeSummaryEmbeddings ?? false, // Added mapping to snake_case
+      include_summary_embeddings: options?.includeSummaryEmbeddings ?? false,
     };
 
     if (options?.ids?.length) {
-      // Ensure 'ids' is only added if the array is not empty
       params.ids = options.ids;
+    }
+
+    if (options?.ownerOnly) {
+      params.owner_only = options.ownerOnly;
     }
 
     return this.client.makeRequest("GET", "documents", {

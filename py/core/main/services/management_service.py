@@ -384,6 +384,7 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
+        owner_only: bool = False,
     ):
         return await self.providers.database.documents_handler.get_documents_overview(
             offset=offset,
@@ -391,6 +392,7 @@ class ManagementService(Service):
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
+            owner_only=owner_only,
         )
 
     async def update_document_metadata(
@@ -603,6 +605,7 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
+        owner_only: bool = False,
     ) -> dict[str, list[CollectionResponse] | int]:
         return await self.providers.database.collections_handler.get_collections_overview(
             offset=offset,
@@ -610,6 +613,7 @@ class ManagementService(Service):
             filter_user_ids=user_ids,
             filter_document_ids=document_ids,
             filter_collection_ids=collection_ids,
+            owner_only=owner_only,
         )
 
     async def add_user_to_collection(

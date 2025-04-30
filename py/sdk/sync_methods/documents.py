@@ -6,8 +6,8 @@ import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional  # Added list, dict for clarity
-from urllib.parse import urlparse  # Added quote for export filenames
+from typing import Any, Optional
+from urllib.parse import urlparse
 from uuid import UUID
 
 import requests
@@ -805,7 +805,8 @@ class DocumentsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
-        include_summary_embeddings: Optional[bool] = False,  # Added parameter
+        include_summary_embeddings: Optional[bool] = False,
+        owner_only: Optional[bool] = False,
     ) -> WrappedDocumentsResponse:
         """list documents with pagination.
 
@@ -816,6 +817,7 @@ class DocumentsSDK:
             offset (int, optional): Number of objects to skip. Defaults to 0.
             limit (int, optional): Max number of objects to return (1-1000). Defaults to 100.
             include_summary_embeddings (Optional[bool]): Whether to include summary embeddings (default: False).
+            owner_only (Optional[bool]): If true, only returns documents owned by the user, not all accessible documents.
 
         Returns:
             WrappedDocumentsResponse
@@ -823,11 +825,11 @@ class DocumentsSDK:
         params: dict[str, Any] = {
             "offset": offset,
             "limit": limit,
+            "include_summary_embeddings": include_summary_embeddings,
+            "owner_only": owner_only,
         }
         if ids:
             params["ids"] = [str(doc_id) for doc_id in ids]
-        if include_summary_embeddings:  # Only add if True
-            params["include_summary_embeddings"] = True
 
         response_dict = self.client._make_request(
             "GET",
