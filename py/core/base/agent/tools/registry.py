@@ -3,7 +3,6 @@ import inspect
 import logging
 import os
 import pkgutil
-import subprocess
 import sys
 from typing import Callable, Optional, Type
 
@@ -40,16 +39,6 @@ class ToolRegistry:
             logger.warning(
                 f"User tools directory not found: {self.user_tools_path}"
             )
-
-    # TODO: Do this within the factory, not here
-    def _install_user_requirements(self, path: str):
-        if os.path.exists(path):
-            logger.info(f"Installing user requirements from {path}")
-            subprocess.check_call(
-                ["pip", "install", "-r", f"{path}/user_requirements.txt"]
-            )
-        else:
-            logger.warning(f"User requirements file not found: {path}")
 
     def _discover_built_in_tools(self):
         """Load all built-in tools from the built_in directory."""
@@ -108,8 +97,6 @@ class ToolRegistry:
         if self.user_tools_path not in sys.path:
             sys.path.append(os.path.dirname(self.user_tools_path))
 
-        self._install_user_requirements(self.user_tools_path)
-
         user_tools_pkg_name = os.path.basename(self.user_tools_path)
 
         # Check all Python files in user_tools directory
@@ -153,11 +140,9 @@ class ToolRegistry:
 
     def get_tool_class(self, tool_name: str):
         """Get a tool class by name."""
-        # Check user tools first (they override built-ins)
         if tool_name in self._user_tools:
             return self._user_tools[tool_name]
 
-        # Then check built-in tools
         return self._built_in_tools.get(tool_name)
 
     def list_available_tools(
@@ -190,26 +175,16 @@ class ToolRegistry:
             return None
 
         try:
-            # 1. Instantiate the SPECIFIC tool class
             tool_instance = tool_class()
-
-            # 2. Set the LLM formatting function if the tool uses it
-            #    (Assuming it's an attribute named 'llm_format_function')
-            #    Check if your specific tools actually need this set here.
-            #    If format_function is passed TO execute, this might not be needed.
             if hasattr(tool_instance, "llm_format_function"):
                 tool_instance.llm_format_function = format_function
 
-            # 3. Set the context DIRECTLY on the specific tool instance
-            tool_instance.set_context(
-                context
-            )  # Uses the Tool base class's set_context
+            # Set the context on the specific tool instance
+            tool_instance.set_context(context)
 
-            # 4. Return the configured specific tool instance
             return tool_instance
 
         except Exception as e:
-            # Log detailed error including stack trace
             logger.error(
                 f"Error creating or setting context for tool instance '{tool_name}': {e}"
             )

@@ -201,11 +201,6 @@ class Agent(ABC):
                         )
                     )
 
-                # raise R2RException(
-                #     message=f"Error parsing function arguments: {e}, agent likely produced invalid tool inputs.",
-                #     status_code=400,
-                # )
-
             merged_kwargs = {**kwargs, **function_args}
             try:
                 raw_result = await tool.execute(*args, **merged_kwargs)

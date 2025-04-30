@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any, Type
 
 from ..abstractions import R2RProviders, R2RServices
@@ -23,6 +24,7 @@ from ..services.retrieval_service import (  # type: ignore
     RetrievalService,  # noqa: F401 # type: ignore
 )
 from .factory import R2RProviderFactory
+from .utils import install_user_tool_dependencies
 
 logger = logging.getLogger()
 
@@ -42,6 +44,20 @@ class R2RBuilder:
 
     async def build(self, *args, **kwargs) -> R2RApp:
         provider_factory = R2RProviderFactory
+
+        try:
+            user_tools_path = "../docker/user_tools"
+            if os.path.exists(user_tools_path) and os.path.isdir(
+                user_tools_path
+            ):
+                logger.info(
+                    f"Checking and installing dependencies for user tools at: {user_tools_path}"
+                )
+
+                install_user_tool_dependencies(user_tools_path)
+        except Exception as e:
+            logger.error(f"Error {e} while installing user tool dependencies.")
+            raise
 
         try:
             providers = await self._create_providers(
