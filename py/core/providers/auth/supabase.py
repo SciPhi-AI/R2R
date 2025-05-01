@@ -74,7 +74,7 @@ class SupabaseAuthProvider(AuthProvider):
                 token = token[7:]
 
             # Get Supabase token information
-            auth_response = await self.supabase.auth.get_user(token)
+            auth_response = self.supabase.auth.get_user(token)
 
             if not auth_response or not auth_response.user:
                 raise R2RException(status_code=401, message="Invalid token")
