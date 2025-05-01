@@ -27,6 +27,10 @@ class FileConfig(ProviderConfig):
             "s3",
         ]
 
+    def validate_config(self) -> None:
+        if self.provider not in self.supported_providers:
+            raise ValueError(f"Unsupported file provider: {self.provider}")
+
 
 class FileProvider(Provider, ABC):
     """
