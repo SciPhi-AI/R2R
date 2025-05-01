@@ -1,4 +1,5 @@
 import logging
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
@@ -17,6 +18,13 @@ class FileConfig(ProviderConfig):
 
     provider: Optional[str] = None
 
+    # S3-specific configuration
+    bucket_name: Optional[str] = None
+    aws_access_key_id: Optional[str] = None
+    aws_secret_access_key: Optional[str] = None
+    region_name: Optional[str] = None
+    endpoint_url: Optional[str] = None
+
     @property
     def supported_providers(self) -> list[str]:
         """
@@ -30,6 +38,13 @@ class FileConfig(ProviderConfig):
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
             raise ValueError(f"Unsupported file provider: {self.provider}")
+
+        if self.provider == "s3" and (
+            not self.bucket_name and not os.getenv("S3_BUCKET_NAME")
+        ):
+            raise ValueError(
+                "S3 bucket name is required when using S3 provider"
+            )
 
 
 class FileProvider(Provider, ABC):
