@@ -85,9 +85,6 @@ class DocumentType(str, Enum):
     DOC = "doc"
     DOCX = "docx"
 
-    # XML
-    XML = "xml"
-
     # Code
     PY = "py"
     JS = "js"

@@ -50,7 +50,6 @@ class AppConfig(InnerConfig):
         "md": 2_000_000,
         "tsv": 2_000_000,
         "csv": 5_000_000,
-        "xml": 2_000_000,
         "html": 5_000_000,
         # Office docs
         "doc": 10_000_000,
