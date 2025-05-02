@@ -295,7 +295,6 @@ class ImageParser(AsyncParser[str | bytes]):
             if not response.choices or not response.choices[0].message:
                 raise ValueError("No response content")
 
-            content = response.choices[0].message.content
             if content := response.choices[0].message.content:
                 yield content
             else:
