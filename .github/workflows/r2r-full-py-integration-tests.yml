@@ -61,26 +61,13 @@ jobs:
           cd py && uv run pytest tests/unit \
             --verbose \
             --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit.xml \
-            --html=test-results/report.html
+            --log-cli-level=INFO
       - name: Run R2R Full Python Integration Test
         run: |
           cd py && uv run pytest tests/integration \
             --verbose \
             --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit.xml \
-            --html=test-results/report.html
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            test-results/
-            pytest-logs/
+            --log-cli-level=INFO
 
       - name: Check for test failures
         if: failure()
