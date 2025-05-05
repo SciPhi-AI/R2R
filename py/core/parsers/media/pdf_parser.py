@@ -398,6 +398,7 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                             or "\u0e00" <= x <= "\u0e7f"  # Thai
                             or "\u3040" <= x <= "\u309f"  # Japanese Hiragana
                             or "\u30a0" <= x <= "\u30ff"  # Katakana
+                            or "\uFF00" <= x <= "\uFFEF"  # Halfwidth and Fullwidth Forms
                             or x in string.printable
                         ),
                         page_text,
