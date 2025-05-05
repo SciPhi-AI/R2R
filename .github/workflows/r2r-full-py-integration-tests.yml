@@ -29,7 +29,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker

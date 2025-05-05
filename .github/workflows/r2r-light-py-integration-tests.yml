@@ -86,7 +86,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
@@ -178,7 +177,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
@@ -307,7 +305,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
