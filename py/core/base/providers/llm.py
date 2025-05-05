@@ -56,7 +56,7 @@ class CompletionProvider(Provider):
     async def _execute_with_backoff_async(
         self,
         task: dict[str, Any],
-        timeout: bool = False,
+        apply_timeout: bool = False,
     ):
         retries = 0
         backoff = self.config.initial_backoff
@@ -64,7 +64,7 @@ class CompletionProvider(Provider):
             try:
                 # A semaphore allows us to limit concurrent requests
                 async with self.semaphore:
-                    if not timeout:
+                    if not apply_timeout:
                         return await self._execute_task(task)
 
                     try:  # Use asyncio.wait_for to set a timeout for the request
@@ -114,12 +114,12 @@ class CompletionProvider(Provider):
     def _execute_with_backoff_sync(
         self,
         task: dict[str, Any],
-        timeout: bool = False,
+        apply_timeout: bool = False,
     ):
         retries = 0
         backoff = self.config.initial_backoff
         while retries < self.config.max_retries:
-            if not timeout:
+            if not apply_timeout:
                 return self._execute_task_sync(task)
 
             try:
@@ -170,7 +170,7 @@ class CompletionProvider(Provider):
         self,
         messages: list[dict],
         generation_config: GenerationConfig,
-        timeout: bool = False,
+        apply_timeout: bool = False,
         **kwargs,
     ) -> LLMChatCompletion:
         task = {
@@ -179,7 +179,7 @@ class CompletionProvider(Provider):
             "kwargs": kwargs,
         }
         response = await self._execute_with_backoff_async(
-            task=task, timeout=timeout
+            task=task, apply_timeout=apply_timeout
         )
         return LLMChatCompletion(**response.dict())
 
