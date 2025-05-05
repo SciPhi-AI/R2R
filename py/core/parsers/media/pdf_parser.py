@@ -155,6 +155,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 response = await self.llm_provider.aget_completion(
                     messages=messages,
                     generation_config=generation_config,
+                    timeout=True,
                     tools=[
                         {
                             "name": "parse_pdf_page",
@@ -198,7 +199,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                     return {"page": str(page_num), "content": ""}
             else:
                 response = await self.llm_provider.aget_completion(
-                    messages=messages, generation_config=generation_config
+                    messages=messages,
+                    generation_config=generation_config,
+                    timeout=True,
                 )
 
                 if response.choices and response.choices[0].message:
