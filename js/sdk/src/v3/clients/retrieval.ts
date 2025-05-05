@@ -139,6 +139,7 @@ export class RetrievalClient {
    *    - Research mode: Advanced capabilities for deep analysis, reasoning, and computation
    *
    * @param message Current message to process
+   * @param messages List of messages to process
    * @param ragGenerationConfig Configuration for RAG generation in 'rag' mode
    * @param researchGenerationConfig Configuration for generation in 'research' mode
    * @param searchMode Search mode to use, either "basic", "advanced", or "custom"
@@ -156,7 +157,8 @@ export class RetrievalClient {
    * @returns
    */
   async agent(options: {
-    message: Message;
+    message?: Message;
+    messages?: Message[];
     ragGenerationConfig?: GenerationConfig | Record<string, any>;
     researchGenerationConfig?: GenerationConfig | Record<string, any>;
     searchMode?: "basic" | "advanced" | "custom";
@@ -173,7 +175,12 @@ export class RetrievalClient {
     needsInitialConversationName?: boolean;
   }): Promise<any | ReadableStream<Uint8Array>> {
     const data: Record<string, any> = {
-      message: options.message,
+      ...(options.message && {
+        message: options.message,
+      }),
+      ...(options.messages && {
+        messages: options.messages,
+      }),
       ...(options.searchMode && {
         search_mode: options.searchMode,
       }),
