@@ -86,7 +86,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
@@ -120,18 +119,7 @@ jobs:
           cd py && uv run pytest tests/unit \
             --verbose \
             --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit.xml \
-            --html=test-results/report.html
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            test-results/
-            pytest-logs/
+            --log-cli-level=INFO
 
       - name: Check for test failures
         if: failure()
@@ -178,7 +166,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
@@ -216,18 +203,7 @@ jobs:
           cd py && uv run pytest tests/unit \
             --verbose \
             --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit-gemini.xml \
-            --html=test-results/report-gemini.html
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-gemini
-          path: |
-            test-results/
-            pytest-logs/
+            --log-cli-level=INFO
 
       - name: Check for test failures
         if: failure()
@@ -307,7 +283,6 @@ jobs:
         with:
           os: ubuntu-latest
           python-version: '3.12'
-          r2r-version: 'latest'
 
       - name: Setup and start PostgreSQL
         uses: ./.github/actions/setup-postgres-ext
@@ -341,18 +316,7 @@ jobs:
           cd py && uv run pytest ${{ matrix.test-group.path }} \
             --verbose \
             --capture=no \
-            --log-cli-level=INFO \
-            --junit-xml=test-results/junit-${{ matrix.test-group.name }}.xml \
-            --html=test-results/report-${{ matrix.test-group.name }}.html
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            test-results/
-            pytest-logs/
+            --log-cli-level=INFO
 
       - name: Check for test failures
         if: failure()
