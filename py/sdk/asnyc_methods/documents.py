@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -109,10 +110,11 @@ class DocumentsSDK:
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
+            filename = os.path.basename(file_path)
             files = [
                 (
                     "file",
-                    (file_path, file_instance, "application/octet-stream"),
+                    (filename, file_instance, "application/octet-stream"),
                 )
             ]
             try:
@@ -148,7 +150,7 @@ class DocumentsSDK:
     async def append_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],
     ) -> WrappedDocumentResponse:
         """Append metadata to a document.
 
@@ -172,13 +174,16 @@ class DocumentsSDK:
     async def replace_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],
     ) -> WrappedDocumentResponse:
         """Replace metadata for a document.
 
         Args:
             id (str | UUID): ID of document to replace metadata for
             metadata (list[dict]): The metadata that will replace the existing metadata
+
+        Returns:
+            WrappedDocumentResponse
         """
         data = json.dumps(metadata)
         response_dict = await self.client._make_request(
@@ -214,13 +219,23 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> BytesIO:
+        """Download a document's original file content.
+
+        Args:
+            id (str | UUID): ID of document to download
+
+        Returns:
+            BytesIO: In-memory bytes buffer containing the document's file content.
+        """
         response = await self.client._make_request(
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
         )
         if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+            raise ValueError(
+                f"Expected BytesIO response, got {type(response)}"
+            )
         return response
 
     async def download_zip(
@@ -230,7 +245,17 @@ class DocumentsSDK:
         end_date: Optional[datetime] = None,
         output_path: Optional[str | Path] = None,
     ) -> BytesIO | None:
-        """Download multiple documents as a zip file."""
+        """Download multiple documents as a zip file.
+
+        Args:
+            document_ids (Optional[list[str | UUID]]): IDs to include. May be required for non-superusers.
+            start_date (Optional[datetime]): Filter documents created on or after this date.
+            end_date (Optional[datetime]): Filter documents created on or before this date.
+            output_path (Optional[str | Path]): If provided, save the zip file to this path and return None. Otherwise, return BytesIO.
+
+        Returns:
+            Optional[BytesIO]: BytesIO object with zip content if output_path is None, else None.
+        """
         params: dict[str, Any] = {}
         if document_ids:
             params["document_ids"] = [str(doc_id) for doc_id in document_ids]
@@ -247,7 +272,9 @@ class DocumentsSDK:
         )
 
         if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+            raise ValueError(
+                f"Expected BytesIO response, got {type(response)}"
+            )
 
         if output_path:
             output_path = (
@@ -470,7 +497,6 @@ class DocumentsSDK:
     async def list_collections(
         self,
         id: str | UUID,
-        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
@@ -500,12 +526,12 @@ class DocumentsSDK:
 
     async def delete_by_filter(
         self,
-        filters: dict,
+        filters: dict[str, Any],
     ) -> WrappedBooleanResponse:
-        """Delete documents based on filters.
+        """Delete documents based on metadata filters.
 
         Args:
-            filters (dict): Filters to apply when selecting documents to delete
+            filters (dict): Filters to apply (e.g., `{"metadata.year": {"$lt": 2020}}`).
 
         Returns:
             WrappedBooleanResponse
@@ -548,6 +574,7 @@ class DocumentsSDK:
             params=data,
             version="v3",
         )
+
         return WrappedGenericMessageResponse(**response_dict)
 
     async def list_entities(
@@ -640,7 +667,7 @@ class DocumentsSDK:
         Returns:
             WrappedDocumentsResponse
         """
-        params = {
+        params: dict[str, Any] = {
             "offset": offset,
             "limit": limit,
             "include_summary_embeddings": include_summary_embeddings,
@@ -661,13 +688,14 @@ class DocumentsSDK:
     async def search(
         self,
         query: str,
-        search_mode: Optional[str | SearchMode] = "custom",
+        search_mode: Optional[str | SearchMode] = SearchMode.custom,
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedDocumentSearchResponse:
-        """Conduct a vector and/or graph search.
+        """Conduct a search query on document summaries.
 
         Args:
             query (str): The query to search for.
+            search_mode (Optional[str | SearchMode]): Search mode ('basic', 'advanced', 'custom'). Defaults to 'custom'.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
         Returns:
@@ -694,18 +722,18 @@ class DocumentsSDK:
     async def deduplicate(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[dict | GraphCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
         """Deduplicate entities and relationships from a document.
 
         Args:
-            id (str, UUID): ID of document to extract from
-            settings (Optional[dict]): Settings for extraction process
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            id (str | UUID): ID of document to deduplicate entities for.
+            settings (Optional[dict | GraphCreationSettings]): Settings for deduplication process.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
-            WrappedGenericMessageResponse
+            WrappedGenericMessageResponse: Indicating task status.
         """
         data: dict[str, Any] = {}
         if settings:
