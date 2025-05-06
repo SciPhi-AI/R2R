@@ -1,7 +1,6 @@
 import os
-from typing import Optional
 
-from shared.abstractions import R2RException
+from shared.abstractions import R2RClientException
 
 
 class BaseClient:
@@ -14,15 +13,14 @@ class BaseClient:
             "R2R_API_BASE", "https://api.sciphi.ai"
         )
         self.timeout = timeout
-        self.access_token: Optional[str] = None
-        self._refresh_token: Optional[str] = None
-        self._user_id: Optional[str] = None
-        self.api_key: Optional[str] = os.getenv("R2R_API_KEY", None)
+        self.access_token: str | None = None
+        self._refresh_token: str | None = None
+        self._user_id: str | None = None
+        self.api_key: str | None = os.getenv("R2R_API_KEY", None)
 
     def _get_auth_header(self) -> dict[str, str]:
         if self.access_token and self.api_key:
-            raise R2RException(
-                status_code=400,
+            raise R2RClientException(
                 message="Cannot have both access token and api key.",
             )
         if self.access_token:

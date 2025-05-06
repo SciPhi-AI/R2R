@@ -20,7 +20,12 @@ from shared.api.models import (
     WrappedRelationshipsResponse,
 )
 
-from ..models import IngestionMode, SearchMode, SearchSettings
+from ..models import (
+    GraphCreationSettings,
+    IngestionMode,
+    SearchMode,
+    SearchSettings,
+)
 
 
 class DocumentsSDK:
@@ -44,13 +49,15 @@ class DocumentsSDK:
         """Create a new document from either a file or content.
 
         Args:
-            file_path (Optional[str]): The file to upload, if any
-            content (Optional[str]): Optional text content to upload, if no file path is provided
-            id (Optional[str | UUID]): Optional ID to assign to the document
-            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
-            metadata (Optional[dict]): Optional metadata to assign to the document
-            ingestion_config (Optional[dict]): Optional ingestion configuration to use
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            file_path (Optional[str]): The path to the file to upload, if any.
+            raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
+            chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
+            id (Optional[str | UUID]): Optional ID to assign to the document.
+            ingestion_mode (Optional[IngestionMode | str]): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
+            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
+            metadata (Optional[dict]): Optional metadata to assign to the document.
+            ingestion_config (Optional[dict | IngestionMode]): Optional ingestion config or preset mode enum. Used when ingestion_mode='custom'.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
             WrappedIngestionResponse
@@ -94,7 +101,11 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
         if ingestion_mode is not None:
-            data["ingestion_mode"] = ingestion_mode
+            data["ingestion_mode"] = (
+                ingestion_mode.value
+                if isinstance(ingestion_mode, IngestionMode)
+                else ingestion_mode
+            )
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
@@ -512,7 +523,7 @@ class DocumentsSDK:
     async def extract(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[dict | GraphCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
         """Extract entities and relationships from a document.

@@ -20,6 +20,24 @@ class R2RException(Exception):
         }
 
 
+class R2RClientException(R2RException):
+    """An exceptiion raised within the R2R client SDK."""
+
+    def __init__(
+        self,
+        message: str,
+        status_code: int = 400,
+        detail: Optional[Any] = None,
+    ):
+        super().__init__(message, status_code, detail)
+        self.detail = detail
+
+    def to_dict(self):
+        result = super().to_dict()
+        result["detail"] = self.detail
+        return result
+
+
 class R2RDocumentProcessingError(R2RException):
     def __init__(
         self, error_message: str, document_id: UUID, status_code: int = 500

@@ -14,6 +14,7 @@ from .document import (
 from .exception import (
     PDFParsingError,
     PopplerNotFoundError,
+    R2RClientException,
     R2RDocumentProcessingError,
     R2RException,
 )
@@ -87,6 +88,7 @@ __all__ = [
     # Exception abstractions
     "R2RDocumentProcessingError",
     "R2RException",
+    "R2RClientException",
     "PDFParsingError",
     "PopplerNotFoundError",
     # Graph abstractions

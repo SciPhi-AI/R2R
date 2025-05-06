@@ -2,9 +2,9 @@ import json
 from io import BytesIO
 from typing import Any, Generator
 
-from httpx import Client, RequestError, Response
+from httpx import Client, ConnectError, RequestError, Response
 
-from shared.abstractions import R2RException
+from shared.abstractions import R2RClientException, R2RException
 
 from .base.base_client import BaseClient
 from .sync_methods import (
@@ -68,10 +68,15 @@ class R2RClient(BaseClient):
             else:
                 return BytesIO(response.content)
 
+        except ConnectError as e:
+            raise R2RClientException(
+                message="Unable to connect to the server. Check your network connection and the server URL."
+            ) from e
+
         except RequestError as e:
             raise R2RException(
-                status_code=500,
                 message=f"Request failed: {str(e)}",
+                status_code=500,
             ) from e
 
     def _make_streaming_request(

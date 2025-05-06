@@ -1,18 +1,14 @@
 import json
 import logging
 import os
-import tempfile
-import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
-from urllib.parse import urlparse
 from uuid import UUID
 
 import requests
 
-# Assuming these models are correctly defined elsewhere
 from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -26,7 +22,6 @@ from shared.api.models import (
     WrappedRelationshipsResponse,
 )
 
-# Assuming these models exist and are correct
 from ..models import (
     GraphCreationSettings,
     IngestionMode,
@@ -38,13 +33,7 @@ logger = logging.getLogger()
 
 
 class DocumentsSDK:
-    """
-    SDK for interacting with documents in the v3 API.
-
-    Note: Many methods have access control restrictions based on user roles (superuser),
-    document ownership, and collection membership. Refer to specific method documentation
-    and the API documentation for details.
-    """
+    """SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -55,14 +44,11 @@ class DocumentsSDK:
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
         id: Optional[str | UUID] = None,
-        # ingestion_mode: Optional[str] = None, # Replaced by ingestion_mode enum below
+        ingestion_mode: Optional[IngestionMode | str] = None,
         collection_ids: Optional[list[str | UUID]] = None,
         metadata: Optional[dict[str, Any]] = None,
-        ingestion_config: Optional[
-            dict | IngestionMode
-        ] = None,  # Type hint clarifies IngestionMode enum usage
+        ingestion_config: Optional[dict | IngestionMode] = None,
         run_with_orchestration: Optional[bool] = True,
-        ingestion_mode: IngestionMode | str = IngestionMode.custom,
     ) -> WrappedIngestionResponse:
         """Create a new document from either a file, raw text, or chunks.
 
@@ -73,11 +59,11 @@ class DocumentsSDK:
             raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
             chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
             id (Optional[str | UUID]): Optional ID to assign to the document.
+            ingestion_mode (Optional[IngestionMode | str]): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
             collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
             metadata (Optional[dict]): Optional metadata to assign to the document.
             ingestion_config (Optional[dict | IngestionMode]): Optional ingestion config or preset mode enum. Used when ingestion_mode='custom'.
             run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
-            ingestion_mode (IngestionMode): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
 
         Returns:
             WrappedIngestionResponse
@@ -102,45 +88,30 @@ class DocumentsSDK:
             data["id"] = str(id)
         if metadata:
             data["metadata"] = json.dumps(metadata)
-
-        # Handle ingestion_config (used mainly for 'custom' mode overrides)
         if ingestion_config:
-            config_dict = {}
             if isinstance(ingestion_config, IngestionMode):
-                # This seems less likely usage, but handle it.
-                # Usually, the mode is set by the ingestion_mode parameter.
-                config_dict = {"mode": ingestion_config.value}
-            elif isinstance(ingestion_config, dict):
-                config_dict = ingestion_config
-            else:
-                # Handle potential pydantic model if passed directly
-                try:
-                    config_dict = ingestion_config.model_dump(
-                        exclude_unset=True
-                    )
-                except AttributeError as e:
-                    raise TypeError(
-                        "ingestion_config must be a dict or IngestionMode enum"
-                    ) from e
-
-            data["ingestion_config"] = json.dumps(config_dict)
-
+                ingestion_config = {"mode": ingestion_config.value}
+            app_config: dict[str, Any] = (
+                {}
+                if isinstance(ingestion_config, dict)
+                else ingestion_config["app"]
+            )
+            ingestion_config = dict(ingestion_config)
+            ingestion_config["app"] = app_config
+            data["ingestion_config"] = json.dumps(ingestion_config)
         if collection_ids:
-            collection_ids_str = [
+            collection_ids = [
                 str(collection_id) for collection_id in collection_ids
             ]
-            data["collection_ids"] = json.dumps(collection_ids_str)
+            data["collection_ids"] = json.dumps(collection_ids)
         if run_with_orchestration is not None:
-            # Send as string 'true'/'false' as expected by Form(...)
             data["run_with_orchestration"] = str(run_with_orchestration)
-
-        # Always send ingestion_mode enum value
-        data["ingestion_mode"] = (
-            ingestion_mode.value
-            if isinstance(ingestion_mode, IngestionMode)
-            else ingestion_mode
-        )
-
+        if ingestion_mode is not None:
+            data["ingestion_mode"] = (
+                ingestion_mode.value
+                if isinstance(ingestion_mode, IngestionMode)
+                else ingestion_mode
+            )
         if file_path:
             # Check if file exists before opening
             if not os.path.exists(file_path):
@@ -288,21 +259,9 @@ class DocumentsSDK:
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
-            # Add headers or params if _make_request needs hint for raw response
-            # headers={"Accept": "*/*"} # Might be needed depending on _make_request impl
         )
-        # _make_request might return dict on error, check type
         if not isinstance(response, BytesIO):
-            # Attempt to log or raise a more informative error
-            error_message = f"Expected BytesIO response, but received type {type(response)}."
-            if isinstance(response, dict) and "error" in response:
-                error_message += f" Content: {response.get('error')}"
-            elif isinstance(response, dict) and "message" in response:
-                error_message += f" Content: {response.get('message')}"
-
-            raise ValueError(
-                error_message, response
-            )  # Include response for debugging
+            raise ValueError("Expected BytesIO response")
         return response
 
     def download_zip(
@@ -343,10 +302,7 @@ class DocumentsSDK:
         )
 
         if not isinstance(response_bytes, BytesIO):
-            error_message = f"Expected BytesIO response for zip download, but received type {type(response_bytes)}."
-            if isinstance(response_bytes, dict):
-                error_message += f" Content: {response_bytes}"  # Log dict content if possible
-            raise ValueError(error_message, response_bytes)
+            raise ValueError("Expected BytesIO response")
 
         if output_path:
             output_path_obj = Path(output_path)
@@ -674,9 +630,7 @@ class DocumentsSDK:
     def extract(
         self,
         id: str | UUID,
-        settings: Optional[
-            dict | GraphCreationSettings
-        ] = None,  # Use GraphCreationSettings if defined
+        settings: Optional[dict | GraphCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
         """Triggers the extraction of entities and relationships from a document.
@@ -941,71 +895,3 @@ class DocumentsSDK:
                 f"Expected dict response, got {type(response_dict)}"
             )
         return WrappedGenericMessageResponse(**response_dict)
-
-    def create_sample(self, hi_res: bool = False) -> WrappedIngestionResponse:
-        """Ingest a sample document (DeepSeek_R1.pdf) into R2R.
-
-        Downloads the file to a temporary location, ingests it, and cleans up.
-
-        Args:
-            hi_res (bool): If True, attempts to use the 'hi-res' ingestion mode. Defaults to False (uses 'custom' or server default).
-
-        Returns:
-            WrappedIngestionResponse: The response from the ingestion request.
-        """
-        sample_file_url = "https://raw.githubusercontent.com/SciPhi-AI/R2R/main/py/core/examples/data/DeepSeek_R1.pdf"
-        parsed_url = urlparse(sample_file_url)
-        filename = os.path.basename(parsed_url.path) or "sample.pdf"
-
-        # Use a context manager for the temporary file for safer cleanup
-        with tempfile.NamedTemporaryFile(
-            delete=False, suffix=f"_{filename}"
-        ) as temp_file:
-            temp_file_path = (
-                temp_file.name
-            )  # Get path before closing (in with statement)
-            try:
-                response = requests.get(
-                    sample_file_url, timeout=self.client.timeout
-                )  # Use client timeout
-                response.raise_for_status()  # Check for download errors
-                temp_file.write(response.content)
-            except requests.exceptions.RequestException as e:
-                # Clean up temp file on download error
-                os.unlink(temp_file_path)
-                raise ConnectionError(
-                    f"Failed to download sample file: {e}"
-                ) from e
-            except Exception as e:
-                os.unlink(temp_file_path)
-                raise RuntimeError(f"Failed to write sample file: {e}") from e
-
-        # File is closed here, but path still exists
-        try:
-            metadata = {"title": filename}
-            # Generate a stable UUID v5 based on the URL
-            doc_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, sample_file_url))
-
-            # Determine ingestion mode
-            mode = (
-                IngestionMode.hi_res if hi_res else IngestionMode.fast
-            )  # Or maybe FAST if hi_res is False? Adjust as needed.
-
-            # Call the SDK's create method
-            ingestion_response = self.create(
-                file_path=temp_file_path,
-                metadata=metadata,
-                id=doc_id,
-                ingestion_mode=mode,
-            )
-            return ingestion_response
-        finally:
-            # Ensure the temporary file is removed
-            try:
-                if os.path.exists(temp_file_path):
-                    os.unlink(temp_file_path)
-            except Exception as e:
-                # Log cleanup error but don't obscure original error
-                logger.warning(
-                    f"Warning: Failed to delete temporary file {temp_file_path}: {e}"
-                )
