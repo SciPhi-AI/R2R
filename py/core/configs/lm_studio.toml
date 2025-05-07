@@ -16,7 +16,6 @@ provider = "litellm"
 base_model = "lm_studio/text-embedding-nomic-embed-text-v1.5"
 base_dimension = nan
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [completion_embedding]
@@ -25,7 +24,6 @@ provider = "litellm"
 base_model = "lm_studio/text-embedding-nomic-embed-text-v1.5"
 base_dimension = nan
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [agent]

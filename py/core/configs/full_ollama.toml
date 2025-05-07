@@ -22,7 +22,6 @@ provider = "ollama"
 base_model = "mxbai-embed-large"
 base_dimension = 1_024
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [completion_embedding]
@@ -30,7 +29,6 @@ provider = "ollama"
 base_model = "mxbai-embed-large"
 base_dimension = 1_024
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [agent]

@@ -114,10 +114,7 @@ default_collection_name = "Default"
 default_collection_description = "Your default collection."
 collection_summary_system_prompt = "system"
 collection_summary_prompt = "collection_summary"
-enable_fts = false
 disable_create_extension = false
-batch_size = 1
-kg_store_path = ""
 
   # PostgreSQL tuning settings
   [database.postgres_configuration_settings]
@@ -152,10 +149,6 @@ kg_store_path = ""
   [database.graph_enrichment_settings]
     graph_communities_prompt = "graph_communities"
 
-  # (Optional) Graph search settings – add fields as needed
-  [database.graph_search_settings]
-    # e.g., search_mode = "default"
-
   # Rate limiting settings
   [database.limits]
     global_per_min = 60
@@ -181,8 +174,6 @@ base_dimension = 512
 rerank_model = ""
 rerank_url = ""
 batch_size = 1
-prefixes = {}   # Provide prefix overrides here if needed
-add_title_as_prefix = true
 concurrent_request_limit = 256
 max_retries = 3
 initial_backoff = 1.0
@@ -202,7 +193,6 @@ provider = "litellm"
 base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 1
-add_title_as_prefix = true
 concurrent_request_limit = 256
 
 ################################################################################
@@ -245,14 +235,6 @@ parser_overrides = {}
   # Extra parsers (mapping from file type to parser name)
   [ingestion.extra_parsers]
     pdf = ["zerox", "ocr"]
-
-################################################################################
-# Logging Settings
-################################################################################
-[logging]
-provider = "r2r"
-log_table = "logs"
-log_info_table = "log_info"
 
 ################################################################################
 # Orchestration Settings (OrchestrationConfig)

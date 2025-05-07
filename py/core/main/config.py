@@ -51,18 +51,15 @@ class R2RConfig:
             "base_model",
             "base_dimension",
             "batch_size",
-            "add_title_as_prefix",
         ],
         "completion_embedding": [
             "provider",
             "base_model",
             "base_dimension",
             "batch_size",
-            "add_title_as_prefix",
         ],
         # TODO - deprecated, remove
         "ingestion": ["provider"],
-        "logging": ["provider", "log_table"],
         "database": ["provider"],
         "agent": ["generation_config"],
         "ocr": [],

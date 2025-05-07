@@ -25,8 +25,6 @@ class EmbeddingConfig(ProviderConfig):
     rerank_model: Optional[str] = None
     rerank_url: Optional[str] = None
     batch_size: int = 1
-    prefixes: Optional[dict[str, str]] = None
-    add_title_as_prefix: bool = True
     concurrent_request_limit: int = 256
     max_retries: int = 3
     initial_backoff: float = 1

@@ -117,24 +117,18 @@ def mock_config():
             "base_model": "test",
             "base_dimension": 1024,
             "batch_size": 10,
-            "add_title_as_prefix": True,
         },
         "completion_embedding": {
             "provider": "mock",
             "base_model": "test",
             "base_dimension": 1024,
             "batch_size": 10,
-            "add_title_as_prefix": True,
         },
         "email": {
             "provider": "mock"
         },
         "ingestion": {
             "provider": "mock"
-        },
-        "logging": {
-            "provider": "mock",
-            "log_table": "logs"
         },
         "agent": {
             "generation_config": {}
