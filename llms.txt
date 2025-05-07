@@ -11071,7 +11071,6 @@ provider = "litellm"
 base_model = "openai/text-embedding-3-small"
 base_dimension = 512
 batch_size = 128
-add_title_as_prefix = false
 concurrent_request_limit = 256
 quantization_settings = { quantization_type = "FP32" }
 
@@ -11097,11 +11096,6 @@ document_summary_model = "openai/gpt-4o-mini"
 
   [ingestion.extra_parsers]
     pdf = "zerox"
-
-[logging]
-provider = "r2r"
-log_table = "logs"
-log_info_table = "log_info"
 
 [orchestration]
 provider = "simple"

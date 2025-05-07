@@ -614,13 +614,17 @@ class DocumentsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
+        include_summary_embeddings: Optional[bool] = False,
+        owner_only: Optional[bool] = False,
     ) -> WrappedDocumentsResponse:
         """List documents with pagination.
 
         Args:
-            ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by
-            offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
-            limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            ids (Optional[list[str | UUID]]): Optional list of document IDs to filter by.
+            offset (int, optional): Number of objects to skip. Defaults to 0.
+            limit (int, optional): Max number of objects to return (1-1000). Defaults to 100.
+            include_summary_embeddings (Optional[bool]): Whether to include summary embeddings (default: False).
+            owner_only (Optional[bool]): If true, only returns documents owned by the user, not all accessible documents.
 
         Returns:
             WrappedDocumentsResponse
@@ -628,6 +632,8 @@ class DocumentsSDK:
         params = {
             "offset": offset,
             "limit": limit,
+            "include_summary_embeddings": include_summary_embeddings,
+            "owner_only": owner_only,
         }
         if ids:
             params["ids"] = [str(doc_id) for doc_id in ids]  # type: ignore

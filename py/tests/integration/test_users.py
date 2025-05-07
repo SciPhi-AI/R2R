@@ -551,3 +551,257 @@ def test_update_user_limits_overrides(client: R2RClient):
     assert updated_user.limits_overrides["global_per_min"] == 10
     assert (updated_user.limits_overrides["route_overrides"]["/some-route"]
             ["route_per_min"] == 5)
+
+def test_collection_ownership_filtering(client: R2RClient):
+    """Test the ownerOnly filter parameter in collections list endpoint."""
+    # Create two test users
+    user1_email = f"user1_{uuid.uuid4()}@test.com"
+    user1_password = "password123"
+    user2_email = f"user2_{uuid.uuid4()}@test.com"
+    user2_password = "password123"
+
+    # Register users
+    client.users.create(user1_email, user1_password)
+    client.users.create(user2_email, user2_password)
+
+    # Login as user1 and create a collection
+    client.users.login(user1_email, user1_password)
+    user1_id = client.users.me().results.id
+    user1_collection = client.collections.create(name="User1 Collection").results
+    user1_collection_id = user1_collection.id
+
+    # Login as user2 and create a collection
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+    user2_id = client.users.me().results.id
+    user2_collection = client.collections.create(name="User2 Collection").results
+    user2_collection_id = user2_collection.id
+
+    # User2 adds user1 to their collection
+    client.collections.add_user(user2_collection_id, user1_id)
+
+    # Login as user1 and check collections
+    client.users.logout()
+    client.users.login(user1_email, user1_password)
+
+    # List all collections
+    all_collections = client.collections.list().results
+    all_collection_ids = [str(col.id) for col in all_collections]
+
+    # Verify user1 can see their own collection
+    assert str(user1_collection_id) in all_collection_ids, "User1 can't see their own collection"
+
+    # Verify user1 can see user2's shared collection
+    assert str(user2_collection_id) in all_collection_ids, "User1 can't see shared collection"
+
+    # List only owned collections
+    owned_collections = client.collections.list(owner_only=True).results
+    owned_collection_ids = [str(col.id) for col in owned_collections]
+
+    # Verify user1's collection is in the owned list
+    assert str(user1_collection_id) in owned_collection_ids, "User1's collection not in owned list"
+
+    # Verify user2's collection is NOT in the owned list
+    assert str(user2_collection_id) not in owned_collection_ids, "Shared collection should not be in owned list"
+
+    # User1 adds user2 to their collection
+    client.collections.add_user(user1_collection_id, user2_id)
+
+    # Login as user2 and check collections
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+
+    # List all collections
+    all_collections = client.collections.list().results
+    all_collection_ids = [str(col.id) for col in all_collections]
+
+    # Verify user2 can see their own collection
+    assert str(user2_collection_id) in all_collection_ids, "User2 can't see their own collection"
+
+    # Verify user2 can see user1's shared collection
+    assert str(user1_collection_id) in all_collection_ids, "User2 can't see shared collection"
+
+    # List only owned collections
+    owned_collections = client.collections.list(owner_only=True).results
+    owned_collection_ids = [str(col.id) for col in owned_collections]
+
+    # Verify user2's collection is in the owned list
+    assert str(user2_collection_id) in owned_collection_ids, "User2's collection not in owned list"
+
+    # Verify user1's collection is NOT in the owned list
+    assert str(user1_collection_id) not in owned_collection_ids, "Shared collection should not be in owned list"
+
+    # Cleanup
+    client.users.logout()
+
+def test_superuser_collection_ownership_filtering(client: R2RClient, superuser_login, config):
+    """Test the ownerOnly filter for superusers."""
+    # Create a regular user
+    user_email = f"regular_{uuid.uuid4()}@test.com"
+    user_password = "password123"
+    client.users.create(user_email, user_password)
+
+    # Create a collection as superuser
+    superuser_collection = client.collections.create(name="Superuser Collection").results
+    superuser_id = client.users.me().results.id
+
+    # List all collections as superuser (without filter)
+    all_collections_count = len(client.collections.list().results)
+    assert all_collections_count > 0, "Superuser should see collections"
+
+    # List only owned collections as superuser
+    owned_collections = client.collections.list(owner_only=True).results
+    owned_count = len(owned_collections)
+    assert owned_count > 0, "Superuser should see owned collections"
+    assert owned_count < all_collections_count, "Filtered list should be smaller than all collections"
+
+    # Verify the superuser collection is in the owned list
+    assert any(str(col.id) == str(superuser_collection.id) for col in owned_collections), \
+        "Superuser collection should be in the owned list"
+
+    # Cleanup
+    client.collections.delete(superuser_collection.id)
+    client.users.logout()
+
+def test_collection_filter_invalid_parameters(client: R2RClient):
+    """Test error handling for invalid filter parameters."""
+    # Create a test user
+    user_email = f"test_{uuid.uuid4()}@test.com"
+    user_password = "password123"
+    client.users.create(user_email, user_password)
+    client.users.login(user_email, user_password)
+
+    # Test with invalid owner_only parameter type (should be bool, not string)
+    with pytest.raises(R2RException) as exc_info:
+        client.collections.list(owner_only="not-a-bool")
+    assert exc_info.value.status_code in [400, 422], \
+        "Expected validation error for invalid owner_only parameter"
+
+    client.users.logout()
+
+
+def test_document_ownership_filtering(client: R2RClient):
+    """Test the ownerOnly filter parameter in documents list endpoint."""
+    # Create two test users
+    user1_email = f"user1_doc_{uuid.uuid4()}@test.com"
+    user1_password = "password123"
+    user2_email = f"user2_doc_{uuid.uuid4()}@test.com"
+    user2_password = "password123"
+
+    # Register users
+    client.users.create(user1_email, user1_password)
+    client.users.create(user2_email, user2_password)
+
+    # Login as user1 and create a document and collection
+    client.users.login(user1_email, user1_password)
+    user1_id = client.users.me().results.id
+    user1_collection = client.collections.create(name="User1 Doc Collection").results
+    user1_collection_id = user1_collection.id
+
+    user1_document = client.documents.create(
+        raw_text="User 1 document content",
+        metadata={"title": "User 1 Document"}
+    ).results
+    user1_document_id = user1_document.document_id
+
+    # Wait for processing
+    import time
+    time.sleep(5)
+
+    # Login as user2 and create a document and collection
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+    user2_id = client.users.me().results.id
+    user2_collection = client.collections.create(name="User2 Doc Collection").results
+    user2_collection_id = user2_collection.id
+
+    user2_document = client.documents.create(
+        raw_text="User 2 document content",
+        metadata={"title": "User 2 Document"}
+    ).results
+    user2_document_id = user2_document.document_id
+
+    # Wait for processing
+    time.sleep(5)
+
+    # Add user1's document to user2's collection
+    client.collections.add_document(user2_collection_id, user1_document_id)
+
+    # Login as user1 and check documents
+    client.users.logout()
+    client.users.login(user1_email, user1_password)
+
+    # List all documents
+    all_documents = client.documents.list().results
+    all_document_ids = [str(doc.id) for doc in all_documents]
+
+    # Verify user1 can see their own document
+    assert str(user1_document_id) in all_document_ids, "User1 can't see their own document"
+
+    # List only owned documents
+    owned_documents = client.documents.list(owner_only=True).results
+    owned_document_ids = [str(doc.id) for doc in owned_documents]
+
+    # Verify user1's document is in the owned list
+    assert str(user1_document_id) in owned_document_ids, "User1's document not in owned list"
+
+    # Add user2's document to user1's collection
+    client.collections.add_document(user1_collection_id, user2_document_id)
+
+    # Login as user2 and check documents
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+
+    # List all documents
+    all_documents = client.documents.list().results
+    all_document_ids = [str(doc.id) for doc in all_documents]
+
+    # Verify user2 can see their own document
+    assert str(user2_document_id) in all_document_ids, "User2 can't see their own document"
+
+    # Verify user2 can see user1's shared document
+    assert str(user1_document_id) in all_document_ids, "User2 can't see shared document"
+
+    # List only owned documents
+    owned_documents = client.documents.list(owner_only=True).results
+    owned_document_ids = [str(doc.id) for doc in owned_documents]
+
+    # Verify user2's document is in the owned list
+    assert str(user2_document_id) in owned_document_ids, "User2's document not in owned list"
+
+    # Verify user1's document is NOT in the owned list
+    assert str(user1_document_id) not in owned_document_ids, "Shared document should not be in owned list"
+
+    # Cleanup - login as the right user first
+    client.users.logout()
+    client.users.login(user1_email, user1_password)
+    try:
+        client.documents.delete(user1_document_id)
+    except Exception as e:
+        print(f"Failed to delete user1's document: {e}")
+
+    client.users.logout()
+    client.users.login(user2_email, user2_password)
+    try:
+        client.documents.delete(user2_document_id)
+    except Exception as e:
+        print(f"Failed to delete user2's document: {e}")
+
+    client.users.logout()
+
+
+def test_document_filter_invalid_parameters(client: R2RClient):
+    """Test error handling for invalid filter parameters in documents endpoint."""
+    # Create a test user
+    user_email = f"test_doc_{uuid.uuid4()}@test.com"
+    user_password = "password123"
+    client.users.create(user_email, user_password)
+    client.users.login(user_email, user_password)
+
+    # Test with invalid owner_only parameter type (should be bool, not string)
+    with pytest.raises(R2RException) as exc_info:
+        client.documents.list(owner_only="not-a-bool")
+    assert exc_info.value.status_code in [400, 422], \
+        "Expected validation error for invalid owner_only parameter"
+
+    client.users.logout()

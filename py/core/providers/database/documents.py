@@ -513,7 +513,8 @@ class PostgresDocumentsHandler(Handler):
         filter_collection_ids: Optional[list[UUID]] = None,
         include_summary_embedding: Optional[bool] = True,
         filters: Optional[dict[str, Any]] = None,
-        sort_order: str = "DESC",  # Add this parameter with a default of DESC
+        sort_order: str = "DESC",
+        owner_only: bool = False,
     ) -> dict[str, Any]:
         """Fetch overviews of documents with optional offset/limit pagination.
 
@@ -575,19 +576,33 @@ class PostgresDocumentsHandler(Handler):
 
             # For owner/collection filters, we used OR logic previously
             # so we combine them into a single sub-condition in parentheses
-            or_conditions = []
+            owner_conditions = []
+            collection_conditions = []
+
             if filter_user_ids:
-                or_conditions.append(f"owner_id = ANY(${param_index})")
+                owner_conditions.append(f"owner_id = ANY(${param_index})")
                 params.append(filter_user_ids)
                 param_index += 1
 
             if filter_collection_ids:
-                or_conditions.append(f"collection_ids && ${param_index}")
+                collection_conditions.append(
+                    f"collection_ids && ${param_index}"
+                )
                 params.append(filter_collection_ids)
                 param_index += 1
 
-            if or_conditions:
-                conditions.append(f"({' OR '.join(or_conditions)})")
+            if owner_only:
+                if owner_conditions:
+                    conditions.append(f"({' OR '.join(owner_conditions)})")
+
+                if collection_conditions:
+                    conditions.append(
+                        f"({' OR '.join(collection_conditions)})"
+                    )
+            elif (
+                combined_conditions := owner_conditions + collection_conditions
+            ):
+                conditions.append(f"({' OR '.join(combined_conditions)})")
 
         # -------------------------
         # Build the full query

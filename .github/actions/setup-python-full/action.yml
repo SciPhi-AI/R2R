@@ -9,10 +9,6 @@ inputs:
     description: 'Python version to use'
     required: false
     default: '3.12'
-  r2r-version:
-    description: 'R2R CLI & SDK version to install'
-    required: false
-    default: 'latest'
 
 runs:
   using: "composite"
@@ -26,11 +22,7 @@ runs:
     - name: Install R2R CLI & Python SDK
       shell: bash
       run: |
-        if [ "${{ inputs.r2r-version }}" = "latest" ]; then
-          pip install r2r
-        else
-          pip install r2r==${{ inputs.r2r-version }}
-        fi
+        pip install r2r
 
     - name: Install uv
       shell: bash

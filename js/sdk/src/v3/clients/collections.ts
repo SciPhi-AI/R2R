@@ -37,12 +37,14 @@ export class CollectionsClient {
    * @param ids Optional list of collection IDs to filter by
    * @param offset Optional offset for pagination
    * @param limit Optional limit for pagination
+   * @param ownerOnly If true, only returns collections owned by the user, not all accessible collections
    * @returns
    */
   async list(options?: {
     ids?: string[];
     offset?: number;
     limit?: number;
+    ownerOnly?: boolean;
   }): Promise<WrappedCollectionsResponse> {
     const params: Record<string, any> = {
       offset: options?.offset ?? 0,
@@ -51,6 +53,10 @@ export class CollectionsClient {
 
     if (options?.ids && options.ids.length > 0) {
       params.ids = options.ids;
+    }
+
+    if (options?.ownerOnly) {
+      params.owner_only = options.ownerOnly;
     }
 
     return this.client.makeRequest("GET", "collections", {

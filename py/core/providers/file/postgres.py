@@ -9,24 +9,32 @@ from zipfile import ZipFile
 import asyncpg
 from fastapi import HTTPException
 
-from core.base import Handler, R2RException
-
-from .base import PostgresConnectionManager
+from core.base import FileConfig, FileProvider, R2RException
 
 logger = logging.getLogger()
 
 
-class PostgresFilesHandler(Handler):
-    """PostgreSQL implementation of the FileHandler."""
+class PostgresFileProvider(FileProvider):
+    """PostgreSQL implementation of the FileProvider."""
 
-    TABLE_NAME = "files"
+    def __init__(
+        self,
+        config: FileConfig,
+        project_name: str,
+        connection_manager,  # PostgresConnectionManager
+    ):
+        super().__init__(config)
+        self.table_name = "files"
+        self.project_name = project_name
+        self.connection_manager = connection_manager
 
-    connection_manager: PostgresConnectionManager
+    def _get_table_name(self, base_name: str) -> str:
+        return f"{self.project_name}.{base_name}"
 
-    async def create_tables(self) -> None:
+    async def initialize(self) -> None:
         """Create the necessary tables for file storage."""
         query = f"""
-        CREATE TABLE IF NOT EXISTS {self._get_table_name(PostgresFilesHandler.TABLE_NAME)} (
+        CREATE TABLE IF NOT EXISTS {self._get_table_name(self.table_name)} (
             document_id UUID PRIMARY KEY,
             name TEXT NOT NULL,
             oid OID NOT NULL,
@@ -46,10 +54,10 @@ class PostgresFilesHandler(Handler):
         $$ LANGUAGE plpgsql;
 
         DROP TRIGGER IF EXISTS update_files_updated_at
-        ON {self._get_table_name(PostgresFilesHandler.TABLE_NAME)};
+        ON {self._get_table_name(self.table_name)};
 
         CREATE TRIGGER update_files_updated_at
-            BEFORE UPDATE ON {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+            BEFORE UPDATE ON {self._get_table_name(self.table_name)}
             FOR EACH ROW
             EXECUTE FUNCTION {self.project_name}.update_files_updated_at();
         """
@@ -65,7 +73,7 @@ class PostgresFilesHandler(Handler):
     ) -> None:
         """Add or update a file entry in storage."""
         query = f"""
-        INSERT INTO {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        INSERT INTO {self._get_table_name(self.table_name)}
         (document_id, name, oid, size, type)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (document_id) DO UPDATE SET
@@ -130,7 +138,7 @@ class PostgresFilesHandler(Handler):
         """Retrieve a file from storage."""
         query = f"""
         SELECT name, oid, size
-        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        FROM {self._get_table_name(self.table_name)}
         WHERE document_id = $1
         """
 
@@ -163,7 +171,7 @@ class PostgresFilesHandler(Handler):
 
         query = f"""
         SELECT document_id, name, oid, size
-        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        FROM {self._get_table_name(self.table_name)}
         WHERE 1=1
         """
         params: list = []
@@ -256,7 +264,7 @@ class PostgresFilesHandler(Handler):
     async def delete_file(self, document_id: UUID) -> bool:
         """Delete a file from storage."""
         query = f"""
-        SELECT oid FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        SELECT oid FROM {self._get_table_name(self.table_name)}
         WHERE document_id = $1
         """
 
@@ -272,7 +280,7 @@ class PostgresFilesHandler(Handler):
                 await self._delete_lobject(conn, oid)
 
                 delete_query = f"""
-                DELETE FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+                DELETE FROM {self._get_table_name(self.table_name)}
                 WHERE document_id = $1
                 """
                 await conn.execute(delete_query, document_id)
@@ -295,7 +303,7 @@ class PostgresFilesHandler(Handler):
         params: list[str | list[str] | int] = []
         query = f"""
         SELECT document_id, name, oid, size, type, created_at, updated_at
-        FROM {self._get_table_name(PostgresFilesHandler.TABLE_NAME)}
+        FROM {self._get_table_name(self.table_name)}
         """
 
         if filter_document_ids:

@@ -5,14 +5,16 @@ volumes:
     name: hatchet_config
   hatchet_api_key:
     name: hatchet_api_key
-  postgres_data:
-    name: postgres_data
   hatchet_rabbitmq_data:
     name: hatchet_rabbitmq_data
   hatchet_rabbitmq_conf:
     name: hatchet_rabbitmq_conf
   hatchet_postgres_data:
     name: hatchet_postgres_data
+  minio_data:
+    name: minio_data
+  postgres_data:
+    name: postgres_data
 
 services:
   postgres:
@@ -33,6 +35,24 @@ services:
     command: >
       postgres
       -c max_connections=1024
+
+  minio:
+    image: minio/minio
+    profiles: [minio]
+    env_file:
+      - ./env/minio.env
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
+    command: server /data --console-address ":9001"
 
   hatchet-postgres:
     image: postgres:latest
@@ -186,12 +206,6 @@ services:
         condition: service_healthy
       graph_clustering:
         condition: service_healthy
-    logging:
-      driver: fluentd
-      options:
-        fluentd-address: host.docker.internal:24224
-        fluentd-sub-second-precision: "true"
-        tag: backend
 
   r2r-dashboard:
     image: sciphiai/r2r-dashboard:1.0.3
@@ -199,27 +213,3 @@ services:
       - ./env/r2r-dashboard.env
     ports:
       - "7273:3000"
-
-  fluent-bit:
-    image: fluent/fluent-bit:latest
-    volumes:
-    - ./fluent-bit:/fluent-bit/etc:ro
-    ports:
-    - "24224:24224"
-    depends_on:
-    - victoria-logs
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-    - "3001:3000"
-    volumes:
-    - ./.data/grafana:/var/lib/grafana
-
-  victoria-logs:
-    image: victoriametrics/victoria-logs:v1.10.1-victorialogs
-    ports:
-    - "9428:9428"
-    volumes:
-    - ./.data/victoria-logs:/data
-    command: -storageDataPath=/data -retentionPeriod=60d

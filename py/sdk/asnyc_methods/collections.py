@@ -44,6 +44,7 @@ class CollectionsSDK:
         ids: Optional[list[str | UUID]] = None,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
+        owner_only: Optional[bool] = False,
     ) -> WrappedCollectionsResponse:
         """List collections with pagination and filtering options.
 
@@ -51,6 +52,7 @@ class CollectionsSDK:
             ids (Optional[list[str | UUID]]): Filter collections by ids
             offset (int, optional): Specifies the number of objects to skip. Defaults to 0.
             limit (int, optional): Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.
+            owner_only (Optional[bool]): If true, only returns collections owned by the user, not all accessible collections.
 
         Returns:
             WrappedCollectionsResponse
@@ -58,6 +60,7 @@ class CollectionsSDK:
         params: dict = {
             "offset": offset,
             "limit": limit,
+            "owner_only": owner_only,
         }
         if ids:
             params["ids"] = ids

@@ -338,6 +338,10 @@ class CollectionsRouter(BaseRouterV3):
                 le=1000,
                 description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
             ),
+            owner_only: bool = Query(
+                False,
+                description="If true, only returns collections owned by the user, not all accessible collections.",
+            ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
             """Returns a paginated list of collections the authenticated user
@@ -350,9 +354,10 @@ class CollectionsRouter(BaseRouterV3):
             The collections are returned in order of last modification, with
             most recent first.
             """
-            requesting_user_id = (
-                None if auth_user.is_superuser else [auth_user.id]
-            )
+            if auth_user.is_superuser:
+                requesting_user_id = [auth_user.id] if owner_only else None
+            else:
+                requesting_user_id = [auth_user.id]
 
             collection_uuids = [UUID(collection_id) for collection_id in ids]
 
@@ -362,6 +367,7 @@ class CollectionsRouter(BaseRouterV3):
                     collection_ids=collection_uuids,
                     offset=offset,
                     limit=limit,
+                    owner_only=owner_only,
                 )
             )
 

@@ -22,6 +22,10 @@ from .embeddings import (
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
 )
+from .file import (
+    PostgresFileProvider,
+    S3FileProvider,
+)
 from .ingestion import (  # type: ignore
     R2RIngestionConfig,
     R2RIngestionProvider,
@@ -61,17 +65,20 @@ __all__ = [
     "BcryptCryptoConfig",
     "NaClCryptoConfig",
     "NaClCryptoProvider",
+    # Database
+    "PostgresDatabaseProvider",
     # Embeddings
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
-    # Database
-    "PostgresDatabaseProvider",
     # Email
     "AsyncSMTPEmailProvider",
     "ConsoleMockEmailProvider",
     "SendGridEmailProvider",
     "MailerSendEmailProvider",
+    # File
+    "PostgresFileProvider",
+    "S3FileProvider",
     # LLM
     "AnthropicCompletionProvider",
     "OpenAICompletionProvider",

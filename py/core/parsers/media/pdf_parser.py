@@ -85,6 +85,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
         self.config = config
         self.vision_prompt_text = None
         self.vlm_batch_size = self.config.vlm_batch_size or 5
+        self.vlm_max_tokens_to_sample = (
+            self.config.vlm_max_tokens_to_sample or 1024
+        )
         self.max_concurrent_vlm_tasks = (
             self.config.max_concurrent_vlm_tasks or 5
         )
@@ -106,6 +109,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
             generation_config = GenerationConfig(
                 model=self.config.vlm or self.config.app.vlm,
                 stream=False,
+                max_tokens_to_sample=self.vlm_max_tokens_to_sample,
             )
 
             is_anthropic = model and "anthropic/" in model
@@ -151,6 +155,7 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                 response = await self.llm_provider.aget_completion(
                     messages=messages,
                     generation_config=generation_config,
+                    apply_timeout=True,
                     tools=[
                         {
                             "name": "parse_pdf_page",
@@ -194,7 +199,9 @@ class VLMPDFParser(AsyncParser[str | bytes]):
                     return {"page": str(page_num), "content": ""}
             else:
                 response = await self.llm_provider.aget_completion(
-                    messages=messages, generation_config=generation_config
+                    messages=messages,
+                    generation_config=generation_config,
+                    apply_timeout=True,
                 )
 
                 if response.choices and response.choices[0].message:
@@ -394,6 +401,9 @@ class BasicPDFParser(AsyncParser[str | bytes]):
                             or "\u0e00" <= x <= "\u0e7f"  # Thai
                             or "\u3040" <= x <= "\u309f"  # Japanese Hiragana
                             or "\u30a0" <= x <= "\u30ff"  # Katakana
+                            or "\uff00"
+                            <= x
+                            <= "\uffef"  # Halfwidth and Fullwidth Forms
                             or x in string.printable
                         ),
                         page_text,

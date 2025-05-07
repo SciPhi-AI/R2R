@@ -74,6 +74,7 @@ log_level = os.environ.get("R2R_LOG_LEVEL", "INFO").upper()
 log_console_formatter = os.environ.get(
     "R2R_LOG_CONSOLE_FORMATTER", "colored"
 ).lower()  # colored or json
+log_format = os.environ.get("R2R_LOG_FORMAT")
 
 log_dir = Path.cwd() / "logs"
 log_dir.mkdir(exist_ok=True)
@@ -89,12 +90,14 @@ log_config = {
     },
     "formatters": {
         "default": {
-            "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            "format": log_format
+            or "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
         "colored": {
             "()": "colorlog.ColoredFormatter",
-            "format": "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
+            "format": log_format
+            or "%(asctime)s - %(log_color)s%(levelname)s%(reset)s - %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
             "log_colors": {
                 "DEBUG": "white",
@@ -106,7 +109,7 @@ log_config = {
         },
         "json": {
             "()": "pythonjsonlogger.json.JsonFormatter",
-            "format": "%(name)s %(levelname)s %(message)s",  # these become keys in the JSON log
+            "format": log_format or "%(name)s %(levelname)s %(message)s",
             "rename_fields": {
                 "asctime": "time",
                 "levelname": "level",

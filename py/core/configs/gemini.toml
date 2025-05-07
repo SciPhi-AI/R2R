@@ -9,7 +9,6 @@ provider = "litellm"
 base_model = "gemini/text-embedding-004"
 base_dimension = nan
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2
 
 [completion_embedding]
@@ -17,5 +16,4 @@ provider = "litellm"
 base_model = "gemini/text-embedding-004"
 base_dimension = nan
 batch_size = 128
-add_title_as_prefix = true
 concurrent_request_limit = 2

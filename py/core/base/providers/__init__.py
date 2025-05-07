@@ -11,6 +11,7 @@ from .database import (
 )
 from .email import EmailConfig, EmailProvider
 from .embedding import EmbeddingConfig, EmbeddingProvider
+from .file import FileConfig, FileProvider
 from .ingestion import (
     ChunkingStrategy,
     IngestionConfig,
@@ -29,16 +30,9 @@ __all__ = [
     "AppConfig",
     "Provider",
     "ProviderConfig",
-    # Ingestion provider
-    "IngestionConfig",
-    "IngestionProvider",
-    "ChunkingStrategy",
     # Crypto provider
     "CryptoConfig",
     "CryptoProvider",
-    # Email provider
-    "EmailConfig",
-    "EmailProvider",
     # Database providers
     "DatabaseConnectionManager",
     "DatabaseConfig",
@@ -46,9 +40,19 @@ __all__ = [
     "PostgresConfigurationSettings",
     "DatabaseProvider",
     "Handler",
+    # Email provider
+    "EmailConfig",
+    "EmailProvider",
     # Embedding provider
     "EmbeddingConfig",
     "EmbeddingProvider",
+    # File provider
+    "FileConfig",
+    "FileProvider",
+    # Ingestion provider
+    "IngestionConfig",
+    "IngestionProvider",
+    "ChunkingStrategy",
     # LLM provider
     "CompletionConfig",
     "CompletionProvider",

@@ -222,9 +222,7 @@ class ManagementService(Service):
     async def download_file(
         self, document_id: UUID
     ) -> Optional[Tuple[str, BinaryIO, int]]:
-        if result := await self.providers.database.files_handler.retrieve_file(
-            document_id
-        ):
+        if result := await self.providers.file.retrieve_file(document_id):
             return result
         return None
 
@@ -234,12 +232,10 @@ class ManagementService(Service):
         start_date: Optional[datetime] = None,
         end_date: Optional[datetime] = None,
     ) -> tuple[str, BinaryIO, int]:
-        return (
-            await self.providers.database.files_handler.retrieve_files_as_zip(
-                document_ids=document_ids,
-                start_date=start_date,
-                end_date=end_date,
-            )
+        return await self.providers.file.retrieve_files_as_zip(
+            document_ids=document_ids,
+            start_date=start_date,
+            end_date=end_date,
         )
 
     async def export_collections(
@@ -384,6 +380,7 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
+        owner_only: bool = False,
     ):
         return await self.providers.database.documents_handler.get_documents_overview(
             offset=offset,
@@ -391,6 +388,7 @@ class ManagementService(Service):
             filter_document_ids=document_ids,
             filter_user_ids=user_ids,
             filter_collection_ids=collection_ids,
+            owner_only=owner_only,
         )
 
     async def update_document_metadata(
@@ -603,6 +601,7 @@ class ManagementService(Service):
         user_ids: Optional[list[UUID]] = None,
         document_ids: Optional[list[UUID]] = None,
         collection_ids: Optional[list[UUID]] = None,
+        owner_only: bool = False,
     ) -> dict[str, list[CollectionResponse] | int]:
         return await self.providers.database.collections_handler.get_collections_overview(
             offset=offset,
@@ -610,6 +609,7 @@ class ManagementService(Service):
             filter_user_ids=user_ids,
             filter_document_ids=document_ids,
             filter_collection_ids=collection_ids,
+            owner_only=owner_only,
         )
 
     async def add_user_to_collection(
