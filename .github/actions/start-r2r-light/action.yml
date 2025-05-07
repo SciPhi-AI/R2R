@@ -12,7 +12,6 @@ runs:
       shell: bash
       run: |
         cd py
-        uv venv
         export R2R_CONFIG_NAME=${{ inputs.config-name }}
         uv run python -m r2r.serve &
         echo "Waiting for services to start..."

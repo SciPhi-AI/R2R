@@ -39,3 +39,4 @@ runs:
       working-directory: py
       run: |
         uv sync --extra core
+        uv pip install pip wheel
