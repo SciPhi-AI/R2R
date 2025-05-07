@@ -9,6 +9,7 @@ from uuid import UUID
 
 import requests
 
+from shared.abstractions import R2RClientException
 from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -170,7 +171,7 @@ class DocumentsSDK:
                         version="v3",
                     )
             except requests.RequestException as e:
-                raise ValueError(
+                raise R2RClientException(
                     f"Failed to download file from S3 URL: {s3_url}"
                 ) from e
             finally:

@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -7,7 +8,9 @@ from typing import Any, Optional
 from uuid import UUID
 
 import aiofiles
+import requests
 
+from shared.abstractions import R2RClientException
 from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -133,7 +136,7 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
-        else:
+        elif chunks:
             data["chunks"] = json.dumps(chunks)
             response_dict = await self.client._make_request(
                 "POST",
@@ -141,6 +144,41 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
+        elif s3_url:
+            try:
+                s3_file = requests.get(s3_url)
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    temp_file_path = temp_file.name
+                    temp_file.write(s3_file.content)
+
+                # Get the filename from the URL
+                filename = os.path.basename(s3_url.split("?")[0]) or "s3_file"
+                with open(temp_file_path, "rb") as file_instance:
+                    files = [
+                        (
+                            "file",
+                            (
+                                filename,
+                                file_instance,
+                                "application/octet-stream",
+                            ),
+                        )
+                    ]
+                    response_dict = await self.client._make_request(
+                        "POST",
+                        "documents",
+                        data=data,
+                        files=files,
+                        version="v3",
+                    )
+            except requests.RequestException as e:
+                raise R2RClientException(
+                    f"Failed to download file from S3 URL: {s3_url}"
+                ) from e
+            finally:
+                # Clean up the temporary file
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
 
         return WrappedIngestionResponse(**response_dict)
 
