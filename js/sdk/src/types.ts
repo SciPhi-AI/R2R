@@ -206,6 +206,7 @@ export interface GenerationConfig {
   extendedThinking?: boolean;
   thinkingBudget?: number;
   reasoningEffort?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface HybridSearchSettings {

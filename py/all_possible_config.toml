@@ -92,6 +92,7 @@ concurrent_request_limit = 256
   stream = false
   # Additional generation kwargs (empty table by default)
   add_generation_kwargs = {}
+  # metadata = {} # for langfuse or other tracing systems
 
 ################################################################################
 # Cryptography Settings (CryptoConfig)

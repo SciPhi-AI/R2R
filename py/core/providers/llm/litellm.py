@@ -42,6 +42,8 @@ class LiteLLMCompletionProvider(CompletionProvider):
             args["tools"] = generation_config.tools
         if generation_config.response_format is not None:
             args["response_format"] = generation_config.response_format
+        if generation_config.metadata is not None:
+            args["metadata"] = generation_config.metadata
 
         return args
 

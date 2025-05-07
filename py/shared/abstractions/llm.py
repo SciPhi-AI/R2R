@@ -174,6 +174,7 @@ class GenerationConfig(R2RSerializable):
         "extended_thinking": False,
         "thinking_budget": None,
         "reasoning_effort": None,
+        "metadata": None,
     }
 
     model: Optional[str] = Field(
@@ -224,6 +225,15 @@ class GenerationConfig(R2RSerializable):
         description=(
             "Effort level for internal reasoning when extended thinking mode is enabled, `low`, `medium`, or `high`."
             "Only applicable to OpenAI providers."
+        ),
+    )
+    metadata: Optional[dict] = Field(
+        default=None,
+        description=(
+            "Metadata to include in the completion. "
+            "Fields: generation_id, generation_name, trace_user_id, session_id, "
+            "trace_name, trace_id, tags, trace_metadata."
+            "You can use for langfuse or other tracing systems."
         ),
     )
 

@@ -11031,6 +11031,7 @@ concurrent_request_limit = 64
   max_tokens_to_sample = 1024
   stream = false
   add_generation_kwargs = { }
+  metadata = {} # for langfuse or other tracing systems
 
 [crypto]
 provider = "bcrypt"
