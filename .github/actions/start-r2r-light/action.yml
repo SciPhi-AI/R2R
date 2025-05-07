@@ -8,6 +8,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Ensure pip is installed
+      shell: bash
+      run: |
+        python -m ensurepip --upgrade
+        python -m pip install --upgrade pip
+
     - name: Start R2R server
       shell: bash
       run: |
