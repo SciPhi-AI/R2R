@@ -70,7 +70,7 @@ class TavilyExtractTool(Tool):
                 lambda: tavily_client.extract(url, extract_depth="advanced"),
             )
 
-            web__page_search_results = []
+            web_page_search_results = []
             for successfulResult in extracted_content.results:
                 content = successfulResult.raw_content
                 if len(content) > 100_000:
@@ -86,10 +86,10 @@ class TavilyExtractTool(Tool):
                     id=generate_id(successfulResult.url),
                     type="tavily_extract",
                 )
-                web__page_search_results.append(web_result)
+                web_page_search_results.append(web_result)
 
             result = AggregateSearchResult(
-                web_page_search_results=web__page_search_results
+                web_page_search_results=web_page_search_results
             )
 
             # Add to results collector if context is provided

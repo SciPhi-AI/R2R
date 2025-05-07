@@ -6,7 +6,7 @@ This directory is mounted inside the R2R Docker container and is intended for cu
 ## Usage
 1. Place your custom tool definitions in this directory. Utilize the template structure demonstrated here.
 2. Add any additional dependencies that you may need to the user_requirements.txt file in this directory.
-3. Include the tool in your your agent configuration.
+3. Include the tool in your agent configuration.
 
 ## Creating a tool
 ```python

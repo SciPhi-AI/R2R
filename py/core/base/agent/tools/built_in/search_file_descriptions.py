@@ -14,7 +14,7 @@ class SearchFileDescriptionsTool(Tool):
         super().__init__(
             name="search_file_descriptions",
             description=(
-                "Semantic search over the stored documents over AI generated summaries of input documents. "
+                "Semantic search over AI-generated summaries of stored documents. "
                 "This does NOT retrieve chunk-level contents or knowledge-graph relationships. "
                 "Use this when you need a broad overview of which documents (files) might be relevant."
             ),
@@ -45,7 +45,7 @@ class SearchFileDescriptionsTool(Tool):
             logger.error("No file_search_method provided in context")
             return AggregateSearchResult(document_search_results=[])
 
-        # Get the content_method from context
+        # Get the file_search_method from context
         file_search_method = context.file_search_method
 
         # Call the content_method from the context

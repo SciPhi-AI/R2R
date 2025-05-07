@@ -44,7 +44,7 @@ class SearchFileKnowledgeTool(Tool):
             logger.error("No knowledge_search_method provided in context")
             return AggregateSearchResult(document_search_results=[])
 
-        # Get the content_method from context
+        # Get the knowledge_search_method from context
         knowledge_search_method = context.knowledge_search_method
 
         # Call the content_method from the context
