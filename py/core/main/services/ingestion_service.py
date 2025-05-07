@@ -226,10 +226,8 @@ class IngestionService:
 
         try:
             # Pull file from DB
-            retrieved = (
-                await self.providers.database.files_handler.retrieve_file(
-                    document_info.id
-                )
+            retrieved = await self.providers.file.retrieve_file(
+                document_info.id
             )
             if not retrieved:
                 # No file found in the DB, can't parse

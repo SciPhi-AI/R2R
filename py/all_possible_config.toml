@@ -200,6 +200,12 @@ concurrent_request_limit = 256
 ################################################################################
 [file]
 provider = "postgres"
+# If using S3
+bucket_name = ""
+endpoint_url = ""
+region_name = ""
+aws_access_key_id = ""
+aws_secret_access_key = ""
 
 ################################################################################
 # Ingestion Settings (IngestionConfig and nested settings)

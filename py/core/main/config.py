@@ -15,6 +15,7 @@ from ..base.providers.crypto import CryptoConfig
 from ..base.providers.database import DatabaseConfig
 from ..base.providers.email import EmailConfig
 from ..base.providers.embedding import EmbeddingConfig
+from ..base.providers.file import FileConfig
 from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.ocr import OCRConfig
@@ -58,7 +59,7 @@ class R2RConfig:
             "base_dimension",
             "batch_size",
         ],
-        # TODO - deprecated, remove
+        "file": ["provider"],
         "ingestion": ["provider"],
         "database": ["provider"],
         "agent": ["generation_config"],
@@ -67,16 +68,17 @@ class R2RConfig:
         "scheduler": ["provider"],
     }
 
+    agent: RAGAgentConfig
     app: AppConfig
     auth: AuthConfig
     completion: CompletionConfig
+    completion_embedding: EmbeddingConfig
     crypto: CryptoConfig
     database: DatabaseConfig
-    embedding: EmbeddingConfig
-    completion_embedding: EmbeddingConfig
     email: EmailConfig
+    embedding: EmbeddingConfig
+    file: FileConfig
     ingestion: IngestionConfig
-    agent: RAGAgentConfig
     ocr: OCRConfig
     orchestration: OrchestrationConfig
     scheduler: SchedulerConfig
@@ -111,9 +113,10 @@ class R2RConfig:
             **self.completion, app=self.app
         )  # type: ignore
         self.crypto = CryptoConfig.create(**self.crypto, app=self.app)  # type: ignore
-        self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.database = DatabaseConfig.create(**self.database, app=self.app)  # type: ignore
+        self.email = EmailConfig.create(**self.email, app=self.app)  # type: ignore
         self.embedding = EmbeddingConfig.create(**self.embedding, app=self.app)  # type: ignore
+        self.file = FileConfig.create(**self.file, app=self.app)  # type: ignore
         self.completion_embedding = EmbeddingConfig.create(
             **self.completion_embedding, app=self.app
         )  # type: ignore

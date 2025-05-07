@@ -22,6 +22,7 @@ from core.providers.auth import R2RAuthProvider
 from core.providers.database import PostgresDatabaseProvider
 from core.providers.email import ConsoleMockEmailProvider
 from core.providers.embeddings import OpenAIEmbeddingProvider
+from core.providers.file import PostgresFileProvider
 from core.providers.ingestion import R2RIngestionProvider
 from core.providers.llm import OpenAICompletionProvider
 from core.providers.orchestration import SimpleOrchestrationProvider
@@ -56,6 +57,8 @@ def mock_providers():
     mock_embedding.config = Mock()
     mock_completion_embedding = create_autospec(OpenAIEmbeddingProvider)
     mock_completion_embedding.config = Mock()
+    mock_file = create_autospec(PostgresFileProvider)
+    mock_file.config = Mock()
     mock_llm = create_autospec(OpenAICompletionProvider)
     mock_llm.config = Mock()
     mock_ocr = create_autospec(MistralOCRProvider)
@@ -76,6 +79,7 @@ def mock_providers():
         database=mock_db,
         email=mock_email,
         embedding=mock_embedding,
+        file=mock_file,
         ingestion=mock_ingestion,
         llm=mock_llm,
         ocr=mock_ocr,

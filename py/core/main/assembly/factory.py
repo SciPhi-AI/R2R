@@ -12,6 +12,7 @@ from core.base import (
     EmailConfig,
     EmbeddingConfig,
     EmbeddingProvider,
+    FileConfig,
     IngestionConfig,
     OCRConfig,
     OrchestrationConfig,
@@ -213,19 +214,39 @@ class R2RProviderFactory:
         quantization_type = (
             self.config.embedding.quantization_settings.quantization_type
         )
-        if db_config.provider == "postgres":
-            database_provider = PostgresDatabaseProvider(
-                db_config,
-                dimension,
-                crypto_provider=crypto_provider,
-                quantization_type=quantization_type,
-            )
-            await database_provider.initialize()
-            return database_provider
-        else:
+        if db_config.provider != "postgres":
             raise ValueError(
                 f"Database provider {db_config.provider} not supported"
             )
+
+        database_provider = PostgresDatabaseProvider(
+            db_config,
+            dimension,
+            crypto_provider=crypto_provider,
+            quantization_type=quantization_type,
+        )
+        await database_provider.initialize()
+        return database_provider
+
+    @staticmethod
+    def create_file_provider(
+        config: FileConfig, database_provider=None, *args, **kwargs
+    ):
+        if config.provider == "postgres":
+            from core.providers import PostgresFileProvider
+
+            return PostgresFileProvider(
+                config=config,
+                project_name=database_provider.project_name,
+                connection_manager=database_provider.connection_manager,
+            )
+
+        elif config.provider == "s3":
+            from core.providers import S3FileProvider
+
+            return S3FileProvider(config)
+        else:
+            raise ValueError(f"File provider {config.provider} not supported")
 
     @staticmethod
     def create_embedding_provider(
@@ -407,6 +428,11 @@ class R2RProviderFactory:
             )
         )
 
+        file_provider = self.create_file_provider(
+            config=self.config.file, database_provider=database_provider
+        )
+        await file_provider.initialize()
+
         ocr_provider = ocr_provider_override or self.create_ocr_provider(
             self.config.ocr
         )
@@ -454,12 +480,13 @@ class R2RProviderFactory:
 
         return R2RProviders(
             auth=auth_provider,
-            database=database_provider,
-            embedding=embedding_provider,
             completion_embedding=completion_embedding_provider,
+            database=database_provider,
+            email=email_provider,
+            embedding=embedding_provider,
+            file=file_provider,
             ingestion=ingestion_provider,
             llm=llm_provider,
-            email=email_provider,
             ocr=ocr_provider,
             orchestration=orchestration_provider,
             scheduler=scheduler_provider,
