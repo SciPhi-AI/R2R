@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
+from uuid import UUID
 
 from shared.api.models import (
     CitationEvent,
@@ -10,12 +11,17 @@ from shared.api.models import (
     ToolResultEvent,
     UnknownEvent,
     WrappedAgentResponse,
+    WrappedEmbeddingResponse,
+    WrappedLLMChatCompletion,
     WrappedRAGResponse,
     WrappedSearchResponse,
 )
 
 from ..models import (
+    GenerationConfig,
     Message,
+    SearchMode,
+    SearchSettings,
 )
 from ..sync_methods.retrieval import parse_retrieval_event
 
@@ -28,129 +34,108 @@ class RetrievalSDK:
     def __init__(self, client):
         self.client = client
 
-    async def search(self, **kwargs) -> WrappedSearchResponse:
+    async def search(
+        self,
+        query: str,
+        search_mode: Optional[str | SearchMode] = "custom",
+        search_settings: Optional[dict | SearchSettings] = None,
+    ) -> WrappedSearchResponse:
         """
         Conduct a vector and/or graph search (async).
 
         Args:
-            query (str): Search query to find relevant documents.
-            search_mode (Optional[str | SearchMode]): Pre-configured search modes: "basic", "advanced", or "custom".
-            search_settings (Optional[dict | SearchSettings]): The search configuration object. If search_mode is "custom",
-                these settings are used as-is. For "basic" or "advanced", these settings
-                will override the default mode configuration.
+            query (str): The search query.
+            search_mode (Optional[str | SearchMode]): Search mode ('basic', 'advanced', 'custom'). Defaults to 'custom'.
+            search_settings (Optional[dict | SearchSettings]): Search settings (filters, limits, hybrid options, etc.).
 
         Returns:
             WrappedSearchResponse: The search results.
         """
-        # Extract the required query parameter
-        query = kwargs.pop("query", None)
-        if query is None:
-            raise ValueError("'query' is a required parameter for search")
-
-        # Process common parameters
-        search_mode = kwargs.pop("search_mode", "custom")
-        search_settings = kwargs.pop("search_settings", None)
-
-        # Handle type conversions
-        if search_mode and not isinstance(search_mode, str):
-            search_mode = search_mode.value
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        # Build payload
-        payload = {
+        data: dict[str, Any] = {
             "query": query,
-            "search_mode": search_mode,
             "search_settings": search_settings,
-            **kwargs,  # Include any additional parameters
         }
-
-        # Filter out None values
-        payload = {k: v for k, v in payload.items() if v is not None}
+        if search_mode:
+            data["search_mode"] = search_mode
 
         response_dict = await self.client._make_request(
             "POST",
             "retrieval/search",
-            json=payload,
+            json=data,
             version="v3",
         )
         return WrappedSearchResponse(**response_dict)
 
-    async def completion(self, **kwargs):
+    async def completion(
+        self,
+        messages: list[dict | Message],
+        generation_config: Optional[dict | GenerationConfig] = None,
+    ) -> WrappedLLMChatCompletion:
         """
         Get a completion from the model (async).
 
         Args:
-            messages (list[dict | Message]): List of messages to generate completion for. Each message
-                should have a 'role' and 'content'.
+            messages (list[dict | Message]): List of messages to generate completion for. Each message should have a 'role' and 'content'.
             generation_config (Optional[dict | GenerationConfig]): Configuration for text generation.
 
         Returns:
-            The completion response.
+            WrappedLLMChatCompletion
         """
-        # Extract required parameters
-        messages = kwargs.pop("messages", None)
-        if messages is None:
-            raise ValueError(
-                "'messages' is a required parameter for completion"
-            )
-
-        # Process optional parameters
-        generation_config = kwargs.pop("generation_config", None)
-
-        # Handle type conversions
-        cast_messages = [
+        cast_messages: list[Message] = [
             Message(**msg) if isinstance(msg, dict) else msg
             for msg in messages
         ]
         if generation_config and not isinstance(generation_config, dict):
             generation_config = generation_config.model_dump()
 
-        # Build payload
-        payload = {
+        data: dict[str, Any] = {
             "messages": [msg.model_dump() for msg in cast_messages],
             "generation_config": generation_config,
-            **kwargs,  # Include any additional parameters
         }
 
-        # Filter out None values
-        payload = {k: v for k, v in payload.items() if v is not None}
-
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "retrieval/completion",
-            json=payload,
+            json=data,
             version="v3",
         )
 
-    async def embedding(self, **kwargs):
-        """
-        Generate an embedding for given text (async).
+        return WrappedLLMChatCompletion(**response_dict)
+
+    async def embedding(self, text: str) -> WrappedEmbeddingResponse:
+        """Generate an embedding for given text.
 
         Args:
             text (str): Text to generate embeddings for.
 
         Returns:
-            The embedding vector.
+            WrappedEmbeddingResponse
         """
-        # Extract required parameters
-        text = kwargs.pop("text", None)
-        if text is None:
-            raise ValueError("'text' is a required parameter for embedding")
+        data: dict[str, Any] = {
+            "text": text,
+        }
 
-        # Build payload
-        payload = {"text": text, **kwargs}  # Include any additional parameters
-
-        return await self.client._make_request(
+        response_dict = await self.client._make_request(
             "POST",
             "retrieval/embedding",
-            data=payload,
+            data=data,
             version="v3",
         )
 
-    # FIXME: Why tf are we just passing kwargs here?
+        return WrappedEmbeddingResponse(**response_dict)
+
     async def rag(
-        self, **kwargs
+        self,
+        query: str,
+        rag_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = SearchMode.custom,
+        search_settings: Optional[dict | SearchSettings] = None,
+        task_prompt: Optional[str] = None,
+        include_title_if_available: Optional[bool] = False,
+        include_web_search: Optional[bool] = False,
     ) -> (
         WrappedRAGResponse
         | AsyncGenerator[
@@ -166,94 +151,80 @@ class RetrievalSDK:
             None,
         ]
     ):
-        """
-        Conducts a Retrieval Augmented Generation (RAG) search (async).
-        May return a `WrappedRAGResponse` or a streaming generator if `stream=True`.
+        """Conducts a Retrieval Augmented Generation (RAG) search with the
+        given query.
 
         Args:
-            query (str): The search query.
-            rag_generation_config (Optional[dict | GenerationConfig]): Configuration for RAG generation.
-            search_mode (Optional[str | SearchMode]): Pre-configured search modes: "basic", "advanced", or "custom".
-            search_settings (Optional[dict | SearchSettings]): The search configuration object.
-            task_prompt (Optional[str]): Optional custom prompt to override default.
-            include_title_if_available (Optional[bool]): Include document titles in responses when available.
-            include_web_search (Optional[bool]): Include web search results provided to the LLM.
+            query (str): The query to search for.
+            rag_generation_config (Optional[dict | GenerationConfig]): RAG generation configuration.
+            search_settings (Optional[dict | SearchSettings]): Vector search settings.
+            task_prompt (Optional[str]): Task prompt override.
+            include_title_if_available (Optional[bool]): Include the title if available.
 
         Returns:
-            Either a WrappedRAGResponse or an AsyncGenerator for streaming.
+            WrappedRAGResponse | AsyncGenerator[RAGResponse, None]: The RAG response
         """
-        # Extract required parameters
-        query = kwargs.pop("query", None)
-        if query is None:
-            raise ValueError("'query' is a required parameter for rag")
-
-        # Process optional parameters
-        rag_generation_config = kwargs.pop("rag_generation_config", None)
-        search_mode = kwargs.pop("search_mode", "custom")
-        search_settings = kwargs.pop("search_settings", None)
-        task_prompt = kwargs.pop("task_prompt", None)
-        include_title_if_available = kwargs.pop(
-            "include_title_if_available", False
-        )
-        include_web_search = kwargs.pop("include_web_search", False)
-
-        # Handle type conversions
         if rag_generation_config and not isinstance(
             rag_generation_config, dict
         ):
             rag_generation_config = rag_generation_config.model_dump()
-        if search_mode and not isinstance(search_mode, str):
-            search_mode = search_mode.value
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        # Build payload
-        payload = {
+        data: dict[str, Any] = {
             "query": query,
             "rag_generation_config": rag_generation_config,
-            "search_mode": search_mode,
             "search_settings": search_settings,
             "task_prompt": task_prompt,
             "include_title_if_available": include_title_if_available,
             "include_web_search": include_web_search,
-            **kwargs,  # Include any additional parameters
         }
 
-        # Filter out None values
-        payload = {k: v for k, v in payload.items() if v is not None}
+        if search_mode:
+            data["search_mode"] = search_mode
 
-        # Check if streaming is enabled
-        is_stream = False
-        if rag_generation_config and rag_generation_config.get(
+        if rag_generation_config and rag_generation_config.get(  # type: ignore
             "stream", False
         ):
-            is_stream = True
-
-        if is_stream:
 
             async def generate_events():
                 raw_stream = self.client._make_streaming_request(
                     "POST",
                     "retrieval/rag",
-                    json=payload,
+                    json=data,
                     version="v3",
                 )
                 async for response in raw_stream:
                     yield parse_retrieval_event(response)
 
             return generate_events()
-        else:
-            response_dict = await self.client._make_request(
-                "POST",
-                "retrieval/rag",
-                json=payload,
-                version="v3",
-            )
-            return WrappedRAGResponse(**response_dict)
 
-    # FIXME: Why tf are we just passing kwargs here?
+        response_dict = await self.client._make_request(
+            "POST",
+            "retrieval/rag",
+            json=data,
+            version="v3",
+        )
+
+        return WrappedRAGResponse(**response_dict)
+
     async def agent(
-        self, **kwargs
+        self,
+        message: Optional[dict | Message] = None,
+        rag_generation_config: Optional[dict | GenerationConfig] = None,
+        research_generation_config: Optional[dict | GenerationConfig] = None,
+        search_mode: Optional[str | SearchMode] = SearchMode.custom,
+        search_settings: Optional[dict | SearchSettings] = None,
+        task_prompt: Optional[str] = None,
+        include_title_if_available: Optional[bool] = True,
+        conversation_id: Optional[str | UUID] = None,
+        max_tool_context_length: Optional[int] = None,
+        use_system_context: Optional[bool] = True,
+        rag_tools: Optional[list[str]] = None,
+        research_tools: Optional[list[str]] = None,
+        tools: Optional[list[str]] = None,
+        mode: Optional[str] = "rag",
+        needs_initial_conversation_name: Optional[bool] = None,
     ) -> (
         WrappedAgentResponse
         | AsyncGenerator[
@@ -282,7 +253,7 @@ class RetrievalSDK:
             search_settings (Optional[dict | SearchSettings]): The search configuration object.
             task_prompt (Optional[str]): Optional custom prompt to override default.
             include_title_if_available (Optional[bool]): Include document titles from search results.
-            conversation_id (Optional[str | uuid.UUID]): ID of the conversation.
+            conversation_id (Optional[str | UUID]): ID of the conversation.
             tools (Optional[list[str]]): List of tools to execute (deprecated).
             rag_tools (Optional[list[str]]): List of tools to enable for RAG mode.
             research_tools (Optional[list[str]]): List of tools to enable for Research mode.
@@ -293,88 +264,72 @@ class RetrievalSDK:
         Returns:
             Either a WrappedAgentResponse or an AsyncGenerator for streaming.
         """
-        # Extract parameters
-        message = kwargs.pop("message", None)
-        messages = kwargs.pop("messages", None)  # Deprecated
-        rag_generation_config = kwargs.pop("rag_generation_config", None)
-        research_generation_config = kwargs.pop(
-            "research_generation_config", None
-        )
-        search_mode = kwargs.pop("search_mode", "custom")
-        search_settings = kwargs.pop("search_settings", None)
-        task_prompt = kwargs.pop("task_prompt", None)
-        include_title_if_available = kwargs.pop(
-            "include_title_if_available", True
-        )
-        conversation_id = kwargs.pop("conversation_id", None)
-        tools = kwargs.pop("tools", None)  # Deprecated
-        rag_tools = kwargs.pop("rag_tools", None)
-        research_tools = kwargs.pop("research_tools", None)
-        max_tool_context_length = kwargs.pop("max_tool_context_length", 32768)
-        use_system_context = kwargs.pop("use_system_context", True)
-        mode = kwargs.pop("mode", "rag")
-
-        # Handle type conversions
-        if message and isinstance(message, dict):
-            message = Message(**message).model_dump()
-        elif message:
-            message = message.model_dump()
-
         if rag_generation_config and not isinstance(
             rag_generation_config, dict
         ):
             rag_generation_config = rag_generation_config.model_dump()
-
         if research_generation_config and not isinstance(
             research_generation_config, dict
         ):
             research_generation_config = (
                 research_generation_config.model_dump()
             )
-
-        if search_mode and not isinstance(search_mode, str):
-            search_mode = search_mode.value
-
         if search_settings and not isinstance(search_settings, dict):
             search_settings = search_settings.model_dump()
 
-        # Build payload
-        payload = {
-            "message": message,
-            "messages": messages,  # Deprecated but included for backward compatibility
-            "rag_generation_config": rag_generation_config,
-            "research_generation_config": research_generation_config,
-            "search_mode": search_mode,
+        data: dict[str, Any] = {
+            "rag_generation_config": rag_generation_config or {},
             "search_settings": search_settings,
             "task_prompt": task_prompt,
             "include_title_if_available": include_title_if_available,
             "conversation_id": (
                 str(conversation_id) if conversation_id else None
             ),
-            "tools": tools,  # Deprecated but included for backward compatibility
-            "rag_tools": rag_tools,
-            "research_tools": research_tools,
             "max_tool_context_length": max_tool_context_length,
             "use_system_context": use_system_context,
             "mode": mode,
-            **kwargs,  # Include any additional parameters
         }
 
-        # Remove None values
-        payload = {k: v for k, v in payload.items() if v is not None}
+        # Handle generation configs based on mode
+        if research_generation_config and mode == "research":
+            data["research_generation_config"] = research_generation_config
 
-        # Check if streaming is enabled
+        # Handle tool configurations
+        if rag_tools:
+            data["rag_tools"] = rag_tools
+        if research_tools:
+            data["research_tools"] = research_tools
+        if tools:  # Backward compatibility
+            data["tools"] = tools
+
+        if search_mode:
+            data["search_mode"] = search_mode
+
+        if needs_initial_conversation_name:
+            data["needs_initial_conversation_name"] = (
+                needs_initial_conversation_name
+            )
+
+        if message:
+            cast_message: Message = (
+                Message(**message) if isinstance(message, dict) else message
+            )
+            data["message"] = cast_message.model_dump()
+
         is_stream = False
-        if rag_generation_config and rag_generation_config.get(
-            "stream", False
-        ):
-            is_stream = True
-        elif (
-            research_generation_config
-            and mode == "research"
-            and research_generation_config.get("stream", False)
-        ):
-            is_stream = True
+        if mode != "research":
+            if isinstance(rag_generation_config, dict):
+                is_stream = rag_generation_config.get("stream", False)
+            elif rag_generation_config is not None:
+                is_stream = rag_generation_config.stream
+        else:
+            if research_generation_config:
+                if isinstance(research_generation_config, dict):
+                    is_stream = research_generation_config.get(  # type: ignore
+                        "stream", False
+                    )
+                else:
+                    is_stream = research_generation_config.stream
 
         if is_stream:
 
@@ -382,18 +337,18 @@ class RetrievalSDK:
                 raw_stream = self.client._make_streaming_request(
                     "POST",
                     "retrieval/agent",
-                    json=payload,
+                    json=data,
                     version="v3",
                 )
                 async for response in raw_stream:
                     yield parse_retrieval_event(response)
 
             return generate_events()
-        else:
-            response_dict = await self.client._make_request(
-                "POST",
-                "retrieval/agent",
-                json=payload,
-                version="v3",
-            )
-            return WrappedAgentResponse(**response_dict)
+
+        response_dict = await self.client._make_request(
+            "POST",
+            "retrieval/agent",
+            json=data,
+            version="v3",
+        )
+        return WrappedAgentResponse(**response_dict)

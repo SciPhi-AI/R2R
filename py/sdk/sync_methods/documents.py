@@ -378,7 +378,7 @@ class DocumentsSDK:
         filters: Optional[dict] = None,
         include_header: bool = True,
     ) -> None:
-        """Export documents to a CSV file, streaming the results directly to
+        """Export entities to a CSV file, streaming the results directly to
         disk.
 
         Args:
@@ -724,8 +724,6 @@ class DocumentsSDK:
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedDocumentSearchResponse:
         """Conduct a search query on document summaries.
-
-        Note: Access control (based on user ownership/collection access) is applied to search results.
 
         Args:
             query (str): The search query.

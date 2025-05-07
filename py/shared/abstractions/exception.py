@@ -21,7 +21,7 @@ class R2RException(Exception):
 
 
 class R2RClientException(R2RException):
-    """An exceptiion raised within the R2R client SDK."""
+    """An exception raised within the R2R client SDK."""
 
     def __init__(
         self,
