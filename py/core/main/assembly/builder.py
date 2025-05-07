@@ -46,7 +46,9 @@ class R2RBuilder:
         provider_factory = R2RProviderFactory
 
         try:
-            user_tools_path = "../docker/user_tools"
+            user_tools_path = (
+                os.getenv("R2R_USER_TOOLS_PATH") or "../docker/user_tools"
+            )
             if os.path.exists(user_tools_path) and os.path.isdir(
                 user_tools_path
             ):

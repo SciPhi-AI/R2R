@@ -25,7 +25,11 @@ class ToolRegistry:
         self.built_in_path = built_in_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "built_in"
         )
-        self.user_tools_path = user_tools_path or "../docker/user_tools"
+        self.user_tools_path = (
+            user_tools_path
+            or os.getenv("R2R_USER_TOOLS_PATH")
+            or "../docker/user_tools"
+        )
 
         # Tool storage
         self._built_in_tools: dict[str, Type[Tool]] = {}
