@@ -1,10 +1,13 @@
 import json
 import os
+import tempfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any, Optional
 from uuid import UUID
+
+import requests
 
 from shared.api.models import (
     WrappedBooleanResponse,
@@ -38,6 +41,7 @@ class DocumentsSDK:
         file_path: Optional[str] = None,
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
+        s3_url: Optional[str] = None,
         id: Optional[str | UUID] = None,
         ingestion_mode: Optional[IngestionMode | str] = None,
         collection_ids: Optional[list[str | UUID]] = None,
@@ -51,6 +55,7 @@ class DocumentsSDK:
             file_path (Optional[str]): The path to the file to upload, if any.
             raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
             chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
+            s3_url (Optional[str]): A presigned S3 URL to upload the file from, if any.
             id (Optional[str | UUID]): Optional ID to assign to the document.
             ingestion_mode (Optional[IngestionMode | str]): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
             collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
@@ -61,17 +66,12 @@ class DocumentsSDK:
         Returns:
             WrappedIngestionResponse
         """
-        if not file_path and not raw_text and not chunks:
-            raise ValueError(
-                "Either `file_path`, `raw_text` or `chunks` must be provided"
-            )
         if (
-            (file_path and raw_text)
-            or (file_path and chunks)
-            or (raw_text and chunks)
+            sum(x is not None for x in [file_path, raw_text, chunks, s3_url])
+            != 1
         ):
             raise ValueError(
-                "Only one of `file_path`, `raw_text` or `chunks` may be provided"
+                "Exactly one of file_path, raw_text, chunks, or s3_url must be provided."
             )
 
         data: dict[str, Any] = {}
@@ -134,7 +134,7 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
-        else:
+        elif chunks:
             data["chunks"] = json.dumps(chunks)
             response_dict = self.client._make_request(
                 "POST",
@@ -142,6 +142,41 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
+        elif s3_url:
+            try:
+                s3_file = requests.get(s3_url)
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    temp_file_path = temp_file.name
+                    temp_file.write(s3_file.content)
+
+                # Get the filename from the URL
+                filename = os.path.basename(s3_url.split("?")[0]) or "s3_file"
+                with open(temp_file_path, "rb") as file_instance:
+                    files = [
+                        (
+                            "file",
+                            (
+                                filename,
+                                file_instance,
+                                "application/octet-stream",
+                            ),
+                        )
+                    ]
+                    response_dict = self.client._make_request(
+                        "POST",
+                        "documents",
+                        data=data,
+                        files=files,
+                        version="v3",
+                    )
+            except requests.RequestException as e:
+                raise ValueError(
+                    f"Failed to download file from S3 URL: {s3_url}"
+                ) from e
+            finally:
+                # Clean up the temporary file
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
 
         return WrappedIngestionResponse(**response_dict)
 

@@ -40,6 +40,7 @@ class DocumentsSDK:
         file_path: Optional[str] = None,
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
+        s3_url: Optional[str] = None,
         id: Optional[str | UUID] = None,
         ingestion_mode: Optional[str] = None,
         collection_ids: Optional[list[str | UUID]] = None,
@@ -53,6 +54,7 @@ class DocumentsSDK:
             file_path (Optional[str]): The path to the file to upload, if any.
             raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
             chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
+            s3_url (Optional[str]): A presigned S3 URL to upload the file from, if any.
             id (Optional[str | UUID]): Optional ID to assign to the document.
             ingestion_mode (Optional[IngestionMode | str]): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
             collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
@@ -63,17 +65,12 @@ class DocumentsSDK:
         Returns:
             WrappedIngestionResponse
         """
-        if not file_path and not raw_text and not chunks:
-            raise ValueError(
-                "Either `file_path`, `raw_text` or `chunks` must be provided"
-            )
         if (
-            (file_path and raw_text)
-            or (file_path and chunks)
-            or (raw_text and chunks)
+            sum(x is not None for x in [file_path, raw_text, chunks, s3_url])
+            != 1
         ):
             raise ValueError(
-                "Only one of `file_path`, `raw_text` or `chunks` may be provided"
+                "Exactly one of file_path, raw_text, chunks, or s3_url must be provided."
             )
 
         data: dict[str, Any] = {}
