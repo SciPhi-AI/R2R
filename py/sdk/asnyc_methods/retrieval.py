@@ -2,14 +2,6 @@ from typing import Any, AsyncGenerator, Optional
 from uuid import UUID
 
 from shared.api.models import (
-    CitationEvent,
-    FinalAnswerEvent,
-    MessageEvent,
-    SearchResultsEvent,
-    ThinkingEvent,
-    ToolCallEvent,
-    ToolResultEvent,
-    UnknownEvent,
     WrappedAgentResponse,
     WrappedEmbeddingResponse,
     WrappedLLMChatCompletion,
@@ -18,18 +10,24 @@ from shared.api.models import (
 )
 
 from ..models import (
+    CitationEvent,
+    FinalAnswerEvent,
     GenerationConfig,
     Message,
+    MessageEvent,
     SearchMode,
+    SearchResultsEvent,
     SearchSettings,
+    ThinkingEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    UnknownEvent,
 )
 from ..sync_methods.retrieval import parse_retrieval_event
 
 
 class RetrievalSDK:
-    """
-    SDK for interacting with documents in the v3 API (Asynchronous).
-    """
+    """Async SDK for interacting with documents in the v3 API."""
 
     def __init__(self, client):
         self.client = client
@@ -37,7 +35,7 @@ class RetrievalSDK:
     async def search(
         self,
         query: str,
-        search_mode: Optional[str | SearchMode] = "custom",
+        search_mode: Optional[str | SearchMode] = SearchMode.custom,
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedSearchResponse:
         """
@@ -188,7 +186,7 @@ class RetrievalSDK:
         ):
 
             async def generate_events():
-                raw_stream = self.client._make_streaming_request(
+                raw_stream = await self.client._make_streaming_request(
                     "POST",
                     "retrieval/rag",
                     json=data,
@@ -334,7 +332,7 @@ class RetrievalSDK:
         if is_stream:
 
             async def generate_events():
-                raw_stream = self.client._make_streaming_request(
+                raw_stream = await self.client._make_streaming_request(
                     "POST",
                     "retrieval/agent",
                     json=data,
