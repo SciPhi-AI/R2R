@@ -26,7 +26,7 @@ FROM python:3.12-slim
 
 # Minimal runtime deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl poppler-utils \
+    curl poppler-utils python3-pip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy the built environment from builder to final image
