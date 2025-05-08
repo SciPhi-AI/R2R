@@ -74,7 +74,7 @@ class SupabaseAuthProvider(AuthProvider):
                 token = token[7:]
 
             # Get Supabase token information
-            auth_response = await self.supabase.auth.get_user(token)
+            auth_response = self.supabase.auth.get_user(token)
 
             if not auth_response or not auth_response.user:
                 raise R2RException(status_code=401, message="Invalid token")
@@ -147,7 +147,7 @@ class SupabaseAuthProvider(AuthProvider):
     async def login(self, email: str, password: str) -> dict[str, Token]:
         # Use Supabase client to authenticate user and get tokens
         try:
-            response = await self.supabase.auth.sign_in_with_password(
+            response = self.supabase.auth.sign_in_with_password(
                 {"email": email, "password": password}
             )
             # Correct access method - token information is found in response.session
@@ -177,7 +177,7 @@ class SupabaseAuthProvider(AuthProvider):
     ) -> dict[str, Token]:
         # Use Supabase client to refresh access token
         try:
-            response = await self.supabase.auth.refresh_session(refresh_token)
+            response = self.supabase.auth.refresh_session(refresh_token)
             if response.session:
                 new_access_token = response.session.access_token
                 new_refresh_token = response.session.refresh_token
@@ -202,7 +202,7 @@ class SupabaseAuthProvider(AuthProvider):
     async def user(self, token: str = Depends(oauth2_scheme)) -> User:
         # Use Supabase client to get user details from token
         try:
-            auth_response = await self.supabase.auth.get_user(token)
+            auth_response = self.supabase.auth.get_user(token)
             if auth_response.user:
                 user_data = auth_response.user
                 return User(
@@ -236,11 +236,11 @@ class SupabaseAuthProvider(AuthProvider):
         # Use Supabase client to update user password
         try:
             # First, we log in with the current password to verify the user
-            await self.supabase.auth.sign_in_with_password(
+            self.supabase.auth.sign_in_with_password(
                 {"email": user.email, "password": current_password}
             )
             # Then we update the password
-            await self.supabase.auth.update_user({"password": new_password})
+            self.supabase.auth.update_user({"password": new_password})
             return {"message": "Password changed successfully"}
         except Exception as e:
             logger.error(f"Password change error: {str(e)}")
@@ -270,7 +270,7 @@ class SupabaseAuthProvider(AuthProvider):
                 # Use the default URL
                 redirect_url = "https://app.sciphi.ai/auth/login"
             # Send the password reset email and use the custom redirect URL
-            await self.supabase.auth.reset_password_for_email(
+            self.supabase.auth.reset_password_for_email(
                 email, options={"redirect_to": redirect_url}
             )
             # Return a success message for security reasons
@@ -294,7 +294,7 @@ class SupabaseAuthProvider(AuthProvider):
     async def logout(self, token: str) -> dict[str, str]:
         try:
             # Logout the user
-            await self.supabase.auth.sign_out()
+            self.supabase.auth.sign_out()
             return {"message": "Logged out successfully"}
         except Exception as e:
             logger.error(f"Logout error: {str(e)}")
