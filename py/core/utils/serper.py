@@ -81,27 +81,3 @@ class SerperClient:
         data = response.read()
         json_data = json.loads(data.decode("utf-8"))
         return SerperClient._extract_results(json_data)
-
-    @staticmethod
-    def construct_context(results: list) -> str:
-        # Organize results by type
-        organized_results = {}
-        for result in results:
-            result_type = result.metadata.pop(
-                "type", "Unknown"
-            )  # Pop the type and use as key
-            if result_type not in organized_results:
-                organized_results[result_type] = [result.metadata]
-            else:
-                organized_results[result_type].append(result.metadata)
-
-        context = ""
-        # Iterate over each result type
-        for result_type, items in organized_results.items():
-            context += f"# {result_type} Results:\n"
-            for index, item in enumerate(items, start=1):
-                # Process each item under the current type
-                context += f"Item {index}:\n"
-                context += process_json(item) + "\n"
-
-        return context

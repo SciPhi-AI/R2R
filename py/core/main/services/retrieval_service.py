@@ -1025,9 +1025,7 @@ class RetrievalService(Service):
             # 3) Build context from aggregator
             collector = SearchResultsCollector()
             collector.add_aggregate_result(aggregated_results)
-            context_str = format_search_results_for_llm(
-                aggregated_results, collector
-            )
+            context_str = format_search_results_for_llm(aggregated_results)
 
             # 4) Prepare system+task messages
             system_prompt_name = system_prompt_name or "system"
@@ -1368,7 +1366,7 @@ class RetrievalService(Service):
                 effective_generation_config = research_generation_config
 
             # Set appropriate LLM model based on mode if not explicitly specified
-            if "model" not in effective_generation_config.__fields_set__:
+            if "model" not in effective_generation_config.model_fields_set:
                 if mode == "rag":
                     effective_generation_config.model = (
                         self.config.app.quality_llm
