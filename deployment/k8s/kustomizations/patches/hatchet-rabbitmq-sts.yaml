@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hatchet-rabbitmq
+spec:
+  volumeClaimTemplates:
+    - kind: PersistentVolumeClaim
+      apiVersion: v1
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 8Gi
+        storageClassName: csi-sc
+  template:
+    spec:
+      containers:
+      - env:
+        - name: RABBITMQ_USERNAME
+          value: ""
+          valueFrom:
+            secretKeyRef:
+              key: rabbitmq-user
+              name: hatchet-rabbitmq
+        name: rabbitmq
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - curl -f --user ${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD} 127.0.0.1:15672/api/health/checks/virtual-hosts
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -ec
+            - curl -f --user ${RABBITMQ_USERNAME}:${RABBITMQ_PASSWORD} 127.0.0.1:15672/api/health/checks/local-alarms
