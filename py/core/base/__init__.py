@@ -69,8 +69,6 @@ __all__ = [
     "AgentConfig",
     "Conversation",
     "Message",
-    "Tool",
-    "ToolResult",
     ## API
     # Auth Responses
     "TokenResponse",

@@ -36,6 +36,7 @@ from core.base import (
     WebSearchResult,
     format_search_results_for_llm,
 )
+from core.base.agent.tools.registry import ToolRegistry
 from core.base.api.models import RAGResponse, User
 from core.utils import (
     CitationTracker,
@@ -103,6 +104,7 @@ class AgentFactory:
         """
         # Create a deep copy of the config to avoid modifying the original
         agent_config = deepcopy(config)
+        tool_registry = ToolRegistry()
 
         # Handle tool specifications based on mode
         if mode == "rag":
@@ -156,6 +158,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
             else:
                 if use_xml_format:
@@ -169,6 +172,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
                 else:
                     return R2RRAGAgent(
@@ -181,6 +185,7 @@ class AgentFactory:
                         knowledge_search_method=knowledge_search_method,
                         content_method=content_method,
                         file_search_method=file_search_method,
+                        tool_registry=tool_registry,
                     )
         else:
             # Research mode agents
@@ -946,14 +951,14 @@ class RetrievalService(Service):
                     query
                 )
             )
-        result = (
+
+        return (
             await self.providers.database.documents_handler.search_documents(
                 query_text=query,
                 settings=settings,
                 query_embedding=query_embedding,
             )
         )
-        return result
 
     async def completion(
         self,
@@ -1960,10 +1965,9 @@ class RetrievalService(Service):
             web_response = WebSearchResult.from_serper_results(raw_results)
 
             # Create an AggregateSearchResult with the web search results
+            # FIXME: Need to understand why we would have had this referencing only web_response.organic_results
             agg_result = AggregateSearchResult(
-                chunk_search_results=None,
-                graph_search_results=None,
-                web_search_results=web_response.organic_results,
+                web_search_results=[web_response]
             )
 
             # Log the search for monitoring purposes

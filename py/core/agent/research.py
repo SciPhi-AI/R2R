@@ -8,7 +8,6 @@ from typing import Any, Callable, Optional
 
 from core.base import AppConfig
 from core.base.abstractions import GenerationConfig, Message, SearchSettings
-from core.base.agent import Tool
 from core.base.providers import DatabaseProvider
 from core.providers import (
     AnthropicCompletionProvider,
@@ -17,6 +16,7 @@ from core.providers import (
     R2RCompletionProvider,
 )
 from core.utils import extract_citations
+from shared.abstractions.tool import Tool
 
 from ..base.agent.agent import RAGAgentConfig  # type: ignore
 

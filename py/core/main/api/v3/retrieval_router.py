@@ -179,7 +179,7 @@ class RetrievalRouter(BaseRouterV3):
             Each result contains the matched text, document ID, and relevance score.
 
             """
-            if query == "":
+            if not query:
                 raise R2RException("Query cannot be empty", 400)
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
@@ -365,6 +365,7 @@ class RetrievalRouter(BaseRouterV3):
                 description="Configuration for generation in 'research' mode. If not provided but mode='research', rag_generation_config will be used with appropriate model overrides.",
             ),
             # Tool configurations
+            # FIXME: We need a more generic way to handle this
             rag_tools: Optional[
                 list[
                     Literal[
@@ -379,6 +380,7 @@ class RetrievalRouter(BaseRouterV3):
                 None,
                 description="List of tools to enable for RAG mode. Available tools: search_file_knowledge, get_file_content, web_search, web_scrape, search_file_descriptions",
             ),
+            # FIXME: We need a more generic way to handle this
             research_tools: Optional[
                 list[
                     Literal["rag", "reasoning", "critique", "python_executor"]
@@ -388,22 +390,11 @@ class RetrievalRouter(BaseRouterV3):
                 description="List of tools to enable for Research mode. Available tools: rag, reasoning, critique, python_executor",
             ),
             # Backward compatibility
-            tools: Optional[list[str]] = Body(
-                None,
-                deprecated=True,
-                description="List of tools to execute (deprecated, use rag_tools or research_tools instead)",
-            ),
-            # Other parameters
             task_prompt: Optional[str] = Body(
                 default=None,
                 description="Optional custom prompt to override default",
             ),
             # Backward compatibility
-            task_prompt_override: Optional[str] = Body(
-                default=None,
-                deprecated=True,
-                description="Optional custom prompt to override default",
-            ),
             include_title_if_available: bool = Body(
                 default=True,
                 description="Pass document titles from search results into the LLM context window.",
@@ -420,6 +411,7 @@ class RetrievalRouter(BaseRouterV3):
                 default=True,
                 description="Use extended prompt for generation",
             ),
+            # FIXME: We need a more generic way to handle this
             mode: Optional[Literal["rag", "research"]] = Body(
                 default="rag",
                 description="Mode to use for generation: 'rag' for standard retrieval or 'research' for deep analysis with reasoning capabilities",
@@ -485,8 +477,6 @@ class RetrievalRouter(BaseRouterV3):
             If no conversation name has already been set for the conversation, the system will automatically assign one.
 
             """
-            # Handle backward compatibility for task_prompt
-            task_prompt = task_prompt or task_prompt_override
             # Handle model selection based on mode
             if "model" not in rag_generation_config.__fields_set__:
                 if mode == "rag":
@@ -498,13 +488,6 @@ class RetrievalRouter(BaseRouterV3):
             effective_settings = self._prepare_search_settings(
                 auth_user, search_mode, search_settings
             )
-
-            # Handle tool configuration and backward compatibility
-            if tools:  # Handle deprecated tools parameter
-                logger.warning(
-                    "The 'tools' parameter is deprecated. Use 'rag_tools' or 'research_tools' based on mode."
-                )
-                rag_tools = tools  # type: ignore
 
             # Determine effective generation config
             effective_generation_config = rag_generation_config

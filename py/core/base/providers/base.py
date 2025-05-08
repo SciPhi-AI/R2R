@@ -31,6 +31,7 @@ class InnerConfig(BaseModel, ABC):
 
 class AppConfig(InnerConfig):
     project_name: Optional[str] = None
+    user_tools_path: Optional[str] = None
     default_max_documents_per_user: Optional[int] = 100
     default_max_chunks_per_user: Optional[int] = 10_000
     default_max_collections_per_user: Optional[int] = 5
