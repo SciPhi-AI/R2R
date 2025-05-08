@@ -1,4 +1,5 @@
 import logging
+import textwrap
 from typing import Any, Literal, Optional
 from uuid import UUID
 
@@ -25,7 +26,6 @@ from core.base.api.models import (
 from ...abstractions import R2RProviders, R2RServices
 from ...config import R2RConfig
 from .base_router import BaseRouterV3
-from .examples import EXAMPLES
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,54 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/search",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Search R2R",
-            openapi_extra=EXAMPLES["search"],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # if using auth, do client.login(...)
+
+                            response = client.retrieval.search(
+                                query="What is DeepSeek R1?",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // if using auth, do client.login(...)
+
+                            const response = await client.retrieval.search({
+                                query: "What is DeepSeek R1?",
+                            });
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            # Basic search
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "query": "What is DeepSeek R1?"
+                            }'
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def search_app(
@@ -195,7 +242,56 @@ class RetrievalRouter(BaseRouterV3):
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG Query",
             response_model=None,
-            openapi_extra=EXAMPLES["rag"],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            # Basic RAG request
+                            response = client.retrieval.rag(
+                                query="What is DeepSeek R1?",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // when using auth, do client.login(...)
+
+                            // Basic RAG request
+                            const response = await client.retrieval.rag({
+                                query: "What is DeepSeek R1?",
+                            });
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            # Basic RAG request
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "query": "What is DeepSeek R1?"
+                            }'
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def rag_app(
@@ -327,14 +423,124 @@ class RetrievalRouter(BaseRouterV3):
                     stream_generator(), media_type="text/event-stream"
                 )  # type: ignore
             else:
-                # ========== Non-streaming path ==========
                 return response
 
         @self.router.post(
             "/retrieval/agent",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="RAG-powered Conversational Agent",
-            openapi_extra=EXAMPLES["agent"],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import (
+                                R2RClient,
+                                ThinkingEvent,
+                                ToolCallEvent,
+                                ToolResultEvent,
+                                CitationEvent,
+                                FinalAnswerEvent,
+                                MessageEvent,
+                            )
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            # Basic synchronous request
+                            response = client.retrieval.agent(
+                                message={
+                                    "role": "user",
+                                    "content": "Do a deep analysis of the philosophical implications of DeepSeek R1"
+                                },
+                                rag_tools=["web_search", "web_scrape", "search_file_descriptions", "search_file_knowledge", "get_file_content"],
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // when using auth, do client.login(...)
+
+                            async function main() {
+                                // Basic synchronous request
+                                const ragResponse = await client.retrieval.agent({
+                                    message: {
+                                        role: "user",
+                                        content: "Do a deep analysis of the philosophical implications of DeepSeek R1"
+                                    },
+                                    ragTools: ["web_search", "web_scrape", "search_file_descriptions", "search_file_knowledge", "get_file_content"]
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            # Basic request
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "message": {
+                                    "role": "user",
+                                    "content": "What were the key contributions of Aristotle to logic?"
+                                },
+                                "search_settings": {
+                                    "use_semantic_search": true,
+                                    "filters": {"document_id": {"$eq": "e43864f5-a36f-548e-aacd-6f8d48b30c7f"}}
+                                },
+                                "rag_tools": ["search_file_knowledge", "get_file_content", "web_search"]
+                            }'
+
+                            # Advanced analysis with extended thinking
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "message": {
+                                    "role": "user",
+                                    "content": "Do a deep analysis of the philosophical implications of DeepSeek R1"
+                                },
+                                "search_settings": {"limit": 20},
+                                "research_tools": ["rag", "reasoning", "critique", "python_executor"],
+                                "rag_generation_config": {
+                                    "model": "anthropic/claude-3-7-sonnet-20250219",
+                                    "extended_thinking": true,
+                                    "thinking_budget": 4096,
+                                    "temperature": 1,
+                                    "top_p": null,
+                                    "max_tokens": 16000,
+                                    "stream": False
+                                }
+                            }'
+
+                            # Conversation continuation
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "message": {
+                                    "role": "user",
+                                    "content": "How does it compare to other reasoning models?"
+                                },
+                                "conversation_id": "YOUR_CONVERSATION_ID"
+                            }'
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def agent_app(
@@ -543,7 +749,90 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/completion",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Message Completions",
-            openapi_extra=EXAMPLES["completion"],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            response = client.completion(
+                                messages=[
+                                    {"role": "system", "content": "You are a helpful assistant."},
+                                    {"role": "user", "content": "What is the capital of France?"},
+                                    {"role": "assistant", "content": "The capital of France is Paris."},
+                                    {"role": "user", "content": "What about Italy?"}
+                                ],
+                                generation_config={
+                                    "model": "openai/gpt-4o-mini",
+                                    "temperature": 0.7,
+                                    "max_tokens": 150,
+                                    "stream": False
+                                }
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // when using auth, do client.login(...)
+
+                            async function main() {
+                                const response = await client.completion({
+                                    messages: [
+                                        { role: "system", content: "You are a helpful assistant." },
+                                        { role: "user", content: "What is the capital of France?" },
+                                        { role: "assistant", content: "The capital of France is Paris." },
+                                        { role: "user", content: "What about Italy?" }
+                                    ],
+                                    generationConfig: {
+                                        model: "openai/gpt-4o-mini",
+                                        temperature: 0.7,
+                                        maxTokens: 150,
+                                        stream: false
+                                    }
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/completion" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "messages": [
+                                    {"role": "system", "content": "You are a helpful assistant."},
+                                    {"role": "user", "content": "What is the capital of France?"},
+                                    {"role": "assistant", "content": "The capital of France is Paris."},
+                                    {"role": "user", "content": "What about Italy?"}
+                                ],
+                                "generation_config": {
+                                    "model": "openai/gpt-4o-mini",
+                                    "temperature": 0.7,
+                                    "max_tokens": 150,
+                                    "stream": false
+                                }
+                                }'
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def completion(
@@ -599,7 +888,57 @@ class RetrievalRouter(BaseRouterV3):
             "/retrieval/embedding",
             dependencies=[Depends(self.rate_limit_dependency)],
             summary="Generate Embeddings",
-            openapi_extra=EXAMPLES["embedding"],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent(
+                            """
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            # when using auth, do client.login(...)
+
+                            result = client.retrieval.embedding(
+                                text="What is DeepSeek R1?",
+                            )
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent(
+                            """
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+                            // when using auth, do client.login(...)
+
+                            async function main() {
+                                const response = await client.retrieval.embedding({
+                                    text: "What is DeepSeek R1?",
+                                });
+                            }
+
+                            main();
+                            """
+                        ),
+                    },
+                    {
+                        "lang": "Shell",
+                        "source": textwrap.dedent(
+                            """
+                            curl -X POST "https://api.sciphi.ai/v3/retrieval/embedding" \\
+                                -H "Content-Type: application/json" \\
+                                -H "Authorization: Bearer YOUR_API_KEY" \\
+                                -d '{
+                                "text": "What is DeepSeek R1?",
+                                }'
+                            """
+                        ),
+                    },
+                ]
+            },
         )
         @self.base_endpoint
         async def embedding(
