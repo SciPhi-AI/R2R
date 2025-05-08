@@ -102,9 +102,7 @@ class RAGAgentMixin:
     def format_search_results_for_llm(
         self, results: AggregateSearchResult
     ) -> str:
-        context = format_search_results_for_llm(
-            results, self.search_results_collector
-        )
+        context = format_search_results_for_llm(results)
         context_tokens = num_tokens(context) + 1
         frac_to_return = self.max_tool_context_length / (context_tokens)
 

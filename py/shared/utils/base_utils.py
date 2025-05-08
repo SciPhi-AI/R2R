@@ -32,7 +32,6 @@ def id_to_shorthand(id: str | UUID):
 
 def format_search_results_for_llm(
     results: AggregateSearchResult,
-    collector: Any,  # SearchResultsCollector
 ) -> str:
     """
     Instead of resetting 'source_counter' to 1, we:
@@ -85,16 +84,18 @@ def format_search_results_for_llm(
                 )
             )
 
-    # TODO: Review how this is being used; there seemed to be a mismatch
-    # between the web search results and the web page search results.
-    # 3) Web search
-    # if results.web_search_results:
-    #     lines.append("Web Search Results:")
-    #     for w in results.web_search_results:
-    #         lines.append(f"Source ID [{id_to_shorthand(w.id)}]:")
-    #         lines.append(f"Title: {w.title}")
-    #         lines.append(f"Link: {w.link}")
-    #         lines.append(f"Snippet: {w.snippet}")
+    if results.web_search_results:
+        for web_search_result in results.web_search_results:
+            lines.append("Web Search Results:")
+            for search_result in web_search_result.organic_results:
+                lines.extend(
+                    (
+                        f"Source ID [{id_to_shorthand(search_result.id)}]:",
+                        f"Title: {search_result.title}",
+                        f"Link: {search_result.link}",
+                        f"Snippet: {search_result.snippet}",
+                    )
+                )
 
     # 4) Local context docs
     if results.document_search_results:
@@ -348,6 +349,13 @@ class SearchResultsCollector:
         if hasattr(agg, "graph_search_results") and agg.graph_search_results:
             for g in agg.graph_search_results:
                 self._results_in_order.append(("graph", g))
+
+        if (
+            hasattr(agg, "web_page_search_results")
+            and agg.web_page_search_results
+        ):
+            for w in agg.web_page_search_results:
+                self._results_in_order.append(("web", w))
 
         if hasattr(agg, "web_search_results") and agg.web_search_results:
             for w in agg.web_search_results:
