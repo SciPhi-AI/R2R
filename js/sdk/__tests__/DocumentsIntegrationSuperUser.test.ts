@@ -269,7 +269,9 @@ describe("r2rClient V3 Documents Integration Tests", () => {
       client.documents.create({
         metadata: { title: "No Content" },
       }),
-    ).rejects.toThrow(/Either file, raw_text, or chunks must be provided/);
+    ).rejects.toThrow(
+      /Either file, raw_text, chunks, or s3Url must be provided/,
+    );
   });
 
   test("Error handling - Create document with both file and content", async () => {
@@ -282,7 +284,9 @@ describe("r2rClient V3 Documents Integration Tests", () => {
         raw_text: "Test content",
         metadata: { title: "Both File and Content" },
       }),
-    ).rejects.toThrow(/Only one of file, raw_text, or chunks may be provided/);
+    ).rejects.toThrow(
+      /Only one of file, raw_text, chunks, or s3Url may be provided/,
+    );
   });
 
   test("Search with $lte filter should only return documents with numericId <= 200", async () => {

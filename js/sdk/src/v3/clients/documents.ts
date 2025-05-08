@@ -53,6 +53,7 @@ export class DocumentsClient {
    * @param file The file to upload, if any
    * @param raw_text Optional raw text content to upload, if no file path is provided
    * @param chunks Optional array of pre-processed text chunks to ingest
+   * @param s3Url Optional presigned S3 URL to upload the file from, if any.
    * @param id Optional ID to assign to the document
    * @param collectionIds Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
    * @param metadata Optional metadata to assign to the document
@@ -65,6 +66,7 @@ export class DocumentsClient {
     file?: FileInput;
     raw_text?: string;
     chunks?: string[];
+    s3Url?: string;
     id?: string;
     metadata?: Record<string, any>;
     ingestionConfig?: Record<string, any>;
@@ -72,18 +74,25 @@ export class DocumentsClient {
     runWithOrchestration?: boolean;
     ingestionMode?: "hi-res" | "ocr" | "fast" | "custom";
   }): Promise<WrappedIngestionResponse> {
-    const inputCount = [options.file, options.raw_text, options.chunks].filter(
-      (x) => x !== undefined,
-    ).length;
+    const inputCount = [
+      options.file,
+      options.raw_text,
+      options.chunks,
+      options.s3Url,
+    ].filter((x) => x !== undefined).length;
     if (inputCount === 0) {
-      throw new Error("Either file, raw_text, or chunks must be provided");
+      throw new Error(
+        "Either file, raw_text, chunks, or s3Url must be provided",
+      );
     }
     if (inputCount > 1) {
-      throw new Error("Only one of file, raw_text, or chunks may be provided");
+      throw new Error(
+        "Only one of file, raw_text, chunks, or s3Url may be provided",
+      );
     }
 
     const formData = new FormData();
-    // Removed processedFiles array as file_names is not used by the router
+    let tempFilePath: string | null = null;
 
     const processPath = async (path: FileInput): Promise<void> => {
       const appendFile = (
@@ -91,7 +100,6 @@ export class DocumentsClient {
         filename: string,
       ) => {
         formData.append(`file`, file, filename);
-        // Removed pushing to processedFiles
       };
 
       if (typeof path === "string") {
@@ -128,14 +136,61 @@ export class DocumentsClient {
 
     if (options.file) {
       await processPath(options.file);
+    } else if (options.raw_text) {
+      formData.append("raw_text", options.raw_text);
+    } else if (options.chunks) {
+      formData.append("chunks", JSON.stringify(options.chunks));
+    } else if (options.s3Url) {
+      // Download the S3 file first, then upload it
+      try {
+        let response;
+        let fileContent;
+        let filename;
+
+        if (typeof window === "undefined") {
+          // Node.js environment
+          response = await axios.get(options.s3Url, {
+            responseType: "arraybuffer",
+          });
+          fileContent = Buffer.from(response.data);
+          filename = options.s3Url.split("?")[0].split("/").pop() || "s3_file";
+
+          const tmpDir = os.tmpdir();
+          tempFilePath = path.join(tmpDir, `r2r_s3_${Date.now()}_${filename}`);
+
+          try {
+            await fs.promises.writeFile(tempFilePath, fileContent);
+
+            formData.append(
+              "file",
+              fs.createReadStream(tempFilePath),
+              filename,
+            );
+          } finally {
+          }
+        } else {
+          // Browser environment
+          response = await fetch(options.s3Url);
+          if (!response.ok) {
+            throw new Error(
+              `Failed to download file from S3 URL: ${response.status}`,
+            );
+          }
+
+          const blob = await response.blob();
+          filename = options.s3Url.split("?")[0].split("/").pop() || "s3_file";
+
+          const file = new File([blob], filename, { type: blob.type });
+
+          formData.append("file", file, filename);
+        }
+      } catch (error: any) {
+        throw new Error(
+          `Failed to download file from S3 URL: ${error.message}`,
+        );
+      }
     }
 
-    if (options.raw_text) {
-      formData.append("raw_text", options.raw_text);
-    }
-    if (options.chunks) {
-      formData.append("chunks", JSON.stringify(options.chunks));
-    }
     if (options.id) {
       formData.append("id", options.id);
     }
@@ -161,17 +216,29 @@ export class DocumentsClient {
       formData.append("ingestion_mode", options.ingestionMode);
     }
 
-    return this.client.makeRequest("POST", "documents", {
-      data: formData,
-      headers: formData.getHeaders?.() ?? {
-        "Content-Type": "multipart/form-data",
-      },
-      transformRequest: [
-        (data: any, headers: Record<string, string>) => {
-          return data;
+    try {
+      return this.client.makeRequest("POST", "documents", {
+        data: formData,
+        headers: formData.getHeaders?.() ?? {
+          "Content-Type": "multipart/form-data",
         },
-      ],
-    });
+        transformRequest: [
+          (data: any, headers: Record<string, string>) => {
+            return data;
+          },
+        ],
+      });
+    } finally {
+      if (tempFilePath && typeof window === "undefined") {
+        try {
+          if (fs.existsSync(tempFilePath)) {
+            await fs.promises.unlink(tempFilePath);
+          }
+        } catch (cleanupError) {
+          console.error("Error cleaning up temporary file:", cleanupError);
+        }
+      }
+    }
   }
 
   /**

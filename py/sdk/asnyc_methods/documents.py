@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -6,7 +8,9 @@ from typing import Any, Optional
 from uuid import UUID
 
 import aiofiles
+import requests
 
+from shared.abstractions import R2RClientException
 from shared.api.models import (
     WrappedBooleanResponse,
     WrappedChunksResponse,
@@ -20,7 +24,12 @@ from shared.api.models import (
     WrappedRelationshipsResponse,
 )
 
-from ..models import IngestionMode, SearchMode, SearchSettings
+from ..models import (
+    GraphCreationSettings,
+    IngestionMode,
+    SearchMode,
+    SearchSettings,
+)
 
 
 class DocumentsSDK:
@@ -34,6 +43,7 @@ class DocumentsSDK:
         file_path: Optional[str] = None,
         raw_text: Optional[str] = None,
         chunks: Optional[list[str]] = None,
+        s3_url: Optional[str] = None,
         id: Optional[str | UUID] = None,
         ingestion_mode: Optional[str] = None,
         collection_ids: Optional[list[str | UUID]] = None,
@@ -44,28 +54,26 @@ class DocumentsSDK:
         """Create a new document from either a file or content.
 
         Args:
-            file_path (Optional[str]): The file to upload, if any
-            content (Optional[str]): Optional text content to upload, if no file path is provided
-            id (Optional[str | UUID]): Optional ID to assign to the document
-            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate with the document. If none are provided, the document will be assigned to the user's default collection.
-            metadata (Optional[dict]): Optional metadata to assign to the document
-            ingestion_config (Optional[dict]): Optional ingestion configuration to use
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            file_path (Optional[str]): The path to the file to upload, if any.
+            raw_text (Optional[str]): Raw text content to upload, if no file path is provided.
+            chunks (Optional[list[str]]): Pre-processed text chunks to ingest.
+            s3_url (Optional[str]): A presigned S3 URL to upload the file from, if any.
+            id (Optional[str | UUID]): Optional ID to assign to the document.
+            ingestion_mode (Optional[IngestionMode | str]): The ingestion mode preset ('hi-res', 'ocr', 'fast', 'custom'). Defaults to 'custom'.
+            collection_ids (Optional[list[str | UUID]]): Collection IDs to associate. Defaults to user's default collection if None.
+            metadata (Optional[dict]): Optional metadata to assign to the document.
+            ingestion_config (Optional[dict | IngestionMode]): Optional ingestion config or preset mode enum. Used when ingestion_mode='custom'.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
             WrappedIngestionResponse
         """
-        if not file_path and not raw_text and not chunks:
-            raise ValueError(
-                "Either `file_path`, `raw_text` or `chunks` must be provided"
-            )
         if (
-            (file_path and raw_text)
-            or (file_path and chunks)
-            or (raw_text and chunks)
+            sum(x is not None for x in [file_path, raw_text, chunks, s3_url])
+            != 1
         ):
             raise ValueError(
-                "Only one of `file_path`, `raw_text` or `chunks` may be provided"
+                "Exactly one of file_path, raw_text, chunks, or s3_url must be provided."
             )
 
         data: dict[str, Any] = {}
@@ -94,14 +102,19 @@ class DocumentsSDK:
         if run_with_orchestration is not None:
             data["run_with_orchestration"] = str(run_with_orchestration)
         if ingestion_mode is not None:
-            data["ingestion_mode"] = ingestion_mode
+            data["ingestion_mode"] = (
+                ingestion_mode.value
+                if isinstance(ingestion_mode, IngestionMode)
+                else ingestion_mode
+            )
         if file_path:
             # Create a new file instance that will remain open during the request
             file_instance = open(file_path, "rb")
+            filename = os.path.basename(file_path)
             files = [
                 (
                     "file",
-                    (file_path, file_instance, "application/octet-stream"),
+                    (filename, file_instance, "application/octet-stream"),
                 )
             ]
             try:
@@ -123,7 +136,7 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
-        else:
+        elif chunks:
             data["chunks"] = json.dumps(chunks)
             response_dict = await self.client._make_request(
                 "POST",
@@ -131,13 +144,48 @@ class DocumentsSDK:
                 data=data,
                 version="v3",
             )
+        elif s3_url:
+            try:
+                s3_file = requests.get(s3_url)
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    temp_file_path = temp_file.name
+                    temp_file.write(s3_file.content)
+
+                # Get the filename from the URL
+                filename = os.path.basename(s3_url.split("?")[0]) or "s3_file"
+                with open(temp_file_path, "rb") as file_instance:
+                    files = [
+                        (
+                            "file",
+                            (
+                                filename,
+                                file_instance,
+                                "application/octet-stream",
+                            ),
+                        )
+                    ]
+                    response_dict = await self.client._make_request(
+                        "POST",
+                        "documents",
+                        data=data,
+                        files=files,
+                        version="v3",
+                    )
+            except requests.RequestException as e:
+                raise R2RClientException(
+                    f"Failed to download file from S3 URL: {s3_url}"
+                ) from e
+            finally:
+                # Clean up the temporary file
+                if os.path.exists(temp_file_path):
+                    os.unlink(temp_file_path)
 
         return WrappedIngestionResponse(**response_dict)
 
     async def append_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],
     ) -> WrappedDocumentResponse:
         """Append metadata to a document.
 
@@ -161,13 +209,16 @@ class DocumentsSDK:
     async def replace_metadata(
         self,
         id: str | UUID,
-        metadata: list[dict],
+        metadata: list[dict[str, Any]],
     ) -> WrappedDocumentResponse:
         """Replace metadata for a document.
 
         Args:
             id (str | UUID): ID of document to replace metadata for
             metadata (list[dict]): The metadata that will replace the existing metadata
+
+        Returns:
+            WrappedDocumentResponse
         """
         data = json.dumps(metadata)
         response_dict = await self.client._make_request(
@@ -203,13 +254,23 @@ class DocumentsSDK:
         self,
         id: str | UUID,
     ) -> BytesIO:
+        """Download a document's original file content.
+
+        Args:
+            id (str | UUID): ID of document to download
+
+        Returns:
+            BytesIO: In-memory bytes buffer containing the document's file content.
+        """
         response = await self.client._make_request(
             "GET",
             f"documents/{str(id)}/download",
             version="v3",
         )
         if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+            raise ValueError(
+                f"Expected BytesIO response, got {type(response)}"
+            )
         return response
 
     async def download_zip(
@@ -219,7 +280,17 @@ class DocumentsSDK:
         end_date: Optional[datetime] = None,
         output_path: Optional[str | Path] = None,
     ) -> BytesIO | None:
-        """Download multiple documents as a zip file."""
+        """Download multiple documents as a zip file.
+
+        Args:
+            document_ids (Optional[list[str | UUID]]): IDs to include. May be required for non-superusers.
+            start_date (Optional[datetime]): Filter documents created on or after this date.
+            end_date (Optional[datetime]): Filter documents created on or before this date.
+            output_path (Optional[str | Path]): If provided, save the zip file to this path and return None. Otherwise, return BytesIO.
+
+        Returns:
+            Optional[BytesIO]: BytesIO object with zip content if output_path is None, else None.
+        """
         params: dict[str, Any] = {}
         if document_ids:
             params["document_ids"] = [str(doc_id) for doc_id in document_ids]
@@ -236,7 +307,9 @@ class DocumentsSDK:
         )
 
         if not isinstance(response, BytesIO):
-            raise ValueError("Expected BytesIO response")
+            raise ValueError(
+                f"Expected BytesIO response, got {type(response)}"
+            )
 
         if output_path:
             output_path = (
@@ -459,7 +532,6 @@ class DocumentsSDK:
     async def list_collections(
         self,
         id: str | UUID,
-        include_vectors: Optional[bool] = False,
         offset: Optional[int] = 0,
         limit: Optional[int] = 100,
     ) -> WrappedCollectionsResponse:
@@ -489,12 +561,12 @@ class DocumentsSDK:
 
     async def delete_by_filter(
         self,
-        filters: dict,
+        filters: dict[str, Any],
     ) -> WrappedBooleanResponse:
-        """Delete documents based on filters.
+        """Delete documents based on metadata filters.
 
         Args:
-            filters (dict): Filters to apply when selecting documents to delete
+            filters (dict): Filters to apply (e.g., `{"metadata.year": {"$lt": 2020}}`).
 
         Returns:
             WrappedBooleanResponse
@@ -512,7 +584,7 @@ class DocumentsSDK:
     async def extract(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[dict | GraphCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
         """Extract entities and relationships from a document.
@@ -537,6 +609,7 @@ class DocumentsSDK:
             params=data,
             version="v3",
         )
+
         return WrappedGenericMessageResponse(**response_dict)
 
     async def list_entities(
@@ -629,7 +702,7 @@ class DocumentsSDK:
         Returns:
             WrappedDocumentsResponse
         """
-        params = {
+        params: dict[str, Any] = {
             "offset": offset,
             "limit": limit,
             "include_summary_embeddings": include_summary_embeddings,
@@ -650,13 +723,14 @@ class DocumentsSDK:
     async def search(
         self,
         query: str,
-        search_mode: Optional[str | SearchMode] = "custom",
+        search_mode: Optional[str | SearchMode] = SearchMode.custom,
         search_settings: Optional[dict | SearchSettings] = None,
     ) -> WrappedDocumentSearchResponse:
-        """Conduct a vector and/or graph search.
+        """Conduct a search query on document summaries.
 
         Args:
             query (str): The query to search for.
+            search_mode (Optional[str | SearchMode]): Search mode ('basic', 'advanced', 'custom'). Defaults to 'custom'.
             search_settings (Optional[dict, SearchSettings]]): Vector search settings.
 
         Returns:
@@ -683,18 +757,18 @@ class DocumentsSDK:
     async def deduplicate(
         self,
         id: str | UUID,
-        settings: Optional[dict] = None,
+        settings: Optional[dict | GraphCreationSettings] = None,
         run_with_orchestration: Optional[bool] = True,
     ) -> WrappedGenericMessageResponse:
         """Deduplicate entities and relationships from a document.
 
         Args:
-            id (str, UUID): ID of document to extract from
-            settings (Optional[dict]): Settings for extraction process
-            run_with_orchestration (Optional[bool]): Whether to run with orchestration
+            id (str | UUID): ID of document to deduplicate entities for.
+            settings (Optional[dict | GraphCreationSettings]): Settings for deduplication process.
+            run_with_orchestration (Optional[bool]): Whether to run with orchestration (default: True).
 
         Returns:
-            WrappedGenericMessageResponse
+            WrappedGenericMessageResponse: Indicating task status.
         """
         data: dict[str, Any] = {}
         if settings:
