@@ -113,8 +113,7 @@ const client = new r2rClient();  // Use baseURL=... for self-hosted
 
 ```python
 # Ingest sample or your own document
-client.documents.create_sample(hi_res=True)
-# client.documents.create(file_path="/path/to/file")
+client.documents.create(file_path="/path/to/file")
 
 # List documents
 client.documents.list()
