@@ -53,7 +53,6 @@ class WebSearchTool(Tool):
             None, lambda: WebSearchResult.from_serper_results(raw_results)
         )
 
-        # FIXME: Need to understand why we would have had this referencing only web_response.organic_results
         result = AggregateSearchResult(
             web_search_results=[web_response],
         )

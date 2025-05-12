@@ -53,7 +53,6 @@ class WebScrapeTool(Tool):
         )
 
         context = self.context
-
         app = FirecrawlApp()
         logger.debug(f"[Firecrawl] Scraping URL={url}")
 
@@ -61,12 +60,12 @@ class WebScrapeTool(Tool):
             None,  # Uses the default executor
             lambda: app.scrape_url(
                 url=url,
-                params={"formats": ["markdown"]},
+                formats=["markdown"],
             ),
         )
 
-        markdown_text = response.get("markdown", "")
-        metadata = response.get("metadata", {})
+        markdown_text = response.markdown or ""
+        metadata = response.metadata or {}
         page_title = metadata.get("title", "Untitled page")
 
         if len(markdown_text) > 100_000:
