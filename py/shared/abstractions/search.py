@@ -265,10 +265,12 @@ class AggregateSearchResult(R2RSerializable):
     )
 
     def __str__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)}, generic_tool_result={self.generic_tool_result})"
+        fields = [
+            f"{field_name}={str(field_value)}"
+            for field_name, field_value in self.__dict__.items()
+        ]
 
-    def __repr__(self) -> str:
-        return f"AggregateSearchResult(chunk_search_results={self.chunk_search_results}, graph_search_results={self.graph_search_results}, web_search_results={self.web_search_results}, document_search_results={str(self.document_search_results)}, generic_tool_result={self.generic_tool_result})"
+        return f"AggregateSearchResult({', '.join(fields)})"
 
     def as_dict(self) -> dict:
         return {
