@@ -45,6 +45,8 @@ def test_agent_rag_tool_usage(client, test_collection):
         rag_generation_config={"stream": False, "max_tokens_to_sample": 150},
     )
 
+    assert "citations" in response.results.messages[-1].metadata, "Response should contain citations"
+    assert len(response.results.messages[-1].metadata["citations"]) > 0, "Citations list should not be empty"
     assert str(doc_id) == response.results.messages[-1].metadata["citations"][0]["payload"]["document_id"], "Agent should use RAG tool to retrieve unique content"
     assert str("search_file_knowledge") == response.results.messages[-1].metadata["tool_calls"][-1]["name"], "Agent should use RAG tool to retrieve unique content"
 
