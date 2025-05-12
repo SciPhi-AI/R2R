@@ -40,11 +40,13 @@ def test_agent_rag_tool_usage(client, test_collection):
     doc_id = client.documents.create(raw_text=unique_content).results.document_id
 
     response = client.retrieval.agent(
-        message={"role": "user", "content": f"What is quantum entanglement?"},
+        message={"role": "user", "content": f"According to the document, what is quantum entanglement? You must use the search_file_knowledge tool."},
         rag_tools=["search_file_knowledge"],
         rag_generation_config={"stream": False, "max_tokens_to_sample": 150},
     )
 
+    assert "citations" in response.results.messages[-1].metadata, "Response should contain citations"
+    assert len(response.results.messages[-1].metadata["citations"]) > 0, "Citations list should not be empty"
     assert str(doc_id) == response.results.messages[-1].metadata["citations"][0]["payload"]["document_id"], "Agent should use RAG tool to retrieve unique content"
     assert str("search_file_knowledge") == response.results.messages[-1].metadata["tool_calls"][-1]["name"], "Agent should use RAG tool to retrieve unique content"
 
@@ -148,7 +150,7 @@ def test_agent_model_selection(client, test_collection):
     # Test with specific model (if available in your setup)
     specific_model_response = client.retrieval.agent(
         message={"role": "user", "content": "Who was Aristotle?"},
-        rag_generation_config={"stream": False, "max_tokens_to_sample": 100, "model": "openai/gpt-4o"},
+        rag_generation_config={"stream": False, "max_tokens_to_sample": 100, "model": "openai/gpt-4.1"},
     )
 
     assert default_response.results.messages[-1].content, "Default model should provide response"

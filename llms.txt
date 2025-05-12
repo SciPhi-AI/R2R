@@ -629,7 +629,7 @@ client.documents.create(file_path="test.txt")
 # Call RAG directly
 rag_response = client.retrieval.rag(
     query="Who is John",
-    rag_generation_config={"model": "openai/gpt-4o-mini", "temperature": 0.0},
+    rag_generation_config={"model": "openai/gpt-4.1-mini", "temperature": 0.0},
 )
 
 results = rag_response["results"]
@@ -673,7 +673,7 @@ print(f"Completion:\n{results['completion']}")
         }
       ],
       "created": 1731957146,
-      "model": "gpt-4o-mini",
+      "model": "gpt-4.1-mini",
       "object": "chat.completion",
       "usage": {
         "completion_tokens": 11,
@@ -715,7 +715,7 @@ provider = "litellm"
 concurrent_request_limit = 16
 
 [completion.generation_config]
-model = "openai/gpt-4o"
+model = "openai/gpt-4.1"
 temperature = 0.5
 
 [ingestion]
@@ -759,7 +759,7 @@ forward_chunks = 3
 backward_chunks = 3
 semantic_neighbors = 10
 semantic_similarity_threshold = 0.7
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 
 [agent]
 rag_agent_static_prompt = "rag_agent"
@@ -770,16 +770,16 @@ entity_types = []
 relation_types = []
 max_knowledge_triples = 100
 fragment_merge_count = 4
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 
 [database.graph_enrichment_settings]
 max_description_input_length = 65536
 max_summary_input_length = 65536
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 leiden_params = {}
 
 [database.graph_settings]
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 ```
 
 ### Runtime Overrides
@@ -904,7 +904,7 @@ forward_chunks = 3
 backward_chunks = 3
 semantic_neighbors = 10
 semantic_similarity_threshold = 0.7
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 ```
 
 **Modes:**
@@ -960,16 +960,16 @@ entity_types = []
 relation_types = []
 max_knowledge_triples = 100
 fragment_merge_count = 4
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 
 [database.graph_enrichment_settings]
 max_description_input_length = 65536
 max_summary_input_length = 65536
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 leiden_params = {}
 
 [database.graph_settings]
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 ```
 
 ### Prompts Configuration
@@ -1203,7 +1203,7 @@ forward_chunks = 3  # Look ahead 3 chunks
 backward_chunks = 3  # Look behind 3 chunks
 semantic_neighbors = 10  # Find 10 semantically similar chunks
 semantic_similarity_threshold = 0.7  # Minimum similarity score
-generation_config = { model = "openai/gpt-4o-mini" }
+generation_config = { model = "openai/gpt-4.1-mini" }
 ```
 
 ### Enrichment Strategies Explained
@@ -2913,7 +2913,7 @@ async function main() {
     const ragResponse = await client.rag({
         query: "What does the file talk about?",
         rag_generation_config: {
-            model: "openai/gpt-4o",
+            model: "openai/gpt-4.1",
             temperature: 0.0,
             stream: false,
         },
@@ -3007,7 +3007,7 @@ console.log("Performing RAG...");
 const ragResponse = await client.rag({
     query: "What does the file talk about?",
     rag_generation_config: {
-        model: "openai/gpt-4o",
+        model: "openai/gpt-4.1",
         temperature: 0.0,
         stream: false,
     },
@@ -11009,7 +11009,7 @@ rag_agent_static_prompt = "rag_agent"
 tools = ["search_file_knowledge"]
 
   [agent.generation_config]
-  model = "openai/gpt-4o"
+  model = "openai/gpt-4.1"
 
 [auth]
 provider = "r2r"
@@ -11025,7 +11025,7 @@ provider = "litellm"
 concurrent_request_limit = 64
 
   [completion.generation_config]
-  model = "openai/gpt-4o"
+  model = "openai/gpt-4.1"
   temperature = 0.1
   top_p = 1
   max_tokens_to_sample = 1024
@@ -11048,15 +11048,15 @@ batch_size = 256
     fragment_merge_count = 1
     max_knowledge_relationships = 100
     max_description_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4.1-mini" }
 
   [database.graph_enrichment_settings]
     max_summary_input_length = 65536
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4.1-mini" }
     leiden_params = {}
 
   [database.graph_search_settings]
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4.1-mini" }
 
   [database.limits]
     global_per_min = 300
@@ -11083,7 +11083,7 @@ chunking_strategy = "recursive"
 chunk_size = 1024
 chunk_overlap = 512
 excluded_parsers = ["mp4"]
-document_summary_model = "openai/gpt-4o-mini"
+document_summary_model = "openai/gpt-4.1-mini"
 
   [ingestion.chunk_enrichment_settings]
     enable_chunk_enrichment = false
@@ -11092,7 +11092,7 @@ document_summary_model = "openai/gpt-4o-mini"
     backward_chunks = 3
     semantic_neighbors = 10
     semantic_similarity_threshold = 0.7
-    generation_config = { model = "openai/gpt-4o-mini" }
+    generation_config = { model = "openai/gpt-4.1-mini" }
 
   [ingestion.extra_parsers]
     pdf = "zerox"

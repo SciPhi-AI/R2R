@@ -274,7 +274,7 @@ class GenerationConfig(R2RSerializable):
         populate_by_name = True
         json_schema_extra = {
             "example": {
-                "model": "openai/gpt-4o",
+                "model": "openai/gpt-4.1",
                 "temperature": 0.1,
                 "top_p": 1.0,
                 "max_tokens_to_sample": 1024,

@@ -358,7 +358,7 @@ def test_img_ingestion(client: R2RClient):
     result = client.documents.create(
         file_path="core/examples/supported_file_types/png.png",
         metadata={"title": "Test Document", "author": "Test Author"},
-        ingestion_config={"vlm":"openai/gpt-4o"},
+        ingestion_config={"vlm":"openai/gpt-4.1"},
         run_with_orchestration=False
     )
     with contextlib.suppress(R2RException):

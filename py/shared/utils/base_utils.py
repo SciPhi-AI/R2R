@@ -276,7 +276,7 @@ def tokens_count_for_message(message, encoding):
     return num_tokens
 
 
-def num_tokens_from_messages(messages, model="gpt-4o"):
+def num_tokens_from_messages(messages, model="gpt-4.1"):
     """Return the number of tokens used by a list of messages for both user and assistant."""
     try:
         encoding = tiktoken.encoding_for_model(model)
@@ -643,7 +643,7 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
     return dumped
 
 
-def num_tokens(text, model="gpt-4o"):
+def num_tokens(text, model="gpt-4.1"):
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:

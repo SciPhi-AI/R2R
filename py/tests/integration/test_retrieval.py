@@ -193,7 +193,7 @@ def test_completion(client: R2RClient):
         messages,
         generation_config={
             "max_tokens": 50,
-            "model": "openai/gpt-4o"
+            "model": "openai/gpt-4.1"
         },
     )
     assert resp.results is not None, "Completion response missing 'results'"

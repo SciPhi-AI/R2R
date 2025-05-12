@@ -446,7 +446,7 @@ class OpenAICompletionProvider(CompletionProvider):
         )
 
         if contains_images:
-            vision_models = ["gpt-4-vision", "gpt-4o"]
+            vision_models = ["gpt-4-vision", "gpt-4.1"]
             if all(
                 vision_model in model_name for vision_model in vision_models
             ):
@@ -499,7 +499,7 @@ class OpenAICompletionProvider(CompletionProvider):
         )
 
         if contains_images:
-            vision_models = ["gpt-4-vision", "gpt-4o"]
+            vision_models = ["gpt-4-vision", "gpt-4.1"]
             if all(
                 vision_model in model_name for vision_model in vision_models
             ):

@@ -32,7 +32,7 @@ logger = logging.getLogger()
 
 
 # FIXME: No need to duplicate this function between the workflows, consolidate it into a shared module
-def count_tokens_for_text(text: str, model: str = "gpt-4o") -> int:
+def count_tokens_for_text(text: str, model: str = "gpt-4.1") -> int:
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
