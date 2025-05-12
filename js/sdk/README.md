@@ -98,7 +98,7 @@ const ragResult = await client.rag({
   use_kg_search: false,
   kg_generation_config: {},
   rag_generation_config: {
-    model: "gpt-4o",
+    model: "gpt-4.1",
     temperature: 0.0,
     stream: false,
   },

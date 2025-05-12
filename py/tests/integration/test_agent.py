@@ -148,7 +148,7 @@ def test_agent_model_selection(client, test_collection):
     # Test with specific model (if available in your setup)
     specific_model_response = client.retrieval.agent(
         message={"role": "user", "content": "Who was Aristotle?"},
-        rag_generation_config={"stream": False, "max_tokens_to_sample": 100, "model": "openai/gpt-4o"},
+        rag_generation_config={"stream": False, "max_tokens_to_sample": 100, "model": "openai/gpt-4.1"},
     )
 
     assert default_response.results.messages[-1].content, "Default model should provide response"

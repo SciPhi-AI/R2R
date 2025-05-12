@@ -200,21 +200,22 @@ class CompletionProvider(Provider):
                 yield LLMChatCompletionChunk(**chunk)
                 continue
 
-            chunk.choices[0].finish_reason = (
-                chunk.choices[0].finish_reason
-                if chunk.choices[0].finish_reason != ""
-                else None
-            )  # handle error output conventions
-            chunk.choices[0].finish_reason = (
-                chunk.choices[0].finish_reason
-                if chunk.choices[0].finish_reason != "eos"
-                else "stop"
-            )  # hardcode `eos` to `stop` for consistency
-            try:
-                yield LLMChatCompletionChunk(**(chunk.dict()))
-            except Exception as e:
-                logger.error(f"Error parsing chunk: {e}")
-                yield LLMChatCompletionChunk(**(chunk.as_dict()))
+            if chunk.choices and len(chunk.choices) > 0:
+                chunk.choices[0].finish_reason = (
+                    chunk.choices[0].finish_reason
+                    if chunk.choices[0].finish_reason != ""
+                    else None
+                )  # handle error output conventions
+                chunk.choices[0].finish_reason = (
+                    chunk.choices[0].finish_reason
+                    if chunk.choices[0].finish_reason != "eos"
+                    else "stop"
+                )  # hardcode `eos` to `stop` for consistency
+                try:
+                    yield LLMChatCompletionChunk(**(chunk.dict()))
+                except Exception as e:
+                    logger.error(f"Error parsing chunk: {e}")
+                    yield LLMChatCompletionChunk(**(chunk.as_dict()))
 
     def get_completion_stream(
         self,

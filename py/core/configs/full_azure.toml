@@ -1,12 +1,12 @@
 [app]
 # LLM used for internal operations, like deriving conversation names
-fast_llm = "azure/gpt-4o-mini"
+fast_llm = "azure/gpt-4.1-mini"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "azure/gpt-4o"
+quality_llm = "azure/gpt-4.1"
 
 # LLM used for ingesting visual inputs
-vlm = "azure/gpt-4o"
+vlm = "azure/gpt-4.1"
 
 # LLM used for transcription
 audio_lm = "azure/whisper-1"
@@ -30,14 +30,14 @@ new_after_n_chars = 2_048
 max_characters = 4_096
 combine_under_n_chars = 1_024
 overlap = 1_024
-document_summary_model = "azure/gpt-4o-mini"
+document_summary_model = "azure/gpt-4.1-mini"
 automatic_extraction = true # enable automatic extraction of entities and relations
 
   [ingestion.extra_parsers]
     pdf = ["zerox", "ocr"]
 
   [ingestion.chunk_enrichment_settings]
-    generation_config = { model = "azure/gpt-4o-mini" }
+    generation_config = { model = "azure/gpt-4.1-mini" }
 
 [orchestration]
 provider = "hatchet"

@@ -720,7 +720,7 @@ completion_examples = {
                         {"role": "user", "content": "What about Italy?"}
                     ],
                     generation_config={
-                        "model": "openai/gpt-4o-mini",
+                        "model": "openai/gpt-4.1-mini",
                         "temperature": 0.7,
                         "max_tokens": 150,
                         "stream": False
@@ -747,7 +747,7 @@ completion_examples = {
                             { role: "user", content: "What about Italy?" }
                         ],
                         generationConfig: {
-                            model: "openai/gpt-4o-mini",
+                            model: "openai/gpt-4.1-mini",
                             temperature: 0.7,
                             maxTokens: 150,
                             stream: false
@@ -774,7 +774,7 @@ completion_examples = {
                         {"role": "user", "content": "What about Italy?"}
                     ],
                     "generation_config": {
-                        "model": "openai/gpt-4o-mini",
+                        "model": "openai/gpt-4.1-mini",
                         "temperature": 0.7,
                         "max_tokens": 150,
                         "stream": false
@@ -860,7 +860,7 @@ All search parameters from the search endpoint apply here, including filters, hy
 Fine-tune the language model's behavior with `rag_generation_config`:
 ```json
 {
-  "model": "openai/gpt-4o-mini",  // Model to use
+  "model": "openai/gpt-4.1-mini",  // Model to use
   "temperature": 0.7,              // Control randomness (0-1)
   "max_tokens": 1500,              // Maximum output length
   "stream": true                   // Enable token streaming
@@ -965,7 +965,7 @@ system message at the start. Each message should have a 'role' and 'content'.
 Fine-tune the language model's behavior with `generation_config`:
 ```json
 {
-  "model": "openai/gpt-4o-mini",  // Model to use
+  "model": "openai/gpt-4.1-mini",  // Model to use
   "temperature": 0.7,              // Control randomness (0-1)
   "max_tokens": 1500,              // Maximum output length
   "stream": true                   // Enable token streaming
