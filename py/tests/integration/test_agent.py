@@ -40,7 +40,7 @@ def test_agent_rag_tool_usage(client, test_collection):
     doc_id = client.documents.create(raw_text=unique_content).results.document_id
 
     response = client.retrieval.agent(
-        message={"role": "user", "content": f"What is quantum entanglement?"},
+        message={"role": "user", "content": f"According to the document, what is quantum entanglement? You must use the search_file_knowledge tool."},
         rag_tools=["search_file_knowledge"],
         rag_generation_config={"stream": False, "max_tokens_to_sample": 150},
     )
