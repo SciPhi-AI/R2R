@@ -55,7 +55,7 @@ core = [
     "google-genai >=0.6.0,<0.7.0",
     "gunicorn >=21.2.0,<22.0.0",
     "hatchet-sdk ==0.47.0",
-    "litellm >=1.63.14,<1.65.0",
+    "litellm >=1.69.3",
     "markdown >=3.6,<4.0",
     "mistralai>=1.5.2",
     "msg-parser>=1.2.0",
