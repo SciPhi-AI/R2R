@@ -168,3 +168,9 @@ class R2RClient(BaseClient):
 
     def set_base_url(self, base_url: str) -> None:
         self.base_url = base_url
+
+    def set_project_name(self, project_name: str | None) -> None:
+        self.project_name = project_name
+
+    def unset_project_name(self) -> None:
+        self.project_name = None
