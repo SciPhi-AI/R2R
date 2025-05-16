@@ -236,6 +236,21 @@ class PostgresDatabaseProvider(DatabaseProvider):
         await self.limits_handler.create_tables()
         await self.maintenance_handler.create_tables()
 
+    async def schema_exists(self, schema_name: str) -> bool:
+        """Check if a PostgreSQL schema exists."""
+        try:
+            async with self.pool.get_connection() as conn:
+                query = """
+                SELECT EXISTS(
+                    SELECT 1 FROM information_schema.schemata
+                    WHERE schema_name = $1
+                );
+                """
+                return await conn.fetchval(query, schema_name)
+        except Exception as e:
+            logger.error(f"Error checking schema existence: {e}")
+            raise
+
     def _get_postgres_configuration_settings(
         self, config: DatabaseConfig
     ) -> PostgresConfigurationSettings:

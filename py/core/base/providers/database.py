@@ -12,6 +12,7 @@ from core.base.abstractions import (
     GraphEnrichmentSettings,
     GraphSearchSettings,
 )
+from core.utils.context import get_current_project_schema
 
 from .base import Provider, ProviderConfig
 
@@ -63,7 +64,8 @@ class Handler(ABC):
         self.connection_manager = connection_manager
 
     def _get_table_name(self, base_name: str) -> str:
-        return f"{self.project_name}.{base_name}"
+        """Get the full qualified table name with the current project schema."""
+        return f'"{get_current_project_schema() or self.project_name}"."{base_name}"'
 
     @abstractmethod
     def create_tables(self):

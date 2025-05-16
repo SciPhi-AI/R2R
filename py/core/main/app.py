@@ -22,6 +22,7 @@ from .api.v3.retrieval_router import RetrievalRouter
 from .api.v3.system_router import SystemRouter
 from .api.v3.users_router import UsersRouter
 from .config import R2RConfig
+from .middleware.project_schema import ProjectSchemaMiddleware
 
 
 class R2RApp:
@@ -72,7 +73,7 @@ class R2RApp:
             )
 
         self._setup_routes()
-        self._apply_cors()
+        self._apply_middleware()
 
     def _setup_routes(self):
         self.app.include_router(self.chunks_router, prefix="/v3")
@@ -94,7 +95,7 @@ class R2RApp:
                 routes=self.app.routes,
             )
 
-    def _apply_cors(self):
+    def _apply_middleware(self):
         origins = ["*", "http://localhost:3000", "http://localhost:7272"]
         self.app.add_middleware(
             CORSMiddleware,
@@ -102,6 +103,11 @@ class R2RApp:
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
+        )
+
+        self.app.add_middleware(
+            ProjectSchemaMiddleware,
+            default_schema="r2r_default",
         )
 
     async def serve(self, host: str = "0.0.0.0", port: int = 7272):

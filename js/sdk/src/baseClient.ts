@@ -38,6 +38,7 @@ export abstract class BaseClient {
   protected baseUrl: string;
   protected accessToken?: string | null;
   protected apiKey?: string | null;
+  protected projectName?: string | null;
   protected refreshToken: string | null;
   protected anonymousTelemetry: boolean;
   protected enableAutoRefresh: boolean;
@@ -51,6 +52,7 @@ export abstract class BaseClient {
     this.baseUrl = `${baseURL}${prefix}`;
     this.accessToken = null;
     this.apiKey = process.env.R2R_API_KEY || null;
+    this.projectName = null;
     this.refreshToken = null;
     this.anonymousTelemetry = anonymousTelemetry;
 
@@ -145,6 +147,10 @@ export abstract class BaseClient {
       !["register", "login", "verify_email", "health"].includes(endpoint)
     ) {
       config.headers.Authorization = `Bearer ${this.accessToken}`;
+    }
+
+    if (this.projectName) {
+      config.headers["x-project-name"] = this.projectName;
     }
 
     if (options.responseType === "stream") {
@@ -245,5 +251,16 @@ export abstract class BaseClient {
       throw new Error("API key is required");
     }
     this.apiKey = apiKey;
+  }
+
+  setProjectName(projectName: string): void {
+    if (!projectName) {
+      throw new Error("Project name is required");
+    }
+    this.projectName = projectName;
+  }
+
+  unsetProjectName(): void {
+    this.projectName = null;
   }
 }
