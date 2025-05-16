@@ -80,10 +80,15 @@ class PostgresCollectionsHandler(Handler):
             PostgresCollectionsHandler.TABLE_NAME
         )
         if "." in qualified_table:
-            schema, table = qualified_table.split(".", 1)
+            # Remove the quotes from schema and table names
+            schema_with_quotes, table_with_quotes = qualified_table.split(
+                ".", 1
+            )
+            schema = schema_with_quotes.replace('"', "")
+            table = table_with_quotes.replace('"', "")
         else:
             schema = "public"
-            table = qualified_table
+            table = qualified_table.replace('"', "")
 
         # 4. Add the unique constraint if it does not already exist.
         alter_table_constraint = f"""

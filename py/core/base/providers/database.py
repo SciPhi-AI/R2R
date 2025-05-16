@@ -12,7 +12,7 @@ from core.base.abstractions import (
     GraphEnrichmentSettings,
     GraphSearchSettings,
 )
-from core.main.middleware.project_schema import get_current_project_schema
+from core.utils.context import get_current_project_schema
 
 from .base import Provider, ProviderConfig
 
