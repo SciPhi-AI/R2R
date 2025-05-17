@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: r2r-pgvector
+spec:
+  serviceName: "r2r-pgvector"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r2r-pgvector
+  template:
+    metadata:
+      labels:
+        app: r2r-pgvector
+    spec:
+      # Run the container as the non-root "postgres" user (UID 999) to prevent running as root.
+      securityContext:
+        runAsUser: 999
+        fsGroup: 999
+      containers:
+      - name: r2r-pgvector
+        image: pgvector/pgvector:0.8.0-pg17
+        command:
+          - postgres
+          - -c
+          - "max_connections=1024"
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: r2r-secrets
+                key: R2R_POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: r2r-secrets
+                key: R2R_POSTGRES_PASSWORD
+#          - name: POSTGRES_HOST
+#            valueFrom:
+#              configMapKeyRef:
+#                name: r2r-configmap
+#                key: R2R_POSTGRES_HOST
+          - name: POSTGRES_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: r2r-configmap
+                key: R2R_POSTGRES_PORT
+          - name: POSTGRES_MAX_CONNECTIONS
+            valueFrom:
+              configMapKeyRef:
+                name: r2r-configmap
+                key: R2R_POSTGRES_MAX_CONNECTIONS
+          - name: PGPORT
+            valueFrom:
+              configMapKeyRef:
+                name: r2r-configmap
+                key: R2R_POSTGRES_PORT
+        ports:
+          - containerPort: 5432
+            name: r2r-pgvector
+        volumeMounts:
+          - name: postgres-data
+            mountPath: /var/lib/postgresql/data
+        #livenessProbe:
+        #  exec:
+        #    command:
+        #      - "pg_isready"
+        #      - "-U"
+        #      - "${POSTGRES_USER}"
+        #  initialDelaySeconds: 10
+        #  timeoutSeconds: 5
+        #  periodSeconds: 10
+        #  failureThreshold: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-data
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      storageClassName: csi-sc
+      resources:
+        requests:
+          storage: 5Gi
+---
+# filepath: /manifests/postgres-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2r-pgvector
+spec:
+  clusterIP: None
+  selector:
+    app: r2r-pgvector
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: r2r-pgvector
