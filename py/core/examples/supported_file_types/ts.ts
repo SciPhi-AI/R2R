@@ -47,7 +47,7 @@ export abstract class BaseClient {
   protected enableAutoRefresh: boolean;
 
   constructor(
-    baseURL: string = "https://api.sciphi.ai",
+    baseURL: string = "http://localhost:7272",
     prefix: string = "",
     anonymousTelemetry = true,
     enableAutoRefresh = false,
