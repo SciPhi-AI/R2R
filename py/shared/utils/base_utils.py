@@ -5,7 +5,7 @@ import uuid
 from abc import ABCMeta
 from copy import deepcopy
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Optional, Tuple, TypeVar
+from typing import Any, Optional, Tuple, TypeVar
 from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 import tiktoken
@@ -18,10 +18,6 @@ from ..abstractions import (
     GraphRelationshipResult,
 )
 from ..abstractions.vector import VectorQuantizationType
-
-if TYPE_CHECKING:
-    pass
-
 
 logger = logging.getLogger()
 
@@ -49,8 +45,9 @@ def format_search_results_for_llm(
     if results.chunk_search_results:
         lines.append("Vector Search Results:")
         for c in results.chunk_search_results:
-            lines.append(f"Source ID [{id_to_shorthand(c.id)}]:")
-            lines.append(c.text or "")  # or c.text[:200] to truncate
+            lines.extend(
+                (f"Source ID [{id_to_shorthand(c.id)}]:", (c.text or ""))
+            )
 
     # 2) Graph search
     if results.graph_search_results:
@@ -58,18 +55,24 @@ def format_search_results_for_llm(
         for g in results.graph_search_results:
             lines.append(f"Source ID [{id_to_shorthand(g.id)}]:")
             if isinstance(g.content, GraphCommunityResult):
-                lines.append(f"Community Name: {g.content.name}")
-                lines.append(f"ID: {g.content.id}")
-                lines.append(f"Summary: {g.content.summary}")
-                # etc. ...
+                lines.extend(
+                    (
+                        f"Community Name: {g.content.name}",
+                        f"ID: {g.content.id}",
+                        f"Summary: {g.content.summary}",
+                    )
+                )
             elif isinstance(g.content, GraphEntityResult):
-                lines.append(f"Entity Name: {g.content.name}")
-                lines.append(f"Description: {g.content.description}")
+                lines.extend(
+                    (
+                        f"Entity Name: {g.content.name}",
+                        f"Description: {g.content.description}",
+                    )
+                )
             elif isinstance(g.content, GraphRelationshipResult):
                 lines.append(
                     f"Relationship: {g.content.subject}-{g.content.predicate}-{g.content.object}"
                 )
-            # Add metadata if needed
 
     # Web page search results
     if results.web_page_search_results:
@@ -84,6 +87,7 @@ def format_search_results_for_llm(
                 )
             )
 
+    # Web search results
     if results.web_search_results:
         for web_search_result in results.web_search_results:
             lines.append("Web Search Results:")
@@ -103,20 +107,23 @@ def format_search_results_for_llm(
         for doc_result in results.document_search_results:
             doc_title = doc_result.title or "Untitled Document"
             doc_id = doc_result.id
-            summary = doc_result.summary
 
-            lines.append(f"Full Document ID: {doc_id}")
-            lines.append(f"Shortened Document ID: {id_to_shorthand(doc_id)}")
-            lines.append(f"Document Title: {doc_title}")
-            if summary:
+            lines.extend(
+                (
+                    f"Full Document ID: {doc_id}",
+                    f"Shortened Document ID: {id_to_shorthand(doc_id)}",
+                    f"Document Title: {doc_title}",
+                )
+            )
+            if summary := doc_result.summary:
                 lines.append(f"Summary: {summary}")
 
             if doc_result.chunks:
                 # Then each chunk inside:
-                for chunk in doc_result.chunks:
-                    lines.append(
-                        f"\nChunk ID {id_to_shorthand(chunk['id'])}:\n{chunk['text']}"
-                    )
+                lines.extend(
+                    f"\nChunk ID {id_to_shorthand(chunk['id'])}:\n{chunk['text']}"
+                    for chunk in doc_result.chunks
+                )
 
     if results.generic_tool_result:
         lines.extend(
@@ -256,8 +263,7 @@ def tokens_count_for_message(message, encoding):
     """Return the number of tokens used by a single message."""
     tokens_per_message = 3
 
-    num_tokens = 0
-    num_tokens += tokens_per_message
+    num_tokens = 0 + tokens_per_message
     if message.get("function_call"):
         num_tokens += len(encoding.encode(message["function_call"]["name"]))
         num_tokens += len(
@@ -269,9 +275,8 @@ def tokens_count_for_message(message, encoding):
             num_tokens += len(
                 encoding.encode(tool_call["function"]["arguments"])
             )
-    else:
-        if "content" in message:
-            num_tokens += len(encoding.encode(message["content"]))
+    elif "content" in message:
+        num_tokens += len(encoding.encode(message["content"]))
 
     return num_tokens
 
@@ -315,27 +320,23 @@ class SearchResultsCollector:
         """
         self._results_in_order = []
 
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, tuple) and len(item) == 2:
-                    source_type, result_obj = item
-
-                    # Only auto-detect if the source type is "unknown"
-                    if source_type == "unknown":
-                        detected_type = self._detect_result_type(result_obj)
-                        self._results_in_order.append(
-                            (detected_type, result_obj)
-                        )
-                    else:
-                        self._results_in_order.append(
-                            (source_type, result_obj)
-                        )
-                else:
-                    # If not a tuple, detect and add
-                    detected_type = self._detect_result_type(item)
-                    self._results_in_order.append((detected_type, item))
-        else:
+        if not isinstance(value, list):
             raise ValueError("Results must be a list")
+
+        for item in value:
+            if isinstance(item, tuple) and len(item) == 2:
+                source_type, result_obj = item
+
+                # Only auto-detect if the source type is "unknown"
+                if source_type == "unknown":
+                    detected_type = self._detect_result_type(result_obj)
+                    self._results_in_order.append((detected_type, result_obj))
+                else:
+                    self._results_in_order.append((source_type, result_obj))
+            else:
+                # If not a tuple, detect and add
+                detected_type = self._detect_result_type(item)
+                self._results_in_order.append((detected_type, item))
 
     def add_aggregate_result(self, agg):
         """
@@ -449,7 +450,7 @@ class SearchResultsCollector:
         # Handle object attributes for OOP-style results
         if hasattr(obj, "result_type"):
             result_type = str(obj.result_type).lower()
-            if result_type in ["entity", "relationship", "community"]:
+            if result_type in {"entity", "relationship", "community"}:
                 return "graph"
 
         # Check class name hints
@@ -583,7 +584,7 @@ def convert_nonserializable_objects(obj):
         new_obj = {}
         for key, value in obj.items():
             # Convert key to string if it is a UUID or not already a string.
-            new_key = str(key) if not isinstance(key, str) else key
+            new_key = key if isinstance(key, str) else str(key)
             new_obj[new_key] = convert_nonserializable_objects(value)
         return new_obj
     elif isinstance(obj, list):
@@ -643,13 +644,15 @@ def dump_collector(collector: SearchResultsCollector) -> list[dict[str, Any]]:
     return dumped
 
 
-def num_tokens(text, model="gpt-4.1"):
+# FIXME: Tiktoken does not support gpt-4.1, so continue using gpt-4o
+# https://github.com/openai/tiktoken/issues/395
+def num_tokens(text, model="gpt-4o"):
     try:
         encoding = tiktoken.encoding_for_model(model)
     except KeyError:
+        # Fallback to a known encoding if model not recognized
         encoding = tiktoken.get_encoding("cl100k_base")
 
-    """Return the number of tokens used by a list of messages for both user and assistant."""
     return len(encoding.encode(text, disallowed_special=()))
 
 

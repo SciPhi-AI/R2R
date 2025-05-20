@@ -5,7 +5,6 @@ import uuid
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-import tiktoken
 from fastapi import HTTPException
 from hatchet_sdk import ConcurrencyLimitStrategy, Context
 from litellm import AuthenticationError
@@ -20,6 +19,7 @@ from core.base import (
 from core.base.abstractions import DocumentResponse, R2RException
 from core.utils import (
     generate_default_user_collection_id,
+    num_tokens,
     update_settings_from_dict,
 )
 
@@ -29,17 +29,6 @@ if TYPE_CHECKING:
     from hatchet_sdk import Hatchet
 
 logger = logging.getLogger()
-
-
-# FIXME: No need to duplicate this function between the workflows, consolidate it into a shared module
-def count_tokens_for_text(text: str, model: str = "gpt-4.1") -> int:
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except KeyError:
-        # Fallback to a known encoding if model not recognized
-        encoding = tiktoken.get_encoding("cl100k_base")
-
-    return len(encoding.encode(text, disallowed_special=()))
 
 
 def hatchet_ingestion_factory(
@@ -115,7 +104,7 @@ def hatchet_ingestion_factory(
                     text_data = chunk.data
                     if not isinstance(text_data, str):
                         text_data = text_data.decode("utf-8", errors="ignore")
-                    total_tokens += count_tokens_for_text(text_data)
+                    total_tokens += num_tokens(text_data)
                 document_info.total_tokens = total_tokens
 
                 if not ingestion_config.get("skip_document_summary", False):
@@ -388,7 +377,7 @@ def hatchet_ingestion_factory(
                 text_data = chunk["data"]
                 if not isinstance(text_data, str):
                     text_data = text_data.decode("utf-8", errors="ignore")
-                total_tokens += count_tokens_for_text(text_data)
+                total_tokens += num_tokens(text_data)
             document_info.total_tokens = total_tokens
 
             return {

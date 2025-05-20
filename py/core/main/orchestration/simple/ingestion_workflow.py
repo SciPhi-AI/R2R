@@ -2,7 +2,6 @@ import asyncio
 import logging
 from uuid import UUID
 
-import tiktoken
 from fastapi import HTTPException
 from litellm import AuthenticationError
 
@@ -15,23 +14,13 @@ from core.base import (
 from core.utils import (
     generate_default_user_collection_id,
     generate_extraction_id,
+    num_tokens,
     update_settings_from_dict,
 )
 
 from ...services import IngestionService
 
 logger = logging.getLogger()
-
-
-# FIXME: No need to duplicate this function between the workflows, consolidate it into a shared module
-def count_tokens_for_text(text: str, model: str = "gpt-4.1") -> int:
-    try:
-        encoding = tiktoken.encoding_for_model(model)
-    except KeyError:
-        # Fallback to a known encoding if model not recognized
-        encoding = tiktoken.get_encoding("cl100k_base")
-
-    return len(encoding.encode(text, disallowed_special=()))
 
 
 def simple_ingestion_factory(service: IngestionService):
@@ -74,7 +63,7 @@ def simple_ingestion_factory(service: IngestionService):
                 text_data = chunk_dict["data"]
                 if not isinstance(text_data, str):
                     text_data = text_data.decode("utf-8", errors="ignore")
-                total_tokens += count_tokens_for_text(text_data)
+                total_tokens += num_tokens(text_data)
             document_info.total_tokens = total_tokens
 
             if not ingestion_config.get("skip_document_summary", False):
