@@ -56,7 +56,7 @@ class SearchFileKnowledgeTool(Tool):
             """
             results = await knowledge_search_method(
                 query=query,
-                settings=context.search_settings,
+                search_settings=context.search_settings,
             )
 
             # FIXME: This is slop
