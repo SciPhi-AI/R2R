@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from uuid import UUID
 
@@ -9,7 +8,6 @@ from core.base import (
     DocumentChunk,
     GraphConstructionStatus,
     R2RException,
-    increment_version,
 )
 from core.utils import (
     generate_default_user_collection_id,
@@ -239,91 +237,6 @@ def simple_ingestion_factory(service: IngestionService):
             raise HTTPException(
                 status_code=500, detail=f"Error during ingestion: {str(e)}"
             ) from e
-
-    async def update_files(input_data):
-        from core.main import IngestionServiceAdapter
-
-        parsed_data = IngestionServiceAdapter.parse_update_files_input(
-            input_data
-        )
-
-        file_datas = parsed_data["file_datas"]
-        user = parsed_data["user"]
-        document_ids = parsed_data["document_ids"]
-        metadatas = parsed_data["metadatas"]
-        ingestion_config = parsed_data["ingestion_config"]
-        file_sizes_in_bytes = parsed_data["file_sizes_in_bytes"]
-
-        if not file_datas:
-            raise R2RException(
-                status_code=400, message="No files provided for update."
-            ) from None
-        if len(document_ids) != len(file_datas):
-            raise R2RException(
-                status_code=400,
-                message="Number of ids does not match number of files.",
-            ) from None
-
-        documents_overview = (
-            await service.providers.database.documents_handler.get_documents_overview(  # FIXME: This was using the pagination defaults from before... We need to review if this is as intended.
-                offset=0,
-                limit=100,
-                filter_user_ids=None if user.is_superuser else [user.id],
-                filter_document_ids=document_ids,
-            )
-        )["results"]
-
-        if len(documents_overview) != len(document_ids):
-            raise R2RException(
-                status_code=404,
-                message="One or more documents not found.",
-            ) from None
-
-        results = []
-
-        for idx, (
-            file_data,
-            doc_id,
-            doc_info,
-            file_size_in_bytes,
-        ) in enumerate(
-            zip(
-                file_datas,
-                document_ids,
-                documents_overview,
-                file_sizes_in_bytes,
-                strict=False,
-            )
-        ):
-            new_version = increment_version(doc_info.version)
-
-            updated_metadata = (
-                metadatas[idx] if metadatas else doc_info.metadata
-            )
-            updated_metadata["title"] = (
-                updated_metadata.get("title")
-                or file_data["filename"].split("/")[-1]
-            )
-
-            ingest_input = {
-                "file_data": file_data,
-                "user": user.model_dump(),
-                "metadata": updated_metadata,
-                "document_id": str(doc_id),
-                "version": new_version,
-                "ingestion_config": ingestion_config,
-                "size_in_bytes": file_size_in_bytes,
-            }
-
-            result = ingest_files(ingest_input)
-            results.append(result)
-
-        await asyncio.gather(*results)
-        if service.providers.ingestion.config.automatic_extraction:
-            raise R2RException(
-                status_code=501,
-                message="Automatic extraction not yet implemented for `simple` ingestion workflows.",
-            ) from None
 
     async def ingest_chunks(input_data):
         document_info = None

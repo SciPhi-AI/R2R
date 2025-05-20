@@ -1,7 +1,6 @@
 from .base_utils import (
     _decorate_vector_type,
     _get_vector_column_str,
-    decrement_version,
     deep_update,
     dump_collector,
     dump_obj,
@@ -13,7 +12,6 @@ from .base_utils import (
     generate_extraction_id,
     generate_id,
     generate_user_id,
-    increment_version,
     validate_uuid,
     yield_sse_event,
 )
@@ -30,8 +28,6 @@ __all__ = [
     "generate_default_prompt_id",
     "generate_entity_document_id",
     # Other
-    "increment_version",
-    "decrement_version",
     "validate_uuid",
     "deep_update",
     # Text splitter

@@ -120,7 +120,6 @@ __all__ = [
     "generate_extraction_id",
     "generate_default_user_collection_id",
     "generate_user_id",
-    "increment_version",
     "yield_sse_event",
     "dump_collector",
     "dump_obj",
