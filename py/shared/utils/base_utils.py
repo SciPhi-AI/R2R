@@ -180,18 +180,6 @@ def generate_entity_document_id() -> UUID:
     return _generate_id_from_label(f"entity-{generation_time}")
 
 
-def increment_version(version: str) -> str:
-    prefix = version[:-1]
-    suffix = int(version[-1])
-    return f"{prefix}{suffix + 1}"
-
-
-def decrement_version(version: str) -> str:
-    prefix = version[:-1]
-    suffix = int(version[-1])
-    return f"{prefix}{max(0, suffix - 1)}"
-
-
 def validate_uuid(uuid_str: str) -> UUID:
     return UUID(uuid_str)
 

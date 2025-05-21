@@ -103,7 +103,6 @@ __all__ = [
     "RecursiveCharacterTextSplitter",
     "TextSplitter",
     "generate_id",
-    "increment_version",
     "validate_uuid",
     "yield_sse_event",
     "convert_nonserializable_objects",
