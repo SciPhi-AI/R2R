@@ -813,7 +813,9 @@ class GraphService(Service):
                         "No <community> XML found in LLM response"
                     )
 
-                xml_content = match.group(0)
+                xml_content = re.sub(
+                    r"&(?!amp;|quot;|apos;|lt;|gt;)", "&amp;", match.group(0)
+                ).strip()
                 root = ET.fromstring(xml_content)
 
                 # extract fields
