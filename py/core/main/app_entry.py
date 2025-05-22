@@ -12,6 +12,7 @@ from core.base import R2RException
 from core.utils.logging_config import configure_logging
 
 from .assembly import R2RBuilder, R2RConfig
+from .middleware.project_schema import ProjectSchemaMiddleware
 
 log_file = configure_logging()
 
@@ -122,4 +123,9 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.add_middleware(
+    ProjectSchemaMiddleware,
+    default_schema="r2r_default",
 )
