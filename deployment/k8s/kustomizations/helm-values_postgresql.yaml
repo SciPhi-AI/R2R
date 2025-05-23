@@ -1,0 +1,13 @@
+auth:
+  existingSecret: r2r-hatchet-secrets
+  secretKeys:
+    adminPasswordKey: HATCHET_DATABASE_POSTGRES_POSTGRES_PASSWORD
+    userPasswordKey: HATCHET_DATABASE_POSTGRES_PASSWORD
+    replicationPasswordKey: HATCHET_DATABASE_POSTGRES_REPLICA_PASSWORD
+
+#creates hatchet database
+global:
+  storageClass: csi-sc
+  postgresql:
+    auth:
+      database: hatchet

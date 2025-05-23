@@ -1,0 +1,218 @@
+# sharedConfig is inherited by all backend services: api, grpc, controllers, scheduler
+sharedConfig:
+  # you can disable shared config by setting this to false
+  enabled: true
+
+  # these are the most commonly configured values
+  serverUrl: "http://localhost:8080"
+  serverAuthCookieDomain: "localhost:8080" # the domain for the auth cookie
+  serverAuthCookieInsecure: "t" # allows cookies to be set over http
+  serverAuthSetEmailVerified: "t" # automatically sets email_verified to true for all users
+  serverAuthBasicAuthEnabled: "t" # allows login via basic auth (email/password)
+  grpcBroadcastAddress: "localhost:7070" # the endpoint for the gRPC server, exposed via the `grpc` service
+  grpcInsecure: "true" # allows gRPC to be served over http
+#  defaultAdminEmail: "" # in exposed/production environments, change this to a valid email
+#  defaultAdminPassword: "" # in exposed/production environments, change this to a secure password
+
+  # you can set additional environment variables here, which will override any defaults
+  env: {}
+
+api:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: "ghcr.io/hatchet-dev/hatchet/hatchet-api"
+    tag: "v0.54.7"
+    pullPolicy: "Always"
+  migrationJob:
+    image:
+      repository: "ghcr.io/hatchet-dev/hatchet/hatchet-migrate"
+  serviceAccount:
+    create: true
+    name: hatchet-api
+  envFrom:
+    - secretRef:
+        name: hatchet-shared-config
+  ingress:
+    enabled: false
+  health:
+    enabled: true
+    spec:
+      livenessProbe:
+        httpGet:
+          path: /api/live
+          port: 8080
+        periodSeconds: 5
+        initialDelaySeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /api/ready
+          port: 8080
+        periodSeconds: 5
+        initialDelaySeconds: 20
+
+grpc:
+  enabled: true
+  nameOverride: hatchet-grpc
+  fullnameOverride: hatchet-grpc
+  replicaCount: 1
+  image:
+    repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
+    tag: "v0.54.7"
+    pullPolicy: "Always"
+  setupJob:
+    enabled: false
+  service:
+    externalPort: 7070
+    internalPort: 7070
+  commandline:
+    command: ["/hatchet/hatchet-engine"]
+  deployment:
+    annotations:
+      app.kubernetes.io/name: hatchet-grpc
+  serviceAccount:
+    create: true
+    name: hatchet-grpc
+  envFrom:
+    - secretRef:
+        name: hatchet-shared-config
+  ingress:
+    enabled: false
+  health:
+    enabled: true
+    spec:
+      livenessProbe:
+        httpGet:
+          path: /live
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 20
+
+controllers:
+  enabled: true
+  nameOverride: controllers
+  fullnameOverride: controllers
+  replicaCount: 1
+  image:
+    repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
+    tag: "v0.54.7"
+    pullPolicy: "Always"
+  setupJob:
+    enabled: false
+  service:
+    externalPort: 7070
+    internalPort: 7070
+  commandline:
+    command: ["/hatchet/hatchet-engine"]
+  deployment:
+    annotations:
+      app.kubernetes.io/name: controllers
+  serviceAccount:
+    create: true
+    name: controllers
+  envFrom:
+    - secretRef:
+        name: hatchet-shared-config
+  ingress:
+    enabled: false
+  health:
+    enabled: true
+    spec:
+      livenessProbe:
+        httpGet:
+          path: /live
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 20
+
+scheduler:
+  enabled: true
+  nameOverride: scheduler
+  fullnameOverride: scheduler
+  replicaCount: 1
+  image:
+    repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
+    tag: "v0.54.7"
+    pullPolicy: "Always"
+  setupJob:
+    enabled: false
+  service:
+    externalPort: 7070
+    internalPort: 7070
+  commandline:
+    command: ["/hatchet/hatchet-engine"]
+  deployment:
+    annotations:
+      app.kubernetes.io/name: scheduler
+  serviceAccount:
+    create: true
+    name: scheduler
+  envFrom:
+    - secretRef:
+        name: hatchet-shared-config
+  ingress:
+    enabled: false
+  health:
+    enabled: true
+    spec:
+      livenessProbe:
+        httpGet:
+          path: /live
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 60
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8733
+        periodSeconds: 5
+        initialDelaySeconds: 20
+
+frontend:
+  enabled: true
+  image:
+    repository: "ghcr.io/hatchet-dev/hatchet/hatchet-frontend"
+    tag: "v0.54.7"
+    pullPolicy: "Always"
+  service:
+    externalPort: 8080
+    internalPort: 80
+  ingress:
+    enabled: false
+
+postgres:
+  enabled: false
+  auth:
+#    username: ""
+#    password: ""
+    database: "hatchet"
+  tls:
+    enabled: false
+  primary:
+    service:
+      ports:
+        postgresql: 5432
+
+rabbitmq:
+  enabled: true
+  auth:
+#    username: ""
+#    password: ""
+  service:
+    ports:
+      amqp: 5672
+
+caddy:
+  enabled: false

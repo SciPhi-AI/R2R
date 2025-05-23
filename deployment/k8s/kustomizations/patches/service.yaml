@@ -1,0 +1,10 @@
+- op: replace
+  path: /spec/ipFamilies
+  value:
+    - IPv4
+
+- op: replace
+  path: /spec/ipFamilyPolicy
+  value:
+    SingleStack
+#    PreferDualStack

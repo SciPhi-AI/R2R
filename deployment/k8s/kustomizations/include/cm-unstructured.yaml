@@ -1,0 +1,12 @@
+---
+# unstructured-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unstructured-configmap
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+data:
+  UNSTRUCTURED_SERVICE_URL: "http://unstructured:7275"
+  UNSTRUCTURED_NUM_WORKERS: "10"
+  UNSTRUCTURED_API_URL: "https://api.unstructured.io/general/v0/general"

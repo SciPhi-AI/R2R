@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2r-graph-clustering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r2r-graph-clustering
+  template:
+    metadata:
+      labels:
+        app: r2r-graph-clustering
+    spec:
+      containers:
+      - name: r2r-graph-clustering
+        image: ragtoriches/cluster-prod:latest
+        ports:
+        - containerPort: 7276
+        livenessProbe:
+          exec:
+            command: ["curl", "-f", "http://localhost:7276/health"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2r-graph-clustering
+spec:
+  type: NodePort
+  selector:
+    app: r2r-graph-clustering
+  ports:
+  - port: 7276
+    targetPort: 7276
