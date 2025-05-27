@@ -190,7 +190,7 @@ class R2RIngestionProvider(IngestionProvider):
                 chunk_overlap=chunk_overlap,
             )
         elif chunking_strategy == ChunkingStrategy.CHARACTER:
-            from core.base.utils.splitter.text import CharacterTextSplitter
+            from shared.utils.splitter.text import CharacterTextSplitter
 
             separator = (
                 ingestion_config_override.get("separator")
