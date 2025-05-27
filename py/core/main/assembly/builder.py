@@ -135,6 +135,7 @@ class R2RBuilder:
             config=self.config,
             orchestration_provider=providers.orchestration,
             services=services,
+            providers=providers,
             **routers,
         )
 
