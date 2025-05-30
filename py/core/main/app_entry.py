@@ -78,7 +78,7 @@ port = int(os.getenv("R2R_PORT", "7272"))
 config = R2RConfig.load(config_name=config_name, config_path=config_path)
 
 project_name = (
-    os.getenv("R2R_PROJECT_NAME") or config.app.project_name or "default"
+    os.getenv("R2R_PROJECT_NAME") or config.app.project_name or "r2r_default"
 )
 
 logging.info(
