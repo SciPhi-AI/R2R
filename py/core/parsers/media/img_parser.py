@@ -184,14 +184,30 @@ class ImageParser(AsyncParser[str | bytes]):
             return "application/octet-stream"  # Default to generic binary as fallback
 
     async def ingest(
-        self, data: str | bytes, **kwargs
+        self,
+        data: str | bytes,
+        prompt_text: str = None,
+        prompt_name: str = None,
+        prompt_args: dict = None,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
-        if not self.vision_prompt_text:
-            self.vision_prompt_text = (
-                await self.database_provider.prompts_handler.get_cached_prompt(
+        # prompt_text > prompt_name > self.vision_prompt_text
+        if not prompt_text and not prompt_name:
+            if not self.vision_prompt_text:
+                prompt = await self.database_provider.prompts_handler.get_cached_prompt(
                     prompt_name="vision_img"
                 )
+                self.vision_prompt_text = prompt
+            prompt_text = self.vision_prompt_text
+        elif not prompt_text and prompt_name:
+            prompt = (
+                await self.database_provider.prompts_handler.get_cached_prompt(
+                    prompt_name=prompt_name,
+                    inputs=prompt_args,
+                )
             )
+            prompt_text = prompt
+
         try:
             filename = kwargs.get("filename", None)
             # Whether to convert HEIC to JPEG (default: True for backward compatibility)
@@ -259,7 +275,7 @@ class ImageParser(AsyncParser[str | bytes]):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": self.vision_prompt_text},
+                            {"type": "text", "text": prompt_text},
                             {
                                 "type": "image",
                                 "source": {
@@ -277,7 +293,7 @@ class ImageParser(AsyncParser[str | bytes]):
                     {
                         "role": "user",
                         "content": [
-                            {"type": "text", "text": self.vision_prompt_text},
+                            {"type": "text", "text": prompt_text},
                             {
                                 "type": "image_url",
                                 "image_url": {
