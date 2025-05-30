@@ -313,7 +313,7 @@ class ChunkEnrichmentSettings(R2RSerializable):
 
 class IngestionConfig(R2RSerializable):
     provider: str = "r2r"
-    excluded_parsers: list[str] = ["mp4"]
+    excluded_parsers: list[str] = []
     chunking_strategy: str = "recursive"
     chunk_enrichment_settings: ChunkEnrichmentSettings = (
         ChunkEnrichmentSettings()
@@ -348,7 +348,7 @@ class IngestionConfig(R2RSerializable):
             # More thorough parsing, no skipping summaries, possibly larger `chunks_for_document_summary`.
             return cls(
                 provider="r2r",
-                excluded_parsers=["mp4"],
+                excluded_parsers=[],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="",
@@ -363,7 +363,7 @@ class IngestionConfig(R2RSerializable):
             # Use Mistral OCR for PDFs and images.
             return cls(
                 provider="r2r",
-                excluded_parsers=["mp4"],
+                excluded_parsers=[],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="",
@@ -378,7 +378,7 @@ class IngestionConfig(R2RSerializable):
             # Skip summaries and other enrichment steps for speed.
             return cls(
                 provider="r2r",
-                excluded_parsers=["mp4"],
+                excluded_parsers=[],
                 chunk_enrichment_settings=ChunkEnrichmentSettings(),  # default
                 extra_parsers={},
                 audio_transcription_model="",

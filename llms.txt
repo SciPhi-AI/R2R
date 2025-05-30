@@ -723,7 +723,7 @@ provider = "r2r"
 chunking_strategy = "recursive"
 chunk_size = 1024
 chunk_overlap = 512
-excluded_parsers = ["mp4"]
+excluded_parsers = []
 
 [database]
 provider = "postgres"
@@ -895,7 +895,7 @@ provider = "r2r"
 chunking_strategy = "recursive"
 chunk_size = 1024
 chunk_overlap = 512
-excluded_parsers = ["mp4"]
+excluded_parsers = []
 
 [ingestion.chunk_enrichment_settings]
 enable_chunk_enrichment = true
@@ -11082,7 +11082,7 @@ provider = "r2r"
 chunking_strategy = "recursive"
 chunk_size = 1024
 chunk_overlap = 512
-excluded_parsers = ["mp4"]
+excluded_parsers = []
 document_summary_model = "openai/gpt-4.1-mini"
 
   [ingestion.chunk_enrichment_settings]

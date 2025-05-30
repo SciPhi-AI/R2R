@@ -212,7 +212,7 @@ aws_secret_access_key = ""
 ################################################################################
 [ingestion]
 provider = "r2r"
-excluded_parsers = ["mp4"]
+excluded_parsers = []
 chunking_strategy = "recursive"
 chunk_size = 1024
 # Extra field handled by extra_fields – not defined explicitly in IngestionConfig:

@@ -27,7 +27,7 @@ class IngestionConfig(ProviderConfig):
     _defaults: ClassVar[dict] = {
         "app": AppConfig(),
         "provider": "r2r",
-        "excluded_parsers": ["mp4"],
+        "excluded_parsers": [],
         "chunking_strategy": "recursive",
         "chunk_size": 1024,
         "chunk_overlap": 512,
