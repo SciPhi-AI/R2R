@@ -80,6 +80,7 @@ class DocumentType(str, Enum):
 
     # Video/GIF
     GIF = "gif"
+    MP4 = "mp4"
 
     # Word
     DOC = "doc"
@@ -90,6 +91,9 @@ class DocumentType(str, Enum):
     JS = "js"
     TS = "ts"
     CSS = "css"
+
+    # other type
+    UNKNOWN = "UNKNOWN"
 
 
 class Document(R2RSerializable):
