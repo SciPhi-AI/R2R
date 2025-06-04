@@ -8,7 +8,6 @@ from core.base.providers import (
     DatabaseProvider,
     IngestionConfig,
 )
-from core.providers import PostgresDatabaseProvider
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +46,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         self.llm_provider = llm_provider
 
         self.video_prompt_name = self.config.extra_fields.get(
-            "extra_video_prompt_name", "vision_img"
+            "extra_video_prompt_name", "vision_video"
         )
         self.video_prompt_args = self.config.extra_fields.get(
             "extra_video_prompt_args", {}
@@ -58,7 +57,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
             self.video_prompt_name,
         )
 
-    async def ingest(
+    async def ingest(  # type: ignore[override]
         self, data: str | bytes | dict, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
@@ -80,16 +79,14 @@ class VideoParser(AsyncParser[str | bytes | dict]):
             file_url = data.get("file_url")
             if not file_url:
                 file_url = kwargs.get("file_url")
+        else:
+            file_url = kwargs.get("file_url")
+
         logger.debug("file for ingest: %s", file_url)
         if file_url is None:
             raise ValueError("file_url is required")
 
         # Process video
-        description = self._call_llm(file_url, **kwargs)
-        yield description
-
-    async def _call_llm(self, file_url, **kwargs) -> str:
-
         model = kwargs.get("vlm", self.config.vlm)
         generation_config = GenerationConfig(
             model=model,
@@ -99,11 +96,9 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         # Load prompt texts
         prompt_name = kwargs.get("prompt_name", self.video_prompt_name)
         prompt_args = kwargs.get("prompt_args", self.video_prompt_args)
-        video_prompt_text = (
-            await self.database_provider.prompts_handler.get_cached_prompt(
-                prompt_name=prompt_name,
-                inputs=prompt_args,
-            )
+        video_prompt_text = await self.database_provider.prompts_handler.get_cached_prompt(  # type: ignore # noqa E501
+            prompt_name=prompt_name,
+            inputs=prompt_args,
         )
 
         messages = [
@@ -131,7 +126,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
             if not content:
                 raise ValueError("Empty response content")
 
-            return content
+            yield content
 
         except Exception as e:
             logger.error(f"Error processing file {file_url}: {str(e)}")
