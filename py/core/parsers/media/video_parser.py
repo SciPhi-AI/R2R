@@ -43,7 +43,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         super().__init__()
 
         self.config = config
-        self.database_provider: PostgresDatabaseProvider = database_provider
+        self.database_provider = database_provider
         self.llm_provider = llm_provider
 
         self.video_prompt_name = self.config.extra_fields.get(
@@ -59,7 +59,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         )
 
     async def ingest(
-        self, data: str | bytes | dict, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Process video file for ingestion.
@@ -76,11 +76,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         Yields:
             str: Generated descriptions from video and audio analysis
         """
-        if isinstance(data, dict):
-            file_url = data.get("file_url")
-            if not file_url:
-                file_url = kwargs.get("file_url")
-
+        file_url = kwargs.get("file_url")
         logger.debug("file for ingest: %s", file_url)
         if file_url is None:
             raise ValueError("file_url is required")
