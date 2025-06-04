@@ -889,7 +889,6 @@ class IngestionServiceAdapter:
             "collection_ids": data.get("collection_ids", []),
         }
 
-    # TODO: Remove?
     @staticmethod
     def parse_update_chunk_input(data: dict) -> dict:
         return {
