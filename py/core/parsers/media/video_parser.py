@@ -91,7 +91,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
 
     async def _call_llm(self, file_url, **kwargs) -> AsyncGenerator[str, None]:
 
-        model = kwargs.get("vlm", self.config.app.vlm)
+        model = kwargs.get("vlm", self.config.vlm)
         generation_config = GenerationConfig(
             model=model,
             stream=False,
