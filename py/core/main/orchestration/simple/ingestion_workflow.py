@@ -255,6 +255,11 @@ def simple_ingestion_factory(service: IngestionService):
             )
             document_id = document_info.id
 
+            collection_ids = parsed_data.get("collection_ids") or []
+            if isinstance(collection_ids, str):
+                collection_ids = [collection_ids]
+            collection_ids = [UUID(id_str) for id_str in collection_ids]
+
             extractions = [
                 DocumentChunk(
                     id=(
@@ -263,7 +268,7 @@ def simple_ingestion_factory(service: IngestionService):
                         else chunk.id
                     ),
                     document_id=document_id,
-                    collection_ids=[],
+                    collection_ids=collection_ids,
                     owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
@@ -289,8 +294,6 @@ def simple_ingestion_factory(service: IngestionService):
             await service.update_document_status(
                 document_info, status=IngestionStatus.SUCCESS
             )
-
-            collection_ids = parsed_data.get("collection_ids")
 
             try:
                 # TODO - Move logic onto management service

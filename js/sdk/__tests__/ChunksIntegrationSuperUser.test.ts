@@ -7,6 +7,7 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let chunkId: string;
+  let collectionId: string;
 
   beforeAll(async () => {
     client = new r2rClient(baseUrl);
@@ -115,6 +116,50 @@ describe("r2rClient V3 Collections Integration Tests", () => {
   test("Delete a document", async () => {
     const response = await client.documents.delete({
       id: "1fb70f3b-37eb-4325-8c83-694a03144a67",
+    });
+    expect(response.results.success).toBe(true);
+  });
+
+  test("Create a document assigned to a new collection", async () => {
+    const collectionResponse = await client.collections.create({
+      name: "Test Collection",
+      description: "A collection for testing purposes",
+    });
+    collectionId = collectionResponse.results.id;
+    console.log("Collection ID:", collectionId);
+
+    const documentResponse = await client.documents.create({
+      chunks: ["This is a test document."],
+      collectionIds: [collectionId],
+    });
+    documentId = documentResponse.results.documentId;
+    expect(documentResponse.results.documentId).toBeDefined();
+    expect(documentResponse.results.message).toBe(
+      "Document created and ingested successfully.",
+    );
+    expect(documentResponse.results.taskId).toBeNull();
+  });
+
+  test("Retrieve a document assigned to a collection", async () => {
+    const response = await client.documents.list({});
+
+    console.log(response.results);
+
+    expect(response.results).toBeDefined();
+    expect(response.results.length).toBeGreaterThan(0);
+    expect(response.results[0].collectionIds).toContain(collectionId);
+  });
+
+  test("Delete the collection", async () => {
+    const response = await client.collections.delete({
+      id: collectionId,
+    });
+    expect(response.results.success).toBe(true);
+  });
+
+  test("Delete the document created in the collection", async () => {
+    const response = await client.documents.delete({
+      id: documentId,
     });
     expect(response.results.success).toBe(true);
   });
