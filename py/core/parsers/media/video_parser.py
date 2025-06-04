@@ -84,11 +84,11 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         if file_url is None:
             raise ValueError("file_url is required")
 
-        # Process video chunks
-        async for description in self._call_llm(file_url, **kwargs):
-            yield description
+        # Process video
+        description = self._call_llm(file_url, **kwargs)
+        yield description
 
-    async def _call_llm(self, file_url, **kwargs) -> AsyncGenerator[str, None]:
+    async def _call_llm(self, file_url, **kwargs) -> str:
 
         model = kwargs.get("vlm", self.config.vlm)
         generation_config = GenerationConfig(
@@ -131,7 +131,7 @@ class VideoParser(AsyncParser[str | bytes | dict]):
             if not content:
                 raise ValueError("Empty response content")
 
-            yield content
+            return content
 
         except Exception as e:
             logger.error(f"Error processing file {file_url}: {str(e)}")
