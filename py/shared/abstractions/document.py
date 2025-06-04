@@ -20,6 +20,12 @@ class DocumentType(str, Enum):
 
     # Audio
     MP3 = "mp3"
+    
+    # Video
+    MP4 = "mp4"
+    AVI = "avi"
+    MOV = "mov"
+    MKV = "mkv"
 
     # CSV
     CSV = "csv"
@@ -80,7 +86,6 @@ class DocumentType(str, Enum):
 
     # Video/GIF
     GIF = "gif"
-    MP4 = "mp4"
 
     # Word
     DOC = "doc"
@@ -91,9 +96,6 @@ class DocumentType(str, Enum):
     JS = "js"
     TS = "ts"
     CSS = "css"
-
-    # other type
-    UNKNOWN = "UNKNOWN"
 
 
 class Document(R2RSerializable):
