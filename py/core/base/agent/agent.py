@@ -227,7 +227,17 @@ class Agent(ABC):
                     )
                 )
                 # HACK - to fix issues with claude thinking + tool use [https://github.com/anthropics/anthropic-cookbook/blob/main/extended_thinking/extended_thinking_with_tool_use.ipynb]
-                if self.rag_generation_config.extended_thinking:
+                logger.debug(
+                    f"Extended thinking - Claude needs a particular message continuation which however breaks other models. Model in use : {self.rag_generation_config.model}"
+                )
+                is_anthropic = (
+                    self.rag_generation_config.model
+                    and "anthropic/" in self.rag_generation_config.model
+                )
+                if (
+                    self.rag_generation_config.extended_thinking
+                    and is_anthropic
+                ):
                     await self.conversation.add_message(
                         Message(
                             role="user",

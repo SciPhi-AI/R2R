@@ -115,6 +115,7 @@ class ResearchAgentMixin(RAGAgentMixin):
                 },
                 "required": ["query"],
             },
+            context=self,
         )
 
     def reasoning_tool(self) -> Tool:
