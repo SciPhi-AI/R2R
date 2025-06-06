@@ -16,6 +16,7 @@
     "test": "jest --no-cache",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:chunks": "jest ChunksIntegrationSuperUser",
     "test:collections": "jest CollectionsIntegrationSuperUser CollectionsIntegrationUser",
     "test:documents": "jest DocumentsIntegrationSuperUser",
     "test:retrieval": "jest RetrievalIntegrationSuperUser",

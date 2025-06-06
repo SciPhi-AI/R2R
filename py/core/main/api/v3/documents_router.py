@@ -403,6 +403,11 @@ class DocumentsRouter(BaseRouterV3):
                         chunk.model_dump(mode="json")
                         for chunk in raw_chunks_for_doc
                     ],
+                    "collection_ids": (
+                        [str(cid) for cid in collection_ids]
+                        if collection_ids
+                        else None
+                    ),
                     "metadata": metadata,  # Base metadata for the document
                     "user": auth_user.model_dump_json(),
                     "ingestion_config": effective_ingestion_config.model_dump(
