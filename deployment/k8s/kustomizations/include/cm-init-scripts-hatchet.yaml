@@ -86,7 +86,7 @@ data:
     set -e
 
     # Wait for required config files
-    MAX_WAIT=300  
+    MAX_WAIT=300
     WAIT_TIME=0
     CONFIG_FILES=("/hatchet/config/server.yaml" "/hatchet/config/database.yaml" "/hatchet_api_key/api_key.txt")
 
@@ -135,8 +135,8 @@ data:
           "${API_SERVER}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}")
 
       if [[ "$response_code" == "200" ]]; then
-          [[ "$ALLOW_OVERRIDE" == "true" || "$ALLOW_OVERRIDE" == "1" ]] || { 
-              echo "ALLOW_OVERRIDE is false. Skipping update."; return; 
+          [[ "$ALLOW_OVERRIDE" == "true" || "$ALLOW_OVERRIDE" == "1" ]] || {
+              echo "ALLOW_OVERRIDE is false. Skipping update."; return;
           }
           echo "Updating existing secret: $SECRET_NAME"
           response=$(curl -s -X PUT --insecure --header "Authorization: Bearer ${TOKEN}" --header "Content-Type: application/json" \
@@ -150,7 +150,7 @@ data:
       echo "JSON:"
       echo "$response" | jq '.data |= with_entries(.value="[REDACTED]")'
     }
-  
+
     update_secret "$1" "$2" "$3"
     echo "Finished processing secret: $2 in folder: $1. ALLOW_OVERRIDE: $3"
     exit 0

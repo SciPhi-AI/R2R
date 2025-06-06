@@ -131,5 +131,3 @@ patches:
   target:
     kind: Secret
     name: hatchet-shared-config
-
-

@@ -11,7 +11,7 @@ repos:
       - id: check-ast
         exclude: ^.venv/
       - id: check-yaml
-        exclude: ^.venv/
+        exclude: ^(.venv/|deployment/)
 
   - repo: local
     hooks:

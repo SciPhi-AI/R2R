@@ -39,7 +39,7 @@ data:
   LITELLM_PROXY_API_URL: "https://litellm.mywebsite.com/v1"
   HUGGINGFACE_API_BASE: "https://hf-tei.mywebsite.com"
 
-  
+
   AZURE_FOUNDRY_API_ENDPOINT: ""
   AZURE_API_BASE: ""
   AZURE_API_VERSION: ""
@@ -58,4 +58,3 @@ data:
   R2R_SENTRY_PROFILES_SAMPLE_RATE: ""
   GOOGLE_REDIRECT_URI: ""
   GITHUB_REDIRECT_URI: ""
-  

@@ -66,4 +66,3 @@ spec:
           defaultMode: 493
           name: hatchet-init-scripts
         name: init-scripts
-
