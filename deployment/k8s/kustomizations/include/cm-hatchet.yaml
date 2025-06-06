@@ -1,0 +1,20 @@
+---
+# hatchet-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hatchet-configmap
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+data:
+  #New
+  HATCHET_CLIENT_TLS_STRATEGY: "none"
+  HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH: "134217728"
+  HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH: "134217728"
+
+  HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CONF: "false"
+  HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CERT: "false"
+  HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_APIKEY: "false"
+  HATCHET_TENANT_ID: "707d0855-80ab-4e1f-a156-f1c4546cbf52"
+  RABBITMQ_URL: "http://hatchet-rabbitmq"
+  RABBITMQ_MGMT_PORT: "15672"

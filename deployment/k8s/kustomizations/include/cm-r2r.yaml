@@ -1,0 +1,61 @@
+# r2r-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r2r-configmap
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+data:
+#  POSTGRES_HOST: "postgres"
+  R2R_POSTGRES_HOST: "r2r-documentdb"
+  R2R_POSTGRES_PORT: "5432"
+#  POSTGRES_PORT: "5432"
+  R2R_POSTGRES_DBNAME: "r2r"
+  R2R_PROJECT_NAME: "r2r_default"
+  R2R_HOST: "0.0.0.0"
+  R2R_PORT: "7272"
+  R2R_LOG_LEVEL: INFO
+
+  PYTHONUNBUFFERED: "1"
+  R2R_CONFIG_NAME: "full"
+#  R2R_CONFIG_PATH: "/app/r2r.toml"
+#  R2R_CONFIG_TOML: "/app/r2r.toml"
+  TELEMETRY_ENABLED: "false"
+  R2R_POSTGRES_PROJECT_NAME: "r2r_default"
+  R2R_POSTGRES_MAX_CONNECTIONS: "1024"
+  R2R_POSTGRES_STATEMENT_CACHE_SIZE: "100"
+  NEXT_PUBLIC_R2R_DEPLOYMENT_URL: "http://r2r:7272"
+  NEXT_PUBLIC_HATCHET_DASHBOARD_URL: "http://hatchet-dashboard:80"
+  R2R_DASHBOARD_PORT: "3000"
+  R2R_NGINX_PORT: "80"
+  R2R_HATCHET_DASHBOARD_PORT: "80"
+
+  PGADMIN_ENABLE_TLS: "false"
+
+
+  # API Base URLs
+  OPENAI_API_BASE: "https://litellm.mywebsite.com/v1"
+  LITELLM_PROXY_API_BASE: "https://litellm.mywebsite.com/v1"
+  LITELLM_PROXY_API_URL: "https://litellm.mywebsite.com/v1"
+  HUGGINGFACE_API_BASE: "https://hf-tei.mywebsite.com"
+
+  
+  AZURE_FOUNDRY_API_ENDPOINT: ""
+  AZURE_API_BASE: ""
+  AZURE_API_VERSION: ""
+  VERTEX_PROJECT: ""
+  VERTEX_LOCATION: ""
+  AWS_REGION_NAME: ""
+  OLLAMA_API_BASE: ""
+#  OLLAMA_API_BASE: "http://host.docker.internal:11434"
+  LM_STUDIO_API_BASE: ""
+
+  CLUSTERING_SERVICE_URL: "http://r2r-graph-clustering:7276"    # Graphologic
+
+  R2R_SENTRY_DSN: ""
+  R2R_SENTRY_ENVIRONMENT: ""
+  R2R_SENTRY_TRACES_SAMPLE_RATE: ""
+  R2R_SENTRY_PROFILES_SAMPLE_RATE: ""
+  GOOGLE_REDIRECT_URI: ""
+  GITHUB_REDIRECT_URI: ""
+  
