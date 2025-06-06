@@ -268,6 +268,7 @@ class RAGAgentConfig(AgentConfig):
         "search_file_descriptions",
         "search_file_knowledge",
         "get_file_content",
+        "smart_filter_tool",
         # Web search tools - disabled by default
         # "web_search",
         # "web_scrape",

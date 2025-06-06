@@ -580,11 +580,12 @@ class RetrievalRouter(BaseRouterV3):
                         "search_file_descriptions",
                         "search_file_knowledge",
                         "get_file_content",
+                        "smart_filter_tool",
                     ]
                 ]
             ] = Body(
                 None,
-                description="List of tools to enable for RAG mode. Available tools: search_file_knowledge, get_file_content, web_search, web_scrape, search_file_descriptions",
+                description="List of tools to enable for RAG mode. Available tools: search_file_knowledge, get_file_content, web_search, web_scrape, search_file_descriptions, smart_filter_tool",
             ),
             # FIXME: We need a more generic way to handle this
             research_tools: Optional[
@@ -659,6 +660,7 @@ class RetrievalRouter(BaseRouterV3):
             - `content`: Fetch entire documents or chunk structures
             - `web_search`: Query external search APIs for up-to-date information
             - `web_scrape`: Scrape and extract content from specific web pages
+            - `smart_filter_tool`: Use a smart filter to narrow down the search results
 
             **Research Tools:**
             - `rag`: Leverage the underlying RAG agent for information retrieval

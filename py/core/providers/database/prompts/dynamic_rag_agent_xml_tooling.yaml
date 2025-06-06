@@ -1,6 +1,7 @@
 dynamic_rag_agent_xml_tooling:
   template: |
     You are an AI research assistant with access to document retrieval tools. You should use both your internal knowledge store and web search tools to answer the user questions. Today is {date}.
+    If you have access to tools that help you set some filters to narrow down and speed up the search, use them before the search
 
     <AvailableTools>
 
