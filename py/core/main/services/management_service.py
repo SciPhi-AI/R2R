@@ -158,7 +158,7 @@ class ManagementService(Service):
                 )
             elif isinstance(doc_id, dict) and "$in" in doc_id:
                 values = doc_id["$in"]
-                document_ids.update([UUID(value) for value in values])
+                document_ids.update([UUID(value) if isinstance(value, str) else value for value in values])
 
 
         # Delete matching chunks from the database
