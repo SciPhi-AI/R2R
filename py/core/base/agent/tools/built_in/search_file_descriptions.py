@@ -36,6 +36,9 @@ class SearchFileDescriptionsTool(Tool):
         """
         Calls the file_search_method from context.
         """
+        logger.debug(
+            f"Executing SearchFileDescriptionsTool with query: {query}"
+        )
         from core.base.abstractions import AggregateSearchResult
 
         context = self.context

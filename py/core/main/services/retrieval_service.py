@@ -38,6 +38,7 @@ from core.base import (
 )
 from core.base.agent.tools.registry import ToolRegistry
 from core.base.api.models import RAGResponse, User
+from core.smolagent.agent import R2RSmolRAGAgent
 from core.utils import (
     CitationTracker,
     SearchResultsCollector,
@@ -65,7 +66,7 @@ class AgentFactory:
 
     @staticmethod
     def create_agent(
-        mode: Literal["rag", "research"],
+        mode: Literal["rag", "research", "rag_smol"],
         database_provider,
         llm_provider,
         config,  # : AgentConfig
@@ -84,7 +85,7 @@ class AgentFactory:
         Creates and returns the appropriate agent based on provided parameters.
 
         Args:
-            mode: Either "rag" or "research" to determine agent type
+            mode: Either "rag", "research", or "rag_smol" to determine agent type
             database_provider: Provider for database operations
             llm_provider: Provider for LLM operations
             config: Agent configuration
@@ -107,12 +108,14 @@ class AgentFactory:
         tool_registry = ToolRegistry()
 
         # Handle tool specifications based on mode
-        if mode == "rag":
+        if mode == "rag" or mode == "rag_smol":
             # For RAG mode, prioritize explicitly passed rag_tools, then tools, then config defaults
             if rag_tools:
                 agent_config.rag_tools = rag_tools
+                logger.debug(f"RAG tools: {rag_tools}")
             elif tools:  # Backward compatibility
                 agent_config.rag_tools = tools
+                logger.debug(f"Tools: {tools}")
             # If neither was provided, the config's default rag_tools will be used
         elif mode == "research":
             # For Research mode, prioritize explicitly passed research_tools, then tools, then config defaults
@@ -187,7 +190,7 @@ class AgentFactory:
                         file_search_method=file_search_method,
                         tool_registry=tool_registry,
                     )
-        else:
+        elif mode == "research":
             # Research mode agents
             if is_streaming:
                 if use_xml_format:
@@ -243,6 +246,19 @@ class AgentFactory:
                         content_method=content_method,
                         file_search_method=file_search_method,
                     )
+        elif mode == "rag_smol":
+            return R2RSmolRAGAgent(
+                database_provider=database_provider,
+                llm_provider=llm_provider,
+                config=agent_config,
+                search_settings=search_settings,
+                rag_generation_config=generation_config,
+                max_tool_context_length=max_tool_context_length,
+                knowledge_search_method=knowledge_search_method,
+                content_method=content_method,
+                file_search_method=file_search_method,
+                tool_registry=tool_registry,
+            )
 
 
 class RetrievalService(Service):
@@ -1281,7 +1297,7 @@ class RetrievalService(Service):
         research_tools: Optional[list[str]] = None,
         research_generation_config: Optional[GenerationConfig] = None,
         needs_initial_conversation_name: Optional[bool] = None,
-        mode: Optional[Literal["rag", "research"]] = "rag",
+        mode: Optional[Literal["rag", "research", "rag_smol"]] = "rag",
     ):
         """
         Engage with an intelligent agent for information retrieval, analysis, and research.
@@ -1365,9 +1381,12 @@ class RetrievalService(Service):
             if mode == "research" and research_generation_config:
                 effective_generation_config = research_generation_config
 
+            logger.debug(
+                f"Effective generation config: {effective_generation_config}"
+            )
             # Set appropriate LLM model based on mode if not explicitly specified
             if "model" not in effective_generation_config.model_fields_set:
-                if mode == "rag":
+                if mode == "rag" or mode == "rag_smol":
                     effective_generation_config.model = (
                         self.config.app.quality_llm
                     )
@@ -1375,7 +1394,9 @@ class RetrievalService(Service):
                     effective_generation_config.model = (
                         self.config.app.planning_llm
                     )
-
+            logger.debug(
+                f"Effective generation config after model set: {effective_generation_config}"
+            )
             # Transform UUID filters to strings
             for filter_key, value in search_settings.filters.items():
                 if isinstance(value, UUID):
@@ -1476,7 +1497,7 @@ class RetrievalService(Service):
 
             # Configure agent with appropriate tools
             agent_config = deepcopy(self.config.agent)
-            if mode == "rag":
+            if mode == "rag" or mode == "rag_smol":
                 # Use provided RAG tools or default from config
                 agent_config.rag_tools = (
                     rag_tools or tools or self.config.agent.rag_tools

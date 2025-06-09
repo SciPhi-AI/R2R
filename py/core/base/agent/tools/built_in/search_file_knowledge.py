@@ -35,6 +35,7 @@ class SearchFileKnowledgeTool(Tool):
         """
         Calls the knowledge_search_method from context.
         """
+        logger.debug(f"Executing SearchFileKnowledgeTool with query: {query}")
         from core.base.abstractions import AggregateSearchResult
 
         context = self.context

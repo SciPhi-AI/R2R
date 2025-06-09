@@ -21,6 +21,7 @@ class ToolRegistry:
         self,
         built_in_path: str | None = None,
         user_tools_path: str | None = None,
+        smolagent_tools_path: str | None = None,
     ):
         self.built_in_path = built_in_path or os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "built_in"
@@ -30,10 +31,15 @@ class ToolRegistry:
             or os.getenv("R2R_USER_TOOLS_PATH")
             or "../docker/user_tools"
         )
+        self.smolagent_tools_path = smolagent_tools_path or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "../../../smolagent/tools",
+        )
 
         # Tool storage
         self._built_in_tools: dict[str, Type[Tool]] = {}
         self._user_tools: dict[str, Type[Tool]] = {}
+        self._smolagent_tools: dict[str, Type[Tool]] = {}
 
         # Discover tools
         self._discover_built_in_tools()
@@ -43,37 +49,56 @@ class ToolRegistry:
             logger.warning(
                 f"User tools directory not found: {self.user_tools_path}"
             )
-
-    def _discover_built_in_tools(self):
-        """Load all built-in tools from the built_in directory."""
-        if not os.path.exists(self.built_in_path):
+        if os.path.exists(self.smolagent_tools_path):
+            self._discover_smolagent_tools()
+        else:
             logger.warning(
-                f"Built-in tools directory not found: {self.built_in_path}"
+                f"Smolagent tools directory not found: {self.smolagent_tools_path}"
             )
+
+    def _discover_tools_from_path(
+        self, path: str, registry: dict, package_prefix: str = ""
+    ):
+        if not os.path.exists(path):
+            logger.warning(f"Tools directory not found: {path}")
             return
 
         # Add to Python path if needed
-        if self.built_in_path not in sys.path:
-            sys.path.append(os.path.dirname(self.built_in_path))
+        if path not in sys.path:
+            sys.path.append(os.path.dirname(path))
 
-        # Import the built_in package
-        try:
-            built_in_pkg = importlib.import_module("built_in")
-        except ImportError:
-            logger.error("Failed to import built_in tools package")
-            return
-
-        # Discover all modules in the package
-        for _, module_name, is_pkg in pkgutil.iter_modules(
-            [self.built_in_path]
-        ):
-            if is_pkg:  # Skip subpackages
-                continue
-
+        # Import the package if a prefix is given
+        prefix_valid = True
+        if package_prefix:
             try:
-                module = importlib.import_module(f"built_in.{module_name}")
+                importlib.import_module(package_prefix)
+            except ImportError as e:
+                logger.warning(
+                    f"Failed to import tools package with prefix only: {package_prefix}\t"
+                    f"Error: {e}"
+                )
+                try:
+                    # prefix works if it is local package, let's also fetch by path
+                    tools_pkg_name = os.path.basename(path)
+                    importlib.import_module(tools_pkg_name)
+                    prefix_valid = False
+                except ImportError as e:
+                    logger.warning(
+                        f"Failed to import tools package: {tools_pkg_name}\t"
+                        f"Error: {e}"
+                    )
+                    return
 
-                # Find all tool classes in the module
+        for _, module_name, is_pkg in pkgutil.iter_modules([path]):
+            if is_pkg:
+                continue
+            try:
+                module_path = f"{module_name}"
+                if prefix_valid and package_prefix:
+                    module_path = f"{package_prefix}.{module_name}"
+                elif not prefix_valid and package_prefix:
+                    module_path = f"{tools_pkg_name}.{module_name}"
+                module = importlib.import_module(module_path)
                 for name, obj in inspect.getmembers(module, inspect.isclass):
                     if (
                         issubclass(obj, Tool)
@@ -81,19 +106,22 @@ class ToolRegistry:
                         and obj != Tool
                     ):
                         try:
-                            tool_instance = obj()
-                            self._built_in_tools[tool_instance.name] = obj
+                            tool_instance = obj()  # type: ignore
+                            registry[tool_instance.name] = obj
                             logger.debug(
-                                f"Loaded built-in tool: {tool_instance.name}"
+                                f"Loaded tool: {tool_instance.name} from {path}"
                             )
                         except Exception as e:
                             logger.error(
-                                f"Error instantiating built-in tool {name}: {e}"
+                                f"Error instantiating tool {name}: {e}"
                             )
             except Exception as e:
-                logger.error(
-                    f"Error loading built-in tool module {module_name}: {e}"
-                )
+                logger.error(f"Error loading tool module {module_name}: {e}")
+
+    def _discover_built_in_tools(self):
+        self._discover_tools_from_path(
+            self.built_in_path, self._built_in_tools, "built_in"
+        )
 
     def _discover_user_tools(self):
         """Scan the user tools directory for custom tools."""
@@ -142,8 +170,17 @@ class ToolRegistry:
                     f"Error loading user tool module {module_name}: {e}"
                 )
 
+    def _discover_smolagent_tools(self):
+        self._discover_tools_from_path(
+            self.smolagent_tools_path, self._smolagent_tools, "smolagent.tools"
+        )
+
     def get_tool_class(self, tool_name: str):
-        """Get a tool class by name."""
+        """Get a tool class by name.
+        If the tool is a smolagent tool, it will return the R2R wrapper.
+        """
+        if tool_name in self._smolagent_tools:
+            return self._smolagent_tools[tool_name]
         if tool_name in self._user_tools:
             return self._user_tools[tool_name]
 

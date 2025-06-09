@@ -29,6 +29,7 @@ dependencies = [
     "pydantic>=2.10.6",
     "python-json-logger>=3.2.1",
     "filetype>=1.2.0",
+    "smolagents>=1.17.0,<2.0.0",
 ]
 
 [project.optional-dependencies]

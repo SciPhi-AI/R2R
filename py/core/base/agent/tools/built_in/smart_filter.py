@@ -39,6 +39,7 @@ class SmartFilterTool(Tool):
         """
         Uses the LLM to analyze the query and available collections, returning collection IDs, filters, and prompt_mod.
         """
+        logger.debug(f"Executing SmartFilterTool with query: {query}")
 
         from core.base.abstractions import (
             AggregateSearchResult,
