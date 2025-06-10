@@ -1,11 +1,3 @@
----
-title: Logging
-subtitle: Configuring Advanced Logging with R2R
-icon: scroll
-slug: cookbooks/logging
----
-
-## Overview
 Users deploying R2R into production settings benefit from robust, persistant logging. R2R supports this via [Victorialogs](https://docs.victoriametrics.com/victorialogs), open source user-friendly database for logs from [VictoriaMetrics](https://docs.victoriametrics.com).
 
 Victorialogs ships by default with the [full version of R2R](/self-hosting/installation/full) and hosts a UI to view your logs at http://localhost:9428/select/vmui.

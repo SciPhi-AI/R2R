@@ -1,12 +1,3 @@
----
-title: Ingestion
-subtitle: Learn how to ingest, update, and delete documents with R2R
-icon: file-arrow-up
-slug: cookbooks/ingestion
----
-
-## Introduction
-
 R2R provides a powerful and flexible ingestion to process and manage various types of documents. It supports a wide range of file formats—text, documents, PDFs, images, audio, and even video—and transforms them into searchable, analyzable content. The ingestion process includes parsing, chunking, embedding, and optionally extracting entities and relationships for knowledge graph construction.
 
 This cookbook will guide you through:

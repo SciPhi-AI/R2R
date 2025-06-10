@@ -1,5 +1,3 @@
-## Overview
-
 The R2R Retrieval System is a Model Context Protocol (MCP) server that enhances Claude with retrieval and search capabilities. This server enables Claude to search through your knowledge base, perform vector searches, graph searches, web searches, and document searches, making it a powerful tool for retrieving relevant information.
 
 ## Features

@@ -1,5 +1,3 @@
-## Overview
-
 R2R allows you to build and analyze knowledge graphs from your documents through a collection-based architecture. The system extracts entities and relationships from documents, enabling richer search capabilities that understand connections between information.
 
 The process works in several key stages:

@@ -1,11 +1,3 @@
----
-title: Application
-subtitle: Learn how to set up and use the R2R Application for managing your instance.
-icon: display
-slug: cookbooks/application
----
-
-
 R2R offers an [open-source React+Next.js application](https://github.com/SciPhi-AI/R2R-Application) designed to give developers an administrative portal for their R2R deployment, and users an application to communicate with out of the box.
 
 ## Setup

@@ -1,4 +1,3 @@
-## Overview
 This guide demonstrates how to evaluate your R2R RAG outputs using the Ragas evaluation framework.
 
 In this tutorial, you will:

@@ -26,8 +26,3 @@ The most advanced AI retrieval system. Agentic Retrieval-Augmented Generation (R
 - [Installation](./self-hosting/getting-started/installation/)
 - [Configuration](./self-hosting/configuration/)
 - [Deployment](./self-hosting/deployment/)
-
-## 🔗 Quick Links
-- [GitHub Repository](https://github.com/SciPhi-AI/R2R)
-- [Community Discord](https://discord.gg/p6KqD2kjtB)
-- [Support](mailto:founders@sciphi.ai)

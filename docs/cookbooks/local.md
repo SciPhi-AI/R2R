@@ -1,26 +1,7 @@
----
-title: Local LLMs
-subtitle: Run R2R with Local LLMs
-icon: computer
-slug: cookbooks/local-llms
----
-
-## Overview
-
 There are many amazing LLMs and embedding models that can be run locally. R2R fully supports using these models, giving you full control over your data and infrastructure.
 
 Running models locally can be ideal for sensitive data handling, reducing API costs, or situations where internet connectivity is limited. While cloud-based LLMs often provide cutting-edge performance,
 local models offer a compelling balance of capability, privacy, and cost-effectiveness for many use cases.
-
-
-<Warning>
-
-Local LLM features are currently restricted to:
-- Self-hosted instances
-- Enterprise tier cloud accounts
-
-Contact our sales team for Enterprise pricing and features.
-</Warning>
 
 <Steps>
 ### Serving Local Models

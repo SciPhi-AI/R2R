@@ -1,11 +1,3 @@
-<Warning>
-User management features are currently restricted to:
-- Self-hosted instances
-- Enterprise tier cloud accounts
-
-Contact our sales team for Enterprise pricing and features.
-</Warning>
-
 This guide covers essential maintenance tasks for R2R deployments, with a focus on vector index management and system updates.
 Understanding when and how to build vector indices, as well as keeping your R2R installation current, is crucial for maintaining
 optimal performance at scale.

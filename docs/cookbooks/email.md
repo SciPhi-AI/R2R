@@ -21,7 +21,8 @@ provider, and generate an API key.
 ## Creating a Template
 Once you have registered for an account with your email provider, you will want to create an email template. Providers will have pre-made templates, or you can build these from scratch.
 
-<img src="../images/cookbooks/email/mailersend.png" alt="A Mailersend welcome template." />
+![A Mailersend welcome template](./images/email/mailersend.png)
+
 
 Once you save a template, you will want to make note of the template id. These will go into the configuration files.
 

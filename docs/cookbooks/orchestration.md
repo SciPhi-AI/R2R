@@ -1,11 +1,3 @@
-<Warning>
-User management features are currently restricted to:
-- Self-hosted instances
-- Enterprise tier cloud accounts
-
-Contact our sales team for Enterprise pricing and features.
-</Warning>
-
 R2R uses [Hatchet](https://docs.hatchet.run/home) for orchestrating complex workflows, particularly for ingestion and knowledge graph construction processes.
 
 Hatchet is a distributed, fault-tolerant task queue that solves scaling problems like concurrency, fairness, and rate limiting. It allows R2R to distribute functions between workers with minimal configuration.
