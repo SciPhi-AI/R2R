@@ -377,7 +377,7 @@ class RetrievalSDK:
             research_tools (Optional[list[str]]): List of tools to enable for Research mode.
                 Available tools: "rag", "reasoning", "critique", "python_executor".
             tools (Optional[list[str]]): Deprecated. List of tools to execute.
-            mode (Optional[str]): Mode to use for generation: "rag", "rag_smol" for smolagent, or "research" for deep analysis.
+            mode (Optional[str]): Mode to use for generation: "rag", "rag_pyd" for pydantic agent, or "research" for deep analysis.
                 Defaults to "rag".
 
         Returns:

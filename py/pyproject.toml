@@ -29,7 +29,7 @@ dependencies = [
     "pydantic>=2.10.6",
     "python-json-logger>=3.2.1",
     "filetype>=1.2.0",
-    "smolagents>=1.17.0,<2.0.0",
+    "pydantic-ai==0.2.16",
 ]
 
 [project.optional-dependencies]
@@ -53,7 +53,7 @@ core = [
     "future >=1.0.0,<2.0.0",
     "google-auth >=2.37.0,<3.0.0",
     "google-auth-oauthlib >=1.2.1,<2.0.0",
-    "google-genai >=0.6.0,<0.7.0",
+    "google-genai >=0.6.0",
     "gunicorn >=21.2.0,<22.0.0",
     "hatchet-sdk ==0.47.0",
     "litellm >=1.69.3",
@@ -63,7 +63,7 @@ core = [
     "networkx >=3.3,<4.0",
     "numpy >=1.22.4,<1.29.0",
     "olefile >=0.47,<0.48",
-    "ollama >=0.3.1,<0.4.0",
+    "ollama >=0.3.1",
     "openpyxl >=3.1.2,<4.0.0",
     "orgparse >=0.4.20231004,<0.5.0",
     "pdf2image>=1.17.0",

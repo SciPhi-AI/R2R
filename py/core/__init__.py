@@ -6,7 +6,6 @@ from .base import *
 from .main import *
 from .parsers import *
 from .providers import *
-from .smolagent import *
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -174,5 +173,4 @@ __all__ = [
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
-    "R2RSmolRAGAgent",
 ]

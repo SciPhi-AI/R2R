@@ -619,7 +619,7 @@ class RetrievalRouter(BaseRouterV3):
                 description="Use extended prompt for generation",
             ),
             # FIXME: We need a more generic way to handle this
-            mode: Optional[Literal["rag", "research", "rag_smol"]] = Body(
+            mode: Optional[Literal["rag", "research", "rag_pyd"]] = Body(
                 default="rag",
                 description="Mode to use for generation: 'rag' for standard retrieval or 'research' for deep analysis with reasoning capabilities",
             ),
