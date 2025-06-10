@@ -373,11 +373,11 @@ class RetrievalSDK:
             max_tool_context_length (Optional[int]): Maximum context length for tool replies.
             use_system_context (Optional[bool]): Whether to use system context in the prompt.
             rag_tools (Optional[list[str]]): List of tools to enable for RAG mode.
-                Available tools: "search_file_knowledge", "content", "web_search", "web_scrape", "search_file_descriptions".
+                Available tools: "search_file_knowledge", "content", "web_search", "web_scrape", "search_file_descriptions", "smart_filter_tool".
             research_tools (Optional[list[str]]): List of tools to enable for Research mode.
                 Available tools: "rag", "reasoning", "critique", "python_executor".
             tools (Optional[list[str]]): Deprecated. List of tools to execute.
-            mode (Optional[str]): Mode to use for generation: "rag" for standard retrieval or "research" for deep analysis.
+            mode (Optional[str]): Mode to use for generation: "rag", "rag_pyd" for pydantic agent, or "research" for deep analysis.
                 Defaults to "rag".
 
         Returns:

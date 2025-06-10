@@ -10,6 +10,7 @@ from .rag import (  # type: ignore
     R2RXMLToolsRAGAgent,
     R2RXMLToolsStreamingRAGAgent,
 )
+from .rag_pyd import RAGPydAgent
 
 # Import the concrete implementations
 from .research import (
@@ -33,4 +34,6 @@ __all__ = [
     "R2RStreamingResearchAgent",
     "R2RXMLToolsResearchAgent",
     "R2RXMLToolsStreamingResearchAgent",
+    # Pydantic Agents
+    "RAGPydAgent",
 ]

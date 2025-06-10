@@ -79,6 +79,7 @@ class ResearchAgentMixin(RAGAgentMixin):
         # Add our research tools to whatever tools are already registered
         research_tools = []
         for tool_name in set(self.config.research_tools):
+            logger.debug(f"Registering research tool: {tool_name}")
             if tool_name == "rag":
                 research_tools.append(self.rag_tool())
             elif tool_name == "reasoning":
