@@ -16,8 +16,7 @@ The resulting knowledge graphs improve search accuracy by understanding relation
 Before we can extract entities and relationships from a document, we must ingest a file. After we've successfully ingested a file, we can `extract` the entities and relationships from document.
 
 In the following script, we fetch *The Gift of the Magi* by O. Henry and ingest it our R2R server. We then begin the extraction process, which may take a few minutes to run.
-<Tabs>
-<Tab title="Python">
+
 ```python
 import requests
 from r2r import R2RClient
@@ -51,44 +50,33 @@ relationships = client.documents.list_relationships(document_id)
 # Clean up the temporary file
 os.unlink(temp_file_path)
 ```
-</Tab>
-</Tabs>
 
 As this script runs, we see indications of successful ingestion and extraction.
 
-<Tabs>
-    <Tab title="Ingestion">
-        <Frame
-        caption="Both ingestion and extraction were successful, as seen in the R2R Dashboard"
-        >
-            <img src="../images/cookbooks/graphs/document_table_success.png" alt="Successful ingestion and extraction in the R2R dashboard." />
-        </Frame>
-    </Tab>
-    <Tab title="Entities">
-        <Frame
-        caption="Some of the entities extracted from the document"
-        >
-            <img src="../images/cookbooks/graphs/entity_view.png" alt="Viewing the entity in the dashboard." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="Both ingestion and extraction were successful, as seen in the R2R Dashboard"
+>
+    <img src="../images/cookbooks/graphs/document_table_success.png" alt="Successful ingestion and extraction in the R2R dashboard." />
+</Frame>
+
+<Frame
+caption="Some of the entities extracted from the document"
+>
+    <img src="../images/cookbooks/graphs/entity_view.png" alt="Viewing the entity in the dashboard." />
+</Frame>
 
 ### Deduplication
 
 If you would like to deduplicate the extracted entities, you can run the following method. To learn more about deduplication, view our [deduplication documentation here](/documentation/deduplication).
 
-<Tabs>
-    <Tab title="Python">
-        ```python
-        from r2r import R2RClient
+```python
+from r2r import R2RClient
 
-        # Set up the client
-        client = R2RClient("http://localhost:7272")
+# Set up the client
+client = R2RClient("http://localhost:7272")
 
-        client.documents.deduplicate("20e29a97-c53c-506d-b89c-1f5346befc58")
-        ```
-    </Tab>
-</Tabs>
+client.documents.deduplicate("20e29a97-c53c-506d-b89c-1f5346befc58")
+```
 
 While the exact number of extracted entities and relationships will differ across models, this particular document produces approximately 120 entities, with only 20 distinct entities.
 
@@ -98,8 +86,6 @@ Graphs are built within a collection, allowing for us to add many documents to a
 
 Each collection has a description which is used in the graph creation process. This can be set by the user, or generated using an LLM.
 
-<Tabs>
-<Tab title="Python">
 ```python
 from r2r import R2RClient
 
@@ -113,8 +99,6 @@ update_result = client.collections.update(
     generate_description=True, # LLM generated
 )
 ```
-</Tab>
-</Tabs>
 
 <Frame
     caption="The LLM generated description for our collection"
@@ -128,8 +112,6 @@ Our graph will not contain the extractions from our documents until we `pull` th
 
 Recall that we already extracted the entities and relationships for the graph; this means that we can `pull` a document into many graphs without having to rerun the extraction process.
 
-<Tabs>
-<Tab title="Python">
 ```python
 from r2r import R2RClient
 
@@ -142,35 +124,26 @@ client.graphs.pull(
     collection_id=collection_id
 )
 ```
-</Tab>
-</Tabs>
 
 As soon as we `pull` the extractions into the graph, we can begin using the graph in our searches. We can confirm that the entities and relationships were pulled into the collection, as well.
 
-<Tabs>
-    <Tab title="Entities">
-        <Frame
-        caption="Entities are `pulled` in from the document to the collection"
-        >
-            <img src="../images/cookbooks/graphs/entity_view_collection.png" alt="Successful ingestion and extraction in the R2R dashboard." />
-        </Frame>
-    </Tab>
-    <Tab title="Entity Visualization">
-        <Frame
-        caption="The distribution of our entities across category"
-        >
-            <img src="../images/cookbooks/graphs/entity_visualization.png" alt="Entity distribution chart." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="Entities are `pulled` in from the document to the collection"
+>
+    <img src="../images/cookbooks/graphs/entity_view_collection.png" alt="Successful ingestion and extraction in the R2R dashboard." />
+</Frame>
+
+<Frame
+caption="The distribution of our entities across category"
+>
+    <img src="../images/cookbooks/graphs/entity_visualization.png" alt="Entity distribution chart." />
+</Frame>
 
 
 ### Building Communities
 
 To further enhance our graph we can build communities, which clusters over the entities and relationships inside our graph. This allows us to capture higher-level concepts that exist within our data.
 
-<Tabs>
-<Tab title="Python">
 ```python
 from r2r import R2RClient
 
@@ -183,8 +156,6 @@ client.graphs.build(
     collection_id=collection_id
 )
 ```
-</Tab>
-</Tabs>
 
 We can see that the resulting communities capture overall themes and concepts within the story.
 
@@ -199,8 +170,6 @@ caption="The resulting communities, generated from the clustering process"
 
 Now that we have built our graph we can query over it. Good questions for graphs might require deep understanding of relationships and ideas that span across multiple documents.
 
-<Tabs>
-<Tab title="Python">
 ```python
 from r2r import R2RClient
 
@@ -217,14 +186,9 @@ results = client.retrieval.search("""
     }
 )
 ```
-</Tab>
-</Tabs>
 
 <Frame
     caption="Performing a multi-hop query over the graph"
 >
     <img src="../images/cookbooks/graphs/graph_search.png" alt="Performing a searhc over the graph." />
 </Frame>
-
-
-</Steps>

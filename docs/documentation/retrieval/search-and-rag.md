@@ -30,8 +30,6 @@ R2R offers powerful and highly configurable search capabilities. This endpoint r
 
 This performs a search using default configurations or a specified mode.
 
-<Tabs>
-<Tab title="Python">
 ```python
 # Uses default settings (likely semantic search in 'custom' mode)
 results = client.retrieval.search(
@@ -44,8 +42,7 @@ results_basic = client.retrieval.search(
   search_mode="basic",
 )
 ```
-</Tab>
-<Tab title="JavaScript">
+
 ```javascript
 // Uses default settings
 const results = await client.retrieval.search({
@@ -58,9 +55,7 @@ const resultsBasic = await client.retrieval.search({
   searchMode: "basic",
 });
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 # Uses default settings
 curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \
@@ -79,8 +74,6 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \
     "search_mode": "basic"
   }'
 ```
-</Tab>
-</Tabs>
 
 **Response Structure (`WrappedSearchResponse`):**
 
@@ -123,9 +116,6 @@ The search endpoint returns a `WrappedSearchResponse` containing an `AggregateSe
 
 Combine keyword-based (full-text) search with vector search for potentially broader results.
 
-<Tabs>
-
-<Tab title="Python">
 ```python
 hybrid_results = client.retrieval.search(
     query="What was Uber's profit in 2020?",
@@ -142,9 +132,7 @@ hybrid_results = client.retrieval.search(
     },
 )
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 const hybridResults = await client.retrieval.search({
   query: "What was Uber's profit in 2020?",
@@ -161,9 +149,7 @@ const hybridResults = await client.retrieval.search({
   },
 });
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \
   -H "Content-Type: application/json" \
@@ -186,15 +172,11 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/search" \
     }
   }'
 ```
-</Tab>
-</Tabs>
 
 ### Advanced Filtering
 
 Apply filters to narrow search results based on document properties or metadata. Supported operators include `$eq`, `$neq`, `$gt`, `$gte`, `$lt`, `$lte`, `$like`, `$ilike`, `$in`, `$nin`. You can combine filters using `$and` and `$or`.
 
-<Tabs>
-<Tab title="Python">
 ```python
 filtered_results = client.retrieval.search(
     query="What are the effects of climate change?",
@@ -209,9 +191,7 @@ filtered_results = client.retrieval.search(
     }
 )
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 const filteredResults = await client.retrieval.search({
   query: "What are the effects of climate change?",
@@ -226,8 +206,6 @@ const filteredResults = await client.retrieval.search({
   }
 });
 ```
-</Tab>
-</Tabs>
 
 ### Distance Measures for Vector Search
 Distance metrics for vector search, which can be configured through the `chunk_settings.index_measure` parameter. Choosing the right distance measure can significantly impact search quality depending on your embeddings and use case:
@@ -239,20 +217,16 @@ Distance metrics for vector search, which can be configured through the `chunk_s
 * **`hamming_distance`**: Counts the positions at which vectors differ. Best for binary embeddings.
 * **`jaccard_distance`**: Measures dissimilarity between sample sets. Useful for sparse embeddings.
 
-<Tabs>
-  <Tab title="Python">
-    ```python
-    results = client.retrieval.search(
-      query="What are the key features of quantum computing?",
-      search_settings={
-        "chunk_settings": {
-          "index_measure": "l2_distance"  # Use Euclidean distance instead of default
-        }
-      }
-    )
-    ```
-  </Tab>
-</Tabs>
+```python
+results = client.retrieval.search(
+    query="What are the key features of quantum computing?",
+    search_settings={
+    "chunk_settings": {
+        "index_measure": "l2_distance"  # Use Euclidean distance instead of default
+    }
+    }
+)
+```
 For most text embedding models (e.g., OpenAI's models), cosine_distance is recommended. For specialized embeddings or specific use cases, experiment with different measures to find the optimal setting for your data.
 
 
@@ -282,22 +256,16 @@ Control the LLM's generation process:
 
 Generate a response using retrieved context. Uses the same `search_mode` and `search_settings` as the search endpoint to find relevant information.
 
-<Tabs>
-<Tab title="Python">
 ```python
 # Basic RAG call using default search and generation settings
 rag_response = client.retrieval.rag(query="What is DeepSeek R1?")
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 // Basic RAG call using default settings
 const ragResponse = await client.retrieval.rag({ query: "What is DeepSeek R1?" });
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
   -H "Content-Type: application/json" \
@@ -306,8 +274,6 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
     "query": "What is DeepSeek R1?"
   }'
 ```
-</Tab>
-</Tabs>
 
 **Response Structure (`WrappedRAGResponse`):**
 
@@ -350,26 +316,20 @@ The non-streaming RAG endpoint returns a `WrappedRAGResponse` containing an `RAG
 
 Enhance RAG responses with up-to-date information from the web by setting `include_web_search=True`.
 
-<Tabs>
-<Tab title="Python">
 ```python
 web_rag_response = client.retrieval.rag(
     query="What are the latest developments with DeepSeek R1?",
     include_web_search=True
 )
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 const webRagResponse = await client.retrieval.rag({
   query: "What are the latest developments with DeepSeek R1?",
   includeWebSearch: true // Use camelCase for JS SDK
 });
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
   -H "Content-Type: application/json" \
@@ -379,8 +339,6 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
     "include_web_search": true
   }'
 ```
-</Tab>
-</Tabs>
 
 When enabled, R2R performs a web search using the query, and the results are added to the context provided to the LLM alongside results from your documents or knowledge graph.
 
@@ -388,17 +346,14 @@ When enabled, R2R performs a web search using the query, and the results are add
 
 Combine hybrid search with RAG by configuring `search_settings`.
 
-<Tabs>
-<Tab title="Python">
+
 ```python
 hybrid_rag_response = client.retrieval.rag(
     query="Who is Jon Snow?",
     search_settings={"use_hybrid_search": True}
 )
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 const hybridRagResponse = await client.retrieval.rag({
   query: "Who is Jon Snow?",
@@ -407,9 +362,7 @@ const hybridRagResponse = await client.retrieval.rag({
   },
 });
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 # Correctly place use_hybrid_search in search_settings
 curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
@@ -423,8 +376,6 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
     }
   }'
 ```
-</Tab>
-</Tabs>
 
 ### Streaming RAG
 
@@ -445,8 +396,6 @@ Receive RAG responses as a stream of Server-Sent Events (SSE) by setting `stream
     *   `data.generated_answer`: The full final text.
     *   `data.citations`: List of all citations, including their `id`, `payload`, and all `spans` where they appeared in the final text.
 
-<Tabs>
-<Tab title="Python">
 ```python
 from r2r import (
     CitationEvent,
@@ -484,9 +433,7 @@ for event in result_stream:
         for cit in event.data.citations:
              print(f"  ID: {cit.id}, Spans: {cit.span}")
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 // Set stream: true in ragGenerationConfig
 const resultStream = await client.retrieval.rag({
@@ -539,8 +486,6 @@ if (Symbol.asyncIterator in resultStream) {
   console.log("Received non-streaming response:", resultStream);
 }
 ```
-</Tab>
-</Tabs>
 
 ### Customizing RAG
 
@@ -548,8 +493,6 @@ Besides `search_settings`, you can customize RAG generation using `rag_generatio
 
 Example of customizing the model with web search:
 
-<Tabs>
-<Tab title="Python">
 ```python
 # Requires ANTHROPIC_API_KEY env var if using Anthropic models
 response = client.retrieval.rag(
@@ -563,9 +506,7 @@ response = client.retrieval.rag(
 )
 print(response.results.generated_answer)
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 // Requires ANTHROPIC_API_KEY env var if using Anthropic models
 const response = await client.retrieval.rag({
@@ -579,9 +520,7 @@ const response = await client.retrieval.rag({
 });
 console.log(response.results.generated_answer);
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 # Requires ANTHROPIC_API_KEY env var if using Anthropic models
 curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
@@ -597,8 +536,6 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/rag" \
         "include_web_search": true
     }'
 ```
-</Tab>
-</Tabs>
 
 ## Conclusion
 

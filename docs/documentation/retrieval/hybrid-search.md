@@ -23,20 +23,18 @@ R2R's hybrid search blends keyword-based full-text search with semantic vector s
 </Steps>
 
 ## Key Features
-<Tabs>
-  <Tab title="Full-Text Search">
+
+### Full-Text Search
     - Uses Postgres indexing and querying for quick, exact term matches.
     - Great for retrieving documents where specific terminology is critical.
-  </Tab>
-  <Tab title="Semantic Search">
+
+### Semantic Search
     - Embeds queries and documents into vector representations.
     - Finds documents related to the query's meaning, not just its wording.
-  </Tab>
-  <Tab title="Hybrid Integration">
+
+### Hybrid Integration
     - By enabling both `use_fulltext_search` and `use_semantic_search`, or choosing the `advanced` mode, you get the best of both worlds.
     - RRF blends these results, ensuring that documents align with the query's intent and exact terms where needed.
-  </Tab>
-</Tabs>
 
 ## Understanding Search Modes
 

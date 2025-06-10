@@ -75,8 +75,7 @@ The agent can use the following tools in Research mode:
 
 Below are examples of how to use the agent for both single-turn queries and multi-turn conversations.
 
-<Tabs>
-<Tab title="Python">
+
 ```python
 from r2r import R2RClient
 from r2r import (
@@ -147,9 +146,7 @@ for event in response:
         print(f"{event.data.generated_answer[:100]}...")
         print(f"   Citations: {len(event.data.citations)} sources referenced")
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 const { r2rClient } = require("r2r-js");
 
@@ -236,9 +233,7 @@ async function main() {
 
 main();
 ```
-</Tab>
 
-<Tab title="Curl">
 ```bash
 curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \
   -H "Content-Type: application/json" \
@@ -260,15 +255,11 @@ curl -X POST "https://api.sciphi.ai/v3/retrieval/agent" \
     "mode": "rag"
   }'
 ```
-</Tab>
-</Tabs>
 
 ## Using Research Mode
 
 Research mode provides more advanced reasoning capabilities for complex questions:
 
-<Tabs>
-<Tab title="Python">
 ```python
 # Research mode with all available tools
 response = client.retrieval.agent(
@@ -309,9 +300,7 @@ compute_response = client.retrieval.agent(
 
 print(f"Final answer: {compute_response.results.messages[-1].content}")
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 // Research mode with all available tools
 const researchStream = await client.retrieval.agent({
@@ -351,8 +340,6 @@ const computeResponse = await client.retrieval.agent({
 
 console.log(`Final answer: ${computeResponse.results.messages[computeResponse.results.messages.length - 1].content}`);
 ```
-</Tab>
-</Tabs>
 
 ## Customizing the Agent
 
@@ -421,8 +408,6 @@ response = client.retrieval.agent(
 
 You can maintain context across multiple turns using `conversation_id`. The agent will remember previous interactions and build upon them in subsequent responses.
 
-<Tabs>
-<Tab title="Python">
 ```python
 # Create a new conversation
 conversation = client.conversations.create()
@@ -458,9 +443,7 @@ print(f"Follow-up response: {follow_up_response.results.messages[-1].content[:10
 
 # The agent maintains context, so it knows "it" refers to DeepSeek R1
 ```
-</Tab>
 
-<Tab title="JavaScript">
 ```javascript
 // Create a new conversation
 const conversation = await client.conversations.create();
@@ -502,8 +485,6 @@ console.log(`Follow-up response: ${followUpResponse.results.messages[followUpRes
 
 // The agent maintains context, so it knows "it" refers to DeepSeek R1
 ```
-</Tab>
-</Tabs>
 
 ## Performance Considerations
 

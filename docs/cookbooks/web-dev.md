@@ -4,7 +4,8 @@ For more extensive reference and examples of how to use the r2r-js library, we e
 ## Hello R2R—JavaScript
 
 R2R gives developers configurable vector search and RAG right out of the box, as well as direct method calls instead of the client-server architecture seen throughout the docs:
-```python r2r-js/examples/hello_r2r.js
+
+```python
 
 const { r2rClient } = require("r2r-js");
 
@@ -59,13 +60,9 @@ main();
 
 To get started, install the R2R JavaScript client with [npm](https://www.npmjs.com/package/r2r-js):
 
-<Tabs>
-<Tab title="npm">
 ```zsh
 npm install r2r-js
 ```
-</Tab>
-</Tabs>
 
 ### Creating the Client
 First, we create the R2R client and specify the base URL where the R2R server is running:

@@ -17,14 +17,10 @@ R2R supports [LiteLLM](https://github.com/BerriAI/litellm) for routing embedding
 
 We must first download the models that we wish to run and start our ollama server. The following command will 'pull' the models and begin the Ollama server via `http://localhost:11434`.
 
-<Tabs>
-<Tab title="Bash">
-```Zsh
+```zsh
 ollama pull llama3.1
 ollama pull mxbai-embed-large
 ```
-</Tab>
-</Tabs>
 
 <Error>
 Ollama has a default context window size of 2048 tokens. Many of the prompts and processes that R2R uses requires larger window sizes.
@@ -46,15 +42,10 @@ ollama create llama3.1 -f Modelfile
 ```
 </Error>
 
-<Tabs>
-<Tab title="Bash">
-
 Then, we can start the Ollama server:
 ```Zsh
 ollama serve
 ```
-</Tab>
-</Tabs>
 
 ### Configuring R2R
 
@@ -131,22 +122,17 @@ Since we're serving with Docker, once R2R successfully launches the R2R dashboar
 
 Now that we have ingested our file, we can perform RAG and chunk search over it. Here, we see that we are able to get relevant results and correct answers—all without needing to make a request out to an external provider!
 
-<Tabs>
-    <Tab title="Local RAG">
-        <Frame
-        caption="A RAG search done using a local LLM"
-        >
-            <img src="../images/cookbooks/local/local_rag.png" alt="A RAG search done with local LLMs." />
-        </Frame>
-    </Tab>
-    <Tab title="Local Search">
-        <Frame
-        caption="A chunk search done using a local LLM"
-        >
-            <img src="../images/cookbooks/local/local_search.png" alt="A semantic serach done with LLMs." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="A RAG search done using a local LLM"
+>
+    <img src="../images/cookbooks/local/local_rag.png" alt="A RAG search done with local LLMs." />
+</Frame>
+
+<Frame
+caption="A chunk search done using a local LLM"
+>
+    <img src="../images/cookbooks/local/local_search.png" alt="A semantic serach done with LLMs." />
+</Frame>
 
 ### Extracting Entities and Relationships
 
@@ -157,29 +143,23 @@ recognition to find entities and relationships.
 Note that this process can take quite a bit of time, depending on the size of your document and the hardware running your model. Once the process is complete,
 we will see that the `extraction` status has turned green.
 
-<Tabs>
-    <Tab title="Successful Extraction">
-        <Frame
-        caption="A successful extraction shown on the documents table "
-        >
-            <img src="../images/cookbooks/local/successful_extraction.png" alt="Successful extraction on the documents table." />
-        </Frame>
-    </Tab>
-    <Tab title="Extracted Entities">
-        <Frame
-        caption="The entities extracted from our document"
-        >
-            <img src="../images/cookbooks/local/extracted_entities.png" alt="A semantic serach done with LLMs." />
-        </Frame>
-    </Tab>
-    <Tab title="Extracted Relationships">
-        <Frame
-        caption="The relationships extracted from our document"
-        >
-            <img src="../images/cookbooks/local/extracted_relationships.png" alt="A semantic serach done with LLMs." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="A successful extraction shown on the documents table "
+>
+    <img src="../images/cookbooks/local/successful_extraction.png" alt="Successful extraction on the documents table." />
+</Frame>
+
+<Frame
+caption="The entities extracted from our document"
+>
+    <img src="../images/cookbooks/local/extracted_entities.png" alt="A semantic serach done with LLMs." />
+</Frame>
+
+<Frame
+caption="The relationships extracted from our document"
+>
+    <img src="../images/cookbooks/local/extracted_relationships.png" alt="A semantic serach done with LLMs." />
+</Frame>
 
 ### Graph RAG
 
@@ -187,22 +167,17 @@ Now we must `pull` the document extractions into the graph. This is done at the 
 
 Then, we can conduct search, RAG, or agent queries that utilize the graph.
 
-<Tabs>
-    <Tab title="Graph RAG">
-        <Frame
-        caption="A RAG search that includes entities and relationships from the graph"
-        >
-            <img src="../images/cookbooks/local/graph_search.png" alt="A search that utilizes the entities and relationships from the graph." />
-        </Frame>
-    </Tab>
-    <Tab title="Pulling Extractions into Graph">
-        <Frame
-        caption="Pulling extractions into the graph"
-        >
-            <img src="../images/cookbooks/local/pulling_extractions.png" alt="A semantic serach done with LLMs." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="A RAG search that includes entities and relationships from the graph"
+>
+    <img src="../images/cookbooks/local/graph_search.png" alt="A search that utilizes the entities and relationships from the graph." />
+</Frame>
+
+<Frame
+caption="Pulling extractions into the graph"
+>
+    <img src="../images/cookbooks/local/pulling_extractions.png" alt="A semantic serach done with LLMs." />
+</Frame>
 
 ### Building communities
 
@@ -213,22 +188,17 @@ or recuring themes.
 We trigger the extraction procedure, which produces a number of communities. Now, when we run queries over our graph we can utilize the communities to provide context that
 better encompasses overall concepts and ideas throughout our documents.
 
-<Tabs>
-    <Tab title="RAG with Communities">
-        <Frame
-        caption="A RAG query that utilizes communities"
-        >
-            <img src="../images/cookbooks/local/graph_search_communities.png" alt="A RAG search that utilizes communities." />
-        </Frame>
-    </Tab>
-    <Tab title="Generated Communities">
-        <Frame
-        caption="The communities that were built from our document"
-        >
-            <img src="../images/cookbooks/local/generated_communities.png" alt="A semantic serach done with LLMs." />
-        </Frame>
-    </Tab>
-</Tabs>
+<Frame
+caption="A RAG query that utilizes communities"
+>
+    <img src="../images/cookbooks/local/graph_search_communities.png" alt="A RAG search that utilizes communities." />
+</Frame>
+
+<Frame
+caption="The communities that were built from our document"
+>
+    <img src="../images/cookbooks/local/generated_communities.png" alt="A semantic serach done with LLMs." />
+</Frame>
 
 
 </Steps>
