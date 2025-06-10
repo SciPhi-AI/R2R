@@ -62,44 +62,39 @@ To interact with R2R with the dashboard, you must first login. If it's your firs
 
 By default, an R2R instance is hosted on port 7272. The login page will include this URL by default, but be sure to update the URL if your R2R instance is deployed elsewhere. For information about deploying a local R2R application server, see the [quickstart](/documentation/quickstart).
 
-![R2R Dashboard Overview](/images/login.png)
+![R2R Dashboard Overview](./images/application/login.png)
+
 
 ### Documents
 
 The documents page provides an overview of uploaded documents and their metadata. You can upload new documents and update, download, or delete existing ones. Additionally, you can view information about each document, including the documents' chunks and previews of PDFs.
 
-![Documents Page](/images/oss_dashboard_documents.png)
+![Documents Page](./images/application/oss_dashboard_documents.png)
 
 ### Collections
 
 Collections allow users to create and share sets of documents. The collections page provides a place to manage your existing collections or create new collections.
 
-![Collections Page](/images/oss_collections_page.png)
+![Collections Page](./images/application/oss_collections_page.png)
 
 ### Chat
 
 In the chat page, you can stream RAG responses with different models and configurable settings. You can interact with both the RAG Agent and RAG endpoints here.
 
-![Chat Interface](/images/chat.png)
+![Chat Interface](./images/application/chat.png)
 
 ### Users
 
 Manage your users and gain insight into their interactions.
 
-![Users Page](/images/users.png)
-
-### Logs
-
-The Logs page enables tracking of user queries, search results, and LLM responses.
-
-![Logs Page](/images/logs.png)
+![Users Page](./images/application/users.png)
 
 ### Settings
 
 The settings page allows you to view the configuration of and edit the prompts associated with your R2R deployment.
 
-![Logs Page](/images/settings_config.png)
-![Logs Page](/images/settings_prompts.png)
+![Settings Page](./images/application/settings_config.png)
+![Settings Page](./images/application/settings_prompts.png)
 
 ## Development
 

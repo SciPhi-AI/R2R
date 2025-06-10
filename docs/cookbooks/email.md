@@ -7,16 +7,13 @@ Currently, R2R has integrations for both [Mailersend](https://www.mailersend.com
 Both Mailersend and Sendgrid require registration, but do offer free tiers for evaluating their services. Create an account with your desired
 provider, and generate an API key.
 
-<Tabs>
-  <Tab title="Mailersend">
+### Mailersend
   - [Create an account](https://www.mailersend.com/signup)
   - [Generate an API key](https://www.mailersend.com/help/managing-api-tokens)
-  </Tab>
-  <Tab title="Sendgrid">
+
+### Sendgrid
   - [Create an account](https://twilio.com/signup)
   - [Generate an API key](https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys)
-  </Tab>
-</Tabs>
 
 ## Creating a Template
 Once you have registered for an account with your email provider, you will want to create an email template. Providers will have pre-made templates, or you can build these from scratch.
@@ -31,7 +28,7 @@ We can then configure our deployment with the templates, redirect URL (`frontend
 
 ### Configuration File
 
-<CodeBlocks>
+
 ```toml title="mailersend.toml"
 [email]
 provider = "mailersend"
@@ -51,7 +48,6 @@ password_changed_template_id=""
 frontend_url=""
 from_email=""
 ```
-</CodeBlocks>
 
 ### Environment Variables
 It is required to set your provider API key in your environment:
