@@ -454,13 +454,16 @@ class DocumentsRouter(BaseRouterV3):
                 if file:
                     file_data = await self._process_file(file)
 
-                    if not file.filename:
+                    if metadata.get("title"):
+                        file_data["filename"] = metadata["title"]
+
+                    if not file_data["filename"]:
                         raise R2RException(
                             status_code=422,
                             message="Uploaded file must have a filename.",
                         )
 
-                    file_ext = file.filename.split(".")[
+                    file_ext = file_data["filename"].split(".")[
                         -1
                     ]  # e.g. "pdf", "txt"
                     max_allowed_size = await self.services.management.get_max_upload_size_by_type(
