@@ -140,6 +140,7 @@ class UnstructuredIngestionProvider(IngestionProvider):
         ) = llm_provider
         self.ocr_provider: MistralOCRProvider = ocr_provider
 
+        self.client: UnstructuredClient | httpx.AsyncClient
         if config.provider == "unstructured_api":
             try:
                 self.unstructured_api_auth = os.environ["UNSTRUCTURED_API_KEY"]

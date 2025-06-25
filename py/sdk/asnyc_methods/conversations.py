@@ -31,10 +31,11 @@ class ConversationsSDK:
         if name:
             data["name"] = name
 
+        # Send JSON so that FastAPI body validation succeeds.
         response_dict = await self.client._make_request(
             "POST",
             "conversations",
-            data=data,
+            json=data,
             version="v3",
         )
 
