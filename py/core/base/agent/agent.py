@@ -161,7 +161,6 @@ class Agent(ABC):
                             "parameters": tool.parameters,
                         },
                         "type": "function",
-                        "name": tool.name,
                     }
                     for tool in self.tools
                 ]
