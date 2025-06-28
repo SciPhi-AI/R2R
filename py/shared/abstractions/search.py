@@ -252,6 +252,47 @@ class WebSearchResult(R2RSerializable):
         )
 
 
+class SmartFilterResult(R2RSerializable):
+    collections: list[str]
+    filters: dict[str, Any]
+    prompt_mod: str
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "collections": ["collection1_id", "collection2_id"],
+                "filters": {
+                    "$and": [
+                        {
+                            "collection_ids": {
+                                "$in": "['7c96bee1-d537-4b68-9ede-a0e5355ac957']"
+                            }
+                        },
+                        {
+                            "metadata.category": {
+                                "$in": "['7c96bee1-d537-4b68-9ede-a0e5355ac957']"
+                            }
+                        },
+                    ]
+                },
+                "prompt_mod": "What is the capital of France?",
+            }
+        }
+
+    def as_dict(self) -> dict:
+        return {
+            "collections": self.collections,
+            "filters": self.filters,
+            "prompt_mod": self.prompt_mod,
+        }
+
+    def __str__(self) -> str:
+        return f"SmartFilterResult(collections={self.collections}, filters={self.filters}, prompt_mod={self.prompt_mod})"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+
 class AggregateSearchResult(R2RSerializable):
     """Result of an aggregate search operation."""
 
@@ -260,6 +301,7 @@ class AggregateSearchResult(R2RSerializable):
     web_page_search_results: Optional[list[WebPageSearchResult]] = None
     web_search_results: Optional[list[WebSearchResult]] = None
     document_search_results: Optional[list[DocumentResponse]] = None
+    smart_filter_result: Optional[SmartFilterResult] = None
     generic_tool_result: Optional[Any] = (
         None  # FIXME: Give this a proper generic type
     )
@@ -298,6 +340,11 @@ class AggregateSearchResult(R2RSerializable):
                 [cdr.to_dict() for cdr in self.document_search_results]
                 if self.document_search_results
                 else []
+            ),
+            "smart_filter_result": (
+                self.smart_filter_result.as_dict()
+                if self.smart_filter_result
+                else None
             ),
             "generic_tool_result": (
                 [result.to_dict() for result in self.generic_tool_result]
@@ -379,6 +426,24 @@ class AggregateSearchResult(R2RSerializable):
                         },
                     }
                 ],
+                "smart_filter_result": {
+                    "collections": ["collection1_id", "collection2_id"],
+                    "filters": {
+                        "$and": [
+                            {
+                                "collection_ids": {
+                                    "$in": "['7c96bee1-d537-4b68-9ede-a0e5355ac957']"
+                                }
+                            },
+                            {
+                                "metadata.category": {
+                                    "$in": "['7c96bee1-d537-4b68-9ede-a0e5355ac957']"
+                                }
+                            },
+                        ]
+                    },
+                    "prompt_mod": "What is the capital of France?",
+                },
                 "generic_tool_result": [
                     {
                         "result": "Generic tool result",
