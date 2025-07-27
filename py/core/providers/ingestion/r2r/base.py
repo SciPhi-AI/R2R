@@ -97,7 +97,7 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.PNG,
         DocumentType.SVG,
     }
-    
+
     VIDEO_TYPES = {
         DocumentType.MP4,
         DocumentType.AVI,

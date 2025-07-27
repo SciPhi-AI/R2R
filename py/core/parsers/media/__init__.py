@@ -1,6 +1,5 @@
 # type: ignore
 from .audio_parser import AudioParser
-from .video_parser import VideoParser
 from .bmp_parser import BMPParser
 from .doc_parser import DOCParser
 from .docx_parser import DOCXParser
@@ -15,6 +14,7 @@ from .pdf_parser import (
 from .ppt_parser import PPTParser
 from .pptx_parser import PPTXParser
 from .rtf_parser import RTFParser
+from .video_parser import VideoParser
 
 __all__ = [
     "AudioParser",

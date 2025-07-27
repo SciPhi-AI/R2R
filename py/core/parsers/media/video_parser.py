@@ -1,3 +1,4 @@
+import base64
 import logging
 from typing import AsyncGenerator
 
@@ -12,12 +13,9 @@ from core.base.providers import (
 logger = logging.getLogger(__name__)
 
 
-class VideoParser(AsyncParser[str | bytes | dict]):
+class VideoParser(AsyncParser[str | bytes]):
     """
-    Video parser that processes video files for ingestion.
-
-    This parser handles:
-    - Video content analysis using LLM
+    A parser for video files.
     """
 
     # Mapping of file extensions to MIME types
@@ -34,23 +32,14 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         database_provider: DatabaseProvider,
         llm_provider: CompletionProvider,
     ):
-        """
-        Initialize the video parser.
-
-        Sets up providers and configurations needed for video processing.
-        """
         super().__init__()
 
         self.config = config
         self.database_provider = database_provider
         self.llm_provider = llm_provider
 
-        self.video_prompt_name = self.config.extra_fields.get(
-            "extra_video_prompt_name", "vision_video"
-        )
-        self.video_prompt_args = self.config.extra_fields.get(
-            "extra_video_prompt_args", {}
-        )
+        self.video_prompt_name = "video_understanding"
+        self.video_prompt_args: dict = {}
 
         logger.info(
             "Video parser initialized with default prompt template: %s",
@@ -58,45 +47,77 @@ class VideoParser(AsyncParser[str | bytes | dict]):
         )
 
     async def ingest(  # type: ignore[override]
-        self, data: str | bytes | dict, **kwargs
+        self, data: str | bytes, **kwargs
     ) -> AsyncGenerator[str, None]:
         """
         Process video file for ingestion.
 
         Args:
-            data: The video data to process, str or dict containing the URL of the video file
-                file_url: Optional URL of the video file
-            **kwargs:
-                file_url: Optional URL of the video file
-                vlm: Optional model to use for processing
-                prompt_name: Optional name of the prompt to use
-                prompt_args: Optional arguments for the prompt
+            data: The video data to process, file url or raw bytes.
+            **kwargs: Additional arguments:
+                - file_type: The type of the video file (e.g., "mp4", "avi").
+                - bytes_limit: Optional limit for raw bytes size.
+                - vlm: Optional vision model to use for processing.
+                - prompt_name: Optional name of the prompt template to use.
+                - input_args: Optional arguments for the prompt template.
 
         Yields:
             str: Generated descriptions from video and audio analysis
         """
-        if isinstance(data, dict):
-            file_url = data.get("file_url")
-            if not file_url:
-                file_url = kwargs.get("file_url")
-        else:
-            file_url = kwargs.get("file_url")
+        file_type = kwargs.get("file_type")
+        if not file_type:
+            raise ValueError("file_type must be provided")
+        if file_type not in self.MIME_TYPE_MAPPING:
+            raise ValueError(
+                f"file type must be one of {list(self.MIME_TYPE_MAPPING.keys())}"
+            )
+        bytes_limit = kwargs.get(
+            "bytes_limit", 5 * 1024 * 1024
+        )  # Default to 5MB
+        if not isinstance(bytes_limit, int):
+            raise ValueError("bytes_limit must be an integer")
 
-        logger.debug("file for ingest: %s", file_url)
-        if file_url is None:
-            raise ValueError("file_url is required")
+        vlm = kwargs.get("vlm")
+        prompt_name = kwargs.get("prompt_name")
+        input_args = kwargs.get("input_args")
+        if isinstance(data, bytes):
+            if (
+                bytes_limit is None
+                or bytes_limit < 0
+                or bytes_limit > 5 * 1024 * 1024
+            ):
+                raise ValueError(
+                    "bytes_limit must be a positive integer up to 5MB"
+                )
+            if len(data) > bytes_limit:
+                raise ValueError(
+                    f"file raw bytes size must be less than {bytes_limit} bytes"
+                )
 
-        # Process video
-        model = kwargs.get("vlm", self.config.vlm)
+        if isinstance(data, str):
+            url_or_base64 = data
+        elif isinstance(data, bytes):
+            base564str = base64.b64encode(data).decode("utf-8")
+            url_or_base64 = f"data:video/{file_type};base64,{base564str}"
+
+        model = vlm or self.config.vlm
         generation_config = GenerationConfig(
             model=model,
             stream=False,
         )
 
-        # Load prompt texts
-        prompt_name = kwargs.get("prompt_name", self.video_prompt_name)
-        prompt_args = kwargs.get("prompt_args", self.video_prompt_args)
-        video_prompt_text = await self.database_provider.prompts_handler.get_cached_prompt(  # type: ignore # noqa E501
+        prompt_name = prompt_name or self.video_prompt_name
+        prompt_args = input_args or self.video_prompt_args
+        prompts_handler = (
+            self.database_provider.prompts_handler
+            if hasattr(self.database_provider, "prompts_handler")
+            else None
+        )
+        if not prompts_handler:
+            raise ValueError(
+                "Prompts handler is not available in the provider"
+            )
+        video_prompt_text = await prompts_handler.get_cached_prompt(
             prompt_name=prompt_name,
             inputs=prompt_args,
         )
@@ -105,11 +126,11 @@ class VideoParser(AsyncParser[str | bytes | dict]):
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": video_prompt_text},
                     {
                         "type": "video_url",
-                        "video_url": {"url": file_url},
+                        "video_url": {"url": url_or_base64},
                     },
+                    {"type": "text", "text": video_prompt_text},
                 ],
             }
         ]
@@ -124,10 +145,12 @@ class VideoParser(AsyncParser[str | bytes | dict]):
 
             content = response.choices[0].message.content
             if not content:
-                raise ValueError("Empty response content")
+                raise ValueError("Response content is empty")
 
             yield content
 
         except Exception as e:
-            logger.error(f"Error processing file {file_url}: {str(e)}")
+            logger.error(
+                f"Error processing file {url_or_base64[:50]}: {str(e)}"
+            )
             raise
