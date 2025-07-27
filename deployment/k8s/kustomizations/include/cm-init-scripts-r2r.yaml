@@ -1,0 +1,114 @@
+# This file contains the initialization scripts used by the InitContainers in the Job manifests.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r2r-init-scripts
+data:
+
+  check-service.sh: |
+    #!/bin/sh
+    set -e
+
+    while true; do
+        if wget -q -O - "${1}" > /dev/null 2>&1; then
+            echo "Service is reachable at ${1}"
+            break
+        else
+            echo "Service is not reachable at ${1}. Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
+
+  check-file.sh: |
+    #!/bin/sh
+    set -e
+
+    while true; do
+        if [ -s "${1}" ]; then
+            echo "File ${1} exists and is not empty."
+            break
+        else
+            if [ -f "${1}" ]; then
+                echo "File ${1} exists but is empty."
+            else
+                echo "File ${1} does not exist."
+            fi
+            echo "Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
+
+  nginx.conf: |
+    events {
+        worker_connections 2048;
+        use epoll;
+        multi_accept on;
+    }
+
+    http {
+        # Required basic settings
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+        client_max_body_size 100M;
+
+        # Logging settings
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+        access_log  /var/log/nginx/access.log  main;
+
+        # Connection optimization
+        sendfile        on;
+        tcp_nopush      on;
+        tcp_nodelay     on;
+        keepalive_timeout  65;
+
+        upstream r2r_backend {
+            least_conn;
+            server r2r:7272 max_fails=3 fail_timeout=30s;  # Use service name instead of container names
+            keepalive 32;
+        }
+
+        server {
+            listen 80;
+            server_name localhost;
+
+            # Timeouts
+            proxy_connect_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+
+            # Buffer settings
+            proxy_buffers 8 16k;
+            proxy_buffer_size 32k;
+
+            location / {
+                proxy_pass http://r2r_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                # Retry settings
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+                proxy_next_upstream_tries 3;
+                proxy_next_upstream_timeout 10s;
+            }
+
+            location /health {
+                access_log off;
+                add_header 'Content-Type' 'application/json';
+                return 200 '{"status":"healthy"}';
+            }
+
+            # Error responses
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+                root /usr/share/nginx/html;
+            }
+        }
+    }

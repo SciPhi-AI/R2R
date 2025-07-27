@@ -364,15 +364,16 @@ def test_img_ingestion(client: R2RClient):
     with contextlib.suppress(R2RException):
         client.documents.delete(result.results.document_id)
 
-    result = client.documents.create(
-        file_path="core/examples/supported_file_types/png.png",
-        metadata={"title": "Test Document", "author": "Test Author"},
-        ingestion_config={"vlm":"anthropic/anthropic/claude-3-7-sonnet-20250219"},
-        run_with_orchestration=False
-    )
+    # Commenting out due to lack of Anthropic API Key in the CI/CD environment.
+    # result = client.documents.create(
+    #     file_path="core/examples/supported_file_types/png.png",
+    #     metadata={"title": "Test Document", "author": "Test Author"},
+    #     ingestion_config={"vlm":"anthropic/anthropic/claude-3-7-sonnet-20250219"},
+    #     run_with_orchestration=False
+    # )
 
-    with contextlib.suppress(R2RException):
-        client.documents.delete(result.results.document_id)
+    # with contextlib.suppress(R2RException):
+    #     client.documents.delete(result.results.document_id)
 
 def test_metadata_title_handling(client: R2RClient):
     """Test that document title in metadata is properly stored and retrievable."""

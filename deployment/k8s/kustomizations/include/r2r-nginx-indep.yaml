@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2r-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r2r-nginx
+  template:
+    metadata:
+      labels:
+        app: r2r-nginx
+    spec:
+      containers:
+      - name: r2r-nginx
+        image: nginx:1.27.3-alpine3.20-slim
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nginx-conf-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        livenessProbe:
+          exec:
+            command: ["curl", "-f", "http://localhost/health"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "512Mi"
+      volumes:
+      - name: nginx-conf-volume
+        configMap:
+          name: r2r-init-scripts
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2r-nginx
+spec:
+  type: NodePort
+  selector:
+    app: r2r-nginx
+  ports:
+  - port: 80
+    targetPort: 80

@@ -1,0 +1,194 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  #generate a unique name for the job
+  #generateName: hatchet-init-job-
+  name: hatchet-init-job
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: hatchet-job-sa
+
+      containers:
+      - name: minimal-job-container
+        image: busybox:1.37.0
+        command: ["sh", "-c", "echo", "All init Jobs are completed"]
+
+      initContainers:
+
+      - name: i01-hatchet-create-db
+        image: postgres:17.2-alpine3.21
+        envFrom:
+        #DATABASE_URL
+        #DATABASE_POSTGRES_HOST
+        #DATABASE_POSTGRES_PORT
+        #DATABASE_POSTGRES_USERNAME
+        #DATABASE_POSTGRES_PASSWORD
+        #DATABASE_POSTGRES_DB_NAME
+        - secretRef:
+            name: hatchet-shared-config
+        volumeMounts:
+        - mountPath: /init/create-db.sh
+          name: init-scripts
+          subPath: create-db.sh
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          sh /init/create-db.sh || exit 1
+          echo "Job completed successfully: Database created"
+          exit 0
+
+      - name: i02-hatchet-migration
+        image: ghcr.io/hatchet-dev/hatchet/hatchet-migrate:v0.54.4
+        envFrom:
+        #DATABASE_URL
+        - secretRef:
+            name: hatchet-shared-config
+
+      - name: i03-hatchet-setup
+        image: ghcr.io/hatchet-dev/hatchet/hatchet-admin:v0.54.4
+        envFrom:
+        #DATABASE_URL
+        #DATABASE_POSTGRES_PORT
+        #DATABASE_POSTGRES_HOST
+        #DATABASE_POSTGRES_USERNAME
+        #DATABASE_POSTGRES_PASSWORD
+        #DATABASE_POSTGRES_DB_NAME
+        #SERVER_TASKQUEUE_RABBITMQ_URL
+        #SERVER_AUTH_COOKIE_DOMAIN
+        #SERVER_URL
+        #SERVER_AUTH_COOKIE_INSECURE
+        #SERVER_GRPC_BIND_ADDRESS
+        #SERVER_GRPC_INSECURE
+        #SERVER_GRPC_BROADCAST_ADDRESS
+        #SERVER_GRPC_MAX_MSG_SIZE
+        - secretRef:
+            name: hatchet-shared-config
+        #HATCHET_CLIENT_TLS_STRATEGY
+        #HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CONF
+        #HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_APIKEY
+        #HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CERT
+        #HATCHET_TENANT_ID
+        #HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH
+        #HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH
+        #RABBITMQ_URL
+        #RABBITMQ_MGMT_PORT
+        - configMapRef:
+            name: hatchet-configmap
+        command: ["/bin/bash"]
+        args:
+        - -c
+        - |
+          apk add -q --no-interactive curl jq
+          # Wait for the volumes to be mounted and files to be present
+          sleep 5
+
+          # Wait for RabbitMQ to be ready. Check if management port is open.
+          sh /init/check-service.sh ${RABBITMQ_URL:-http://hatchet-rabbitmq}:${RABBITMQ_MGMT_PORT:-15672}
+
+          #in case the secrets do not exists, create the directories
+          echo "Preparing /hatchet_api_key and /hatchet/config directories..."
+          mkdir -p /hatchet_api_key-cm /hatchet/certs-cm /hatchet/config-cm
+          mkdir -p /hatchet_api_key /hatchet/certs /hatchet/config
+          cp -r /hatchet_api_key-cm/. /hatchet_api_key/
+          cp -r /hatchet/certs-cm/. /hatchet/certs/
+          cp -r /hatchet/config-cm/. /hatchet/config/
+          #chmod 666 -R /hatchet_api_key
+          #chmod 666 -R /hatchet/certs
+          #chmod 666 -R /hatchet/config
+
+          #Generate Config
+          bash /init/setup-config.sh  || exit 1
+          echo "Job completed successfully: Config created."
+
+          #Generate Token
+          bash /init/setup-token.sh   || exit 1
+          echo "Job completed successfully: Token created."
+
+          #Push Config and Token into k8s Secrets
+          bash /init/inject-secret.sh "/hatchet_api_key" "r2r-hatchet-gen-conf-api" "${HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_APIKEY:-false}" || exit 1
+          echo "Job completed successfully: Token file is processed for k8s Secrets."
+
+          bash /init/inject-secret.sh "/hatchet/config" "r2r-hatchet-gen-conf-files" "${HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CONF:-false}"  || exit 1
+          echo "Job completed successfully: Config files are processed for k8s Secrets."
+
+          #Push Certificates into k8s Secrets
+          if [ "${HATCHET_CLIENT_TLS_STRATEGY}" = "none" ]; then
+            echo ">>> HATCHET_CLIENT_TLS_STRATEGY is set to none, skipping certificate processing for k8s Secrets."
+          else
+            bash /init/inject-secret.sh "/hatchet/certs" "r2r-hatchet-gen-cert-files"  "${HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CERT:-false}" || exit 1
+            echo "Job completed successfully: Certificate files are processed for k8s Secrets."
+          fi
+
+          exit 0
+        volumeMounts:
+        - name: init-scripts
+          mountPath: /init
+
+        - name: hatchet-api-key
+          mountPath: /hatchet_api_key-cm
+        - name: certs-volume
+          mountPath: /hatchet/certs-cm
+        - name: config-volume
+          mountPath: /hatchet/config-cm
+
+      volumes:
+      - name: init-scripts
+        configMap:
+          defaultMode: 0755
+          name: hatchet-init-scripts
+      - name: hatchet-api-key
+        secret:
+          defaultMode: 0644
+          secretName: r2r-hatchet-gen-conf-api
+          optional: true
+      - name: certs-volume
+        secret:
+          #stat -c "%a %n" *
+          defaultMode: 0644
+          secretName: r2r-hatchet-gen-cert-files
+          optional: true
+      - name: config-volume
+        secret:
+          defaultMode: 0644
+          secretName: r2r-hatchet-gen-conf-files
+          optional: true
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hatchet-job-sa
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: hatchet-secret-writer
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["update", "patch", "get"]
+    resourceNames: ["r2r-hatchet-gen-conf-api", "r2r-hatchet-gen-conf-files", "r2r-hatchet-gen-cert-files"]
+#  - apiGroups: [""]
+#    resources: ["secrets"]
+#    verbs: ["delete"]
+#    resourceNames: ["r2r-hatchet-gen-conf-api", "r2r-hatchet-gen-conf-files", "r2r-hatchet-gen-cert-files"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+#  - apiGroups: [""]
+#    resources: ["secrets"]
+#    verbs: ["watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: hatchet-secret-writer-binding
+subjects:
+  - kind: ServiceAccount
+    name: hatchet-job-sa
+roleRef:
+  kind: Role
+  name: hatchet-secret-writer
+  apiGroup: rbac.authorization.k8s.io

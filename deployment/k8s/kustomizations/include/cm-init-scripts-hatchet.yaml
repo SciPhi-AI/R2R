@@ -1,0 +1,262 @@
+# This file contains the initialization scripts used by the InitContainers in the Job manifests.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hatchet-init-scripts
+data:
+  create-db.sh: |
+    #!/bin/sh
+    set -e
+    echo 'Waiting for PostgreSQL to be ready...'
+    DATABASE_POSTGRES_HOST=${DATABASE_POSTGRES_HOST:-hatchet-postgres}
+    while ! pg_isready -h ${DATABASE_POSTGRES_HOST} -p ${DATABASE_POSTGRES_PORT} -U ${DATABASE_POSTGRES_USERNAME:-hatchet_user}; do
+      sleep 1
+    done
+    echo 'PostgreSQL is ready, checking if database exists...'
+    if ! PGPASSWORD=${DATABASE_POSTGRES_PASSWORD:-hatchet_password} psql -h ${DATABASE_POSTGRES_HOST} -p ${DATABASE_POSTGRES_PORT} -U ${DATABASE_POSTGRES_USERNAME:-hatchet_user} -lqt | grep -qw ${DATABASE_POSTGRES_DB_NAME:-hatchet}; then
+      echo 'Database does not exist, creating it...'
+      PGPASSWORD=${DATABASE_POSTGRES_PASSWORD:-hatchet_password} createdb -h ${DATABASE_POSTGRES_HOST} -p ${DATABASE_POSTGRES_PORT} -U ${DATABASE_POSTGRES_USERNAME:-hatchet_user} -w ${DATABASE_POSTGRES_DB_NAME:-hatchet}
+    else
+      echo 'Database already exists, skipping creation.'
+    fi
+
+  setup-config.sh: |
+
+    echo '>>> Starting config creation process...'
+    if [ "${HATCHET_CLIENT_TLS_STRATEGY}" = "none" ]; then
+      echo "HATCHET_CLIENT_TLS_STRATEGY is set to none, skipping certificate creation."
+      /hatchet/hatchet-admin quickstart --skip certs --generated-config-dir /hatchet/config --overwrite=${HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CONF:-false}
+    else
+      echo "HATCHET_CLIENT_TLS_STRATEGY is not none, creating certificates."
+      /hatchet/hatchet-admin quickstart --cert-dir /hatchet/certs --generated-config-dir /hatchet/config --overwrite=${HATCHET_ADMIN_INIT_ALLOW_OVERRIDE_CONF:-false}
+    fi
+
+  setup-token.sh: |
+    #!/bin/sh
+    set -e
+
+    echo '>>> Starting token creation process...'
+    # Attempt to create token and capture both stdout and stderr
+    TOKEN_OUTPUT=$(/hatchet/hatchet-admin token create --config /hatchet/config --tenant-id ${HATCHET_TENANT_ID:-00000000-0000-0000-0000-00000000} 2>&1)
+    # Extract the token (assuming it's the only part that looks like a JWT)
+    TOKEN=$(echo "$TOKEN_OUTPUT" | grep -Eo 'eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*')
+
+    if [ -z "$TOKEN" ]; then
+      echo 'Error: Failed to extract token. Full command output:' >&2
+      echo "$TOKEN_OUTPUT" >&2
+      exit 1
+    fi
+
+    echo "$TOKEN" > /tmp/hatchet_api_key
+    echo 'Token created and saved to /tmp/hatchet_api_key'
+    # Copy token to final destination
+    #mkdir -p /hatchet_api_key/
+    echo -n "$TOKEN" > /hatchet_api_key/api_key.txt
+    echo '>>> Token copied to /hatchet_api_key/api_key.txt'
+
+    # Verify token was copied correctly
+    if [ "$(cat /tmp/hatchet_api_key)" != "$(cat /hatchet_api_key/api_key.txt)" ]; then
+      echo 'Error: Token copy failed, files do not match' >&2
+      echo 'Content of /tmp/hatchet_api_key:'
+      cat /tmp/hatchet_api_key
+      exit 1
+    fi
+
+    echo 'Hatchet API key has been saved successfully'
+    echo 'Token length:' ${#TOKEN}
+    echo 'Token (first 20 chars):' ${TOKEN:0:20}
+    echo 'Token structure:' $(echo $TOKEN | awk -F. '{print NF-1}') 'parts'
+    # Check each part of the token
+    for i in 1 2 3; do
+      PART=$(echo $TOKEN | cut -d. -f$i)
+      echo 'Part' $i 'length:' ${#PART}
+      echo 'Part' $i 'base64 check:' $(echo $PART | base64 -d >/dev/null 2>&1 && echo 'Valid' || echo 'Invalid')
+    done
+    # Final validation attempt
+    if ! echo $TOKEN | awk -F. '{print $2}' | base64 -d 2>/dev/null | jq . >/dev/null 2>&1; then
+      echo 'Warning: Token payload is not valid JSON when base64 decoded' >&2
+    else
+      echo 'Token payload appears to be valid JSON'
+    fi
+
+  # thsi relies on the Serviceaccount, Role & Bunding set up in k8s (Included)
+  inject-secret.sh: |
+    #!/bin/bash
+    set -e
+
+    # Wait for required config files
+    MAX_WAIT=300
+    WAIT_TIME=0
+    CONFIG_FILES=("/hatchet/config/server.yaml" "/hatchet/config/database.yaml" "/hatchet_api_key/api_key.txt")
+
+    while ! [[ -s "${CONFIG_FILES[0]}" && -s "${CONFIG_FILES[1]}" && -s "${CONFIG_FILES[2]}" ]]; do
+        (( WAIT_TIME >= MAX_WAIT )) && { echo "Timeout waiting for config files."; exit 1; }
+        echo "Waiting for config files to be created and not empty..."; sleep 10; (( WAIT_TIME += 10 ))
+    done
+    echo "Config files are ready."
+
+    # Kubernetes API variables
+    NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+    TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    API_SERVER="https://kubernetes.default.svc:${KUBERNETES_SERVICE_PORT}"
+
+    echo ">>> Processing secret: $2 in folder: $1. ALLOW_OVERRIDE: $3"
+
+    update_secret() {
+      local DIR="$1" SECRET_NAME="$2" ALLOW_OVERRIDE="${3:-false}"
+      ALLOW_OVERRIDE=$(echo "$ALLOW_OVERRIDE" | tr '[:upper:]' '[:lower:]')
+      local -a key_value_pairs=()
+
+      echo "Processing directory: $DIR"; ls -la "$DIR"
+
+      for f in "$DIR"/*; do
+          [[ -f "$f" ]] || continue
+          key=$(basename "$f")
+          value=$(base64 "$f" | tr -d '\n')
+          key_value_pairs+=("\"$key\":\"$value\"")
+          echo "Found file: $f, key: $key"
+      done
+
+      local json_data=$(printf '{%s}' "$(IFS=, ; echo "${key_value_pairs[*]}")")
+      local json_body
+      json_body=$(jq -n \
+        --arg name "$SECRET_NAME" \
+        --arg ns "$NAMESPACE" \
+        --arg data "$json_data" \
+        '{apiVersion:"v1", kind:"Secret", metadata:{name:$name, namespace:$ns}, data: ($data | fromjson)}')
+
+      #echo "Validated JSON Body: $json_body"
+
+      # Check if the secret exists
+      local response
+      local response_code
+      response_code=$(curl -s -o /dev/null -w "%{http_code}" --insecure --header "Authorization: Bearer ${TOKEN}" \
+          "${API_SERVER}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}")
+
+      if [[ "$response_code" == "200" ]]; then
+          [[ "$ALLOW_OVERRIDE" == "true" || "$ALLOW_OVERRIDE" == "1" ]] || {
+              echo "ALLOW_OVERRIDE is false. Skipping update."; return;
+          }
+          echo "Updating existing secret: $SECRET_NAME"
+          response=$(curl -s -X PUT --insecure --header "Authorization: Bearer ${TOKEN}" --header "Content-Type: application/json" \
+              --data "$json_body" "${API_SERVER}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}")
+      else
+          echo "Creating new secret: $SECRET_NAME"
+          response=$(curl -s -X POST --insecure --header "Authorization: Bearer ${TOKEN}" --header  "Content-Type: application/json" \
+            --data "$json_body" "${API_SERVER}/api/v1/namespaces/${NAMESPACE}/secrets")
+      fi
+      # Remove sensitive data before printing. All withing data.[*]: "[REDACTED]"
+      echo "JSON:"
+      echo "$response" | jq '.data |= with_entries(.value="[REDACTED]")'
+    }
+
+    update_secret "$1" "$2" "$3"
+    echo "Finished processing secret: $2 in folder: $1. ALLOW_OVERRIDE: $3"
+    exit 0
+
+  check-service.sh: |
+    #!/bin/sh
+    set -e
+
+    while true; do
+        if wget -q -O - "${1}" > /dev/null 2>&1; then
+            echo "Service is reachable at ${1}"
+            break
+        else
+            echo "Service is not reachable at ${1}. Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
+
+  check-file.sh: |
+    #!/bin/sh
+    set -e
+
+    while true; do
+        if [ -s "${1}" ]; then
+            echo "File ${1} exists and is not empty."
+            break
+        else
+            if [ -f "${1}" ]; then
+                echo "File ${1} exists but is empty."
+            else
+                echo "File ${1} does not exist."
+            fi
+            echo "Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
+  nginx.conf: |
+    events {
+        worker_connections 2048;
+        use epoll;
+        multi_accept on;
+    }
+
+    http {
+        # Required basic settings
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+        client_max_body_size 100M;
+
+        # Logging settings
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+        access_log  /var/log/nginx/access.log  main;
+
+        # Connection optimization
+        sendfile        on;
+        tcp_nopush      on;
+        tcp_nodelay     on;
+        keepalive_timeout  65;
+
+        upstream r2r_backend {
+            least_conn;
+            server r2r:7272 max_fails=3 fail_timeout=30s;  # Use service name instead of container names
+            keepalive 32;
+        }
+
+        server {
+            listen 80;
+            server_name localhost;
+
+            # Timeouts
+            proxy_connect_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+
+            # Buffer settings
+            proxy_buffers 8 16k;
+            proxy_buffer_size 32k;
+
+            location / {
+                proxy_pass http://r2r_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                # Retry settings
+                proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+                proxy_next_upstream_tries 3;
+                proxy_next_upstream_timeout 10s;
+            }
+
+            location /health {
+                access_log off;
+                add_header 'Content-Type' 'application/json';
+                return 200 '{"status":"healthy"}';
+            }
+
+            # Error responses
+            error_page 500 502 503 504 /50x.html;
+            location = /50x.html {
+                root /usr/share/nginx/html;
+            }
+        }
+    }

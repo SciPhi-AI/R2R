@@ -1,0 +1,153 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2r
+  annotations:
+    argocd.argoproj.io/sync-wave: "30"
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: r2r
+  template:
+    metadata:
+      labels:
+        app: r2r
+    spec:
+      initContainers:
+      - name: wait-for-configs-and-services
+        image: busybox:1.37.0
+        command:
+          - /bin/sh
+          - -c
+          - |
+            # Wait for /app/r2r.toml and /hatchet_api_key/api_key.txt to exist and be not empty.
+            sh /init/check-file.sh /app/r2r.toml
+            echo "Config file is ready."
+            #sh /init/check-file.sh /hatchet_api_key/api_key.txt
+            #echo "API key is ready."
+
+            UNSTRUCTURED_HEALTH_URL=${UNSTRUCTURED_SERVICE_URL:-http://unstructured:7275}"/health"
+            echo "Checking health of the Unstructured service at: ${UNSTRUCTURED_HEALTH_URL}..."
+            sh /init/check-service.sh $UNSTRUCTURED_HEALTH_URL
+
+            GRAPHCLUSTER_HEALTH_URL=${CLUSTERING_SERVICE_URL:-http://r2r-graph-clustering:7276}"/health"
+            echo "Checking health of the Graph-Clustering service at: ${GRAPHCLUSTER_HEALTH_URL}..."
+            sh /init/check-service.sh $GRAPHCLUSTER_HEALTH_URL
+
+        env:
+          - name: CLUSTERING_SERVICE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: r2r-configmap
+                key: CLUSTERING_SERVICE_URL
+          - name: UNSTRUCTURED_SERVICE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: unstructured-configmap
+                key: UNSTRUCTURED_SERVICE_URL
+        volumeMounts:
+        - mountPath: /init
+          name: init-scripts
+#        - name: hatchet-api-key
+#          mountPath: /hatchet_api_key
+#          readOnly: true
+        - name: r2r-toml
+          mountPath: /app/r2r.toml
+          subPath: r2r.toml
+          readOnly: true
+      containers:
+      - name: r2r
+        image: "ragtoriches/prod:3.3.32"
+        command:
+          - sh
+          - -c
+          - |
+            #!/bin/sh
+            sleep 10
+            if [ -z "${HATCHET_CLIENT_TOKEN}" ]; then
+              export HATCHET_CLIENT_TOKEN=$(cat /hatchet_api_key/api_key.txt)
+            fi
+            exec uvicorn core.main.app_entry:app --host ${R2R_HOST} --port ${R2R_PORT}
+        ports:
+          - containerPort: 7272
+        envFrom:
+          - configMapRef:
+              name: unstructured-configmap
+          - configMapRef:
+              name: r2r-configmap
+          - secretRef:
+              name: r2r-secrets
+        env:
+          - name: HATCHET_CLIENT_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: hatchet-client-config
+                key: HATCHET_CLIENT_TOKEN
+                optional: true
+          - name: HATCHET_CLIENT_TLS_STRATEGY
+            valueFrom:
+              configMapKeyRef:
+                name: hatchet-configmap
+                key: HATCHET_CLIENT_TLS_STRATEGY
+          - name: HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH
+            valueFrom:
+              configMapKeyRef:
+                name: hatchet-configmap
+                key: HATCHET_CLIENT_GRPC_MAX_RECV_MESSAGE_LENGTH
+          - name: HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH
+            valueFrom:
+              configMapKeyRef:
+                name: hatchet-configmap
+                key: HATCHET_CLIENT_GRPC_MAX_SEND_MESSAGE_LENGTH
+        #livenessProbe:
+        #  httpGet:
+        #    path: /v3/health
+        #    port: 7272
+        #  initialDelaySeconds: 60
+        #  periodSeconds: 10
+        #  timeoutSeconds: 5
+        #  failureThreshold: 5
+        volumeMounts:
+#        - name: hatchet-api-key
+#          mountPath: /hatchet_api_key
+#          subPath: api_key.txt
+#          readOnly: true
+        - name: r2r-toml
+          mountPath: /app/r2r.toml
+          subPath: r2r.toml
+          readOnly: true
+      volumes:
+      - configMap:
+          defaultMode: 493
+          name: r2r-init-scripts
+        name: init-scripts
+      - name: r2r-toml
+        secret:
+          defaultMode: 0455
+          items:
+          - key: r2r.toml
+            path: r2r.toml
+          secretName: r2r-files
+#      - name: hatchet-api-key
+#        secret:
+#          defaultMode: 0755
+#          items:
+#          - key: HATCHET_CLIENT_TOKEN
+#            path: api_key.txt
+#          secretName: hatchet-client-config
+---
+# filepath: /manifests/r2r-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2r
+spec:
+  selector:
+    app: r2r
+  ports:
+    - port: 7272
+      targetPort: 7272
+  type: ClusterIP

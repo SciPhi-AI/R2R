@@ -1,0 +1,78 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hatchet-rabbitmq
+spec:
+  serviceName: "hatchet-rabbitmq"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hatchet-rabbitmq
+  template:
+    metadata:
+      labels:
+        app: hatchet-rabbitmq
+    spec:
+      hostname: hatchet-rabbitmq
+      containers:
+      - name: hatchet-rabbitmq
+        image: "rabbitmq:3.13.7-management-alpine"
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: hatchet-secrets
+              key: RABBITMQ_DEFAULT_USER
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: hatchet-secrets
+              key: RABBITMQ_DEFAULT_PASS
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+        - name: rabbitmq-my-conf
+          mountPath: /etc/rabbitmq/conf.d/myrabbitmq.conf
+          subPath: myrabbitmq.conf
+        livenessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 5
+      volumes:
+      - name: rabbitmq-my-conf
+        configMap:
+          name: hatchet-configmap
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: csi-sc
+      resources:
+        requests:
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hatchet-rabbitmq
+spec:
+  clusterIP: None
+  selector:
+    app: hatchet-rabbitmq
+  ports:
+  - port: 5672
+    targetPort: 5672
+    name: amqp
+  - port: 15672
+    targetPort: 15672
+    name: management

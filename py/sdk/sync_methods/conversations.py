@@ -32,7 +32,7 @@ class ConversationsSDK:
         response_dict = self.client._make_request(
             "POST",
             "conversations",
-            data=data,
+            json=data,
             version="v3",
         )
 

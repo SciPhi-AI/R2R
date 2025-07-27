@@ -886,6 +886,7 @@ class IngestionServiceAdapter:
                 UnprocessedChunk.from_dict(chunk) for chunk in data["chunks"]
             ],
             "id": data.get("id"),
+            "collection_ids": data.get("collection_ids", []),
         }
 
     @staticmethod
