@@ -38,12 +38,16 @@ class VideoParser(AsyncParser[str | bytes]):
         self.database_provider = database_provider
         self.llm_provider = llm_provider
 
+        self.vlm = (
+            self.config.vlm or self.config.app.vlm if self.config.app else None
+        )
         self.video_prompt_name = "video_understanding"
         self.video_prompt_args: dict = {}
 
         logger.info(
-            "Video parser initialized with default prompt template: %s",
+            "Video parser initialized with default prompt template: %s and vlm: %s",
             self.video_prompt_name,
+            self.vlm,
         )
 
     async def ingest(  # type: ignore[override]
@@ -64,22 +68,23 @@ class VideoParser(AsyncParser[str | bytes]):
         Yields:
             str: Generated descriptions from video and audio analysis
         """
-        file_type = kwargs.get("file_type")
+        extra_fields = kwargs.get("extra_fields", {})
+        file_type = extra_fields.get("file_type")
         if not file_type:
             raise ValueError("file_type must be provided")
         if file_type not in self.MIME_TYPE_MAPPING:
             raise ValueError(
                 f"file type must be one of {list(self.MIME_TYPE_MAPPING.keys())}"
             )
-        bytes_limit = kwargs.get(
+        bytes_limit = extra_fields.get(
             "bytes_limit", 5 * 1024 * 1024
         )  # Default to 5MB
         if not isinstance(bytes_limit, int):
             raise ValueError("bytes_limit must be an integer")
 
-        vlm = kwargs.get("vlm")
-        prompt_name = kwargs.get("prompt_name")
-        input_args = kwargs.get("input_args")
+        vlm = extra_fields.get("vlm")
+        prompt_name = extra_fields.get("prompt_name")
+        input_args = extra_fields.get("input_args")
         if isinstance(data, bytes):
             if (
                 bytes_limit is None
@@ -100,7 +105,9 @@ class VideoParser(AsyncParser[str | bytes]):
             base564str = base64.b64encode(data).decode("utf-8")
             url_or_base64 = f"data:video/{file_type};base64,{base564str}"
 
-        model = vlm or self.config.vlm
+        model = vlm or self.vlm
+        if not model:
+            raise ValueError("Vision model (vlm) must be provided")
         generation_config = GenerationConfig(
             model=model,
             stream=False,

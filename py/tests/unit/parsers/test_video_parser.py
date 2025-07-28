@@ -10,6 +10,7 @@ class DummyApp:
 
 
 class DummyConfig:
+    vlm = None
     app = DummyApp()
 
 
@@ -41,7 +42,7 @@ async def test_ingest_str_success(mock_db_provider, mock_llm_provider):
         llm_provider=mock_llm_provider,
     )
     gen = parser.ingest(
-        "http://test/video.mp4", file_type="mp4", bytes_limit=None
+        "http://test/video.mp4", extra_fields={"file_type": "mp4", "bytes_limit": 120}
     )
     result = [x async for x in gen]
     assert result == ["video description"]
@@ -55,7 +56,7 @@ async def test_ingest_bytes_success(mock_db_provider, mock_llm_provider):
         llm_provider=mock_llm_provider,
     )
     data = b"1234"
-    gen = parser.ingest(data, file_type="mp4", bytes_limit=10)
+    gen = parser.ingest(data, extra_fields={"file_type": "mp4", "bytes_limit": 10})
     result = [x async for x in gen]
     assert result == ["video description"]
 
@@ -68,7 +69,7 @@ async def test_ingest_invalid_file_type(mock_db_provider, mock_llm_provider):
         llm_provider=mock_llm_provider,
     )
     with pytest.raises(ValueError):
-        gen = parser.ingest("http://test/video.xyz", file_type="xyz")
+        gen = parser.ingest("http://test/video.xyz", extra_fields={"file_type": "xyz"})
         [x async for x in gen]
 
 
@@ -83,7 +84,7 @@ async def test_ingest_bytes_limit_exceeded(
     )
     data = b"1" * 11
     with pytest.raises(ValueError):
-        gen = parser.ingest(data, file_type="mp4", bytes_limit=10)
+        gen = parser.ingest(data, extra_fields={"file_type": "mp4", "bytes_limit": 10})
         [x async for x in gen]
 
 
@@ -97,6 +98,6 @@ async def test_ingest_llm_no_response(mock_db_provider, mock_llm_provider):
         database_provider=mock_db_provider,
         llm_provider=mock_llm_provider,
     )
-    gen = parser.ingest("http://test/video.mp4", file_type="mp4")
+    gen = parser.ingest("http://test/video.mp4", extra_fields={"file_type": "mp4"})
     with pytest.raises(ValueError):
         [x async for x in gen]
