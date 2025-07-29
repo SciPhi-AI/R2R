@@ -41,7 +41,7 @@ response = client.retrieval.rag(query="What is DeepSeek R1?")
 response = client.retrieval.agent(
   message={"role":"user", "content": "What does deepseek r1 imply? Think about market, societal implications, and more."},
   rag_generation_config={
-    "model"="anthropic/claude-3-7-sonnet-20250219",
+    "model": "anthropic/claude-3-7-sonnet-20250219",
     "extended_thinking": True,
     "thinking_budget": 4096,
     "temperature": 1,
