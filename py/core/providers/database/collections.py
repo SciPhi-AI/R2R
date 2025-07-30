@@ -171,7 +171,7 @@ class PostgresCollectionsHandler(Handler):
             )
         except UniqueViolationError as e:
             raise R2RException(
-                message="Unique constraint violation: " + str(e),
+                message=f"Unique constraint violation: {str(e)}",
                 status_code=409,
             ) from None
         except Exception as e:
