@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from litellm import AuthenticationError
 
 from core.base import (
-    DocumentResponse,
     DocumentChunk,
+    DocumentResponse,
     GraphConstructionStatus,
     R2RException,
 )
@@ -222,6 +222,15 @@ def simple_ingestion_factory(service: IngestionService):
                 filter_collection_ids=collection_ids,
             )
             existing_collections = result.get("results", [])
+            if not isinstance(existing_collections, list):
+                logger.error(
+                    "Invalid response format for existing collections retrieval: %s",
+                    result,
+                )
+                raise R2RException(
+                    status_code=500,
+                    message="Error during collection retrieval: Invalid response format.",
+                )
             existing_collection_ids = [c.id for c in existing_collections]
             user_info = (
                 await service.providers.database.users_handler.get_user_by_id(
