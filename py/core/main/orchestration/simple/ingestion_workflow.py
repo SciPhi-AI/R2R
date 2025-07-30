@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from litellm import AuthenticationError
 
 from core.base import (
+    DocumentResponse,
     DocumentChunk,
     GraphConstructionStatus,
     R2RException,
@@ -210,7 +211,9 @@ def simple_ingestion_factory(service: IngestionService):
             ) from e
 
     async def _ensure_collections_exists(
-        service: IngestionService, document_info, collection_ids: list[UUID]
+        service: IngestionService,
+        document_info: DocumentResponse,
+        collection_ids: list[UUID],
     ):
         try:
             result = await service.providers.database.collections_handler.get_collections_overview(
