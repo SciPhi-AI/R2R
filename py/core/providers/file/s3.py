@@ -66,7 +66,7 @@ class S3FileProvider(FileProvider):
         self,
         document_id: UUID,
         file_name: str,
-        file_content: BytesIO,
+        file_content: BinaryIO,
         file_type: Optional[str] = None,
     ) -> None:
         """Store a file in S3."""
