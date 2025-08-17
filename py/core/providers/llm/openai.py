@@ -399,8 +399,13 @@ class OpenAICompletionProvider(CompletionProvider):
 
         model_str = generation_config.model or ""
 
-        if any(model_prefix in model_str.lower() for model_prefix in ["o1", "o3", "gpt-5"]):
-            args["max_completion_tokens"] = generation_config.max_tokens_to_sample
+        if any(
+            model_prefix in model_str.lower()
+            for model_prefix in ["o1", "o3", "gpt-5"]
+        ):
+            args["max_completion_tokens"] = (
+                generation_config.max_tokens_to_sample
+            )
 
         else:
             args["max_tokens"] = generation_config.max_tokens_to_sample
