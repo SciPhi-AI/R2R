@@ -399,14 +399,18 @@ class OpenAICompletionProvider(CompletionProvider):
 
         model_str = generation_config.model or ""
 
-        if "o1" not in model_str and "o3" not in model_str:
-            args["max_tokens"] = generation_config.max_tokens_to_sample
-            args["temperature"] = generation_config.temperature
-            args["top_p"] = generation_config.top_p
-        else:
+        if any(
+            model_prefix in model_str.lower()
+            for model_prefix in ["o1", "o3", "gpt-5"]
+        ):
             args["max_completion_tokens"] = (
                 generation_config.max_tokens_to_sample
             )
+
+        else:
+            args["max_tokens"] = generation_config.max_tokens_to_sample
+            args["temperature"] = generation_config.temperature
+            args["top_p"] = generation_config.top_p
 
         if generation_config.reasoning_effort is not None:
             args["reasoning_effort"] = generation_config.reasoning_effort
