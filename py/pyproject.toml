@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "r2r"
-version = "3.6.5"
+version = "3.6.6"
 description = "SciPhi R2R"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,7 +17,7 @@ dependencies = [
     "alembic >=1.13.3,<2.0.0",
     "fastapi >=0.115.11,<0.116.0",
     "httpx >=0.27.0",
-    "openai >=1.61.0",
+    "openai >=1.99.0",
     "python-dotenv >=1.0.1,<2.0.0",
     "psycopg-binary >=3.2.3,<4.0.0",
     "requests >=2.31.0,<3.0.0",
