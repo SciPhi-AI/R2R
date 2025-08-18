@@ -21,6 +21,12 @@ class DocumentType(str, Enum):
     # Audio
     MP3 = "mp3"
 
+    # Video
+    MP4 = "mp4"
+    AVI = "avi"
+    MOV = "mov"
+    MKV = "mkv"
+
     # CSV
     CSV = "csv"
 
