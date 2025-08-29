@@ -1,17 +1,19 @@
 import asyncio
+import logging
 import os
 import sys
-from typing import List
 
 # Ensure the repository's Python package path is available when executing as a script.
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-from core.main.config import R2RConfig
-from core.main.assembly.builder import R2RBuilder
 from core.base import DocumentResponse
+from core.main.assembly.builder import R2RBuilder
+from core.main.config import R2RConfig
+
+logger = logging.getLogger(__name__)
 
 
-def _chunk_records_to_dicts(results: List[dict]) -> List[dict]:
+def _chunk_records_to_dicts(results: list[dict]) -> list[dict]:
     """Translate chunk records from the database into the format expected by
     IngestionService.augment_document_info."""
     chunk_dicts = []
@@ -31,7 +33,7 @@ def _chunk_records_to_dicts(results: List[dict]) -> List[dict]:
 
 async def backfill_document_summaries() -> None:
     """Generate and store summaries for documents lacking one."""
-    config = R2RConfig.from_toml(os.getenv("R2R_CONFIG"))
+    config = R2RConfig.load()
     builder = R2RBuilder(config)
     app = await builder.build()
 
@@ -39,32 +41,38 @@ async def backfill_document_summaries() -> None:
     providers = app.providers
 
     # Fetch all documents missing a summary (NULL or empty string).
-    docs_resp = await providers.database.documents_handler.get_documents_overview(
-        offset=0,
-        limit=-1,
-        filters={
-            "$or": [
-                {"summary": {"$eq": None}},
-                {"summary": {"$eq": ""}},
-            ]
-        },
-    )
-    documents: List[DocumentResponse] = docs_resp["results"]
-
-    for doc in documents:
-        print(f"Processing document {doc.id}")
-        chunks_resp = await providers.database.chunks_handler.list_document_chunks(
-            document_id=doc.id,
+    docs_resp = (
+        await providers.database.documents_handler.get_documents_overview(
             offset=0,
             limit=-1,
+            filters={
+                "$or": [
+                    {"summary": {"$eq": None}},
+                    {"summary": {"$eq": ""}},
+                ]
+            },
+        )
+    )
+    documents: list[DocumentResponse] = docs_resp["results"]
+
+    for doc in documents:
+        logger.info("Processing document %s", doc.id)
+        chunks_resp = (
+            await providers.database.chunks_handler.list_document_chunks(
+                document_id=doc.id,
+                offset=0,
+                limit=-1,
+            )
         )
         chunk_dicts = _chunk_records_to_dicts(chunks_resp["results"])
         if not chunk_dicts:
-            print(f"Skipping {doc.id}; no chunks found")
+            logger.info("Skipping %s; no chunks found", doc.id)
             continue
 
         await ingestion_service.augment_document_info(doc, chunk_dicts)
-        await providers.database.documents_handler.upsert_documents_overview(doc)
+        await providers.database.documents_handler.upsert_documents_overview(
+            doc
+        )
 
     await providers.database.close()
 
