@@ -75,6 +75,7 @@ def delete_documents_by_type(client: R2RClient, file_types: Sequence[str]) -> No
                     client.documents.delete(doc_id)
                 except Exception as exc:  # pragma: no cover - best effort logging
                     logger.error("Failed to delete document %s: %s", doc_id, exc)
+
         except R2RException as exc:  # pragma: no cover - best effort logging
             if exc.status_code == 401:
                 logger.error(
@@ -82,8 +83,7 @@ def delete_documents_by_type(client: R2RClient, file_types: Sequence[str]) -> No
                 )
                 break
             logger.error("Failed to delete type %s: %s", file_type, exc)
-        except Exception as exc:  # pragma: no cover - best effort logging
-            logger.error("Failed to delete type %s: %s", file_type, exc)
+
 
 
 def main() -> None:
