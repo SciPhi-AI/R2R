@@ -863,6 +863,7 @@ class IngestionServiceAdapter:
 
     @staticmethod
     def parse_ingest_file_input(data: dict) -> dict:
+        data["metadata"]['collection_ids'] = data.get('collection_ids', [])
         return {
             "user": IngestionServiceAdapter._parse_user_data(data["user"]),
             "metadata": data["metadata"],
