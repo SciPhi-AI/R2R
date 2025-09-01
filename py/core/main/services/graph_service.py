@@ -1307,6 +1307,18 @@ class GraphService(Service):
         """
         Inlined from old code: merges duplicates by name, calls LLM for a new consolidated description, updates the record.
         """
+        entity_count = (
+            await self.providers.database.entities_handler.get_entity_count(
+                document_id=document_id,
+                entity_table_name="documents_entities",
+            )
+        )
+        if entity_count == 0:
+            logger.info(
+                f"No entities found for document {document_id}. Skipping deduplication."
+            )
+            return
+
         merged_results = await self.providers.database.entities_handler.merge_duplicate_name_blocks(
             parent_id=document_id,
             store_type=StoreType.DOCUMENTS,
