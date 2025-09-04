@@ -83,6 +83,13 @@ default_admin_password = "change_me_immediately"
 provider = "r2r"
 # Maximum number of concurrent requests allowed
 concurrent_request_limit = 256
+# Per-model concurrency limits for different LLM types
+fast_llm_concurrent_request_limit = 128
+quality_llm_concurrent_request_limit = 64
+vlm_concurrent_request_limit = 32
+audio_lm_concurrent_request_limit = 16
+reasoning_llm_concurrent_request_limit = 32
+planning_llm_concurrent_request_limit = 32
 
   [completion.generation_config]
   # Generation parameters
@@ -144,6 +151,7 @@ disable_create_extension = false
     entity_types = []
     relation_types = []
     automatic_deduplication = true
+    concurrent_request_limit = 16
 
   # Graph enrichment settings
   [database.graph_enrichment_settings]
@@ -251,6 +259,10 @@ max_runs = 2048
 kg_creation_concurrency_limit = 32
 ingestion_concurrency_limit = 16
 kg_concurrency_limit = 4
+# Task-specific concurrency limits for different operations
+rag_query_concurrency_limit = 64
+graph_creation_concurrency_limit = 16
+entity_deduplication_concurrency_limit = 8
 
 ################################################################################
 # Prompt Settings

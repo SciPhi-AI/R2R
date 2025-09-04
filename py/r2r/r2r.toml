@@ -46,6 +46,13 @@ default_admin_password = "change_me_immediately"
 [completion]
 provider = "r2r"
 concurrent_request_limit = 64
+# Per-model concurrency limits for different LLM types
+fast_llm_concurrent_request_limit = 32
+quality_llm_concurrent_request_limit = 16
+vlm_concurrent_request_limit = 8
+audio_lm_concurrent_request_limit = 4
+reasoning_llm_concurrent_request_limit = 8
+planning_llm_concurrent_request_limit = 8
 request_timeout = 60
 
   [completion.generation_config]
@@ -72,6 +79,7 @@ collection_summary_prompt = "collection_summary"
     entity_types = [] # if empty, all entities are extracted
     relation_types = [] # if empty, all relations are extracted
     automatic_deduplication = true # enable automatic deduplication of entities
+    concurrent_request_limit = 8 # concurrency limit for graph creation operations
 
   [database.graph_enrichment_settings]
     graph_communities_prompt = "graph_communities"
@@ -124,6 +132,14 @@ model = "mistral-ocr-latest"
 
 [orchestration]
 provider = "simple"
+max_runs = 2048
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 4
+# Task-specific concurrency limits for different operations
+rag_query_concurrency_limit = 16
+graph_creation_concurrency_limit = 8
+entity_deduplication_concurrency_limit = 4
 
 [email]
 provider = "console_mock" # `smtp`, `sendgrid`, and `mailersend` supported

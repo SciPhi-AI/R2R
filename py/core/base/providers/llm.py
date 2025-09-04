@@ -23,6 +23,13 @@ class CompletionConfig(ProviderConfig):
     provider: Optional[str] = None
     generation_config: Optional[GenerationConfig] = None
     concurrent_request_limit: int = 256
+    # Per-model concurrency limits for different LLM types
+    fast_llm_concurrent_request_limit: Optional[int] = None
+    quality_llm_concurrent_request_limit: Optional[int] = None
+    vlm_concurrent_request_limit: Optional[int] = None
+    audio_lm_concurrent_request_limit: Optional[int] = None
+    reasoning_llm_concurrent_request_limit: Optional[int] = None
+    planning_llm_concurrent_request_limit: Optional[int] = None
     max_retries: int = 3
     initial_backoff: float = 1.0
     max_backoff: float = 64.0
@@ -37,6 +44,35 @@ class CompletionConfig(ProviderConfig):
     @property
     def supported_providers(self) -> list[str]:
         return ["anthropic", "litellm", "openai", "r2r"]
+    
+    def get_concurrent_request_limit(self, model: Optional[str] = None) -> int:
+        """Get the appropriate concurrency limit based on the model being used.
+        
+        Args:
+            model: The model identifier (e.g., from app.fast_llm, app.quality_llm)
+            
+        Returns:
+            The concurrency limit to use for the given model
+        """
+        if not model or not self.app:
+            return self.concurrent_request_limit
+            
+        # Check if the model matches any of the configured LLM types
+        if self.app.fast_llm and model == self.app.fast_llm:
+            return self.fast_llm_concurrent_request_limit or self.concurrent_request_limit
+        elif self.app.quality_llm and model == self.app.quality_llm:
+            return self.quality_llm_concurrent_request_limit or self.concurrent_request_limit
+        elif self.app.vlm and model == self.app.vlm:
+            return self.vlm_concurrent_request_limit or self.concurrent_request_limit
+        elif self.app.audio_lm and model == self.app.audio_lm:
+            return self.audio_lm_concurrent_request_limit or self.concurrent_request_limit
+        elif self.app.reasoning_llm and model == self.app.reasoning_llm:
+            return self.reasoning_llm_concurrent_request_limit or self.concurrent_request_limit
+        elif self.app.planning_llm and model == self.app.planning_llm:
+            return self.planning_llm_concurrent_request_limit or self.concurrent_request_limit
+        
+        # Default to the global limit if no specific match
+        return self.concurrent_request_limit
 
 
 class CompletionProvider(Provider):
@@ -48,22 +84,50 @@ class CompletionProvider(Provider):
         logger.info(f"Initializing CompletionProvider with config: {config}")
         super().__init__(config)
         self.config: CompletionConfig = config
+        # Use a single semaphore for backward compatibility, but track per-model limits
         self.semaphore = asyncio.Semaphore(config.concurrent_request_limit)
         self.thread_pool = ThreadPoolExecutor(
             max_workers=config.concurrent_request_limit
         )
+        # Store per-model semaphores for different concurrency limits
+        self._model_semaphores: dict[str, asyncio.Semaphore] = {}
+    
+    def _get_semaphore_for_model(self, model: Optional[str] = None) -> asyncio.Semaphore:
+        """Get the appropriate semaphore for the given model.
+        
+        Args:
+            model: The model identifier
+            
+        Returns:
+            The semaphore to use for concurrency control
+        """
+        if not model:
+            return self.semaphore
+            
+        # Check if we have a specific limit for this model
+        limit = self.config.get_concurrent_request_limit(model)
+        if limit == self.config.concurrent_request_limit:
+            # Use the default semaphore if the limit is the same
+            return self.semaphore
+            
+        # Create or get a model-specific semaphore
+        if model not in self._model_semaphores:
+            self._model_semaphores[model] = asyncio.Semaphore(limit)
+        return self._model_semaphores[model]
 
     async def _execute_with_backoff_async(
         self,
         task: dict[str, Any],
         apply_timeout: bool = False,
+        model: Optional[str] = None,
     ):
         retries = 0
         backoff = self.config.initial_backoff
+        semaphore = self._get_semaphore_for_model(model)
         while retries < self.config.max_retries:
             try:
                 # A semaphore allows us to limit concurrent requests
-                async with self.semaphore:
+                async with semaphore:
                     if not apply_timeout:
                         return await self._execute_task(task)
 
@@ -89,13 +153,14 @@ class CompletionProvider(Provider):
                 backoff = min(backoff * 2, self.config.max_backoff)
 
     async def _execute_with_backoff_async_stream(
-        self, task: dict[str, Any]
+        self, task: dict[str, Any], model: Optional[str] = None
     ) -> AsyncGenerator[Any, None]:
         retries = 0
         backoff = self.config.initial_backoff
+        semaphore = self._get_semaphore_for_model(model)
         while retries < self.config.max_retries:
             try:
-                async with self.semaphore:
+                async with semaphore:
                     async for chunk in await self._execute_task(task):
                         yield chunk
                 return  # Successful completion of the stream
@@ -178,8 +243,10 @@ class CompletionProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
+        # Extract model from generation_config for concurrency control
+        model = getattr(generation_config, 'model', None)
         response = await self._execute_with_backoff_async(
-            task=task, apply_timeout=apply_timeout
+            task=task, apply_timeout=apply_timeout, model=model
         )
         return LLMChatCompletion(**response.dict())
 
@@ -195,7 +262,9 @@ class CompletionProvider(Provider):
             "generation_config": generation_config,
             "kwargs": kwargs,
         }
-        async for chunk in self._execute_with_backoff_async_stream(task):
+        # Extract model from generation_config for concurrency control
+        model = getattr(generation_config, 'model', None)
+        async for chunk in self._execute_with_backoff_async_stream(task, model=model):
             if isinstance(chunk, dict):
                 yield LLMChatCompletionChunk(**chunk)
                 continue

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from .base import Provider, ProviderConfig
 
@@ -16,6 +16,10 @@ class OrchestrationConfig(ProviderConfig):
     graph_search_results_creation_concurrency_limit: int = 32
     ingestion_concurrency_limit: int = 16
     graph_search_results_concurrency_limit: int = 8
+    # Task-specific concurrency limits for different operations
+    rag_query_concurrency_limit: Optional[int] = None
+    graph_creation_concurrency_limit: Optional[int] = None
+    entity_deduplication_concurrency_limit: Optional[int] = None
 
     def validate_config(self) -> None:
         if self.provider not in self.supported_providers:
