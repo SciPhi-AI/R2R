@@ -195,6 +195,11 @@ class GraphCreationSettings(R2RSerializable):
         default=False,
         description="Whether to automatically deduplicate entities.",
     )
+    
+    concurrent_request_limit: Optional[int] = Field(
+        default=None,
+        description="Concurrency limit for graph creation operations. If not set, uses the global completion limit.",
+    )
 
 
 class GraphEnrichmentSettings(R2RSerializable):
