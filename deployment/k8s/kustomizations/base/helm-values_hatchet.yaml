@@ -50,6 +50,15 @@ api:
           port: 8080
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 grpc:
   enabled: true
@@ -93,6 +102,15 @@ grpc:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 controllers:
   enabled: true
@@ -136,6 +154,15 @@ controllers:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 scheduler:
   enabled: true
@@ -179,6 +206,15 @@ scheduler:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 frontend:
   enabled: true
@@ -208,6 +244,8 @@ postgres:
 rabbitmq:
   enabled: true
   auth:
+    tls:
+      enabled: false
 #    username: ""
 #    password: ""
   service:

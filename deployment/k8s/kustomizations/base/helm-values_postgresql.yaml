@@ -11,3 +11,17 @@ global:
   postgresql:
     auth:
       database: hatchet
+
+primary:
+  resources:
+    requests:
+      cpu: 200m
+      memory: 1Gi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  initdb:
+    scripts:
+      01-create-extra-db.sql: |
+        CREATE DATABASE r2r;
+        GRANT ALL PRIVILEGES ON DATABASE r2r TO postgres;

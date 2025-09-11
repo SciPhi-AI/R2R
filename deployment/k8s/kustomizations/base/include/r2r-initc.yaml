@@ -60,7 +60,7 @@ spec:
           readOnly: true
       containers:
       - name: r2r
-        image: "ragtoriches/prod:3.3.32"
+        image: "sciphiai/r2r:3.6.6"
         command:
           - sh
           - -c

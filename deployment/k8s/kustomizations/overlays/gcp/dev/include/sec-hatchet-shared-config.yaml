@@ -1,0 +1,81 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hatchet-shared-config
+  namespace: ai-system
+type: Opaque
+stringData:
+  ADMIN_EMAIL: "admin@example.com"
+  ADMIN_PASSWORD: "vnsefhsgbc8vfse"
+
+  # DB
+  DATABASE_POSTGRES_DB_NAME: "hatchet"
+  DATABASE_POSTGRES_HOST: "postgresql"
+  DATABASE_POSTGRES_USERNAME: "postgres"
+  DATABASE_POSTGRES_PASSWORD: "s54c2xh756n90in6h7b76v3dh"
+  DATABASE_POSTGRES_PORT: "5432"
+  DATABASE_POSTGRES_SSL_MODE: "disable"
+  DATABASE_URL: "postgres://postgres:s54c2xh756n90in6h7b76v3dh@postgresql:5432/hatchet?sslmode=disable"
+
+  # Auth / Server
+  SERVER_AUTH_BASIC_AUTH_ENABLED: "t"
+  SERVER_AUTH_COOKIE_DOMAIN: "localhost:8080"
+  SERVER_AUTH_COOKIE_INSECURE: "t"
+  SERVER_AUTH_SET_EMAIL_VERIFIED: "t"
+  SERVER_GRPC_BIND_ADDRESS: "0.0.0.0"
+  SERVER_GRPC_BROADCAST_ADDRESS: "controllers:7070"
+  SERVER_GRPC_INSECURE: "true"
+  SERVER_TASKQUEUE_RABBITMQ_URL: "amqp://hatchet:ffdg9u3wdhe2d843hf3@hatchet-rabbitmq:5672/"
+  SERVER_URL: "http://hatchet-api:8080"
+  SERVER_AUTH_COOKIE_SECRETS: "duYYuQjsoFE0O48eQP40JsztKVzvZujFu58hiconYc8= LFg9PSBN91eDeF4x4i0HYmwPU1mDph4/nakhIzIl1Q0="
+
+  # Encryption
+  SERVER_ENCRYPTION_MASTER_KEYSET_FILE: /etc/hatchet/keys/master.key
+  SERVER_ENCRYPTION_JWT_PRIVATE_KEYSET_FILE: /etc/hatchet/keys/private_ec256.key
+  SERVER_ENCRYPTION_JWT_PUBLIC_KEYSET_FILE: /etc/hatchet/keys/public_ec256.key
+
+  RABBITMQ_DEFAULT_USER: "hatchet"
+  RABBITMQ_DEFAULT_PASS: "ffdg9u3wdhe2d843hf3"
+  RABBITMQ_ADMIN_EMAIL: "admin@example.com"
+  RABBITMQ_ADMIN_PASSWORD: "ffdg9u3wdhe2d843hf3"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hatchet-rabbitmq-config
+  namespace: ai-system
+type: Opaque
+stringData:
+  rabbitmq.conf: |
+    ## Username and password
+    default_user = hatchet
+
+    ## Clustering
+    cluster_name = hatchet-rabbitmq
+    cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s
+    cluster_formation.k8s.host = kubernetes.default
+    cluster_formation.k8s.address_type = hostname
+    cluster_formation.k8s.service_name = hatchet-rabbitmq-headless
+    cluster_formation.k8s.hostname_suffix = .hatchet-rabbitmq-headless.ai-system.svc.cluster.local
+    cluster_formation.node_cleanup.interval = 10
+    cluster_formation.node_cleanup.only_log_warning = true
+    cluster_partition_handling = autoheal
+
+    # queue master locator
+    queue_master_locator = min-masters
+    # enable loopback user
+    loopback_users.hatchet = false
+    #default_vhost = ai-system-vhost
+    #disk_free_limit.absolute = 50MB
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hatchet-rabbitmq
+  namespace: ai-system
+type: Opaque
+stringData:
+  rabbitmq-user: "hatchet"
+  rabbitmq-password: "ffdg9u3wdhe2d843hf3"
+  rabbitmq-erlang-cookie: "A_Very_Long_Random_ErlangCookie_32+chars"

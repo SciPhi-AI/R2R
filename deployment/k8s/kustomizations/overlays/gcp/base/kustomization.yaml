@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base
+
+patches:
+  - path: patches/hatchet-rabbitmq-sts.yaml
+    target:
+      kind: StatefulSet
+      name: hatchet-rabbitmq
+  - path: patches/pgvector-sts.yaml
+    target:
+      kind: StatefulSet
+      name: r2r-pgvector
+  - path: patches/postgresql-sts.yaml
+    target:
+      kind: StatefulSet
+      name: postgresql
+      namespace: ai-system
