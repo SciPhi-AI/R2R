@@ -32,22 +32,22 @@ images:
 
     #ghcr.io/hatchet-dev/hatchet/hatchet-dashboard
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-dashboard
-    newTag: v0.54.7
+    newTag: v0.72.8
     #ghcr.io/hatchet-dev/hatchet/hatchet-engine
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-engine
-    newTag: v0.54.7
+    newTag: v0.72.8
     #ghcr.io/hatchet-dev/hatchet/hatchet-admin
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-admin
-    newTag: v0.54.7
+    newTag: v0.72.8
     #ghcr.io/hatchet-dev/hatchet/hatchet-migrate
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-migrate
-    newTag: v0.54.7
+    newTag: v0.72.8
     #ghcr.io/hatchet-dev/hatchet/hatchet-api
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-api
-    newTag: v0.54.7
+    newTag: v0.72.8
     #ghcr.io/hatchet-dev/hatchet/hatchet-frontend
   - name: ghcr.io/hatchet-dev/hatchet/hatchet-frontend
-    newTag: v0.54.7
+    newTag: v0.72.8
 
     #https://hub.docker.com/r/bitnami/rabbitmq/tags?name=3.
   - name: docker.io/bitnami/rabbitmq
