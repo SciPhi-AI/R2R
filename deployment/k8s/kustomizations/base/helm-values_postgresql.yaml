@@ -20,6 +20,9 @@ primary:
     limits:
       cpu: 1
       memory: 1Gi
+  extraEnvVars:
+    - name: POSTGRESQL_MAX_CONNECTIONS
+      value: "500"
   initdb:
     scripts:
       01-create-extra-db.sql: |
