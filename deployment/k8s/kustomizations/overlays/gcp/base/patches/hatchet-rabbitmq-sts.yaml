@@ -10,7 +10,7 @@ spec:
         name: data
       spec:
         accessModes:
-        - ReadWriteOnce
+          - ReadWriteOnce
         resources:
           requests:
             storage: 8Gi

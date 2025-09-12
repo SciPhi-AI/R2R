@@ -4,8 +4,8 @@ metadata:
   name: hatchet-rabbitmq
 spec:
   volumeClaimTemplates:
-    - kind: PersistentVolumeClaim
-      apiVersion: v1
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
       metadata:
         name: data
       spec:
