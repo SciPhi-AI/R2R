@@ -612,13 +612,9 @@ class PostgresDocumentsHandler(Handler):
             f"FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
         
-        # Always filter for successfully ingested documents only
-        success_condition = "ingestion_status = 'success'"
         if conditions:
             # Combine everything with AND
-            base_query += " WHERE " + success_condition + " AND " + " AND ".join(conditions)
-        else:
-            base_query += " WHERE " + success_condition
+            base_query += " WHERE " + " AND ".join(conditions)
 
         # Construct SELECT fields (including total_entries via window function)
         select_fields = """
