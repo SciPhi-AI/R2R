@@ -532,13 +532,21 @@ class DocumentsRouter(BaseRouterV3):
                 file_data["content_type"],
             )
 
-            await self.services.ingestion.ingest_file_ingress(
+            ingest_result = await self.services.ingestion.ingest_file_ingress(
                 file_data=workflow_input["file_data"],
                 user=auth_user,
                 document_id=workflow_input["document_id"],
                 size_in_bytes=workflow_input["size_in_bytes"],
                 metadata=workflow_input["metadata"],
                 version=workflow_input["version"],
+            )
+            
+            # Update workflow input with the document's collection_ids
+            document_info = ingest_result["info"]
+            workflow_input["collection_ids"] = (
+                [str(cid) for cid in document_info.collection_ids]
+                if document_info.collection_ids
+                else None
             )
 
             if run_with_orchestration:
@@ -980,7 +988,7 @@ class DocumentsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             include_summary_embeddings: bool = Query(
                 False,
@@ -1010,7 +1018,7 @@ class DocumentsRouter(BaseRouterV3):
                 requesting_user_id = [auth_user.id]
                 filter_collection_ids = auth_user.collection_ids
 
-            document_uuids = [UUID(document_id) for document_id in ids]
+            document_uuids = [UUID(document_id) for document_id in ids] if ids else None
             documents_overview_response = (
                 await self.services.management.documents_overview(
                     user_ids=requesting_user_id,
@@ -1176,7 +1184,7 @@ class DocumentsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             include_vectors: Optional[bool] = Query(
                 False,
@@ -1562,7 +1570,7 @@ class DocumentsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedCollectionsResponse:
@@ -1890,7 +1898,7 @@ class DocumentsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             include_embeddings: Optional[bool] = Query(
                 False,
@@ -2117,7 +2125,7 @@ class DocumentsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             entity_names: Optional[list[str]] = Query(
                 None,

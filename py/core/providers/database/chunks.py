@@ -746,6 +746,15 @@ class PostgresChunksHandler(Handler):
                 }
                 for result in results
             ]
+        else:
+            # If no results, run a separate count query
+            count_query = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
+            WHERE document_id = $1
+            """
+            count_result = await self.connection_manager.fetch_query(count_query, [document_id])
+            total = count_result[0]["count"] if count_result else 0
 
         return {"results": chunks, "total_entries": total}
 
@@ -993,6 +1002,22 @@ class PostgresChunksHandler(Handler):
                     "tuples_fetched": result["tuples_fetched"],
                 }
                 indices.append(index_info)
+        else:
+            # If no results, run a separate count query
+            count_query = f"""
+            SELECT COUNT(*) as total
+            FROM pg_indexes i
+            JOIN pg_class c ON c.relname = i.indexname
+            JOIN pg_am am ON c.relam = am.oid
+            LEFT JOIN pg_stat_user_indexes psat ON psat.indexrelname = i.indexname
+                AND psat.schemaname = i.schemaname
+            WHERE i.schemaname = $1
+            AND i.indexdef LIKE '%vector%'
+            {where_clause}
+            """
+            count_params = params[:-2]  # Remove limit and offset params
+            count_result = await self.connection_manager.fetch_query(count_query, count_params)
+            total_entries = count_result[0]["total"] if count_result else 0
 
         return {"indices": indices, "total_entries": total_entries}
 
@@ -1143,6 +1168,16 @@ class PostgresChunksHandler(Handler):
                 }
                 for result in results
             ]
+        else:
+            # If no results, run a separate count query
+            count_query = f"""
+            SELECT COUNT(*)
+            FROM {self._get_table_name(PostgresChunksHandler.TABLE_NAME)}
+            {where_clause}
+            """
+            count_params = params[:-2]  # Remove limit and offset params
+            count_result = await self.connection_manager.fetch_query(count_query, count_params)
+            total_entries = count_result[0]["count"] if count_result else 0
 
         return {"results": chunks, "total_entries": total_entries}
 

@@ -414,7 +414,16 @@ class PostgresCollectionsHandler(Handler):
             results = await self.connection_manager.fetch_query(query, params)
 
             if not results:
-                return {"results": [], "total_entries": 0}
+                # If no results, run a separate count query
+                count_query = f"""
+                SELECT COUNT(*)
+                FROM {self.project_name}.collections c
+                {where_clause}
+                """
+                count_params = params[:-1] if limit != -1 else params  # Remove offset and limit params
+                count_result = await self.connection_manager.fetch_query(count_query, count_params)
+                total_entries = count_result[0]["count"] if count_result else 0
+                return {"results": [], "total_entries": total_entries}
 
             total_entries = results[0]["total_entries"] if results else 0
 

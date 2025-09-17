@@ -210,7 +210,7 @@ class PostgresDocumentsHandler(Handler):
                     async with (
                         self.connection_manager.pool.get_connection() as conn  # type: ignore
                     ):
-                        async with conn.transaction():
+                        async with conn.transaction(isolation='serializable'):
                             # Lock the row for update
                             check_query = f"""
                             SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
@@ -316,6 +316,7 @@ class PostgresDocumentsHandler(Handler):
                 except (
                     asyncpg.exceptions.UniqueViolationError,
                     asyncpg.exceptions.DeadlockDetectedError,
+                    asyncpg.exceptions.SerializationFailureError,
                 ) as e:
                     retries += 1
                     if retries == max_retries:
@@ -610,9 +611,14 @@ class PostgresDocumentsHandler(Handler):
         base_query = (
             f"FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
+        
+        # Always filter for successfully ingested documents only
+        success_condition = "ingestion_status = 'success'"
         if conditions:
             # Combine everything with AND
-            base_query += " WHERE " + " AND ".join(conditions)
+            base_query += " WHERE " + success_condition + " AND " + " AND ".join(conditions)
+        else:
+            base_query += " WHERE " + success_condition
 
         # Construct SELECT fields (including total_entries via window function)
         select_fields = """
@@ -651,7 +657,15 @@ class PostgresDocumentsHandler(Handler):
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
-            total_entries = results[0]["total_entries"] if results else 0
+            
+            if results:
+                total_entries = results[0]["total_entries"]
+            else:
+                # If no results, run a separate count query
+                count_query = f"SELECT COUNT(*) FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)} {base_query}"
+                count_params = params[:-2] if limit != -1 else params[:-1]  # Remove limit and offset params
+                count_result = await self.connection_manager.fetch_query(count_query, count_params)
+                total_entries = count_result[0]["count"] if count_result else 0
 
             documents = []
             for row in results:
