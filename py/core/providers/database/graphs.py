@@ -1803,21 +1803,8 @@ class PostgresGraphsHandler(Handler):
 
         try:
             results = await self.connection_manager.fetch_query(query, params)
-            
             if not results:
-                # If no results, run a separate count query
-                count_query = f"""
-                SELECT COUNT(*) as total
-                FROM (
-                    SELECT DISTINCT collection_id
-                    FROM {self._get_table_name(PostgresGraphsHandler.TABLE_NAME)}
-                    {where_clause}
-                ) distinct_collections
-                """
-                count_params = params[:-2]  # Remove offset and limit params
-                count_result = await self.connection_manager.fetch_query(count_query, count_params)
-                total_entries = count_result[0]["total"] if count_result else 0
-                return {"results": [], "total_entries": total_entries}
+                return {"results": [], "total_entries": 0}
 
             total_entries = results[0]["total_entries"] if results else 0
 
