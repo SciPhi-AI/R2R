@@ -326,7 +326,7 @@ class PostgresCollectionsHandler(Handler):
         documents = [
             DocumentResponse(
                 id=row["id"],
-                collection_ids=[collection_id],
+                collection_ids=row["collection_ids"],
                 owner_id=row["owner_id"],
                 document_type=DocumentType(row["type"]),
                 metadata=json.loads(row["metadata"]),
