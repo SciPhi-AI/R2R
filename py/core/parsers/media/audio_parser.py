@@ -43,32 +43,67 @@ class AudioParser(AsyncParser[bytes]):
         Yields:
             Chunks of transcribed text
         """
+        temp_file_path = None
         try:
+            logger.info(f"AUDIO DEBUG: Starting audio transcription")
+            logger.info(f"AUDIO DEBUG: Data size: {len(data)} bytes")
+            logger.info(f"AUDIO DEBUG: Model config: {self.config.audio_transcription_model or self.config.app.audio_lm}")
+            logger.info(f"AUDIO DEBUG: Additional kwargs: {kwargs}")
+            
             # Create a temporary file to store the audio data
             with tempfile.NamedTemporaryFile(
                 suffix=".wav", delete=False
             ) as temp_file:
                 temp_file.write(data)
                 temp_file_path = temp_file.name
+                logger.info(f"AUDIO DEBUG: Created temp file: {temp_file_path}")
 
             # Call Whisper transcription
+            model_name = self.config.audio_transcription_model or self.config.app.audio_lm
+            logger.info(f"AUDIO DEBUG: Calling atranscription with model: {model_name}")
+            
+            # Filter out text chunking parameters that don't apply to audio transcription
+            audio_kwargs = {}
+            for key, value in kwargs.items():
+                if key not in ['chunking_strategy', 'chunk_size', 'chunk_overlap', 'strategy']:
+                    audio_kwargs[key] = value
+                else:
+                    logger.info(f"AUDIO DEBUG: Filtering out text chunking parameter: {key}={value}")
+            
+            logger.info(f"AUDIO DEBUG: Filtered kwargs for audio: {audio_kwargs}")
+            
             response = await self.atranscription(
-                model=self.config.audio_transcription_model
-                or self.config.app.audio_lm,
+                model=model_name,
                 file=open(temp_file_path, "rb"),
-                **kwargs,
+                **audio_kwargs,
             )
 
-            # The response should contain the transcribed text directly
-            yield response.text
+            logger.info(f"AUDIO DEBUG: Transcription response received")
+            logger.info(f"AUDIO DEBUG: Response type: {type(response)}")
+            logger.info(f"AUDIO DEBUG: Response attributes: {dir(response)}")
+            
+            if hasattr(response, 'text'):
+                logger.info(f"AUDIO DEBUG: Response text length: {len(response.text)}")
+                logger.info(f"AUDIO DEBUG: Response text preview: {response.text[:200]}...")
+                # The response should contain the transcribed text directly
+                yield response.text
+            else:
+                logger.error(f"AUDIO DEBUG: Response has no 'text' attribute")
+                logger.error(f"AUDIO DEBUG: Full response: {response}")
 
         except Exception as e:
-            logger.error(f"Error processing audio with Whisper: {str(e)}")
+            logger.error(f"AUDIO DEBUG: Error processing audio with Whisper: {str(e)}")
+            logger.error(f"AUDIO DEBUG: Exception type: {type(e)}")
+            logger.error(f"AUDIO DEBUG: Exception args: {e.args}")
+            import traceback
+            logger.error(f"AUDIO DEBUG: Full traceback: {traceback.format_exc()}")
             raise
 
         finally:
             # Clean up the temporary file
-            try:
-                os.unlink(temp_file_path)
-            except Exception as e:
-                logger.warning(f"Failed to delete temporary file: {str(e)}")
+            if temp_file_path:
+                try:
+                    os.unlink(temp_file_path)
+                    logger.info(f"AUDIO DEBUG: Cleaned up temp file: {temp_file_path}")
+                except Exception as e:
+                    logger.warning(f"AUDIO DEBUG: Failed to delete temporary file: {str(e)}")
