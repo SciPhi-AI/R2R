@@ -9,21 +9,21 @@ default_max_collections_per_user = 5_000
 default_max_upload_size = 214748364800
 
 # LLM used for internal operations, like deriving conversation names
-fast_llm = "openai/gpt-5-nano-2025-08-07"
+fast_llm = "gpt-5-nano"
 
 # LLM used for user-facing output, like RAG replies
-quality_llm = "openai/gpt-5-2025-08-07"
+quality_llm = "gpt-5-mini"
 
 # LLM used for ingesting visual inputs
-vlm = "openai/gpt-5-2025-08-07"
+vlm = "gpt-o4-mini"
 
 # LLM used for transcription
-audio_lm = "openai/whisper-1"
+audio_lm = "gpt-4o-mini-transcribe"
 
 # Reasoning model, used for `research` agent
-reasoning_llm = "openai/o3-mini"
+reasoning_llm = "o3-mini"
 # Planning model, used for `research` agent
-planning_llm = "anthropic/claude-3-7-sonnet-20250219"
+planning_llm = "anthropic/claude-3-7-sonnet"
 
 
 [agent]
@@ -62,9 +62,18 @@ provider = "bcrypt"
 provider = "postgres"
 
 [database]
+provider = "postgres"
 default_collection_name = "Default"
 default_collection_description = "Your default collection."
 collection_summary_prompt = "collection_summary"
+
+# Supabase configuration (recommended)
+# Set these environment variables:
+# POSTGRES_HOST=your-project.supabase.co
+# POSTGRES_DB=postgres
+# POSTGRES_USER=postgres
+# POSTGRES_PASSWORD=your-supabase-password
+# POSTGRES_PORT=5432
 
   [database.graph_creation_settings]
     graph_entity_description_prompt = "graph_entity_description"
@@ -101,14 +110,21 @@ concurrent_request_limit = 256
 
 [ingestion]
 provider = "r2r"
-chunking_strategy = "recursive"
+chunking_strategy = "recursive" # Options: "recursive", "hierarchical" 
 chunk_size = 1_024
 chunk_overlap = 512
 excluded_parsers = []
 automatic_extraction = true # enable automatic extraction of entities and relations
+automatic_enrichment = true # enable automatic graph enrichment (communities)
 vlm_batch_size=20
 max_concurrent_vlm_tasks=20
 vlm_ocr_one_page_per_chunk = true
+
+# Hierarchical chunking options (when chunking_strategy = "hierarchical")
+child_chunk_size = 512
+child_overlap = 50
+children_per_parent = 4
+generate_summaries = true
 
   [ingestion.chunk_enrichment_settings]
     chunk_enrichment_prompt = "chunk_enrichment"
@@ -118,12 +134,41 @@ vlm_ocr_one_page_per_chunk = true
   [ingestion.extra_parsers]
     pdf = ["zerox", "ocr"]
 
+  [ingestion.spreadsheet_settings]
+    generate_narrative = true
+    store_structured_data = true
+    max_rows_for_narrative = 100
+
 [ocr]
 provider = "mistral"
 model = "mistral-ocr-latest"
 
 [orchestration]
 provider = "simple"
+
+# Enhanced citation system
+[orchestration.citation_settings]
+citation_style = "detailed" # Options: "detailed", "compact", "academic"
+max_citations = 5
+min_citation_score = 0.7
+generate_deep_links = true
+
+# Tool-augmented orchestration (Text-to-SQL for structured data)
+[orchestration.tool_augmented_settings]
+enable_sql_workflow = true
+sql_confidence_threshold = 0.7
+max_sql_results = 50
+structured_data_types = ["spreadsheet", "csv", "xlsx"]
+
+# Web search integration
+[orchestration.web_search_settings]
+enable_web_fallback = true
+web_confidence_threshold = 0.6
+min_rag_results = 2
+web_search_provider = "serper"  # Options: "serper", "tavily"
+max_web_results = 5
+low_confidence_threshold = 0.5
+insufficient_content_threshold = 200
 
 [email]
 provider = "console_mock" # `smtp`, `sendgrid`, and `mailersend` supported

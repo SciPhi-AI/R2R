@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "r2r-enhanced": {
+      "command": "python",
+      "args": ["/Users/chrisgscott/projects/r2r-test/mcp/r2r_mcp_server.py"],
+      "env": {
+        "R2R_BASE_URL": "http://localhost:7272",
+        "PYTHONPATH": "/Users/chrisgscott/projects/r2r-test/py"
+      }
+    }
+  }
+}

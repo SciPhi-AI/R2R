@@ -1,0 +1,5 @@
+# MCP Server Requirements for R2R Enhanced Template
+mcp>=1.0.0
+r2r>=0.3.0
+aiohttp>=3.8.0
+asyncio-mqtt>=0.11.0
