@@ -1112,10 +1112,51 @@ class GraphService(Service):
 
         for attempt in range(retries):
             try:
+                # DEBUG LOGGING: Log the exact prompt being sent
+                logger.info(f"GRAPH EXTRACTION DEBUG: Sending prompt to LLM (attempt {attempt + 1})")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Number of messages: {len(messages)}")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Messages type: {type(messages)}")
+                
+                for i, msg in enumerate(messages):
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Message {i} type: {type(msg)}")
+                    
+                    # Handle both dict and message object formats
+                    if hasattr(msg, 'role'):
+                        # Message object format
+                        role = msg.role
+                        content = msg.content
+                    elif isinstance(msg, dict):
+                        # Dictionary format
+                        role = msg.get('role', 'unknown')
+                        content = msg.get('content', '')
+                    else:
+                        role = 'unknown'
+                        content = str(msg)
+                    
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Message {i} role: {role}")
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Message {i} content length: {len(content)}")
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Message {i} content preview: '{content[:500]}...'")
+                    
+                logger.info(f"GRAPH EXTRACTION DEBUG: Generation config: {generation_config}")
+                
                 resp = await self.providers.llm.aget_completion(
                     messages, generation_config=generation_config
                 )
                 graph_search_results_str = resp.choices[0].message.content
+
+                # DEBUG LOGGING: Log the exact OpenAI response
+                logger.info(f"GRAPH EXTRACTION DEBUG: Full LLM response received")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Response type: {type(resp)}")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Response choices length: {len(resp.choices)}")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Message content type: {type(graph_search_results_str)}")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Message content length: {len(graph_search_results_str) if graph_search_results_str else 0}")
+                logger.info(f"GRAPH EXTRACTION DEBUG: Raw content: '{graph_search_results_str}'")
+                
+                if graph_search_results_str:
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Content preview (first 500 chars): '{graph_search_results_str[:500]}...'")
+                    logger.info(f"GRAPH EXTRACTION DEBUG: Content preview (last 500 chars): '...{graph_search_results_str[-500:]}'")
+                else:
+                    logger.error(f"GRAPH EXTRACTION DEBUG: Content is None or empty!")
 
                 if not graph_search_results_str:
                     raise R2RException(
@@ -1164,11 +1205,23 @@ class GraphService(Service):
             r = r.replace("<root>", "").replace("</root>", "")
             return r.strip()
 
+        # DEBUG LOGGING: Log XML parsing process
+        logger.info(f"GRAPH EXTRACTION DEBUG: Starting XML parsing")
+        logger.info(f"GRAPH EXTRACTION DEBUG: Original response length: {len(response_str)}")
+        
         cleaned_xml = sanitize_xml(response_str)
+        logger.info(f"GRAPH EXTRACTION DEBUG: Cleaned XML length: {len(cleaned_xml)}")
+        logger.info(f"GRAPH EXTRACTION DEBUG: Cleaned XML content: '{cleaned_xml}'")
+        
         wrapped = f"<root>{cleaned_xml}</root>"
+        logger.info(f"GRAPH EXTRACTION DEBUG: Wrapped XML: '{wrapped}'")
+        
         try:
             root = ET.fromstring(wrapped)
-        except ET.ParseError:
+            logger.info(f"GRAPH EXTRACTION DEBUG: XML parsing successful")
+        except ET.ParseError as e:
+            logger.error(f"GRAPH EXTRACTION DEBUG: XML parsing failed: {e}")
+            logger.error(f"GRAPH EXTRACTION DEBUG: Failed XML data: {wrapped}")
             raise R2RException(
                 f"Failed to parse XML:\nData: {wrapped[:1000]}...", 400
             ) from None

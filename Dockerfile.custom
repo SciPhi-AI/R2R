@@ -1,0 +1,15 @@
+# Custom R2R with bug fixes
+FROM sciphi/r2r:latest
+
+# Copy your fixed core files
+COPY py/core/main/services/graph_service.py /app/core/main/services/graph_service.py
+COPY py/core/parsers/media/audio_parser.py /app/core/parsers/media/audio_parser.py
+COPY py/core/agent/base.py /app/core/agent/base.py
+COPY py/core/base/providers/llm.py /app/core/base/providers/llm.py
+
+# Copy your custom configuration
+COPY py/r2r/r2r.toml /app/r2r.toml
+
+# Ensure proper permissions
+RUN chmod +x /app/core/main/services/graph_service.py
+RUN chmod +x /app/core/parsers/media/audio_parser.py
