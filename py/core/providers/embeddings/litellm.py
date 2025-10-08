@@ -69,6 +69,10 @@ class LiteLLMEmbeddingProvider(EmbeddingProvider):
             "model": self.base_model,
             "dimensions": self.base_dimension,
         }
+        if self.config.api_base:
+            embedding_kwargs["api_base"] = self.config.api_base
+        if self.config.api_key:
+            embedding_kwargs["api_key"] = self.config.api_key
         embedding_kwargs.update(kwargs)
         return embedding_kwargs
 
