@@ -1,3 +1,4 @@
+#py/core/main/services/ingestion_service.py
 import asyncio
 import json
 import logging
@@ -600,6 +601,88 @@ class IngestionService:
         )
         return document_info
 
+    async def create_chunks_ingress(
+        self,
+        document_id: UUID,
+        chunks: list[UnprocessedChunk],
+        user: User,
+        *args: Any,
+        **kwargs: Any,
+    ) -> list[dict]:
+        """Create and add new chunks to an existing document.
+
+        Args:
+            document_id: The UUID of the document to add chunks to
+            chunks: List of unprocessed chunks to add
+            user: The user creating the chunks
+
+        Returns:
+            List of created chunk dictionaries
+
+        Raises:
+            R2RException: If document doesn't exist or user lacks permission
+        """
+        # Verify document exists and user has access
+        existing_documents = (
+            await self.providers.database.documents_handler.get_documents_overview(
+                offset=0,
+                limit=1,
+                filter_user_ids=[user.id] if not user.is_superuser else None,
+                filter_document_ids=[document_id],
+            )
+        )["results"]
+
+        if not existing_documents:
+            raise R2RException(
+                status_code=404,
+                message=f"Document {document_id} not found or access denied.",
+            )
+
+        existing_doc = existing_documents[0]
+
+        if (
+            str(existing_doc.owner_id) != str(user.id)
+            and not user.is_superuser
+        ):
+            raise R2RException(
+                status_code=403,
+                message="You don't have permission to add chunks to this document.",
+            )
+
+        # Prepare chunks with document context
+        document_chunks = []
+        for chunk in chunks:
+            chunk_id = chunk.id or generate_id()
+            extraction_data = {
+                "id": chunk_id,
+                "document_id": document_id,
+                "collection_ids": chunk.collection_ids
+                or existing_doc.collection_ids,
+                "owner_id": existing_doc.owner_id,
+                "data": chunk.text,
+                "metadata": {**chunk.metadata, "created_via": "chunk_create_api"},
+            }
+            document_chunks.append(
+                DocumentChunk(**extraction_data).model_dump()
+            )
+
+        # Embed new chunks
+        embeddings_generator = self.embed_document(
+            document_chunks, embedding_batch_size=len(document_chunks)
+        )
+        embeddings = []
+        async for embedding in embeddings_generator:
+            embeddings.append(embedding)
+
+        # Store embeddings
+        store_gen = self.store_embeddings(
+            embeddings, storage_batch_size=len(embeddings)
+        )
+        async for _ in store_gen:
+            pass
+
+        return document_chunks
+
     async def update_chunk_ingress(
         self,
         document_id: UUID,
@@ -887,6 +970,16 @@ class IngestionServiceAdapter:
             ],
             "id": data.get("id"),
             "collection_ids": data.get("collection_ids", []),
+        }
+
+    @staticmethod
+    def parse_create_chunks_input(data: dict) -> dict:
+        return {
+            "user": IngestionServiceAdapter._parse_user_data(data["user"]),
+            "document_id": UUID(data["document_id"]),
+            "chunks": [
+                UnprocessedChunk.from_dict(chunk) for chunk in data["chunks"]
+            ],
         }
 
     @staticmethod

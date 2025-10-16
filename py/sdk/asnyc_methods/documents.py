@@ -1,3 +1,4 @@
+#py/sdk/asnyc_methods/documents.py
 import json
 import os
 import tempfile
@@ -524,6 +525,39 @@ class DocumentsSDK:
             "GET",
             f"documents/{str(id)}/chunks",
             params=params,
+            version="v3",
+        )
+
+        return WrappedChunksResponse(**response_dict)
+
+    async def create_chunks(
+        self,
+        id: str | UUID,
+        chunks: list[dict[str, Any]],
+    ) -> WrappedChunksResponse:
+        """Create and add new chunks to an existing document.
+
+        Args:
+            id (str | UUID): ID of document to add chunks to
+            chunks (list[dict]): List of chunks to create, each with 'text' and optional 'metadata'
+
+        Returns:
+            WrappedChunksResponse
+
+        Example:
+            >>> chunks = [
+            ...     {"text": "New chunk content", "metadata": {"source": "manual"}},
+            ...     {"text": "Another chunk", "metadata": {"custom": "value"}}
+            ... ]
+            >>> result = await client.documents.create_chunks(
+            ...     id="doc-uuid",
+            ...     chunks=chunks
+            ... )
+        """
+        response_dict = await self.client._make_request(
+            "POST",
+            f"documents/{str(id)}/chunks",
+            json=chunks,
             version="v3",
         )
 

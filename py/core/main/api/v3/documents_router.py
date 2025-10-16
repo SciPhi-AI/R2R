@@ -1,3 +1,4 @@
+#py/core/main/api/v3/documents_router.py
 import base64
 import logging
 import mimetypes
@@ -543,8 +544,6 @@ class DocumentsRouter(BaseRouterV3):
 
             if run_with_orchestration:
                 try:
-                    # TODO - Modify create_chunks so that we can add chunks to existing document
-
                     workflow_result: dict[
                         str, str | None
                     ] = await self.providers.orchestration.run_workflow(  # type: ignore
@@ -575,6 +574,102 @@ class DocumentsRouter(BaseRouterV3):
                 "document_id": str(document_id),
                 "task_id": None,
             }
+
+        @self.router.post(
+            "/documents/{id}/chunks",
+            summary="Create Chunks for Document",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            response = client.documents.create_chunks(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                chunks=[
+                                    {
+                                        "text": "This is a new chunk to add to the document.",
+                                        "metadata": {"source": "manual_entry"}
+                                    }
+                                ]
+                            )
+                            """),
+                    },
+                    {
+                        "lang": "JavaScript",
+                        "source": textwrap.dedent("""
+                            const { r2rClient } = require("r2r-js");
+
+                            const client = new r2rClient();
+
+                            async function main() {
+                                const response = await client.documents.createChunks({
+                                    id: "9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                    chunks: [
+                                        {
+                                            text: "This is a new chunk to add to the document.",
+                                            metadata: {source: "manual_entry"}
+                                        }
+                                    ]
+                                });
+                            }
+
+                            main();
+                            """),
+                    },
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def create_chunks_for_document(
+            id: UUID = Path(..., description="Document ID"),
+            chunks: list[UnprocessedChunk] = Body(
+                ..., description="List of chunks to create"
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ) -> WrappedChunksResponse:
+            """Create and add new chunks to an existing document.
+
+            This endpoint allows you to add new chunks to a document without
+            re-ingesting the entire document. Chunks will be embedded and stored
+            automatically.
+
+            Users can only add chunks to documents they own unless they are
+            superusers.
+            """
+            workflow_input = {
+                "document_id": str(id),
+                "chunks": [chunk.model_dump() for chunk in chunks],
+                "user": auth_user.model_dump_json(),
+            }
+
+            logger.info("Running chunk creation without orchestration.")
+            from core.main.orchestration import simple_ingestion_factory
+
+            simple_ingestor = simple_ingestion_factory(self.services.ingestion)
+            created_chunks = await simple_ingestor["create-chunks"](
+                workflow_input
+            )
+
+            # Convert to response format
+            from core.base import ChunkResponse
+
+            chunk_responses = [
+                ChunkResponse(
+                    id=chunk["id"],
+                    document_id=chunk["document_id"],
+                    owner_id=chunk["owner_id"],
+                    collection_ids=chunk["collection_ids"],
+                    text=chunk["data"],
+                    metadata=chunk["metadata"],
+                )
+                for chunk in created_chunks or []
+            ]
+
+            return (chunk_responses, {"total_entries": len(chunk_responses)})  # type: ignore
 
         @self.router.patch(
             "/documents/{id}/metadata",

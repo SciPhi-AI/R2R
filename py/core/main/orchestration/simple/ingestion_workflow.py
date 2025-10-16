@@ -1,3 +1,4 @@
+#py/core/main/orchestration/simple/ingestion_workflow.py
 import logging
 from uuid import UUID
 
@@ -386,6 +387,33 @@ def simple_ingestion_factory(service: IngestionService):
                 detail=f"Error during chunk ingestion: {str(e)}",
             ) from e
 
+    async def create_chunks(input_data):
+        from core.main import IngestionServiceAdapter
+
+        try:
+            parsed_data = IngestionServiceAdapter.parse_create_chunks_input(
+                input_data
+            )
+            document_uuid = (
+                UUID(parsed_data["document_id"])
+                if isinstance(parsed_data["document_id"], str)
+                else parsed_data["document_id"]
+            )
+
+            created_chunks = await service.create_chunks_ingress(
+                document_id=document_uuid,
+                chunks=parsed_data["chunks"],
+                user=parsed_data["user"],
+            )
+
+            return created_chunks
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error during chunk creation: {str(e)}",
+            ) from e
+
     async def update_chunk(input_data):
         from core.main import IngestionServiceAdapter
 
@@ -464,6 +492,7 @@ def simple_ingestion_factory(service: IngestionService):
     return {
         "ingest-files": ingest_files,
         "ingest-chunks": ingest_chunks,
+        "create-chunks": create_chunks,
         "update-chunk": update_chunk,
         "create-vector-index": create_vector_index,
         "delete-vector-index": delete_vector_index,

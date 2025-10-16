@@ -1,3 +1,4 @@
+#py/core/main/services/management_service.py
 import logging
 import os
 from collections import defaultdict
@@ -193,7 +194,17 @@ class ManagementService(Service):
                     status_code=404,
                     message="Document not found or insufficient permissions",
                 )
-            docs_to_delete.append(doc_id)
+            
+            # BUGFIX: Only delete document if NO chunks remain
+            remaining_chunks = await self.providers.database.chunks_handler.list_chunks(
+                filters={"document_id": {"$eq": str(doc_id)}},
+                offset=0,
+                limit=1,
+                include_vectors=False
+            )
+            
+            if remaining_chunks["total_entries"] == 0:
+                docs_to_delete.append(doc_id)
 
         # Delete documents that no longer have associated chunks
         for doc_id in docs_to_delete:

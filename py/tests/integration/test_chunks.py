@@ -1,3 +1,4 @@
+#py/tests/integration/test_chunks.py
 import asyncio
 import contextlib
 import uuid
@@ -45,6 +46,14 @@ class AsyncR2RTestClient:
 
     async def delete_chunk(self, chunk_id: str):
         response = await self.client.chunks.delete(id=chunk_id)
+        return response.results
+
+    async def create_chunks_for_document(
+        self, doc_id: str, chunks: list[dict]
+    ):
+        response = await self.client.documents.create_chunks(
+            id=doc_id, chunks=chunks
+        )
         return response.results
 
     async def search_chunks(self, query: str, limit: int = 5):
@@ -110,6 +119,48 @@ class TestChunks:
         assert str(retrieved.id) == str(chunk_id), "Retrieved wrong chunk ID"
         assert retrieved.text.split("_")[0] == "Test chunk 1", (
             "Chunk text mismatch")
+
+    @pytest.mark.asyncio
+    async def test_create_chunks_for_document(
+        self, test_client: AsyncR2RTestClient, cleanup_documents
+    ):
+        """Test creating new chunks for an existing document."""
+        # Create initial document with 2 chunks
+        doc_id, _ = await test_client.create_document(
+            ["Initial chunk 1", "Initial chunk 2"]
+        )
+        cleanup_documents(str(doc_id))
+        await asyncio.sleep(1)  # Wait for ingestion
+
+        # Verify initial chunks
+        initial_chunks = await test_client.list_chunks(str(doc_id))
+        assert len(initial_chunks) == 2, "Expected 2 initial chunks"
+
+        # Add 2 new chunks to the existing document
+        new_chunks = [
+            {"text": "New chunk 3", "metadata": {"source": "test"}},
+            {"text": "New chunk 4", "metadata": {"source": "test"}},
+        ]
+        created = await test_client.create_chunks_for_document(
+            str(doc_id), new_chunks
+        )
+        await asyncio.sleep(1)  # Wait for ingestion
+
+        # Verify we now have 4 chunks total
+        all_chunks = await test_client.list_chunks(str(doc_id))
+        assert len(all_chunks) == 4, "Expected 4 total chunks after creation"
+
+        # Verify the new chunks have correct metadata
+        new_chunk_texts = {"New chunk 3", "New chunk 4"}
+        found_new_chunks = [
+            c for c in all_chunks if c.text in new_chunk_texts
+        ]
+        assert len(found_new_chunks) == 2, "Could not find new chunks"
+        for chunk in found_new_chunks:
+            assert chunk.metadata.get("source") == "test"
+            assert (
+                chunk.metadata.get("created_via") == "chunk_create_api"
+            ), "Missing created_via marker"
 
     @pytest.mark.asyncio
     async def test_update_chunk(self, test_client: AsyncR2RTestClient,
