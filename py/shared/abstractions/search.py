@@ -627,7 +627,7 @@ def select_search_filters(
             allowed_collections = user_collections
         # for non-superusers, we filter by user_id and selected & allowed collections
         collection_filters = {
-            "$or": [
+            "$and": [
                 {"owner_id": {"$eq": auth_user.id}},
                 {"collection_ids": {"$overlap": list(allowed_collections)}},
             ]  # type: ignore
