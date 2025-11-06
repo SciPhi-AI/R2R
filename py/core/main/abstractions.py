@@ -20,6 +20,7 @@ from core.providers import (
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
     PostgresFileProvider,
+    PresidioPIIDetectionProvider,
     R2RAuthProvider,
     R2RCompletionProvider,
     R2RIngestionProvider,
@@ -75,6 +76,7 @@ class R2RProviders(BaseModel):
     )
     ocr: MistralOCRProvider
     orchestration: HatchetOrchestrationProvider | SimpleOrchestrationProvider
+    pii_detection: PresidioPIIDetectionProvider | None
     scheduler: APSchedulerProvider
 
     class Config:

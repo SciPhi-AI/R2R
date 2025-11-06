@@ -20,6 +20,7 @@ from ..base.providers.ingestion import IngestionConfig
 from ..base.providers.llm import CompletionConfig
 from ..base.providers.ocr import OCRConfig
 from ..base.providers.orchestration import OrchestrationConfig
+from ..base.providers.pii_detection import PIIDetectionConfig
 from ..base.providers.scheduler import SchedulerConfig
 from ..base.utils import deep_update
 
@@ -65,6 +66,7 @@ class R2RConfig:
         "agent": ["generation_config"],
         "ocr": [],
         "orchestration": ["provider"],
+        "pii_detection": [],
         "scheduler": ["provider"],
     }
 
@@ -81,6 +83,7 @@ class R2RConfig:
     ingestion: IngestionConfig
     ocr: OCRConfig
     orchestration: OrchestrationConfig
+    pii_detection: PIIDetectionConfig
     scheduler: SchedulerConfig
 
     def __init__(self, config_data: dict[str, Any]):
@@ -125,6 +128,9 @@ class R2RConfig:
         self.ocr = OCRConfig.create(**self.ocr, app=self.app)  # type: ignore
         self.orchestration = OrchestrationConfig.create(
             **self.orchestration, app=self.app
+        )  # type: ignore
+        self.pii_detection = PIIDetectionConfig.create(
+            **self.pii_detection, app=self.app
         )  # type: ignore
         self.scheduler = SchedulerConfig.create(**self.scheduler, app=self.app)  # type: ignore
 

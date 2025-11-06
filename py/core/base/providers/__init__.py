@@ -20,6 +20,13 @@ from .ingestion import (
 from .llm import CompletionConfig, CompletionProvider
 from .ocr import OCRConfig, OCRProvider
 from .orchestration import OrchestrationConfig, OrchestrationProvider, Workflow
+from .pii_detection import (
+    AnonymizationResult,
+    AnonymizationStrategy,
+    PIIDetectionConfig,
+    PIIDetectionProvider,
+    PIIEntity,
+)
 from .scheduler import SchedulerConfig, SchedulerProvider
 
 __all__ = [
@@ -63,6 +70,12 @@ __all__ = [
     "OrchestrationConfig",
     "OrchestrationProvider",
     "Workflow",
+    # PII detection provider
+    "PIIDetectionConfig",
+    "PIIDetectionProvider",
+    "PIIEntity",
+    "AnonymizationResult",
+    "AnonymizationStrategy",
     # Scheduler provider
     "SchedulerConfig",
     "SchedulerProvider",

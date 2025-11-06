@@ -16,6 +16,7 @@ from core.base import (
     IngestionConfig,
     OCRConfig,
     OrchestrationConfig,
+    PIIDetectionConfig,
     SchedulerConfig,
 )
 from core.providers import (
@@ -38,6 +39,8 @@ from core.providers import (
     OpenAICompletionProvider,
     OpenAIEmbeddingProvider,
     PostgresDatabaseProvider,
+    PresidioPIIDetectionConfig,
+    PresidioPIIDetectionProvider,
     R2RAuthProvider,
     R2RCompletionProvider,
     R2RIngestionConfig,
@@ -350,6 +353,23 @@ class R2RProviderFactory:
                 f"Scheduler provider {scheduler_config.provider} not supported."
             )
 
+    @staticmethod
+    def create_pii_detection_provider(
+        pii_config: PIIDetectionConfig, *args, **kwargs
+    ) -> PresidioPIIDetectionProvider | None:
+        """Creates a PII detection provider based on configuration."""
+        if not pii_config.enabled:
+            return None
+
+        if pii_config.provider == "presidio":
+            return PresidioPIIDetectionProvider(
+                PresidioPIIDetectionConfig(**pii_config.model_dump())
+            )
+        else:
+            raise ValueError(
+                f"PII detection provider {pii_config.provider} not supported."
+            )
+
     async def create_providers(
         self,
         auth_provider_override: Optional[
@@ -381,6 +401,9 @@ class R2RProviderFactory:
         ] = None,
         ocr_provider_override: Optional[MistralOCRProvider] = None,
         orchestration_provider_override: Optional[Any] = None,
+        pii_detection_provider_override: Optional[
+            PresidioPIIDetectionProvider
+        ] = None,
         scheduler_provider_override: Optional[APSchedulerProvider] = None,
         *args,
         **kwargs,
@@ -473,6 +496,11 @@ class R2RProviderFactory:
             or self.create_orchestration_provider(self.config.orchestration)
         )
 
+        pii_detection_provider = (
+            pii_detection_provider_override
+            or self.create_pii_detection_provider(self.config.pii_detection)
+        )
+
         scheduler_provider = (
             scheduler_provider_override
             or await self.create_scheduler_provider(self.config.scheduler)
@@ -489,5 +517,6 @@ class R2RProviderFactory:
             llm=llm_provider,
             ocr=ocr_provider,
             orchestration=orchestration_provider,
+            pii_detection=pii_detection_provider,
             scheduler=scheduler_provider,
         )

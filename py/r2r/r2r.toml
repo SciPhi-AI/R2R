@@ -125,6 +125,26 @@ model = "mistral-ocr-latest"
 [orchestration]
 provider = "simple"
 
+[pii_detection]
+provider = "presidio"
+enabled = false  # disabled by default - users must opt-in
+anonymization_strategy = "hash"  # Options: "mask", "hash", "replace", "redact"
+supported_entities = [
+    "PERSON",
+    "EMAIL_ADDRESS",
+    "PHONE_NUMBER",
+    "CREDIT_CARD",
+    "US_SSN",
+    "IBAN_CODE",
+    "IP_ADDRESS",
+    "LOCATION",
+    "DATE_TIME",
+]
+language = "en"
+score_threshold = 0.5  # Minimum confidence score (0.0 - 1.0)
+store_mappings = true  # Store PII mappings for potential re-identification
+custom_models = []  # Optional: Custom NLP models for entity recognition
+
 [email]
 provider = "console_mock" # `smtp`, `sendgrid`, and `mailersend` supported
 

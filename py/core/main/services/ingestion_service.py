@@ -203,6 +203,48 @@ class IngestionService:
             updated_at=datetime.now(),
         )
 
+    async def _apply_pii_protection(
+        self, extraction: DocumentChunk
+    ) -> DocumentChunk:
+        """Apply PII detection and anonymization to a document chunk."""
+        if not self.providers.pii_detection:
+            return extraction
+
+        try:
+            # Get text from extraction
+            text = (
+                extraction.data.decode("utf-8")
+                if isinstance(extraction.data, bytes)
+                else extraction.data
+            )
+
+            # Anonymize the text
+            result = await self.providers.pii_detection.anonymize_text(text)
+
+            # Update extraction data with anonymized text
+            extraction.data = result.anonymized_text
+
+            # Add PII metadata to extraction
+            extraction.metadata["pii_detected"] = result.anonymization_applied
+            if result.entities:
+                extraction.metadata["pii_entity_types"] = list(
+                    set(entity.entity_type for entity in result.entities)
+                )
+                extraction.metadata["pii_entity_count"] = len(result.entities)
+
+            # Log PII detection
+            if result.anonymization_applied:
+                logger.info(
+                    f"Anonymized {len(result.entities)} PII entities in chunk {extraction.id}"
+                )
+
+            return extraction
+
+        except Exception as e:
+            logger.error(f"Error applying PII protection: {str(e)}")
+            # On error, return original extraction to avoid blocking ingestion
+            return extraction
+
     async def parse_file(
         self,
         document_info: DocumentResponse,
@@ -264,6 +306,10 @@ class IngestionService:
                 # or any other needed transformations
                 extraction.id = generate_id(f"{extraction.id}_{version}")
                 extraction.metadata["version"] = version
+
+                # Apply PII protection if enabled
+                extraction = await self._apply_pii_protection(extraction)
+
                 yield extraction
 
         except (PopplerNotFoundError, PDFParsingError) as e:

@@ -45,6 +45,10 @@ from .orchestration import (
     HatchetOrchestrationProvider,
     SimpleOrchestrationProvider,
 )
+from .pii_detection import (
+    PresidioPIIDetectionConfig,
+    PresidioPIIDetectionProvider,
+)
 from .scheduler import (
     APSchedulerProvider,
 )
@@ -89,6 +93,9 @@ __all__ = [
     # Orchestration
     "HatchetOrchestrationProvider",
     "SimpleOrchestrationProvider",
+    # PII Detection
+    "PresidioPIIDetectionConfig",
+    "PresidioPIIDetectionProvider",
     # Scheduler
     "APSchedulerProvider",
 ]
