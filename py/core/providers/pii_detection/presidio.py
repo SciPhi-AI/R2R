@@ -72,13 +72,31 @@ class PresidioPIIDetectionProvider(PIIDetectionProvider):
         """Ensure Presidio engines are initialized."""
         if self._analyzer is None:
             logger.info("Initializing Presidio AnalyzerEngine...")
-            self._analyzer = self.AnalyzerEngine()
-            logger.info("Presidio AnalyzerEngine initialized")
+            try:
+                self._analyzer = self.AnalyzerEngine()
+                logger.info("Presidio AnalyzerEngine initialized")
+            except OSError as e:
+                # spaCy model not found
+                if "Can't find model" in str(e) or "E050" in str(e):
+                    raise RuntimeError(
+                        f"spaCy language model not found for language '{self.config.language}'. "
+                        f"Please install it with: python -m spacy download en_core_web_lg"
+                    ) from e
+                raise
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to initialize Presidio AnalyzerEngine: {str(e)}"
+                ) from e
 
         if self._anonymizer is None:
             logger.info("Initializing Presidio AnonymizerEngine...")
-            self._anonymizer = self.AnonymizerEngine()
-            logger.info("Presidio AnonymizerEngine initialized")
+            try:
+                self._anonymizer = self.AnonymizerEngine()
+                logger.info("Presidio AnonymizerEngine initialized")
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to initialize Presidio AnonymizerEngine: {str(e)}"
+                ) from e
 
         if self._faker is None and self.config.use_faker:
             try:
@@ -138,17 +156,31 @@ class PresidioPIIDetectionProvider(PIIDetectionProvider):
     def _get_anonymization_operator(
         self, strategy: AnonymizationStrategy
     ) -> dict:
-        """Get Presidio operator configuration for the given strategy."""
+        """Get Presidio operator configuration for the given strategy.
+
+        Returns a dict mapping entity types to OperatorConfig objects.
+        The OperatorConfig constructor signature is: OperatorConfig(operator_name, params_dict)
+        """
         from presidio_anonymizer.entities import OperatorConfig
 
         if strategy == AnonymizationStrategy.MASK:
-            return {"DEFAULT": OperatorConfig("mask", {"chars_to_mask": 100, "masking_char": "*", "from_end": False})}
+            # Mask with asterisks - params: chars_to_mask, masking_char, from_end
+            return {
+                "DEFAULT": OperatorConfig(
+                    "mask",
+                    {"chars_to_mask": 100, "masking_char": "*", "from_end": False},
+                )
+            }
         elif strategy == AnonymizationStrategy.REDACT:
+            # Complete removal - no params needed
             return {"DEFAULT": OperatorConfig("redact", {})}
         elif strategy == AnonymizationStrategy.HASH:
-            return {"DEFAULT": OperatorConfig("hash", {"hash_type": "sha256"})}
+            # SHA256 hashing - params: hash_type
+            return {
+                "DEFAULT": OperatorConfig("hash", {"hash_type": "sha256"})
+            }
         elif strategy == AnonymizationStrategy.REPLACE:
-            # Use entity-specific replacement strategies
+            # Replace with fake data - use entity-specific operators
             operators = {}
             replacement_map = {
                 "PERSON": "replace",
@@ -163,9 +195,12 @@ class PresidioPIIDetectionProvider(PIIDetectionProvider):
                 else:
                     # Fall back to redaction for entities without good replacements
                     operators[entity_type] = OperatorConfig("redact", {})
+            # Add DEFAULT for any unmatched entities
+            if "DEFAULT" not in operators:
+                operators["DEFAULT"] = OperatorConfig("redact", {})
             return operators
         else:
-            # Default to redaction
+            # Default to redaction for unknown strategies
             return {"DEFAULT": OperatorConfig("redact", {})}
 
     def _generate_deterministic_hash(self, text: str) -> str:

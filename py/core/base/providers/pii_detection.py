@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Optional
 
+from pydantic import Field
+
 from .base import Provider, ProviderConfig
 
 
@@ -44,30 +46,25 @@ class PIIDetectionConfig(ProviderConfig):
     """Configuration for PII detection provider."""
 
     provider: Optional[str] = None
-    enabled: bool = True
+    enabled: bool = False  # Disabled by default (opt-in)
     anonymization_strategy: AnonymizationStrategy = AnonymizationStrategy.HASH
-    supported_entities: list[str] = None
+    supported_entities: list[str] = Field(
+        default_factory=lambda: [
+            "PERSON",
+            "EMAIL_ADDRESS",
+            "PHONE_NUMBER",
+            "CREDIT_CARD",
+            "US_SSN",
+            "IBAN_CODE",
+            "IP_ADDRESS",
+            "LOCATION",
+            "DATE_TIME",
+        ]
+    )
     language: str = "en"
     score_threshold: float = 0.5  # Minimum confidence score to consider
     store_mappings: bool = True  # Store PII mappings for re-identification
-    custom_models: list[str] = None
-
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.supported_entities is None:
-            self.supported_entities = [
-                "PERSON",
-                "EMAIL_ADDRESS",
-                "PHONE_NUMBER",
-                "CREDIT_CARD",
-                "US_SSN",
-                "IBAN_CODE",
-                "IP_ADDRESS",
-                "LOCATION",
-                "DATE_TIME",
-            ]
-        if self.custom_models is None:
-            self.custom_models = []
+    custom_models: list[str] = Field(default_factory=list)
 
     @property
     def supported_providers(self) -> list[str]:
