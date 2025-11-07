@@ -2337,6 +2337,127 @@ class DocumentsRouter(BaseRouterV3):
             )
             return results  # type: ignore
 
+        @self.router.get(
+            "/documents/{id}/pii",
+            summary="Get PII Statistics for Document",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            response = client.documents.get_pii_stats(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1"
+                            )
+                            """),
+                    }
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_document_pii_stats(
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ):
+            """Get PII statistics for a document.
+
+            Returns aggregate statistics about detected PII entities including
+            entity types and confidence scores.
+            """
+            # Check ownership
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            # Get PII stats
+            stats = await self.providers.database.pii_entities_handler.get_pii_stats_by_document(
+                id
+            )
+
+            return stats
+
+        @self.router.get(
+            "/documents/{id}/pii/entities",
+            summary="Get PII Entities for Document",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            response = client.documents.get_pii_entities(
+                                id="9fbe403b-c11c-5aae-8ade-ef22980c3ad1",
+                                offset=0,
+                                limit=100
+                            )
+                            """),
+                    }
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_document_pii_entities(
+            id: UUID = Path(...),
+            offset: int = Query(
+                0,
+                ge=0,
+                description="Specifies the number of objects to skip. Defaults to 0.",
+            ),
+            limit: int = Query(
+                100,
+                ge=1,
+                le=1000,
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
+            ),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ):
+            """Get all PII entities detected in a document with pagination.
+
+            Returns detailed information about detected PII including entity type,
+            position, confidence score, and anonymized values.
+            """
+            # Check ownership
+            request_user_ids = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
+            documents_overview_response = (
+                await self.services.management.documents_overview(
+                    user_ids=request_user_ids,
+                    document_ids=[id],
+                    offset=0,
+                    limit=1,
+                )
+            )
+            results = documents_overview_response["results"]
+            if len(results) == 0:
+                raise R2RException("Document not found.", 404)
+
+            # Get PII entities
+            entities_data = await self.providers.database.pii_entities_handler.get_entities_by_document(
+                document_id=id, offset=offset, limit=limit
+            )
+
+            return entities_data
+
     @staticmethod
     async def _process_file(file):
         import base64

@@ -420,3 +420,52 @@ class ChunksRouter(BaseRouterV3):
             ]
 
             return (chunks, {"total_entries": results["total_entries"]})  # type: ignore
+
+        @self.router.get(
+            "/chunks/{id}/pii",
+            summary="Get PII Entities for Chunk",
+            dependencies=[Depends(self.rate_limit_dependency)],
+            openapi_extra={
+                "x-codeSamples": [
+                    {
+                        "lang": "Python",
+                        "source": textwrap.dedent("""
+                            from r2r import R2RClient
+
+                            client = R2RClient()
+                            response = client.chunks.get_pii(
+                                id="b4ac4dd6-5f27-596e-a55b-7cf242ca30aa"
+                            )
+                            """),
+                    }
+                ]
+            },
+        )
+        @self.base_endpoint
+        async def get_chunk_pii(
+            id: UUID = Path(...),
+            auth_user=Depends(self.providers.auth.auth_wrapper()),
+        ):
+            """Get all PII entities detected in a specific chunk.
+
+            Returns detailed information about detected PII including entity type,
+            position, confidence score, and anonymized values.
+            """
+            # Get the chunk to verify ownership
+            existing_chunk = await self.services.ingestion.get_chunk(id)
+            if existing_chunk is None:
+                raise R2RException(f"Chunk {id} not found", 404)
+
+            # Check ownership
+            if (
+                not auth_user.is_superuser
+                and existing_chunk["owner_id"] != auth_user.id
+            ):
+                raise R2RException("Access denied", 403)
+
+            # Get PII entities
+            entities = await self.providers.database.pii_entities_handler.get_entities_by_chunk(
+                id
+            )
+
+            return {"chunk_id": str(id), "entities": entities}

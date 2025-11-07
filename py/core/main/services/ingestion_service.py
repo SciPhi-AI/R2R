@@ -232,6 +232,26 @@ class IngestionService:
                 )
                 extraction.metadata["pii_entity_count"] = len(result.entities)
 
+                # Store entities for DB persistence (will be processed in store_embeddings)
+                import hashlib
+                extraction.metadata["_pii_entities_to_persist"] = [
+                    {
+                        "entity_type": entity.entity_type,
+                        "start": entity.start,
+                        "end": entity.end,
+                        "score": entity.score,
+                        "original_text_hash": hashlib.sha256(
+                            entity.text.encode()
+                        ).hexdigest(),
+                        "anonymized_text": result.anonymized_text[
+                            entity.start : entity.end
+                        ]
+                        if result.anonymization_applied
+                        else None,
+                    }
+                    for entity in result.entities
+                ]
+
             # Log PII detection
             if result.anonymization_applied:
                 logger.info(
@@ -244,6 +264,24 @@ class IngestionService:
             logger.error(f"Error applying PII protection: {str(e)}")
             # On error, return original extraction to avoid blocking ingestion
             return extraction
+
+    async def _persist_pii_entities(
+        self, vector_batch: list["VectorEntry"]
+    ) -> None:
+        """Persist PII entities from vector batch to database."""
+        try:
+            for entry in vector_batch:
+                # Check if this entry has PII entities to persist
+                pii_entities = entry.metadata.pop("_pii_entities_to_persist", None)
+                if pii_entities:
+                    await self.providers.database.pii_entities_handler.insert_entities(
+                        chunk_id=entry.id,
+                        document_id=entry.document_id,
+                        entities=pii_entities,
+                    )
+        except Exception as e:
+            # Don't fail ingestion if PII persistence fails
+            logger.error(f"Error persisting PII entities: {str(e)}")
 
     async def parse_file(
         self,
@@ -538,6 +576,8 @@ class IngestionService:
                             vector_batch
                         )
                     )
+                    # Persist PII entities if present
+                    await self._persist_pii_entities(vector_batch)
                 except Exception as e:
                     logger.error(f"Failed to store vector batch: {e}")
                     yield f"Error: {e}"
@@ -549,6 +589,8 @@ class IngestionService:
                 await self.providers.database.chunks_handler.upsert_entries(
                     vector_batch
                 )
+                # Persist PII entities if present
+                await self._persist_pii_entities(vector_batch)
             except Exception as e:
                 logger.error(f"Failed to store final vector batch: {e}")
                 yield f"Error: {e}"
