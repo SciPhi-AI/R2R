@@ -7,7 +7,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "-2"
 data:
 #  POSTGRES_HOST: "postgres"
-  R2R_POSTGRES_HOST: "r2r-documentdb"
+  R2R_POSTGRES_HOST: "postgresql"
   R2R_POSTGRES_PORT: "5432"
 #  POSTGRES_PORT: "5432"
   R2R_POSTGRES_DBNAME: "r2r"
@@ -17,8 +17,8 @@ data:
   R2R_LOG_LEVEL: INFO
 
   PYTHONUNBUFFERED: "1"
-  R2R_CONFIG_NAME: "full"
-#  R2R_CONFIG_PATH: "/app/r2r.toml"
+  R2R_CONFIG_NAME: ""
+  R2R_CONFIG_PATH: "/app/r2r.toml"
 #  R2R_CONFIG_TOML: "/app/r2r.toml"
   TELEMETRY_ENABLED: "false"
   R2R_POSTGRES_PROJECT_NAME: "r2r_default"

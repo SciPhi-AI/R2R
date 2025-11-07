@@ -22,7 +22,7 @@ api:
   replicaCount: 2
   image:
     repository: "ghcr.io/hatchet-dev/hatchet/hatchet-api"
-    tag: "v0.54.7"
+    tag: "v0.72.8"
     pullPolicy: "Always"
   migrationJob:
     image:
@@ -50,6 +50,15 @@ api:
           port: 8080
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 grpc:
   enabled: true
@@ -58,7 +67,7 @@ grpc:
   replicaCount: 1
   image:
     repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
-    tag: "v0.54.7"
+    tag: "v0.72.8"
     pullPolicy: "Always"
   setupJob:
     enabled: false
@@ -93,6 +102,15 @@ grpc:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 controllers:
   enabled: true
@@ -101,7 +119,7 @@ controllers:
   replicaCount: 1
   image:
     repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
-    tag: "v0.54.7"
+    tag: "v0.72.8"
     pullPolicy: "Always"
   setupJob:
     enabled: false
@@ -136,6 +154,15 @@ controllers:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 scheduler:
   enabled: true
@@ -144,7 +171,7 @@ scheduler:
   replicaCount: 1
   image:
     repository: "ghcr.io/hatchet-dev/hatchet/hatchet-engine"
-    tag: "v0.54.7"
+    tag: "v0.72.8"
     pullPolicy: "Always"
   setupJob:
     enabled: false
@@ -179,12 +206,21 @@ scheduler:
           port: 8733
         periodSeconds: 5
         initialDelaySeconds: 20
+  extraVolumes:
+    - name: hatchet-keys
+      secret:
+        secretName: hatchet-keyset
+        defaultMode: 0400
+  extraVolumeMounts:
+    - name: hatchet-keys
+      mountPath: /etc/hatchet/keys
+      readOnly: true
 
 frontend:
   enabled: true
   image:
     repository: "ghcr.io/hatchet-dev/hatchet/hatchet-frontend"
-    tag: "v0.54.7"
+    tag: "v0.72.8"
     pullPolicy: "Always"
   service:
     externalPort: 8080
@@ -208,6 +244,8 @@ postgres:
 rabbitmq:
   enabled: true
   auth:
+    tls:
+      enabled: false
 #    username: ""
 #    password: ""
   service:

@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+  - ./include/sec-hatchet-config.yaml
+  - ./include/sec-hatchet-shared-config.yaml
+  - ./include/sec-hatchet-keyset.yaml
+  - ./include/sec-hatchet-postgresql-passwords.yaml
+  - ./include/sec-r2r.yaml
+  - ./include/sec-r2r-file.yaml
+
+patches:
+  - path: patches/cm-r2r.yaml
+    target:
+      kind: ConfigMap
+      name: r2r-configmap

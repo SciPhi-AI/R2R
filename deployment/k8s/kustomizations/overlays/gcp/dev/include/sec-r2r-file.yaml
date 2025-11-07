@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: r2r-files
+  namespace: ai-system
+type: Opaque
+stringData:
+  r2r.toml: |
+    [app]
+    fast_llm = "openai/gpt-4.1-nano"
+    quality_llm = "vllm/Bedovyy/Qwen3-32B"
+    
+    [auth]
+    require_authentication = true
+    default_admin_email = "user@example.com"
+    default_admin_password = "change_me_immediately"
+
+    [completion]
+    provider = "r2r"
+    concurrent_request_limit = 16
+      [completion.generation_config]
+      max_tokens_to_sample = 1024
+      stream = true
+      temperature = 0.1
+      top_p = 1
+
+    [embedding]
+    provider = "litellm"
+    base_model = "gemini/text-embedding-004"
+    base_dimension = nan
+    batch_size = 128
+    concurrent_request_limit = 2
+    
+    [completion_embedding]
+    provider = "litellm"
+    base_model = "gemini/text-embedding-004"
+    base_dimension = nan
+    batch_size = 128
+    concurrent_request_limit = 2
+
+    [logging]
+    level = "DEBUG"
+    format = "json"

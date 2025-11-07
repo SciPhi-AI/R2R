@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: r2r-secrets
+  namespace: ai-system
+type: Opaque
+stringData:
+  # Database access
+  R2R_POSTGRES_USER: "postgres"
+  R2R_POSTGRES_PASSWORD: "s54c2xh756n90in6h7b76v3dh"
+
+  # LLMs keys
+  OPENAI_API_KEY: ""
+  LITELLM_PROXY_API_KEY: ""
+  R2R_SECRET_KEY: ""
+  ANTHROPIC_API_KEY: ""
+  AZURE_FOUNDRY_API_KEY: ""
+  AZURE_API_KEY: ""
+  GOOGLE_APPLICATION_CREDENTIALS: ""
+  GEMINI_API_KEY: ""
+  AWS_ACCESS_KEY_ID: ""
+  AWS_SECRET_ACCESS_KEY: ""
+  GROQ_API_KEY: ""
+  COHERE_API_KEY: ""
+  ANYSCALE_API_KEY: ""
+  LM_STUDIO_API_KEY: ""
+  HUGGINGFACE_API_KEY: ""
+  UNSTRUCTURED_API_KEY: ""
+  SERPER_API_KEY: ""
+  SENDGRID_API_KEY: ""
+
+  # OAuth (opcjonalnie)
+  GOOGLE_CLIENT_ID: ""
+  GOOGLE_CLIENT_SECRET: ""
+  GITHUB_CLIENT_ID: ""
+  GITHUB_CLIENT_SECRET: ""
