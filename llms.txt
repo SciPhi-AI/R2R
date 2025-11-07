@@ -4180,7 +4180,7 @@ Returns a paginated list of documents accessible to the authenticated user. Regu
 | :-------------------------- | :------- | :------ | :-------------------------------------------------------------------------- |
 | `ids`                       | `string` | No      | A comma-separated list of document IDs to retrieve.                         |
 | `offset`                    | `integer`| No      | Number of objects to skip. Defaults to `0`.                                 |
-| `limit`                     | `integer`| No      | Max number of objects to return, `1–100`. Defaults to `100`.               |
+| `limit`                     | `integer`| No      | Max number of objects to return, `1–1000`. Defaults to `100`.               |
 | `include_summary_embeddings`| `integer`| No      | Whether to include embeddings of each document summary (`1` for true, `0` for false). |
 
 **Successful Response:**
@@ -4434,7 +4434,7 @@ Retrieves the text chunks generated from a document during ingestion. Chunks rep
 | Parameter         | Type      | Required | Description                                       |
 | :---------------- | :-------- | :------ | :------------------------------------------------ |
 | `offset`          | `integer` | No      | Number of chunks to skip. Defaults to `0`.        |
-| `limit`           | `integer` | No      | Number of chunks to return (`1–100`). Defaults to `100`. |
+| `limit`           | `integer` | No      | Number of chunks to return (`1–1000`). Defaults to `100`. |
 | `include_vectors` | `boolean` | No      | Whether to include vector embeddings in the response (`true` or `false`). |
 
 **Successful Response:**

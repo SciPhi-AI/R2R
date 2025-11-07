@@ -158,10 +158,15 @@ class IngestionService:
         metadata = metadata or {}
         metadata["version"] = version
 
+        collection_ids = metadata.get("collection_ids", [])
+        if not collection_ids and user.collection_ids:
+            # If no collection_ids provided, assign to user's first collection (default)
+            collection_ids = [user.collection_ids[0]]
+
         return DocumentResponse(
             id=document_id,
             owner_id=user.id,
-            collection_ids=metadata.get("collection_ids", []),
+            collection_ids=collection_ids,
             document_type=DocumentType[file_extension.upper()],
             title=(
                 metadata.get("title", file_name.split("/")[-1])
@@ -187,10 +192,15 @@ class IngestionService:
         metadata = metadata or {}
         metadata["version"] = version
 
+        collection_ids = metadata.get("collection_ids", [])
+        if not collection_ids and user.collection_ids:
+            # If no collection_ids provided, assign to user's first collection (default)
+            collection_ids = [user.collection_ids[0]]
+
         return DocumentResponse(
             id=document_id,
             owner_id=user.id,
-            collection_ids=metadata.get("collection_ids", []),
+            collection_ids=collection_ids,
             document_type=DocumentType.TXT,
             title=metadata.get("title", f"Ingested Chunks - {document_id}"),
             metadata=metadata,
@@ -542,6 +552,21 @@ class IngestionService:
         self, document_info: DocumentResponse
     ):
         try:
+            # Check if document still exists before updating status
+            # This prevents recreating documents that were deleted during ingestion
+            existing_docs = await self.providers.database.documents_handler.get_documents_overview(
+                offset=0,
+                limit=1,
+                filter_document_ids=[document_info.id]
+            )
+            
+            if not existing_docs["results"]:
+                logger.warning(
+                    f"Document {document_info.id} no longer exists. "
+                    f"Skipping status update to {document_info.ingestion_status}."
+                )
+                return
+            
             await self.providers.database.documents_handler.upsert_documents_overview(
                 document_info
             )

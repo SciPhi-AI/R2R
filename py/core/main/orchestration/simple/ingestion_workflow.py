@@ -93,7 +93,7 @@ def simple_ingestion_factory(service: IngestionService):
                 document_info, status=IngestionStatus.SUCCESS
             )
 
-            collection_ids = parsed_data.get("collection_ids")
+            collection_ids = document_info.collection_ids
 
             try:
                 if not collection_ids:
@@ -255,7 +255,7 @@ def simple_ingestion_factory(service: IngestionService):
             )
             document_id = document_info.id
 
-            collection_ids = parsed_data.get("collection_ids") or []
+            collection_ids = document_info.collection_ids or []
             if isinstance(collection_ids, str):
                 collection_ids = [collection_ids]
             collection_ids = [UUID(id_str) for id_str in collection_ids]

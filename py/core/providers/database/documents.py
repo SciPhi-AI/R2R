@@ -210,7 +210,7 @@ class PostgresDocumentsHandler(Handler):
                     async with (
                         self.connection_manager.pool.get_connection() as conn  # type: ignore
                     ):
-                        async with conn.transaction():
+                        async with conn.transaction(isolation='serializable'):
                             # Lock the row for update
                             check_query = f"""
                             SELECT ingestion_attempt_number, ingestion_status FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}
@@ -316,6 +316,7 @@ class PostgresDocumentsHandler(Handler):
                 except (
                     asyncpg.exceptions.UniqueViolationError,
                     asyncpg.exceptions.DeadlockDetectedError,
+                    asyncpg.exceptions.SerializationFailureError,
                 ) as e:
                     retries += 1
                     if retries == max_retries:
@@ -610,6 +611,7 @@ class PostgresDocumentsHandler(Handler):
         base_query = (
             f"FROM {self._get_table_name(PostgresDocumentsHandler.TABLE_NAME)}"
         )
+        
         if conditions:
             # Combine everything with AND
             base_query += " WHERE " + " AND ".join(conditions)

@@ -336,7 +336,7 @@ class CollectionsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             owner_only: bool = Query(
                 False,
@@ -359,7 +359,7 @@ class CollectionsRouter(BaseRouterV3):
             else:
                 requesting_user_id = [auth_user.id]
 
-            collection_uuids = [UUID(collection_id) for collection_id in ids]
+            collection_uuids = [UUID(collection_id) for collection_id in ids] if ids else None
 
             collections_overview_response = (
                 await self.services.management.collections_overview(
@@ -738,7 +738,7 @@ class CollectionsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedDocumentsResponse:
@@ -898,7 +898,7 @@ class CollectionsRouter(BaseRouterV3):
                 100,
                 ge=1,
                 le=1000,
-                description="Specifies a limit on the number of objects to return, ranging between 1 and 100. Defaults to 100.",
+                description="Specifies a limit on the number of objects to return, ranging between 1 and 1000. Defaults to 100.",
             ),
             auth_user=Depends(self.providers.auth.auth_wrapper()),
         ) -> WrappedUsersResponse:

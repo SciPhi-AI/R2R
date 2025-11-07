@@ -150,9 +150,7 @@ def hatchet_ingestion_factory(
                     status=IngestionStatus.SUCCESS,
                 )
 
-                collection_ids = context.workflow_input()["request"].get(
-                    "collection_ids"
-                )
+                collection_ids = document_info.collection_ids
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
@@ -363,7 +361,7 @@ def hatchet_ingestion_factory(
                 DocumentChunk(
                     id=generate_extraction_id(document_id, i),
                     document_id=document_id,
-                    collection_ids=[],
+                    collection_ids=document_info.collection_ids,
                     owner_id=document_info.owner_id,
                     data=chunk.text,
                     metadata=parsed_data["metadata"],
@@ -429,9 +427,7 @@ def hatchet_ingestion_factory(
 
             try:
                 # TODO - Move logic onto the `management service`
-                collection_ids = context.workflow_input()["request"].get(
-                    "collection_ids"
-                )
+                collection_ids = document_info.collection_ids
                 if not collection_ids:
                     # TODO: Move logic onto the `management service`
                     collection_id = generate_default_user_collection_id(
