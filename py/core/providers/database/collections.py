@@ -310,6 +310,7 @@ class PostgresCollectionsHandler(Handler):
         query = f"""
             SELECT d.id, d.owner_id, d.type, d.metadata, d.title, d.version,
                 d.size_in_bytes, d.ingestion_status, d.extraction_status, d.created_at, d.updated_at, d.summary,
+                d.collection_ids,
                 COUNT(*) OVER() AS total_entries
             FROM {self._get_table_name("documents")} d
             WHERE $1 = ANY(d.collection_ids)
@@ -326,7 +327,7 @@ class PostgresCollectionsHandler(Handler):
         documents = [
             DocumentResponse(
                 id=row["id"],
-                collection_ids=[collection_id],
+                collection_ids=row["collection_ids"],
                 owner_id=row["owner_id"],
                 document_type=DocumentType(row["type"]),
                 metadata=json.loads(row["metadata"]),
