@@ -387,9 +387,18 @@ class R2RIngestionProvider(IngestionProvider):
             else:
                 # Standard parsing for non-override cases
                 async for text in self.parsers[document.document_type].ingest(
-                    file_content, **ingestion_config_override
+                    file_content,
+                    **ingestion_config_override,
+                    document=document,
                 ):
-                    if text is not None:
+                    if text is not None and isinstance(text, dict):
+                        contents.append(
+                            {
+                                "content": text.get("content", ""),
+                                "metadata": text.get("metadata", {}),
+                            }
+                        )
+                    elif text is not None:
                         contents.append({"content": text})
 
             if not contents:
@@ -401,12 +410,15 @@ class R2RIngestionProvider(IngestionProvider):
             iteration = 0
             for content_item in contents:
                 chunk_text = content_item["content"]
+                parser_generated = content_item.get("metadata", {})
                 chunks = self.chunk(chunk_text, ingestion_config_override)
 
                 for chunk in chunks:
                     metadata = {**document.metadata, "chunk_order": iteration}
                     if "page_number" in content_item:
                         metadata["page_number"] = content_item["page_number"]
+                    if parser_generated:
+                        metadata["parser_generated"] = parser_generated
 
                     extraction = DocumentChunk(
                         id=generate_extraction_id(document.id, iteration),
