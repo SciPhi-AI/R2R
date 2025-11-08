@@ -1,3 +1,5 @@
+from pydantic_ai import Tool as PydanticTool
+
 from shared.abstractions.tool import Tool
 
 
@@ -26,6 +28,14 @@ class WebSearchTool(Tool):
             },
             results_function=self.execute,
             llm_format_function=None,
+        )
+        pyd_params = self.parameters.copy()
+        pyd_params["additionalProperties"] = False
+        self._pydantic_ai_tool = PydanticTool.from_schema(
+            function=self.execute,
+            name=self.name,
+            description=self.description,
+            json_schema=pyd_params,
         )
 
     async def execute(self, query: str, *args, **kwargs):
