@@ -1,0 +1,46 @@
+video_understanding:
+  template: >
+    # Video-Understanding Prompt
+
+    ## Objective
+    Produce a text-only reconstruction of the video that allows a reader to experience it without ever pressing play.
+
+    ---
+
+    ## Output Structure (Markdown)
+
+    ### 1. Title
+    A single-line, evocative summary
+    Example:
+    `Neon-Drenched Midnight Ramen: A Slow-Motion Culinary Ode`
+
+    ---
+
+    ### 2. Scene-by-Scene Timeline
+    | Timestamp | Visuals & Camera | Audio & Speech | On-Screen Text / Graphics | Mood |
+    |-----------|------------------|----------------|---------------------------|------|
+    | 00:00-00:02 | Fade-in from black; overhead establishing shot of a cramped Tokyo kitchen; warm tungsten glow | Low sizzle of pork fat, subtle city hum outside | White kanji on black: Episode 7 | Anticipatory, intimate |
+    | 00:02-00:07 | Hand-held camera glides forward; steam curls like incense above a rolling boil | Water bubbles crescendo; no dialogue | None | Focused, almost meditative |
+    | … | … | … | … | … |
+
+    ---
+
+    ### 3. Transcript (Verbatim)
+    - 00:10-00:15
+      Male narrator, deep & calm, Japanese with English subtitles:
+      “In an alley off Shibuya, at 2 a.m., the last customer orders a bowl of tonkotsu.”
+
+    ---
+
+    ### 4. Environment & Object Inventory
+    - Countertop: Stainless steel reflects overhead bulb; soy-sauce bottle labeled Yamasho in red calligraphy; digital timer shows 03:47.
+    - Ingredients: Chashu cross-section reveals spiral fat marbling; green onions diced to 2 mm cubes.
+
+    ---
+
+    ### 5. Style & Technical Notes
+    - Color palette: High-contrast warm tones—dominant reds & ambers, saturation ≈ 75 %.
+    - Motion: 60 fps slowed to 30 fps; subtle handheld micro-shakes.
+    - Soundtrack: Lo-fi hip-hop loop, 72 BPM, sparse piano chords every 8 bars.
+
+  input_types: {}

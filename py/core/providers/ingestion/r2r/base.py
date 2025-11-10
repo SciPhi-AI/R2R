@@ -64,6 +64,10 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.HEIC: parsers.ImageParser,
         DocumentType.SVG: parsers.ImageParser,
         DocumentType.MP3: parsers.AudioParser,
+        DocumentType.MP4: parsers.VideoParser,
+        DocumentType.AVI: parsers.VideoParser,
+        DocumentType.MOV: parsers.VideoParser,
+        DocumentType.MKV: parsers.VideoParser,
         DocumentType.P7S: parsers.P7SParser,
         DocumentType.RST: parsers.RSTParser,
         DocumentType.RTF: parsers.RTFParser,
@@ -92,6 +96,13 @@ class R2RIngestionProvider(IngestionProvider):
         DocumentType.JPEG,
         DocumentType.PNG,
         DocumentType.SVG,
+    }
+
+    VIDEO_TYPES = {
+        DocumentType.MP4,
+        DocumentType.AVI,
+        DocumentType.MOV,
+        DocumentType.MKV,
     }
 
     def __init__(

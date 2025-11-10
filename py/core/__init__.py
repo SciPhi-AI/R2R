@@ -121,6 +121,7 @@ __all__ = [
     "RetrievalService",
     "GraphService",
     "AudioParser",
+    "VideoParser",
     "BMPParser",
     "DOCParser",
     "DOCXParser",

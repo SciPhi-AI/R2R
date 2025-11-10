@@ -14,9 +14,11 @@ from .pdf_parser import (
 from .ppt_parser import PPTParser
 from .pptx_parser import PPTXParser
 from .rtf_parser import RTFParser
+from .video_parser import VideoParser
 
 __all__ = [
     "AudioParser",
+    "VideoParser",
     "BMPParser",
     "DOCParser",
     "DOCXParser",

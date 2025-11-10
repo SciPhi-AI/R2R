@@ -4,6 +4,7 @@ from .text import *
 
 __all__ = [
     "AudioParser",
+    "VideoParser",
     "BMPParser",
     "DOCParser",
     "DOCXParser",
