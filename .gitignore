@@ -43,3 +43,12 @@ go.work.sum
 .ruff_cache/
 *.egg-info
 .venv
+
+# Deployment secrets
+deployment/gcp/vertex-ai-key.json
+deployment/gcp/.env
+docker/user_configs/gcp-production.env
+docker/user_configs/gemini-openai.toml
+*-key.json
+*.env
+!.env.example
