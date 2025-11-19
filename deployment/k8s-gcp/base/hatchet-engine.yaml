@@ -1,0 +1,193 @@
+# ========================================
+# Hatchet Controllers
+# ========================================
+# Manages workflow execution
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hatchet-controllers
+  namespace: r2r-system
+  labels:
+    app: hatchet-controllers
+    component: orchestration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hatchet-controllers
+  template:
+    metadata:
+      labels:
+        app: hatchet-controllers
+        component: orchestration
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        # Cloud SQL Proxy
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - "r2r-full-deployment:us-central1:r2r-postgres"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+
+        # Controllers
+        - name: hatchet-controllers
+          image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.54.7
+          command:
+            - /hatchet/hatchet-engine
+            - controllers
+            - --config
+            - /hatchet/config.yaml
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(HATCHET_DATABASE_POSTGRES_USERNAME):$(HATCHET_DATABASE_POSTGRES_PASSWORD)@127.0.0.1:5432/hatchet?sslmode=disable"
+            - name: DATABASE_RABBITMQ_URL
+              value: "amqp://hatchet:$(HATCHET_RABBITMQ_PASSWORD)@rabbitmq:5672/"
+
+          envFrom:
+            - secretRef:
+                name: r2r-secrets
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+# ========================================
+# Hatchet Scheduler
+# ========================================
+# Schedules workflow tasks
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hatchet-scheduler
+  namespace: r2r-system
+  labels:
+    app: hatchet-scheduler
+    component: orchestration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hatchet-scheduler
+  template:
+    metadata:
+      labels:
+        app: hatchet-scheduler
+        component: orchestration
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        # Cloud SQL Proxy
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - "r2r-full-deployment:us-central1:r2r-postgres"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+
+        # Scheduler
+        - name: hatchet-scheduler
+          image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.54.7
+          command:
+            - /hatchet/hatchet-engine
+            - scheduler
+            - --config
+            - /hatchet/config.yaml
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(HATCHET_DATABASE_POSTGRES_USERNAME):$(HATCHET_DATABASE_POSTGRES_PASSWORD)@127.0.0.1:5432/hatchet?sslmode=disable"
+            - name: DATABASE_RABBITMQ_URL
+              value: "amqp://hatchet:$(HATCHET_RABBITMQ_PASSWORD)@rabbitmq:5672/"
+
+          envFrom:
+            - secretRef:
+                name: r2r-secrets
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+---
+# ========================================
+# Hatchet Frontend (Dashboard)
+# ========================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hatchet-frontend
+  namespace: r2r-system
+  labels:
+    app: hatchet-frontend
+    component: orchestration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hatchet-frontend
+  template:
+    metadata:
+      labels:
+        app: hatchet-frontend
+        component: orchestration
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/hatchet-dev/hatchet/hatchet-frontend:v0.54.7
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: HATCHET_CLIENT_HOST_PORT
+              value: "hatchet-api:8080"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hatchet-frontend
+  namespace: r2r-system
+  labels:
+    app: hatchet-frontend
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+  selector:
+    app: hatchet-frontend

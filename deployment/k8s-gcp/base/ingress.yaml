@@ -1,0 +1,125 @@
+# ========================================
+# Managed Certificate for SSL/TLS
+# ========================================
+# Google-managed SSL certificate
+# DNS must be pointed to Load Balancer IP before certificate provisioning
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: r2r-cert
+  namespace: r2r-system
+spec:
+  domains:
+    - r2r.yourdomain.com  # Replace with your domain
+    - api.r2r.yourdomain.com  # Optional: separate domain for API
+
+---
+# ========================================
+# Global Static IP Address
+# ========================================
+# Reserve this IP before applying ingress:
+# gcloud compute addresses create r2r-production-ip --global
+# Get IP: gcloud compute addresses describe r2r-production-ip --global --format="get(address)"
+#
+# Then point your DNS A record to this IP:
+# r2r.yourdomain.com → IP_ADDRESS
+
+---
+# ========================================
+# Ingress - Google Cloud Load Balancer
+# ========================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: r2r-ingress
+  namespace: r2r-system
+  labels:
+    app: r2r
+  annotations:
+    # Use Google Cloud Load Balancer (not nginx)
+    kubernetes.io/ingress.class: "gce"
+
+    # Use the reserved global static IP
+    kubernetes.io/ingress.global-static-ip-name: "r2r-production-ip"
+
+    # Use managed certificate for SSL
+    networking.gke.io/managed-certificates: "r2r-cert"
+
+    # Redirect HTTP to HTTPS
+    networking.gke.io/v1beta1.FrontendConfig: "r2r-frontend-config"
+
+    # Health check configuration
+    cloud.google.com/backend-config: '{"default": "r2r-backend-config"}'
+
+    # Allow large payloads for document upload
+    # Default is 1m, increase to 100m for large PDFs
+    ingress.kubernetes.io/proxy-body-size: "100m"
+
+spec:
+  # Default backend (optional)
+  defaultBackend:
+    service:
+      name: r2r-dashboard
+      port:
+        number: 3000
+
+  rules:
+    # Main domain
+    - host: r2r.yourdomain.com
+      http:
+        paths:
+          # API routes
+          - path: /v3/*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: r2r-api
+                port:
+                  number: 7272
+
+          # Health endpoint
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: r2r-api
+                port:
+                  number: 7272
+
+          # Dashboard (default path)
+          - path: /*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: r2r-dashboard
+                port:
+                  number: 3000
+
+---
+# ========================================
+# Frontend Config - HTTPS Redirect
+# ========================================
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: r2r-frontend-config
+  namespace: r2r-system
+spec:
+  # Redirect HTTP to HTTPS
+  redirectToHttps:
+    enabled: true
+    responseCodeName: "MOVED_PERMANENTLY_DEFAULT"  # 301 redirect
+
+  # SSL Policy (optional - for stronger encryption)
+  sslPolicy: "gce-ssl-policy"
+
+---
+# ========================================
+# SSL Policy - Strong Encryption
+# ========================================
+# Create SSL policy with gcloud:
+# gcloud compute ssl-policies create gce-ssl-policy \
+#   --profile MODERN \
+#   --min-tls-version 1.2
+#
+# This enforces TLS 1.2+ with modern cipher suites

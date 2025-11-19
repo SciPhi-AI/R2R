@@ -176,7 +176,7 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id_str in collection_ids:
-                        collection_id = UUID(collection_id_str)
+                        collection_id = collection_id_str if isinstance(collection_id_str, UUID) else UUID(collection_id_str)
                         try:
                             name = document_info.title or "N/A"
                             description = ""
@@ -200,14 +200,19 @@ def hatchet_ingestion_factory(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        await service.providers.database.collections_handler.assign_document_to_collection_relational(
-                            document_id=document_info.id,
-                            collection_id=collection_id,
-                        )
-                        await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
-                            document_id=document_info.id,
-                            collection_id=collection_id,
-                        )
+                        try:
+                            await service.providers.database.collections_handler.assign_document_to_collection_relational(
+                                document_id=document_info.id,
+                                collection_id=collection_id,
+                            )
+                            await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
+                                document_id=document_info.id,
+                                collection_id=collection_id,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, document/chunks already assigned to collection: {str(e)}"
+                            )
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,
                             status_type="graph_sync_status",
@@ -453,7 +458,7 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id_str in collection_ids:
-                        collection_id = UUID(collection_id_str)
+                        collection_id = collection_id_str if isinstance(collection_id_str, UUID) else UUID(collection_id_str)
                         try:
                             name = document_info.title or "N/A"
                             description = ""
@@ -477,15 +482,20 @@ def hatchet_ingestion_factory(
                                 f"Warning, could not create collection with error: {str(e)}"
                             )
 
-                        await service.providers.database.collections_handler.assign_document_to_collection_relational(
-                            document_id=document_info.id,
-                            collection_id=collection_id,
-                        )
+                        try:
+                            await service.providers.database.collections_handler.assign_document_to_collection_relational(
+                                document_id=document_info.id,
+                                collection_id=collection_id,
+                            )
 
-                        await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
-                            document_id=document_info.id,
-                            collection_id=collection_id,
-                        )
+                            await service.providers.database.chunks_handler.assign_document_chunks_to_collection(
+                                document_id=document_info.id,
+                                collection_id=collection_id,
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f"Warning, document/chunks already assigned to collection: {str(e)}"
+                            )
 
                         await service.providers.database.documents_handler.set_workflow_status(
                             id=collection_id,

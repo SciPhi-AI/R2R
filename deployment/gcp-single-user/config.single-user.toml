@@ -1,0 +1,215 @@
+# ========================================
+# R2R Single-User Configuration
+# ========================================
+# Optimized for single user on small VM (4GB RAM)
+# Cost-efficient settings with full functionality
+# ========================================
+
+[app]
+# Project Configuration
+project_name = "r2r-single-user"
+
+# LLM Models (using Vertex AI)
+# Use "lite" models for cost savings
+fast_llm = "vertex_ai/gemini-2.0-flash-lite"      # Fast, cheap for simple tasks
+quality_llm = "vertex_ai/gemini-2.0-flash"        # Better quality when needed
+reasoning_llm = "vertex_ai/gemini-2.0-flash-thinking" # For complex reasoning
+planning_llm = "vertex_ai/gemini-2.0-flash"       # For planning tasks
+
+# Multimodal models
+vlm = "vertex_ai/gemini-2.0-flash"                # Vision-language model
+audio_lm = "vertex_ai/gemini-2.0-flash"           # Audio processing
+
+# ========================================
+# Authentication
+# ========================================
+[auth]
+provider = "r2r"
+access_token_lifetime_in_minutes = 60
+refresh_token_lifetime_in_days = 7
+require_authentication = false  # Set to true for production with auth
+require_email_verification = false
+
+[auth.default_admin]
+email = "admin@example.com"
+password = "change_me_immediately"
+
+# ========================================
+# Database (PostgreSQL with pgvector)
+# ========================================
+[database]
+provider = "postgres"
+
+[database.postgres_config]
+user = "postgres"
+password = "postgres"  # Override with env var
+host = "postgres"
+port = 5432
+db_name = "r2r"
+project_name = "r2r-single-user"
+
+# Connection pool settings for single user (minimal resources)
+max_connections = 10        # Low for single user
+connection_timeout = 60
+
+# Vector index settings
+default_collection_name = "Default"
+default_collection_description = "Default collection for single user"
+
+# Performance tuning for pgvector
+[database.vector_index_config]
+# Use IVFFlat for smaller datasets (faster, less memory)
+index_method = "ivfflat"
+index_arguments = { nlist = 100 }  # Lower for small datasets
+index_measure = "cosine_distance"
+search_arguments = { nprobe = 10 }
+
+# ========================================
+# Embedding Provider (Vertex AI)
+# ========================================
+[embedding]
+provider = "vertex_ai"
+base_model = "text-embedding-004"
+base_dimension = 768  # Vertex AI embedding dimension
+batch_size = 32  # Small batches for single user
+add_title_as_prefix = true
+rerank_model = "None"  # Disable reranking to save costs
+concurrent_request_limit = 1  # Single user doesn't need concurrency
+
+# Vertex AI specific settings
+[embedding.vertex_ai_config]
+project = "${VERTEX_PROJECT}"
+location = "${VERTEX_LOCATION}"
+
+# ========================================
+# LLM/Completion Provider (Vertex AI)
+# ========================================
+[completion]
+provider = "litellm"  # LiteLLM supports Vertex AI
+
+[completion.generation_config]
+# Cost-optimized settings
+temperature = 0.1
+top_p = 0.9
+max_tokens_to_sample = 1024  # Lower for cost savings
+model = "vertex_ai/gemini-2.0-flash-lite"
+api_base = "None"
+
+# ========================================
+# Document Ingestion
+# ========================================
+[ingestion]
+provider = "r2r"  # Simple provider without Unstructured service
+excluded_parsers = ["mp4"]  # Exclude heavy parsers
+
+# Chunking strategy
+[ingestion.chunking_config]
+provider = "r2r"
+method = "recursive"
+chunk_size = 512  # Smaller chunks for better search
+chunk_overlap = 50
+
+# CRITICAL: Enable automatic extraction
+automatic_extraction = true
+automatic_deduplication = true
+
+# ========================================
+# Knowledge Graph
+# ========================================
+[kg]
+provider = "postgres"
+batch_size = 1  # Process one document at a time
+
+[kg.kg_extraction_config]
+model = "vertex_ai/gemini-2.0-flash-lite"  # Use lite model for extraction
+
+[kg.kg_extraction_prompt]
+# Optimized for cost-efficiency
+system_role = "You are a knowledge graph extraction expert. Extract entities and relationships efficiently."
+task = "Extract key entities and relationships from the text. Be concise."
+format = "Return JSON with entities and relationships."
+
+# ========================================
+# Graph Creation
+# ========================================
+[database.graph_creation_settings]
+automatic_deduplication = true
+entity_types = []  # Auto-detect
+relation_types = []  # Auto-detect
+max_knowledge_triples = 100  # Limit for single user
+fragment_merge_count = 4
+
+[database.graph_creation_settings.generation_config]
+model = "vertex_ai/gemini-2.0-flash-lite"  # Cost-efficient model
+
+# ========================================
+# Graph Enrichment
+# ========================================
+[database.graph_enrichment_settings]
+max_description_input_length = 65536
+
+[database.graph_enrichment_settings.generation_config]
+model = "vertex_ai/gemini-2.0-flash-lite"
+
+# ========================================
+# Agent Configuration
+# ========================================
+[agent]
+system_instruction_name = "rag_agent"
+tool_names = ["search"]  # Minimal tools for single user
+
+[agent.generation_config]
+model = "vertex_ai/gemini-2.0-flash"  # Use regular model for agent
+temperature = 0.1
+top_p = 0.9
+max_tokens_to_sample = 2048
+
+# ========================================
+# Orchestration
+# ========================================
+# Default: simple (no Hatchet)
+# Override with ORCHESTRATION_PROVIDER=hatchet for full mode
+[orchestration]
+provider = "simple"  # Use "hatchet" for full mode
+
+# ========================================
+# Logging
+# ========================================
+[logging]
+provider = "local"
+log_table = "logs"
+log_info_table = "log_info"
+logging_path = "/app/logs"
+
+[logging.logging_config]
+version = 1
+disable_existing_loggers = false
+
+[logging.logging_config.formatters.default]
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+[logging.logging_config.handlers.console]
+class = "logging.StreamHandler"
+formatter = "default"
+stream = "ext://sys.stdout"
+
+[logging.logging_config.handlers.file]
+class = "logging.handlers.RotatingFileHandler"
+formatter = "default"
+filename = "/app/logs/r2r.log"
+maxBytes = 10485760  # 10MB
+backupCount = 3
+
+[logging.logging_config.root]
+level = "INFO"
+handlers = ["console", "file"]
+
+# ========================================
+# Cost Optimization Notes
+# ========================================
+# 1. Uses gemini-2.0-flash-lite for most operations (cheaper)
+# 2. Smaller chunk sizes = less tokens processed
+# 3. Lower max_tokens_to_sample = reduced costs
+# 4. Minimal concurrency settings
+# 5. Simple orchestration provider (no Hatchet overhead)
+# 6. Automatic extraction enabled for knowledge graphs

@@ -1,0 +1,125 @@
+# ========================================
+# Horizontal Pod Autoscaler for R2R API
+# ========================================
+# Automatically scales R2R API pods based on CPU and memory usage
+# Min replicas: 2 (HA), Max replicas: 10
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: r2r-api-hpa
+  namespace: r2r-system
+  labels:
+    app: r2r-api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: r2r-api
+
+  minReplicas: 2  # Minimum for high availability
+  maxReplicas: 10  # Scale up to 10 pods max
+
+  # Target metrics for autoscaling
+  metrics:
+    # Scale based on CPU utilization
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70  # Scale when CPU > 70%
+
+    # Scale based on memory utilization
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80  # Scale when memory > 80%
+
+  # Scaling behavior
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+        - type: Percent
+          value: 50  # Scale down max 50% of pods at a time
+          periodSeconds: 60
+        - type: Pods
+          value: 2  # or max 2 pods at a time
+          periodSeconds: 60
+      selectPolicy: Min  # Use most conservative policy
+
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+        - type: Percent
+          value: 100  # Scale up max 100% (double pods) at a time
+          periodSeconds: 30
+        - type: Pods
+          value: 4  # or max 4 pods at a time
+          periodSeconds: 30
+      selectPolicy: Max  # Use most aggressive policy
+
+---
+# ========================================
+# Horizontal Pod Autoscaler for Dashboard
+# ========================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: r2r-dashboard-hpa
+  namespace: r2r-system
+  labels:
+    app: r2r-dashboard
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: r2r-dashboard
+
+  minReplicas: 2
+  maxReplicas: 5  # Dashboard needs less scaling
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+---
+# ========================================
+# Horizontal Pod Autoscaler for Unstructured
+# ========================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: unstructured-hpa
+  namespace: r2r-system
+  labels:
+    app: unstructured
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: unstructured
+
+  minReplicas: 2
+  maxReplicas: 8  # Unstructured is CPU-intensive
+
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75

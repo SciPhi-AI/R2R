@@ -52,3 +52,6 @@ docker/user_configs/gemini-openai.toml
 *-key.json
 *.env
 !.env.example
+.env.local
+.env.production
+vertex-ai-key.production.json

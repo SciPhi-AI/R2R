@@ -1,0 +1,154 @@
+# ========================================
+# R2R Single-User Deployment (Minimal)
+# ========================================
+# Lightweight Docker Compose for single user
+# Optimized for cost-efficiency ($20-25/month on GCP)
+# ========================================
+
+services:
+  # ========================================
+  # PostgreSQL with pgvector
+  # ========================================
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: r2r-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DBNAME:-r2r}
+      # Performance tuning for small VM (4GB RAM)
+      POSTGRES_SHARED_BUFFERS: ${POSTGRES_SHARED_BUFFERS:-512MB}
+      POSTGRES_EFFECTIVE_CACHE_SIZE: ${POSTGRES_EFFECTIVE_CACHE_SIZE:-2GB}
+      POSTGRES_WORK_MEM: ${POSTGRES_WORK_MEM:-16MB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - r2r-network
+
+  # ========================================
+  # R2R API (Light Mode)
+  # ========================================
+  r2r:
+    image: ragtoriches/prod:3.4.0
+    container_name: r2r-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "7272:7272"
+    environment:
+      # Database Configuration
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DBNAME: ${POSTGRES_DBNAME:-r2r}
+
+      # R2R Configuration
+      R2R_PROJECT_NAME: ${R2R_PROJECT_NAME:-r2r-single-user}
+      R2R_CONFIG_PATH: /app/r2r.toml
+
+      # Orchestration (Simple mode - no Hatchet)
+      ORCHESTRATION_PROVIDER: simple
+
+      # Storage (Local filesystem instead of MinIO)
+      STORAGE_PROVIDER: local
+      STORAGE_PATH: /app/data
+
+      # Vertex AI Configuration
+      VERTEX_PROJECT: ${VERTEX_PROJECT}
+      VERTEX_LOCATION: ${VERTEX_LOCATION:-us-central1}
+      GOOGLE_APPLICATION_CREDENTIALS: /app/credentials/vertex-ai-key.json
+
+      # OpenAI (fallback/alternative)
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Performance tuning for single user
+      MAX_WORKERS: ${MAX_WORKERS:-2}
+
+      # Enable automatic extraction (critical!)
+      AUTOMATIC_EXTRACTION: ${AUTOMATIC_EXTRACTION:-true}
+      AUTOMATIC_DEDUPLICATION: ${AUTOMATIC_DEDUPLICATION:-true}
+    volumes:
+      # Configuration
+      - ./config.single-user.toml:/app/r2r.toml:ro
+      - ./vertex-ai-key.json:/app/credentials/vertex-ai-key.json:ro
+
+      # Data persistence
+      - r2r_data:/app/data
+      - r2r_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7272/v3/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - r2r-network
+    # Resource limits for small VM
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+
+  # ========================================
+  # R2R Dashboard (Optional)
+  # ========================================
+  dashboard:
+    image: emrgntcmplxty/r2r-dashboard:1.0.0
+    container_name: r2r-dashboard
+    restart: unless-stopped
+    depends_on:
+      - r2r
+    ports:
+      - "3000:3000"
+    environment:
+      R2R_API_URL: http://r2r:7272
+    networks:
+      - r2r-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    profiles:
+      - dashboard  # Only start if --profile dashboard is specified
+
+# ========================================
+# Volumes
+# ========================================
+volumes:
+  postgres_data:
+    driver: local
+    name: r2r-postgres-data
+  r2r_data:
+    driver: local
+    name: r2r-data
+  r2r_logs:
+    driver: local
+    name: r2r-logs
+
+# ========================================
+# Networks
+# ========================================
+networks:
+  r2r-network:
+    driver: bridge
+    name: r2r-network

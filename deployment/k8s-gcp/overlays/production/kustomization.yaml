@@ -1,0 +1,113 @@
+# ========================================
+# R2R Production Overlay for GKE
+# ========================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base configuration
+bases:
+  - ../../base
+
+# ========================================
+# Production-specific Labels
+# ========================================
+commonLabels:
+  tier: production
+  deployment-method: kustomize
+
+# ========================================
+# Production Config Overrides
+# ========================================
+configMapGenerator:
+  - name: r2r-gcp-config
+    behavior: merge
+    literals:
+      # Replace with actual Cloud SQL private IP
+      - POSTGRES_HOST=10.x.x.x  # Update after Cloud SQL creation
+      - HATCHET_DATABASE_POSTGRES_HOST=10.x.x.x
+
+      # Replace with actual GCS bucket names
+      - GCS_BUCKET_DOCUMENTS=r2r-documents-r2r-full-deployment
+      - GCS_BUCKET_EMBEDDINGS=r2r-embeddings-r2r-full-deployment
+      - GCS_BUCKET_GRAPHS=r2r-graphs-r2r-full-deployment
+
+      # Production logging
+      - LOG_LEVEL=INFO
+
+# ========================================
+# Production Resource Patches
+# ========================================
+patches:
+  # Increase R2R API resources for production
+  - target:
+      kind: Deployment
+      name: r2r-api
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/1/resources/requests/memory
+        value: "3Gi"
+      - op: replace
+        path: /spec/template/spec/containers/1/resources/requests/cpu
+        value: "1500m"
+      - op: replace
+        path: /spec/template/spec/containers/1/resources/limits/memory
+        value: "6Gi"
+      - op: replace
+        path: /spec/template/spec/containers/1/resources/limits/cpu
+        value: "3000m"
+
+  # Update Ingress with production domain
+  - target:
+      kind: ManagedCertificate
+      name: r2r-cert
+    patch: |-
+      - op: replace
+        path: /spec/domains/0
+        value: "r2r.yourdomain.com"  # Replace with actual domain
+
+  - target:
+      kind: Ingress
+      name: r2r-ingress
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: "r2r.yourdomain.com"  # Replace with actual domain
+
+  # Update Cloud SQL connection name
+  - target:
+      kind: Deployment
+      labelSelector: "component=backend"
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/args/2
+        value: "r2r-full-deployment:us-central1:r2r-postgres"
+
+  # Update ServiceAccount with actual project ID
+  - target:
+      kind: ServiceAccount
+      name: r2r-ksa
+    patch: |-
+      - op: replace
+        path: /metadata/annotations/iam.gke.io~1gcp-service-account
+        value: "r2r-workload@r2r-full-deployment.iam.gserviceaccount.com"
+
+# ========================================
+# Production Replicas
+# ========================================
+replicas:
+  - name: r2r-api
+    count: 3  # Start with 3 replicas in production
+
+  - name: r2r-dashboard
+    count: 2
+
+  - name: hatchet-api
+    count: 2
+
+  - name: unstructured
+    count: 3
+
+# ========================================
+# Production Namespace
+# ========================================
+namespace: r2r-system

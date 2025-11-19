@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2r-dashboard
+  namespace: r2r-system
+  labels:
+    app: r2r-dashboard
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: r2r-dashboard
+  template:
+    metadata:
+      labels:
+        app: r2r-dashboard
+        component: frontend
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        - name: dashboard
+          image: emrgntcmplxty/r2r-dashboard:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+
+          env:
+            # R2R API endpoint (internal)
+            - name: NEXT_PUBLIC_API_URL
+              value: "http://r2r-api:7272"
+
+            # Hatchet Dashboard URL (internal)
+            - name: NEXT_PUBLIC_HATCHET_URL
+              value: "http://hatchet-frontend:8080"
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - r2r-dashboard
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: r2r-dashboard
+  namespace: r2r-system
+  labels:
+    app: r2r-dashboard
+    component: frontend
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: ClusterIP
+  ports:
+    - port: 3000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: r2r-dashboard

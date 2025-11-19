@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: graph-clustering
+  namespace: r2r-system
+  labels:
+    app: graph-clustering
+    component: graph
+spec:
+  replicas: 1  # Graph clustering is stateful, keep at 1
+  selector:
+    matchLabels:
+      app: graph-clustering
+  template:
+    metadata:
+      labels:
+        app: graph-clustering
+        component: graph
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        - name: graph-clustering
+          image: ragtoriches/cluster-prod:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 7276
+              protocol: TCP
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: graph-clustering
+  namespace: r2r-system
+  labels:
+    app: graph-clustering
+    component: graph
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7276
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: graph-clustering

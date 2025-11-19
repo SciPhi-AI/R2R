@@ -1,0 +1,246 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: r2r-api
+  namespace: r2r-system
+  labels:
+    app: r2r-api
+    component: backend
+spec:
+  replicas: 2  # Start with 2 for HA, HPA will scale up to 10
+  selector:
+    matchLabels:
+      app: r2r-api
+  template:
+    metadata:
+      labels:
+        app: r2r-api
+        component: backend
+      annotations:
+        # Prometheus metrics scraping
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "7272"
+        prometheus.io/path: "/v3/metrics"
+    spec:
+      serviceAccountName: r2r-ksa
+
+      # ========================================
+      # Init Containers - Wait for dependencies
+      # ========================================
+      initContainers:
+      # Wait for Unstructured service
+      - name: wait-for-unstructured
+        image: busybox:1.36
+        command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for Unstructured service..."
+            until wget -q --spider http://unstructured:7275/health; do
+              echo "Unstructured not ready, waiting..."
+              sleep 5
+            done
+            echo "Unstructured is ready!"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # Wait for Graph Clustering service
+      - name: wait-for-graph-clustering
+        image: busybox:1.36
+        command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for Graph Clustering service..."
+            until wget -q --spider http://graph-clustering:7276/health; do
+              echo "Graph Clustering not ready, waiting..."
+              sleep 5
+            done
+            echo "Graph Clustering is ready!"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # Wait for Hatchet gRPC
+      - name: wait-for-hatchet
+        image: busybox:1.36
+        command:
+          - sh
+          - -c
+          - |
+            echo "Waiting for Hatchet gRPC service..."
+            until nc -z hatchet-grpc 7070; do
+              echo "Hatchet not ready, waiting..."
+              sleep 5
+            done
+            echo "Hatchet is ready!"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+      # ========================================
+      # Main Containers
+      # ========================================
+      containers:
+      # Cloud SQL Proxy sidecar for secure Cloud SQL connection
+      - name: cloud-sql-proxy
+        image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+        args:
+          # Replace with your Cloud SQL connection name
+          # Format: PROJECT_ID:REGION:INSTANCE_NAME
+          - "--structured-logs"
+          - "--port=5432"
+          - "r2r-full-deployment:us-central1:r2r-postgres"
+        ports:
+          - name: postgres
+            containerPort: 5432
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+
+      # R2R API main container
+      - name: r2r
+        image: ragtoriches/prod:3.4.0
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 7272
+            protocol: TCP
+
+        # ========================================
+        # Environment Variables
+        # ========================================
+        env:
+          # Override POSTGRES_HOST to use Cloud SQL proxy localhost
+          - name: POSTGRES_HOST
+            value: "127.0.0.1"
+          - name: HATCHET_DATABASE_POSTGRES_HOST
+            value: "127.0.0.1"
+
+        # Load all config from ConfigMap and Secrets
+        envFrom:
+          - configMapRef:
+              name: r2r-gcp-config
+          - secretRef:
+              name: r2r-secrets
+
+        # ========================================
+        # Volume Mounts
+        # ========================================
+        volumeMounts:
+          # Mount r2r.toml configuration file
+          - name: r2r-config
+            mountPath: /app/r2r.toml
+            subPath: r2r.toml
+            readOnly: true
+
+          # Mount Vertex AI service account key
+          - name: gcp-credentials
+            mountPath: /app/credentials
+            readOnly: true
+
+        # ========================================
+        # Resource Limits
+        # ========================================
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+
+        # ========================================
+        # Health Checks
+        # ========================================
+        livenessProbe:
+          httpGet:
+            path: /v3/health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /v3/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+
+        # ========================================
+        # Security Context
+        # ========================================
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+
+      # ========================================
+      # Volumes
+      # ========================================
+      volumes:
+        # R2R configuration from ConfigMap
+        - name: r2r-config
+          configMap:
+            name: r2r-config-toml
+            items:
+              - key: r2r.toml
+                path: r2r.toml
+
+        # GCP Service Account credentials
+        - name: gcp-credentials
+          secret:
+            secretName: vertex-ai-key
+            items:
+              - key: key.json
+                path: vertex-ai-key.json
+
+      # ========================================
+      # Pod Settings
+      # ========================================
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      # Anti-affinity for high availability
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - r2r-api
+                topologyKey: kubernetes.io/hostname

@@ -1,0 +1,111 @@
+# ========================================
+# RabbitMQ for Hatchet Message Queue
+# ========================================
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: r2r-system
+  labels:
+    app: rabbitmq
+    component: message-queue
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+        component: message-queue
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        - name: rabbitmq
+          image: bitnami/rabbitmq:3.12.14
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: amqp
+              containerPort: 5672
+              protocol: TCP
+            - name: management
+              containerPort: 15672
+              protocol: TCP
+
+          env:
+            - name: RABBITMQ_USERNAME
+              value: "hatchet"
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretRef:
+                  name: r2r-secrets
+                  key: HATCHET_RABBITMQ_PASSWORD
+            - name: RABBITMQ_VHOST
+              value: "/"
+
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /bitnami/rabbitmq/mnesia
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - check_port_connectivity
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+  volumeClaimTemplates:
+    - metadata:
+        name: rabbitmq-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "standard-rwo"  # GCP standard persistent disk
+        resources:
+          requests:
+            storage: 10Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: r2r-system
+  labels:
+    app: rabbitmq
+spec:
+  type: ClusterIP
+  ports:
+    - name: amqp
+      port: 5672
+      targetPort: amqp
+      protocol: TCP
+    - name: management
+      port: 15672
+      targetPort: management
+      protocol: TCP
+  selector:
+    app: rabbitmq

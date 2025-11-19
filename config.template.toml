@@ -1,0 +1,51 @@
+# R2R Full Mode Configuration Template for Vertex AI
+# Copy this file to user_configs/gemini-openai.toml and deploy to VM
+
+[app]
+# Use Vertex AI Gemini models
+fast_llm = "vertex_ai/gemini-2.0-flash-lite"
+quality_llm = "vertex_ai/gemini-2.0-flash"
+vlm = "vertex_ai/gemini-2.0-flash"
+audio_lm = "vertex_ai/gemini-2.0-flash-lite"
+reasoning_llm = "vertex_ai/gemini-2.0-flash-thinking-exp"
+planning_llm = "vertex_ai/gemini-2.0-flash-lite"
+
+# Completion settings for Full Mode
+[completion]
+provider = "r2r"
+concurrent_request_limit = 128
+
+# Use Vertex AI for embeddings (text-embedding-004)
+[embedding]
+provider = "litellm"
+base_model = "vertex_ai/text-embedding-004"
+base_dimension = 768
+batch_size = 128
+concurrent_request_limit = 256
+
+[completion_embedding]
+provider = "litellm"
+base_model = "vertex_ai/text-embedding-004"
+base_dimension = 768
+batch_size = 128
+concurrent_request_limit = 256
+
+# Full Mode ingestion with Unstructured service
+[ingestion]
+provider = "unstructured_local"
+strategy = "auto"
+chunking_strategy = "by_title"
+new_after_n_chars = 2_048
+max_characters = 4_096
+combine_under_n_chars = 1_024
+overlap = 1_024
+
+  [ingestion.extra_parsers]
+  pdf = ["zerox", "ocr"]
+
+# Full Mode orchestration with Hatchet
+[orchestration]
+provider = "hatchet"
+kg_creation_concurrency_limit = 32
+ingestion_concurrency_limit = 16
+kg_concurrency_limit = 8

@@ -1,0 +1,130 @@
+# ========================================
+# Hatchet gRPC Server
+# ========================================
+# R2R communicates with Hatchet via gRPC
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hatchet-grpc
+  namespace: r2r-system
+  labels:
+    app: hatchet-grpc
+    component: orchestration
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hatchet-grpc
+  template:
+    metadata:
+      labels:
+        app: hatchet-grpc
+        component: orchestration
+    spec:
+      serviceAccountName: r2r-ksa
+
+      initContainers:
+        # Wait for Hatchet API
+        - name: wait-for-api
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Hatchet API..."
+              until nc -z hatchet-api 8080; do
+                sleep 5
+              done
+              echo "Hatchet API is ready!"
+
+      containers:
+        # Cloud SQL Proxy
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - "r2r-full-deployment:us-central1:r2r-postgres"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "200m"
+
+        # Hatchet gRPC
+        - name: hatchet-grpc
+          image: ghcr.io/hatchet-dev/hatchet/hatchet-engine:v0.54.7
+          imagePullPolicy: IfNotPresent
+          command:
+            - /hatchet/hatchet-engine
+            - grpc
+            - --config
+            - /hatchet/config.yaml
+
+          ports:
+            - name: grpc
+              containerPort: 7070
+              protocol: TCP
+            - name: health
+              containerPort: 8733
+              protocol: TCP
+
+          env:
+            - name: DATABASE_URL
+              value: "postgresql://$(HATCHET_DATABASE_POSTGRES_USERNAME):$(HATCHET_DATABASE_POSTGRES_PASSWORD)@127.0.0.1:5432/hatchet?sslmode=disable"
+            - name: DATABASE_RABBITMQ_URL
+              value: "amqp://hatchet:$(HATCHET_RABBITMQ_PASSWORD)@rabbitmq:5672/"
+            - name: SERVER_GRPC_BIND_ADDRESS
+              value: "0.0.0.0:7070"
+            - name: SERVER_GRPC_INSECURE
+              value: "true"
+
+          envFrom:
+            - secretRef:
+                name: r2r-secrets
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: health
+            initialDelaySeconds: 60
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: health
+            initialDelaySeconds: 30
+            periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hatchet-grpc
+  namespace: r2r-system
+  labels:
+    app: hatchet-grpc
+spec:
+  type: ClusterIP
+  ports:
+    - name: grpc
+      port: 7070
+      targetPort: grpc
+      protocol: TCP
+    - name: health
+      port: 8733
+      targetPort: health
+      protocol: TCP
+  selector:
+    app: hatchet-grpc

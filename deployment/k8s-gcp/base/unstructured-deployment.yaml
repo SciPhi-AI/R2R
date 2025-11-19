@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unstructured
+  namespace: r2r-system
+  labels:
+    app: unstructured
+    component: parser
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: unstructured
+  template:
+    metadata:
+      labels:
+        app: unstructured
+        component: parser
+    spec:
+      serviceAccountName: r2r-ksa
+
+      containers:
+        - name: unstructured
+          image: ragtoriches/unst-prod:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 7275
+              protocol: TCP
+
+          env:
+            - name: UNSTRUCTURED_WORKERS
+              value: "10"
+            - name: UNSTRUCTURED_TIMEOUT
+              value: "300"
+
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - unstructured
+                topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: unstructured
+  namespace: r2r-system
+  labels:
+    app: unstructured
+    component: parser
+spec:
+  type: ClusterIP
+  ports:
+    - port: 7275
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: unstructured

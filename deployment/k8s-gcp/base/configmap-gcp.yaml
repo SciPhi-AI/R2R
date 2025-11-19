@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: r2r-gcp-config
+  namespace: r2r-system
+data:
+  # ========================================
+  # Vertex AI Configuration
+  # ========================================
+  VERTEX_PROJECT: "r2r-full-deployment"
+  VERTEX_LOCATION: "us-central1"
+
+  # ========================================
+  # Cloud SQL Configuration
+  # ========================================
+  # NOTE: Update POSTGRES_HOST with actual Cloud SQL private IP after creation
+  # Get with: gcloud sql instances describe r2r-postgres --format='get(ipAddresses[0].ipAddress)'
+  POSTGRES_HOST: "CLOUD_SQL_PRIVATE_IP_HERE"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "r2r"
+  POSTGRES_DBNAME: "r2r"
+
+  # Hatchet database
+  HATCHET_DATABASE_POSTGRES_HOST: "CLOUD_SQL_PRIVATE_IP_HERE"
+  HATCHET_DATABASE_POSTGRES_PORT: "5432"
+  HATCHET_DATABASE_POSTGRES_DBNAME: "hatchet"
+
+  # ========================================
+  # Google Cloud Storage Configuration
+  # ========================================
+  # Replace ${PROJECT_ID} with actual project ID
+  GCS_BUCKET_DOCUMENTS: "r2r-documents-${PROJECT_ID}"
+  GCS_BUCKET_EMBEDDINGS: "r2r-embeddings-${PROJECT_ID}"
+  GCS_BUCKET_GRAPHS: "r2r-graphs-${PROJECT_ID}"
+
+  # Use GCS instead of MinIO
+  STORAGE_PROVIDER: "gcs"
+
+  # ========================================
+  # Service URLs (Internal Kubernetes DNS)
+  # ========================================
+  UNSTRUCTURED_SERVICE_URL: "http://unstructured:7275"
+  CLUSTERING_SERVICE_URL: "http://graph-clustering:7276"
+  HATCHET_CLIENT_HOSTPORT: "hatchet-grpc:7070"
+  HATCHET_CLIENT_TLS_STRATEGY: "none"
+
+  # ========================================
+  # R2R Configuration
+  # ========================================
+  R2R_CONFIG_NAME: "full"
+  R2R_PROJECT_NAME: "r2r_default"
+  R2R_HOST: "0.0.0.0"
+  R2R_PORT: "7272"
+
+  # ========================================
+  # Embedding Configuration
+  # ========================================
+  # Using Vertex AI text-embedding-004 (768 dimensions)
+  EMBEDDING_PROVIDER: "vertex_ai"
+  EMBEDDING_MODEL: "text-embedding-004"
+  EMBEDDING_DIMENSION: "768"
+
+  # ========================================
+  # LLM Configuration
+  # ========================================
+  # Using Vertex AI Gemini models
+  LLM_PROVIDER: "vertex_ai"
+  FAST_LLM_MODEL: "vertex_ai/gemini-2.0-flash-lite"
+  QUALITY_LLM_MODEL: "vertex_ai/gemini-2.0-flash"
+  REASONING_LLM_MODEL: "vertex_ai/gemini-2.0-flash-thinking-exp"
+
+  # ========================================
+  # Automatic Extraction Settings
+  # ========================================
+  # CRITICAL: Enable automatic knowledge graph extraction after ingestion
+  AUTOMATIC_EXTRACTION: "true"
+  AUTOMATIC_DEDUPLICATION: "true"
+
+  # ========================================
+  # Monitoring and Logging
+  # ========================================
+  LOG_LEVEL: "INFO"
+  ENABLE_METRICS: "true"

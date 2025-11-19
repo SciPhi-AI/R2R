@@ -1,0 +1,118 @@
+# ========================================
+# R2R Base Kustomization for GKE
+# ========================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace for all resources
+namespace: r2r-system
+
+# ========================================
+# Resources
+# ========================================
+resources:
+  # Namespace
+  - namespace.yaml
+
+  # Service Account with Workload Identity
+  - serviceaccount.yaml
+
+  # Configuration
+  - configmap-gcp.yaml
+  # Note: secret.yaml must be created from secret-template.yaml
+
+  # R2R Core
+  - r2r-deployment.yaml
+  - r2r-service.yaml
+
+  # R2R Dashboard
+  - r2r-dashboard-deployment.yaml
+
+  # Hatchet Orchestration
+  - hatchet-rabbitmq.yaml
+  - hatchet-api.yaml
+  - hatchet-grpc.yaml
+  - hatchet-engine.yaml
+
+  # Support Services
+  - unstructured-deployment.yaml
+  - graph-clustering-deployment.yaml
+
+  # Ingress and Load Balancer
+  - ingress.yaml
+
+  # Autoscaling
+  - hpa.yaml
+
+# ========================================
+# Common Labels
+# ========================================
+commonLabels:
+  app.kubernetes.io/name: r2r
+  app.kubernetes.io/instance: production
+  app.kubernetes.io/managed-by: kustomize
+  environment: production
+
+# ========================================
+# Images
+# ========================================
+# Specify image versions here for easy updates
+images:
+  # R2R Images
+  - name: ragtoriches/prod
+    newTag: "3.4.0"
+
+  - name: emrgntcmplxty/r2r-dashboard
+    newTag: "1.0.0"
+
+  - name: ragtoriches/unst-prod
+    newTag: latest
+
+  - name: ragtoriches/cluster-prod
+    newTag: latest
+
+  # Hatchet Images
+  - name: ghcr.io/hatchet-dev/hatchet/hatchet-api
+    newTag: "v0.54.7"
+
+  - name: ghcr.io/hatchet-dev/hatchet/hatchet-engine
+    newTag: "v0.54.7"
+
+  - name: ghcr.io/hatchet-dev/hatchet/hatchet-frontend
+    newTag: "v0.54.7"
+
+  # Infrastructure
+  - name: bitnami/rabbitmq
+    newTag: "3.12.14"
+
+  - name: gcr.io/cloud-sql-connectors/cloud-sql-proxy
+    newTag: "2.8.0"
+
+# ========================================
+# Config Map Generator
+# ========================================
+# Generate ConfigMaps from files
+configMapGenerator:
+  # R2R configuration file
+  - name: r2r-config-toml
+    files:
+      - r2r.toml=../../../config.production.toml
+
+# ========================================
+# Secret Generator
+# ========================================
+# Generate Secrets from files
+secretGenerator:
+  # Vertex AI service account key
+  - name: vertex-ai-key
+    files:
+      - key.json=../../../vertex-ai-key.production.json
+
+# ========================================
+# Patches
+# ========================================
+# Common patches applied to all resources
+patchesStrategicMerge: []
+
+# JSON patches for specific resources
+patches: []
