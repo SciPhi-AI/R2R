@@ -1136,27 +1136,28 @@ class RetrievalService(Service):
                                 # Process each new citation span
                                 for cid, spans in new_citation_spans.items():
                                     for span in spans:
-                                        # Check if this is the first time we've seen this citation ID
-                                        is_new_citation = (
-                                            citation_tracker.is_new_citation(
-                                                cid
-                                            )
-                                        )
+                                        # find_new_citation_spans already marked it as seen
+                                        # and ensures we only get it once per span.
+                                        # We only need the payload for the first occurrence of this CID.
 
-                                        # Get payload if it's a new citation
-                                        payload = None
-                                        if is_new_citation:
+                                        # Store payloads locally for this stream to avoid redundant lookups
+                                        is_new_citation = False
+                                        if cid not in citation_payloads:
                                             source_obj = (
                                                 self._find_item_by_shortid(
                                                     cid, collector
                                                 )
                                             )
-                                            if source_obj:
-                                                # Store payload for reuse
-                                                payload = dump_obj(source_obj)
-                                                citation_payloads[cid] = (
-                                                    payload
-                                                )
+                                            citation_payloads[cid] = dump_obj(
+                                                source_obj
+                                            )
+                                            is_new_citation = True
+
+                                        payload = (
+                                            citation_payloads[cid]
+                                            if is_new_citation
+                                            else None
+                                        )
 
                                         # Create citation event payload
                                         citation_data = {
