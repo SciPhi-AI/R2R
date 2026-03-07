@@ -598,7 +598,7 @@ class R2RStreamingAgent(R2RAgent):
                                 )
 
                             # (a) Prepare final answer with optimized citations
-                            consolidated_citations: list[dict] = []
+                            consolidated_citations = []
                             # Group citations by ID with all their spans
                             for (
                                 cid,
@@ -659,7 +659,7 @@ class R2RStreamingAgent(R2RAgent):
                         )
                     )
 
-                    consolidated_citations: list[dict] = []
+                    consolidated_citations = []
                     # Group citations by ID with all their spans
                     for cid, spans in citation_tracker.get_all_spans().items():
                         if cid in citation_payloads:
@@ -1191,7 +1191,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         )
                     else:
                         # (a) Prepare final answer with optimized citations
-                        consolidated_citations: list[dict] = []
+                        consolidated_citations = []
                         # Group citations by ID with all their spans
                         for (
                             cid,
@@ -1251,7 +1251,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         )
                     )
 
-                    consolidated_citations: list[dict] = []
+                    consolidated_citations = []
                     # Group citations by ID with all their spans
                     for cid, spans in citation_tracker.get_all_spans().items():
                         if cid in citation_payloads:
