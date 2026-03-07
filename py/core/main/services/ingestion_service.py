@@ -555,18 +555,16 @@ class IngestionService:
             # Check if document still exists before updating status
             # This prevents recreating documents that were deleted during ingestion
             existing_docs = await self.providers.database.documents_handler.get_documents_overview(
-                offset=0,
-                limit=1,
-                filter_document_ids=[document_info.id]
+                offset=0, limit=1, filter_document_ids=[document_info.id]
             )
-            
+
             if not existing_docs["results"]:
                 logger.warning(
                     f"Document {document_info.id} no longer exists. "
                     f"Skipping status update to {document_info.ingestion_status}."
                 )
                 return
-            
+
             await self.providers.database.documents_handler.upsert_documents_overview(
                 document_info
             )

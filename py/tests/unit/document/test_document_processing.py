@@ -1,10 +1,12 @@
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from typing import Dict, List, Any, Optional
 
 # Skip all tests in this file for now as they need to be updated
 # to match the current Document and DocumentChunk implementations
-pytestmark = pytest.mark.skip("Document processing tests need to be updated to match current implementation")
+pytestmark = pytest.mark.skip(
+    "Document processing tests need to be updated to match current implementation"
+)
 
 # Import necessary classes
 from core.base import Document, DocumentChunk
@@ -20,22 +22,22 @@ def sample_document():
             "source": "Philosophy Encyclopedia",
             "author": "Academic Press",
             "year": 2020,
-            "document_type": "text"
+            "document_type": "text",
         },
         chunks=[
             DocumentChunk(
                 chunk_id="chunk-1",
                 document_id="doc-123",
                 text="Aristotle was a Greek philosopher who studied under Plato.",
-                metadata={"section": "biography", "page": 1}
+                metadata={"section": "biography", "page": 1},
             ),
             DocumentChunk(
                 chunk_id="chunk-2",
                 document_id="doc-123",
                 text="He made significant contributions to logic, ethics, and metaphysics.",
-                metadata={"section": "contributions", "page": 1}
-            )
-        ]
+                metadata={"section": "contributions", "page": 1},
+            ),
+        ],
     )
 
 
@@ -60,26 +62,28 @@ async def test_document_chunking(mock_document_handler, sample_document):
 
     # Mock the chunking method
     original_chunk_method = service.chunk_document
-    service.chunk_document = MagicMock(return_value=[
-        DocumentChunk(
-            chunk_id="new-chunk-1",
-            document_id=sample_document.document_id,
-            text="Aristotle was a Greek philosopher.",
-            metadata={"auto_chunk": True}
-        ),
-        DocumentChunk(
-            chunk_id="new-chunk-2",
-            document_id=sample_document.document_id,
-            text="He studied under Plato.",
-            metadata={"auto_chunk": True}
-        ),
-        DocumentChunk(
-            chunk_id="new-chunk-3",
-            document_id=sample_document.document_id,
-            text="He made significant contributions to logic, ethics, and metaphysics.",
-            metadata={"auto_chunk": True}
-        )
-    ])
+    service.chunk_document = MagicMock(
+        return_value=[
+            DocumentChunk(
+                chunk_id="new-chunk-1",
+                document_id=sample_document.document_id,
+                text="Aristotle was a Greek philosopher.",
+                metadata={"auto_chunk": True},
+            ),
+            DocumentChunk(
+                chunk_id="new-chunk-2",
+                document_id=sample_document.document_id,
+                text="He studied under Plato.",
+                metadata={"auto_chunk": True},
+            ),
+            DocumentChunk(
+                chunk_id="new-chunk-3",
+                document_id=sample_document.document_id,
+                text="He made significant contributions to logic, ethics, and metaphysics.",
+                metadata={"auto_chunk": True},
+            ),
+        ]
+    )
 
     # Process the document
     processed_doc = await service.process_document(sample_document)
@@ -89,14 +93,18 @@ async def test_document_chunking(mock_document_handler, sample_document):
 
     # Check that document was updated with new chunks
     assert len(processed_doc.chunks) == 3
-    assert all(chunk.metadata.get("auto_chunk") for chunk in processed_doc.chunks)
+    assert all(
+        chunk.metadata.get("auto_chunk") for chunk in processed_doc.chunks
+    )
 
     # Restore original method
     service.chunk_document = original_chunk_method
 
 
 @pytest.mark.asyncio
-async def test_document_metadata_extraction(mock_document_handler, sample_document):
+async def test_document_metadata_extraction(
+    mock_document_handler, sample_document
+):
     """Test metadata extraction from documents."""
     from core.main.services.documents import DocumentProcessingService
 
@@ -105,15 +113,19 @@ async def test_document_metadata_extraction(mock_document_handler, sample_docume
 
     # Mock metadata extraction
     original_extract_method = service.extract_metadata
-    service.extract_metadata = MagicMock(return_value={
-        "title": "Aristotle: Life and Works",
-        "topics": ["philosophy", "logic", "ethics"],
-        "sentiment": "neutral",
-        "word_count": 24
-    })
+    service.extract_metadata = MagicMock(
+        return_value={
+            "title": "Aristotle: Life and Works",
+            "topics": ["philosophy", "logic", "ethics"],
+            "sentiment": "neutral",
+            "word_count": 24,
+        }
+    )
 
     # Process the document
-    processed_doc = await service.process_document(sample_document, extract_metadata=True)
+    processed_doc = await service.process_document(
+        sample_document, extract_metadata=True
+    )
 
     # Verify metadata extraction was called
     service.extract_metadata.assert_called_once_with(sample_document.raw_text)
@@ -127,7 +139,9 @@ async def test_document_metadata_extraction(mock_document_handler, sample_docume
 
 
 @pytest.mark.asyncio
-async def test_document_embedding_generation(mock_document_handler, sample_document):
+async def test_document_embedding_generation(
+    mock_document_handler, sample_document
+):
     """Test embedding generation for document chunks."""
     from core.main.services.documents import DocumentProcessingService
 
@@ -140,17 +154,18 @@ async def test_document_embedding_generation(mock_document_handler, sample_docum
     # Setup document processing service
     service = DocumentProcessingService(
         document_handler=mock_document_handler,
-        embedding_provider=mock_embedding_provider
+        embedding_provider=mock_embedding_provider,
     )
 
     # Process document with embedding generation
     processed_doc = await service.process_document(
-        sample_document,
-        generate_embeddings=True
+        sample_document, generate_embeddings=True
     )
 
     # Verify embedding provider was called for each chunk
-    assert mock_embedding_provider.async_get_embedding.call_count == len(sample_document.chunks)
+    assert mock_embedding_provider.async_get_embedding.call_count == len(
+        sample_document.chunks
+    )
 
     # Check that embeddings were stored with chunks
     for chunk in processed_doc.chunks:
@@ -159,7 +174,9 @@ async def test_document_embedding_generation(mock_document_handler, sample_docum
 
 
 @pytest.mark.asyncio
-async def test_document_citation_processing(mock_document_handler, sample_document):
+async def test_document_citation_processing(
+    mock_document_handler, sample_document
+):
     """Test citation extraction and processing in documents."""
     from core.main.services.documents import DocumentProcessingService
 
@@ -167,7 +184,7 @@ async def test_document_citation_processing(mock_document_handler, sample_docume
     document_with_citations = Document(
         document_id="doc-456",
         raw_text="According to Smith [abc123], Aristotle developed formal logic. Jones [def456] argues that his ethics were revolutionary.",
-        metadata={"source": "Academic Journal"}
+        metadata={"source": "Academic Journal"},
     )
 
     # Setup document processing service
@@ -175,19 +192,27 @@ async def test_document_citation_processing(mock_document_handler, sample_docume
 
     # Mock citation extraction method
     original_extract_citations = service.extract_citations
-    service.extract_citations = MagicMock(return_value=[
-        {"id": "abc123", "span": "According to Smith [abc123]", "start": 0, "end": 25},
-        {"id": "def456", "span": "Jones [def456]", "start": 54, "end": 68}
-    ])
+    service.extract_citations = MagicMock(
+        return_value=[
+            {
+                "id": "abc123",
+                "span": "According to Smith [abc123]",
+                "start": 0,
+                "end": 25,
+            },
+            {"id": "def456", "span": "Jones [def456]", "start": 54, "end": 68},
+        ]
+    )
 
     # Process document with citation extraction
     processed_doc = await service.process_document(
-        document_with_citations,
-        extract_citations=True
+        document_with_citations, extract_citations=True
     )
 
     # Verify citation extraction was called
-    service.extract_citations.assert_called_once_with(document_with_citations.raw_text)
+    service.extract_citations.assert_called_once_with(
+        document_with_citations.raw_text
+    )
 
     # Check that citations were stored with the document
     assert "citations" in processed_doc.metadata
@@ -208,7 +233,7 @@ async def test_document_text_preprocessing(mock_document_handler):
     document_with_formatting = Document(
         document_id="doc-789",
         raw_text="  Aristotle  was\n\na Greek\tphilosopher.   He studied\nunder Plato.  ",
-        metadata={}
+        metadata={},
     )
 
     # Setup document processing service
@@ -216,19 +241,25 @@ async def test_document_text_preprocessing(mock_document_handler):
 
     # Mock text preprocessing method
     original_preprocess = service.preprocess_text
-    service.preprocess_text = MagicMock(return_value="Aristotle was a Greek philosopher. He studied under Plato.")
+    service.preprocess_text = MagicMock(
+        return_value="Aristotle was a Greek philosopher. He studied under Plato."
+    )
 
     # Process document with preprocessing
     processed_doc = await service.process_document(
-        document_with_formatting,
-        preprocess_text=True
+        document_with_formatting, preprocess_text=True
     )
 
     # Verify preprocessing was called
-    service.preprocess_text.assert_called_once_with(document_with_formatting.raw_text)
+    service.preprocess_text.assert_called_once_with(
+        document_with_formatting.raw_text
+    )
 
     # Check that document text was preprocessed
-    assert processed_doc.raw_text == "Aristotle was a Greek philosopher. He studied under Plato."
+    assert (
+        processed_doc.raw_text
+        == "Aristotle was a Greek philosopher. He studied under Plato."
+    )
 
     # Restore original method
     service.preprocess_text = original_preprocess

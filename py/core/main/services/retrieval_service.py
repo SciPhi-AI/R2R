@@ -1557,7 +1557,9 @@ class RetrievalService(Service):
                                                 }
                                             ],
                                             GenerationConfig(
-                                                model=self.config.app.fast_llm, stream=False),
+                                                model=self.config.app.fast_llm,
+                                                stream=False,
+                                            ),
                                         )
                                     )
                                     .choices[0]
@@ -1659,7 +1661,9 @@ class RetrievalService(Service):
                                 await self.providers.llm.aget_completion(
                                     [{"role": "system", "content": prompt}],
                                     GenerationConfig(
-                                        model=self.config.app.fast_llm, stream=False),
+                                        model=self.config.app.fast_llm,
+                                        stream=False,
+                                    ),
                                 )
                             )
                             .choices[0]

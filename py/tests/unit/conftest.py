@@ -16,7 +16,8 @@ from core.providers.database.postgres import (
     PostgresPromptsHandler,
 )
 from core.providers.database.users import (  # Make sure this import is correct
-    PostgresUserHandler, )
+    PostgresUserHandler,
+)
 
 TEST_DB_CONNECTION_STRING = os.environ.get(
     "TEST_DB_CONNECTION_STRING",
@@ -41,8 +42,9 @@ async def db_provider():
     dimension = 4
     quantization_type = VectorQuantizationType.FP32
 
-    db_provider = PostgresDatabaseProvider(db_config, dimension,
-                                           crypto_provider, quantization_type)
+    db_provider = PostgresDatabaseProvider(
+        db_config, dimension, crypto_provider, quantization_type
+    )
 
     await db_provider.initialize()
     yield db_provider
@@ -127,8 +129,7 @@ async def graphs_handler(db_provider):
         connection_manager=connection_manager,
         dimension=dimension,
         quantization_type=quantization_type,
-        collections_handler=
-        None,  # if needed, or await collections_handler fixture
+        collections_handler=None,  # if needed, or await collections_handler fixture
     )
     await handler.create_tables()
     return handler
@@ -148,7 +149,8 @@ async def limits_handler(db_provider):
     await handler.create_tables()
     # Optionally truncate
     await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('request_log')};")
+        f"TRUNCATE {handler._get_table_name('request_log')};"
+    )
     return handler
 
 
@@ -166,9 +168,11 @@ async def users_handler(db_provider, crypto_provider):
 
     # Optionally clean up users table before each test
     await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('users')} CASCADE;")
+        f"TRUNCATE {handler._get_table_name('users')} CASCADE;"
+    )
     await connection_manager.execute_query(
-        f"TRUNCATE {handler._get_table_name('users_api_keys')} CASCADE;")
+        f"TRUNCATE {handler._get_table_name('users_api_keys')} CASCADE;"
+    )
 
     return handler
 
@@ -217,15 +221,21 @@ async def graphs_handler(db_provider):
     await handler.create_tables()
     return handler
 
+
 # Citation testing fixtures and utilities
 import json
 import re
-from unittest.mock import MagicMock, AsyncMock
-from typing import Tuple, Any, AsyncGenerator
+from typing import AsyncGenerator
+from unittest.mock import MagicMock
 
-from core.base import Message, LLMChatCompletion, LLMChatCompletionChunk, GenerationConfig
-from core.utils import CitationTracker, SearchResultsCollector
 from core.agent.base import R2RStreamingAgent
+from core.base import (
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    Message,
+)
+from core.utils import CitationTracker
 
 
 class MockLLMProvider:
@@ -275,7 +285,9 @@ class MockLLMProvider:
 class MockPromptsHandler:
     """Mock prompts handler for testing."""
 
-    async def get_cached_prompt(self, prompt_key, inputs=None, *args, **kwargs):
+    async def get_cached_prompt(
+        self, prompt_key, inputs=None, *args, **kwargs
+    ):
         """Return a mock system prompt."""
         return "You are a helpful assistant that provides well-sourced information."
 
@@ -304,11 +316,14 @@ class MockSearchResultsCollector:
         self.results = results or {}
 
     def find_by_short_id(self, short_id):
-        return self.results.get(short_id, {
-            "document_id": f"doc_{short_id}",
-            "text": f"This is document text for {short_id}",
-            "metadata": {"source": f"source_{short_id}"}
-        })
+        return self.results.get(
+            short_id,
+            {
+                "document_id": f"doc_{short_id}",
+                "text": f"This is document text for {short_id}",
+                "metadata": {"source": f"source_{short_id}"},
+            },
+        )
 
 
 # Create a concrete implementation of R2RStreamingAgent for testing
@@ -326,7 +341,10 @@ class MockR2RStreamingAgent(R2RStreamingAgent):
     async def _setup(self, system_instruction=None, *args, **kwargs):
         """Override _setup to simplify initialization and avoid external dependencies."""
         # Use a simple system message instead of fetching from database
-        system_content = system_instruction or "You are a helpful assistant that provides well-sourced information."
+        system_content = (
+            system_instruction
+            or "You are a helpful assistant that provides well-sourced information."
+        )
 
         # Add system message to conversation
         await self.conversation.add_message(
@@ -376,33 +394,42 @@ class MockR2RStreamingAgent(R2RStreamingAgent):
             for span in spans:
                 # Check if the span is new and record it
                 if citation_tracker.is_new_span(cid, span):
-
                     # Look up the source document for this citation
-                    source_doc = self.search_results_collector.find_by_short_id(cid)
+                    source_doc = (
+                        self.search_results_collector.find_by_short_id(cid)
+                    )
 
                     # Create citation payload
                     citation_payload = {
-                        "document_id": source_doc.get("document_id", f"doc_{cid}"),
-                        "text": source_doc.get("text", f"This is document text for {cid}"),
-                        "metadata": source_doc.get("metadata", {"source": f"source_{cid}"}),
+                        "document_id": source_doc.get(
+                            "document_id", f"doc_{cid}"
+                        ),
+                        "text": source_doc.get(
+                            "text", f"This is document text for {cid}"
+                        ),
+                        "metadata": source_doc.get(
+                            "metadata", {"source": f"source_{cid}"}
+                        ),
                     }
 
                     # Store the payload by citation ID
                     citation_payloads[cid] = citation_payload
 
                     # Track for persistence
-                    self.streaming_citations.append({
-                        "id": cid,
-                        "span": {"start": span[0], "end": span[1]},
-                        "payload": citation_payload
-                    })
+                    self.streaming_citations.append(
+                        {
+                            "id": cid,
+                            "span": {"start": span[0], "end": span[1]},
+                            "payload": citation_payload,
+                        }
+                    )
 
                     # Emit citation event in the expected format
                     citation_event = {
                         "id": cid,
                         "object": "citation",
                         "span": {"start": span[0], "end": span[1]},
-                        "payload": citation_payload
+                        "payload": citation_payload,
                     }
 
                     yield self._format_sse_event("citation", citation_event)
@@ -412,7 +439,7 @@ class MockR2RStreamingAgent(R2RStreamingAgent):
             Message(
                 role="assistant",
                 content=response_content,
-                metadata={"citations": self.streaming_citations}
+                metadata={"citations": self.streaming_citations},
             )
         )
 
@@ -422,19 +449,21 @@ class MockR2RStreamingAgent(R2RStreamingAgent):
         # Group citations by ID with all their spans
         for cid, spans in citation_tracker.get_all_spans().items():
             if cid in citation_payloads:
-                consolidated_citations.append({
-                    "id": cid,
-                    "object": "citation",
-                    "spans": [{"start": s[0], "end": s[1]} for s in spans],
-                    "payload": citation_payloads[cid]
-                })
+                consolidated_citations.append(
+                    {
+                        "id": cid,
+                        "object": "citation",
+                        "spans": [{"start": s[0], "end": s[1]} for s in spans],
+                        "payload": citation_payloads[cid],
+                    }
+                )
 
         # Create and emit final answer event
         final_evt_payload = {
             "id": "msg_final",
             "object": "agent.final_answer",
             "generated_answer": response_content,
-            "citations": consolidated_citations
+            "citations": consolidated_citations,
         }
 
         # Manually format the final answer event
@@ -455,7 +484,7 @@ def mock_streaming_agent():
     # Create mock providers
     llm_provider = MockLLMProvider(
         response_content="This is a test response with citations",
-        citations=["abc1234", "def5678"]
+        citations=["abc1234", "def5678"],
     )
     db_provider = MockDatabaseProvider()
 
@@ -464,22 +493,24 @@ def mock_streaming_agent():
         database_provider=db_provider,
         llm_provider=llm_provider,
         config=config,
-        rag_generation_config=GenerationConfig(model="test/model")
+        rag_generation_config=GenerationConfig(model="test/model"),
     )
 
     # Replace the search results collector with our mock
-    agent.search_results_collector = MockSearchResultsCollector({
-        "abc1234": {
-            "document_id": "doc_abc1234",
-            "text": "This is document text for abc1234",
-            "metadata": {"source": "source_abc1234"}
-        },
-        "def5678": {
-            "document_id": "doc_def5678",
-            "text": "This is document text for def5678",
-            "metadata": {"source": "source_def5678"}
+    agent.search_results_collector = MockSearchResultsCollector(
+        {
+            "abc1234": {
+                "document_id": "doc_abc1234",
+                "text": "This is document text for abc1234",
+                "metadata": {"source": "source_abc1234"},
+            },
+            "def5678": {
+                "document_id": "doc_def5678",
+                "text": "This is document text for def5678",
+                "metadata": {"source": "source_def5678"},
+            },
         }
-    })
+    )
 
     return agent
 
@@ -492,4 +523,4 @@ async def collect_stream_output(stream):
     return output
 
 
-from core.utils import extract_citation_spans, find_new_citation_spans
+from core.utils import extract_citation_spans

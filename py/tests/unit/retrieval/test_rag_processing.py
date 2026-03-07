@@ -1,12 +1,12 @@
 """
 Unit tests for RAG (Retrieval-Augmented Generation) processing functionality.
 """
+
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from typing import Dict, List, Any, Optional
 
 # Import core classes related to RAG prompt handling
-from core.base import Message, SearchSettings
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mock_search_results():
                 "metadata": {
                     "source": f"source-{i}",
                     "title": f"Document {i//2}",
-                    "page": i+1
+                    "page": i + 1,
                 },
                 "score": 0.95 - (i * 0.05),
             }
@@ -36,10 +36,14 @@ def mock_providers():
     providers = AsyncMock()
     providers.llm = AsyncMock()
     providers.llm.aget_completion = AsyncMock(
-        return_value={"choices": [{"message": {"content": "LLM generated response"}}]}
+        return_value={
+            "choices": [{"message": {"content": "LLM generated response"}}]
+        }
     )
     providers.llm.aget_completion_stream = AsyncMock(
-        return_value=iter([{"choices": [{"delta": {"content": "Streamed chunk"}}]}])
+        return_value=iter(
+            [{"choices": [{"delta": {"content": "Streamed chunk"}}]}]
+        )
     )
 
     providers.database = AsyncMock()
@@ -55,13 +59,22 @@ class TestRAGPromptBuilding:
     """Tests for RAG prompt construction."""
 
     @pytest.mark.asyncio
-    async def test_rag_prompt_construction(self, mock_providers, mock_search_results):
+    async def test_rag_prompt_construction(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction with search results."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None, include_metadata=True):
+            async def build_prompt(
+                self,
+                query,
+                search_results,
+                system_prompt_template_id=None,
+                include_metadata=True,
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -74,7 +87,9 @@ class TestRAGPromptBuilding:
                     if include_metadata:
                         metadata_items = []
                         for key, value in chunk.get("metadata", {}).items():
-                            if key not in ["embedding"]:  # Skip non-user-friendly fields
+                            if key not in [
+                                "embedding"
+                            ]:  # Skip non-user-friendly fields
                                 metadata_items.append(f"{key}: {value}")
 
                         if metadata_items:
@@ -84,8 +99,11 @@ class TestRAGPromptBuilding:
                     context += chunk_text + "\n\n"
 
                 return [
-                    {"role": "system", "content": f"System prompt with context:\n\n{context}"},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": f"System prompt with context:\n\n{context}",
+                    },
+                    {"role": "user", "content": query},
                 ]
 
         # Create a RAG prompt builder
@@ -97,36 +115,53 @@ class TestRAGPromptBuilding:
             query=query,
             search_results=mock_search_results,
             system_prompt_template_id="default_rag_prompt",
-            include_metadata=True
+            include_metadata=True,
         )
 
         # Check that the messages list was constructed properly
         assert len(messages) > 0
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
         assert system_message is not None, "System message should be present"
 
         # Check that context was injected into system message
-        assert "search result" in system_message["content"], "System message should contain search results"
+        assert (
+            "search result" in system_message["content"]
+        ), "System message should contain search results"
 
         # Check that metadata was included
-        assert "source" in system_message["content"] or "title" in system_message["content"], \
-            "System message should contain metadata when include_metadata=True"
+        assert (
+            "source" in system_message["content"]
+            or "title" in system_message["content"]
+        ), "System message should contain metadata when include_metadata=True"
 
         # Find the user message
         user_message = next((m for m in messages if m["role"] == "user"), None)
         assert user_message is not None, "User message should be present"
-        assert user_message["content"] == query, "User message should contain the query"
+        assert (
+            user_message["content"] == query
+        ), "User message should contain the query"
 
     @pytest.mark.asyncio
-    async def test_rag_prompt_construction_without_metadata(self, mock_providers, mock_search_results):
+    async def test_rag_prompt_construction_without_metadata(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction without metadata."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None, include_metadata=True):
+            async def build_prompt(
+                self,
+                query,
+                search_results,
+                system_prompt_template_id=None,
+                include_metadata=True,
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -139,7 +174,9 @@ class TestRAGPromptBuilding:
                     if include_metadata:
                         metadata_items = []
                         for key, value in chunk.get("metadata", {}).items():
-                            if key not in ["embedding"]:  # Skip non-user-friendly fields
+                            if key not in [
+                                "embedding"
+                            ]:  # Skip non-user-friendly fields
                                 metadata_items.append(f"{key}: {value}")
 
                         if metadata_items:
@@ -149,8 +186,11 @@ class TestRAGPromptBuilding:
                     context += chunk_text + "\n\n"
 
                 return [
-                    {"role": "system", "content": f"System prompt with context:\n\n{context}"},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": f"System prompt with context:\n\n{context}",
+                    },
+                    {"role": "user", "content": query},
                 ]
 
         # Create a RAG prompt builder
@@ -162,25 +202,37 @@ class TestRAGPromptBuilding:
             query=query,
             search_results=mock_search_results,
             system_prompt_template_id="default_rag_prompt",
-            include_metadata=False
+            include_metadata=False,
         )
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Ensure metadata is not included
         for term in ["source", "title", "page"]:
-            assert term not in system_message["content"].lower(), \
-                f"System message should not contain metadata term '{term}' when include_metadata=False"
+            assert (
+                term not in system_message["content"].lower()
+            ), f"System message should not contain metadata term '{term}' when include_metadata=False"
 
     @pytest.mark.asyncio
-    async def test_rag_prompt_with_task_prompt(self, mock_providers, mock_search_results):
+    async def test_rag_prompt_with_task_prompt(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction with a task prompt."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None, task_prompt=None):
+            async def build_prompt(
+                self,
+                query,
+                search_results,
+                system_prompt_template_id=None,
+                task_prompt=None,
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -195,8 +247,11 @@ class TestRAGPromptBuilding:
                     context += f"\n\nTask: {task_prompt}"
 
                 return [
-                    {"role": "system", "content": f"System prompt with context:\n\n{context}"},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": f"System prompt with context:\n\n{context}",
+                    },
+                    {"role": "user", "content": query},
                 ]
 
         # Create a RAG prompt builder
@@ -209,25 +264,38 @@ class TestRAGPromptBuilding:
             query=query,
             search_results=mock_search_results,
             system_prompt_template_id="default_rag_prompt",
-            task_prompt=task_prompt
+            task_prompt=task_prompt,
         )
 
         # Find the messages
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
         user_message = next((m for m in messages if m["role"] == "user"), None)
 
         # Check that task prompt was incorporated
-        assert task_prompt in system_message["content"] or task_prompt in user_message["content"], \
-            "Task prompt should be incorporated into the messages"
+        assert (
+            task_prompt in system_message["content"]
+            or task_prompt in user_message["content"]
+        ), "Task prompt should be incorporated into the messages"
 
     @pytest.mark.asyncio
-    async def test_rag_prompt_with_conversation_history(self, mock_providers, mock_search_results):
+    async def test_rag_prompt_with_conversation_history(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction with conversation history."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None, conversation_history=None):
+            async def build_prompt(
+                self,
+                query,
+                search_results,
+                system_prompt_template_id=None,
+                conversation_history=None,
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -239,7 +307,10 @@ class TestRAGPromptBuilding:
                     context += chunk_text + "\n\n"
 
                 messages = [
-                    {"role": "system", "content": f"System prompt with context:\n\n{context}"}
+                    {
+                        "role": "system",
+                        "content": f"System prompt with context:\n\n{context}",
+                    }
                 ]
 
                 # Add conversation history if provided
@@ -257,8 +328,11 @@ class TestRAGPromptBuilding:
         # Setup conversation history
         conversation_history = [
             {"role": "user", "content": "Tell me about Aristotle"},
-            {"role": "assistant", "content": "Aristotle was a Greek philosopher."},
-            {"role": "user", "content": "What about his ethics?"}
+            {
+                "role": "assistant",
+                "content": "Aristotle was a Greek philosopher.",
+            },
+            {"role": "user", "content": "What about his ethics?"},
         ]
 
         # The last message in conversation history is the query
@@ -267,13 +341,16 @@ class TestRAGPromptBuilding:
             query=query,
             search_results=mock_search_results,
             system_prompt_template_id="default_rag_prompt",
-            conversation_history=conversation_history
+            conversation_history=conversation_history,
         )
 
         # Check that all conversation messages are included
-        history_messages = [m for m in messages if m["role"] in ["user", "assistant"]]
-        assert len(history_messages) == len(conversation_history), \
-            "All conversation history messages should be included"
+        history_messages = [
+            m for m in messages if m["role"] in ["user", "assistant"]
+        ]
+        assert len(history_messages) == len(
+            conversation_history
+        ), "All conversation history messages should be included"
 
         # Check that the conversation history is preserved in the correct order
         for i, msg in enumerate(history_messages):
@@ -281,13 +358,22 @@ class TestRAGPromptBuilding:
             assert msg["content"] == conversation_history[i]["content"]
 
     @pytest.mark.asyncio
-    async def test_rag_prompt_with_citations(self, mock_providers, mock_search_results):
+    async def test_rag_prompt_with_citations(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction with citation information."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None, include_citations=True):
+            async def build_prompt(
+                self,
+                query,
+                search_results,
+                system_prompt_template_id=None,
+                include_citations=True,
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -309,12 +395,17 @@ class TestRAGPromptBuilding:
                     citation_instructions = "\n\nWhen referring to the context, include citation markers like [cit0] to attribute information to its source."
 
                 return [
-                    {"role": "system", "content": f"System prompt with context:\n\n{context}{citation_instructions}"},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": f"System prompt with context:\n\n{context}{citation_instructions}",
+                    },
+                    {"role": "user", "content": query},
                 ]
 
         # Add citation metadata to search results
-        for i, result in enumerate(mock_search_results["chunk_search_results"]):
+        for i, result in enumerate(
+            mock_search_results["chunk_search_results"]
+        ):
             result["metadata"]["citation_id"] = f"cit-{i}"
 
         # Create a RAG prompt builder
@@ -326,28 +417,37 @@ class TestRAGPromptBuilding:
             query=query,
             search_results=mock_search_results,
             system_prompt_template_id="default_rag_prompt",
-            include_citations=True
+            include_citations=True,
         )
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Check that citation markers are included in the context
-        assert any(f"[cit-{i}]" in system_message["content"] for i in range(5)), \
-            "Citation markers should be included in the context"
+        assert any(
+            f"[cit-{i}]" in system_message["content"] for i in range(5)
+        ), "Citation markers should be included in the context"
 
         # Check for citation instruction in the prompt
-        assert "citation" in system_message["content"].lower(), \
-            "System message should include instructions about using citations"
+        assert (
+            "citation" in system_message["content"].lower()
+        ), "System message should include instructions about using citations"
 
     @pytest.mark.asyncio
-    async def test_rag_custom_system_prompt(self, mock_providers, mock_search_results):
+    async def test_rag_custom_system_prompt(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG prompt construction with a custom system prompt."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None):
+            async def build_prompt(
+                self, query, search_results, system_prompt_template_id=None
+            ):
                 # Simple implementation that handles search results
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -369,11 +469,13 @@ class TestRAGPromptBuilding:
 
                 return [
                     {"role": "system", "content": system_content},
-                    {"role": "user", "content": query}
+                    {"role": "user", "content": query},
                 ]
 
         # Create a custom system prompt template
-        custom_prompt = "Custom system prompt with {{context}} and some instructions"
+        custom_prompt = (
+            "Custom system prompt with {{context}} and some instructions"
+        )
 
         # Create a RAG prompt builder
         builder = RAGPromptBuilder(providers=mock_providers)
@@ -383,19 +485,23 @@ class TestRAGPromptBuilding:
         messages = await builder.build_prompt(
             query=query,
             search_results=mock_search_results,
-            system_prompt_template_id="custom_template_id"
+            system_prompt_template_id="custom_template_id",
         )
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Check that the custom prompt was used
-        assert "Custom system prompt" in system_message["content"], \
-            "System message should use the custom prompt template"
+        assert (
+            "Custom system prompt" in system_message["content"]
+        ), "System message should use the custom prompt template"
 
         # Check that context was still injected
-        assert "search result" in system_message["content"], \
-            "Context should still be injected into custom prompt"
+        assert (
+            "search result" in system_message["content"]
+        ), "Context should still be injected into custom prompt"
 
 
 class TestRAGProcessing:
@@ -404,27 +510,34 @@ class TestRAGProcessing:
     @pytest.mark.asyncio
     async def test_rag_generation(self, mock_providers, mock_search_results):
         """Test generating a response using RAG."""
+
         class RAGProcessor:
             def __init__(self, providers):
                 self.providers = providers
                 self.prompt_builder = MagicMock()
                 self.prompt_builder.build_prompt = AsyncMock(
                     return_value=[
-                        {"role": "system", "content": "System prompt with context"},
-                        {"role": "user", "content": "What did Aristotle say about ethics?"}
+                        {
+                            "role": "system",
+                            "content": "System prompt with context",
+                        },
+                        {
+                            "role": "user",
+                            "content": "What did Aristotle say about ethics?",
+                        },
                     ]
                 )
 
             async def generate(self, query, search_results, **kwargs):
                 # Build the prompt
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=search_results,
-                    **kwargs
+                    query=query, search_results=search_results, **kwargs
                 )
 
                 # Generate a response
-                response = await self.providers.llm.aget_completion(messages=messages)
+                response = await self.providers.llm.aget_completion(
+                    messages=messages
+                )
                 return response["choices"][0]["message"]["content"]
 
         # Create the processor
@@ -433,8 +546,7 @@ class TestRAGProcessing:
         # Generate a response
         query = "What did Aristotle say about ethics?"
         response = await processor.generate(
-            query=query,
-            search_results=mock_search_results
+            query=query, search_results=mock_search_results
         )
 
         # Verify the LLM was called
@@ -446,27 +558,34 @@ class TestRAGProcessing:
     @pytest.mark.asyncio
     async def test_rag_streaming(self, mock_providers, mock_search_results):
         """Test streaming a response using RAG."""
+
         class RAGProcessor:
             def __init__(self, providers):
                 self.providers = providers
                 self.prompt_builder = MagicMock()
                 self.prompt_builder.build_prompt = AsyncMock(
                     return_value=[
-                        {"role": "system", "content": "System prompt with context"},
-                        {"role": "user", "content": "What did Aristotle say about ethics?"}
+                        {
+                            "role": "system",
+                            "content": "System prompt with context",
+                        },
+                        {
+                            "role": "user",
+                            "content": "What did Aristotle say about ethics?",
+                        },
                     ]
                 )
 
             async def generate_stream(self, query, search_results, **kwargs):
                 # Build the prompt
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=search_results,
-                    **kwargs
+                    query=query, search_results=search_results, **kwargs
                 )
 
                 # Generate a streaming response
-                stream = await self.providers.llm.aget_completion_stream(messages=messages)
+                stream = await self.providers.llm.aget_completion_stream(
+                    messages=messages
+                )
                 return stream
 
         # Create a mock stream
@@ -487,15 +606,19 @@ class TestRAGProcessing:
                 return chunk
 
         # Configure the LLM mock to return an async iterable stream
-        mock_stream = MockStream([
-            {"choices": [{"delta": {"content": "This"}}]},
-            {"choices": [{"delta": {"content": " is"}}]},
-            {"choices": [{"delta": {"content": " a"}}]},
-            {"choices": [{"delta": {"content": " test"}}]},
-            {"choices": [{"delta": {"content": " response."}}]}
-        ])
+        mock_stream = MockStream(
+            [
+                {"choices": [{"delta": {"content": "This"}}]},
+                {"choices": [{"delta": {"content": " is"}}]},
+                {"choices": [{"delta": {"content": " a"}}]},
+                {"choices": [{"delta": {"content": " test"}}]},
+                {"choices": [{"delta": {"content": " response."}}]},
+            ]
+        )
 
-        mock_providers.llm.aget_completion_stream = AsyncMock(return_value=mock_stream)
+        mock_providers.llm.aget_completion_stream = AsyncMock(
+            return_value=mock_stream
+        )
 
         # Create the processor
         processor = RAGProcessor(mock_providers)
@@ -503,8 +626,7 @@ class TestRAGProcessing:
         # Generate a streaming response
         query = "What did Aristotle say about ethics?"
         stream = await processor.generate_stream(
-            query=query,
-            search_results=mock_search_results
+            query=query, search_results=mock_search_results
         )
 
         # Verify the LLM streaming method was called
@@ -517,35 +639,47 @@ class TestRAGProcessing:
 
         # Verify chunks were received
         assert len(chunks) == 5, "Should receive all 5 chunks"
-        assert chunks[0]["choices"][0]["delta"]["content"] == "This", "First chunk content should match"
-        assert chunks[-1]["choices"][0]["delta"]["content"] == " response.", "Last chunk content should match"
+        assert (
+            chunks[0]["choices"][0]["delta"]["content"] == "This"
+        ), "First chunk content should match"
+        assert (
+            chunks[-1]["choices"][0]["delta"]["content"] == " response."
+        ), "Last chunk content should match"
 
     @pytest.mark.asyncio
-    async def test_rag_with_different_provider_models(self, mock_providers, mock_search_results):
+    async def test_rag_with_different_provider_models(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG with different provider models."""
+
         class RAGProcessor:
             def __init__(self, providers):
                 self.providers = providers
                 self.prompt_builder = MagicMock()
                 self.prompt_builder.build_prompt = AsyncMock(
                     return_value=[
-                        {"role": "system", "content": "System prompt with context"},
-                        {"role": "user", "content": "What did Aristotle say about ethics?"}
+                        {
+                            "role": "system",
+                            "content": "System prompt with context",
+                        },
+                        {
+                            "role": "user",
+                            "content": "What did Aristotle say about ethics?",
+                        },
                     ]
                 )
 
-            async def generate(self, query, search_results, model=None, **kwargs):
+            async def generate(
+                self, query, search_results, model=None, **kwargs
+            ):
                 # Build the prompt
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=search_results,
-                    **kwargs
+                    query=query, search_results=search_results, **kwargs
                 )
 
                 # Generate a response with the specified model
                 response = await self.providers.llm.aget_completion(
-                    messages=messages,
-                    model=model
+                    messages=messages, model=model
                 )
                 return response["choices"][0]["message"]["content"]
 
@@ -558,9 +692,7 @@ class TestRAGProcessing:
 
         for model in models:
             await processor.generate(
-                query=query,
-                search_results=mock_search_results,
-                model=model
+                query=query, search_results=mock_search_results, model=model
             )
 
             # Verify the LLM was called with the correct model
@@ -576,6 +708,7 @@ class TestRAGContextFormatting:
 
     def test_default_context_formatting(self, mock_search_results):
         """Test the default formatting of context from search results."""
+
         # Function to format context
         def format_context(search_results, include_metadata=True):
             context = ""
@@ -587,7 +720,9 @@ class TestRAGContextFormatting:
                 if include_metadata:
                     metadata_items = []
                     for key, value in result.get("metadata", {}).items():
-                        if key not in ["embedding"]:  # Skip non-user-friendly fields
+                        if key not in [
+                            "embedding"
+                        ]:  # Skip non-user-friendly fields
                             metadata_items.append(f"{key}: {value}")
 
                     if metadata_items:
@@ -607,7 +742,9 @@ class TestRAGContextFormatting:
         assert "title" in context_with_metadata
 
         # Format context without metadata
-        context_without_metadata = format_context(mock_search_results, include_metadata=False)
+        context_without_metadata = format_context(
+            mock_search_results, include_metadata=False
+        )
 
         # Check formatting
         assert "[1]" in context_without_metadata
@@ -616,6 +753,7 @@ class TestRAGContextFormatting:
 
     def test_numbered_list_context_formatting(self, mock_search_results):
         """Test numbered list formatting of context."""
+
         # Function to format context as a numbered list
         def format_context_numbered_list(search_results):
             context_items = []
@@ -636,14 +774,21 @@ class TestRAGContextFormatting:
 
     def test_source_attribution_context_formatting(self, mock_search_results):
         """Test context formatting with source attribution."""
+
         # Function to format context with source attribution
         def format_context_with_sources(search_results):
             context_items = []
             for result in search_results["chunk_search_results"]:
-                source = result.get("metadata", {}).get("source", "Unknown source")
-                title = result.get("metadata", {}).get("title", "Unknown title")
+                source = result.get("metadata", {}).get(
+                    "source", "Unknown source"
+                )
+                title = result.get("metadata", {}).get(
+                    "title", "Unknown title"
+                )
 
-                context_items.append(f"From {source} ({title}):\n{result['text']}")
+                context_items.append(
+                    f"From {source} ({title}):\n{result['text']}"
+                )
 
             return "\n\n".join(context_items)
 
@@ -658,7 +803,9 @@ class TestRAGContextFormatting:
     def test_citation_marker_context_formatting(self, mock_search_results):
         """Test context formatting with citation markers."""
         # Add citation IDs to search results
-        for i, result in enumerate(mock_search_results["chunk_search_results"]):
+        for i, result in enumerate(
+            mock_search_results["chunk_search_results"]
+        ):
             result["metadata"]["citation_id"] = f"cit{i}"
 
         # Function to format context with citation markers
@@ -690,16 +837,22 @@ class TestRAGErrorHandling:
     @pytest.mark.asyncio
     async def test_rag_with_empty_search_results(self, mock_providers):
         """Test RAG behavior with empty search results."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None):
+            async def build_prompt(
+                self, query, search_results, system_prompt_template_id=None
+            ):
                 # Simple implementation that handles empty results gracefully
                 if not search_results.get("chunk_search_results"):
                     return [
-                        {"role": "system", "content": "No relevant information was found for your query."},
-                        {"role": "user", "content": query}
+                        {
+                            "role": "system",
+                            "content": "No relevant information was found for your query.",
+                        },
+                        {"role": "user", "content": query},
                     ]
                 return []
 
@@ -714,25 +867,33 @@ class TestRAGErrorHandling:
         messages = await builder.build_prompt(
             query=query,
             search_results=empty_search_results,
-            system_prompt_template_id="default_rag_prompt"
+            system_prompt_template_id="default_rag_prompt",
         )
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Check that the system message handles empty results gracefully
-        assert system_message is not None, "System message should be present even with empty results"
-        assert "no relevant information" in system_message["content"].lower(), \
-               "System message should indicate that no relevant information was found"
+        assert (
+            system_message is not None
+        ), "System message should be present even with empty results"
+        assert (
+            "no relevant information" in system_message["content"].lower()
+        ), "System message should indicate that no relevant information was found"
 
     @pytest.mark.asyncio
     async def test_rag_with_malformed_search_results(self, mock_providers):
         """Test RAG behavior with malformed search results."""
+
         class RAGPromptBuilder:
             def __init__(self, providers):
                 self.providers = providers
 
-            async def build_prompt(self, query, search_results, system_prompt_template_id=None):
+            async def build_prompt(
+                self, query, search_results, system_prompt_template_id=None
+            ):
                 # Handle malformed results by including whatever is available
                 chunks = search_results.get("chunk_search_results", [])
 
@@ -743,8 +904,11 @@ class TestRAGErrorHandling:
                     context += text + "\n\n"
 
                 return [
-                    {"role": "system", "content": f"Context:\n{context}\n\nBased on the above context, answer the following question."},
-                    {"role": "user", "content": query}
+                    {
+                        "role": "system",
+                        "content": f"Context:\n{context}\n\nBased on the above context, answer the following question.",
+                    },
+                    {"role": "user", "content": query},
                 ]
 
         # Create a RAG prompt builder
@@ -766,57 +930,79 @@ class TestRAGErrorHandling:
         messages = await builder.build_prompt(
             query=query,
             search_results=malformed_search_results,
-            system_prompt_template_id="default_rag_prompt"
+            system_prompt_template_id="default_rag_prompt",
         )
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Check that the system message handles malformed results gracefully
-        assert system_message is not None, "System message should be present even with malformed results"
-        assert "Malformed result" in system_message["content"], \
-               "The text content should still be included"
+        assert (
+            system_message is not None
+        ), "System message should be present even with malformed results"
+        assert (
+            "Malformed result" in system_message["content"]
+        ), "The text content should still be included"
 
     @pytest.mark.asyncio
-    async def test_rag_with_llm_error_recovery(self, mock_providers, mock_search_results):
+    async def test_rag_with_llm_error_recovery(
+        self, mock_providers, mock_search_results
+    ):
         """Test RAG recovery from LLM errors."""
+
         class RAGProcessorWithErrorRecovery:
             def __init__(self, providers):
                 self.providers = providers
                 self.prompt_builder = MagicMock()
                 self.prompt_builder.build_prompt = AsyncMock(
                     return_value=[
-                        {"role": "system", "content": "System prompt with context"},
-                        {"role": "user", "content": "What did Aristotle say about ethics?"}
+                        {
+                            "role": "system",
+                            "content": "System prompt with context",
+                        },
+                        {
+                            "role": "user",
+                            "content": "What did Aristotle say about ethics?",
+                        },
                     ]
                 )
 
                 # Configure the LLM mock to fail on first call, succeed on second
-                self.providers.llm.aget_completion = AsyncMock(side_effect=[
-                    Exception("LLM API error"),
-                    {"choices": [{"message": {"content": "Fallback response after error"}}]}
-                ])
+                self.providers.llm.aget_completion = AsyncMock(
+                    side_effect=[
+                        Exception("LLM API error"),
+                        {
+                            "choices": [
+                                {
+                                    "message": {
+                                        "content": "Fallback response after error"
+                                    }
+                                }
+                            ]
+                        },
+                    ]
+                )
 
-            async def generate_with_error_recovery(self, query, search_results, **kwargs):
+            async def generate_with_error_recovery(
+                self, query, search_results, **kwargs
+            ):
                 # Build the prompt
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=search_results,
-                    **kwargs
+                    query=query, search_results=search_results, **kwargs
                 )
 
                 # Try with primary model
                 try:
                     response = await self.providers.llm.aget_completion(
-                        messages=messages,
-                        model="primary_model"
+                        messages=messages, model="primary_model"
                     )
                     return response["choices"][0]["message"]["content"]
                 except Exception as e:
                     # On error, try with fallback model
                     response = await self.providers.llm.aget_completion(
-                        messages=messages,
-                        model="fallback_model"
+                        messages=messages, model="fallback_model"
                     )
                     return response["choices"][0]["message"]["content"]
 
@@ -826,15 +1012,16 @@ class TestRAGErrorHandling:
         # Generate a response with error recovery
         query = "What did Aristotle say about ethics?"
         response = await processor.generate_with_error_recovery(
-            query=query,
-            search_results=mock_search_results
+            query=query, search_results=mock_search_results
         )
 
         # Verify both LLM calls were made
         assert mock_providers.llm.aget_completion.call_count == 2
 
         # Check the second call used the fallback model
-        second_call_kwargs = mock_providers.llm.aget_completion.call_args_list[1][1]
+        second_call_kwargs = mock_providers.llm.aget_completion.call_args_list[
+            1
+        ][1]
         assert second_call_kwargs["model"] == "fallback_model"
 
         # Check the response is from the fallback
@@ -846,6 +1033,7 @@ class TestRAGContextTruncation:
 
     def test_token_count_truncation(self, mock_search_results):
         """Test truncating context based on token count."""
+
         # Function to truncate context to max tokens
         def truncate_context_by_tokens(search_results, max_tokens=1000):
             # Simple token counting function (in real code, use a tokenizer)
@@ -872,19 +1060,28 @@ class TestRAGContextTruncation:
             return "\n\n".join(context_items)
 
         # Truncate to a small token limit (should fit ~2-3 chunks)
-        small_context = truncate_context_by_tokens(mock_search_results, max_tokens=50)
+        small_context = truncate_context_by_tokens(
+            mock_search_results, max_tokens=50
+        )
 
         # Check truncation
         chunk_count = small_context.count("search result")
-        assert 1 <= chunk_count <= 3, "Should only include 1-3 chunks with small token limit"
+        assert (
+            1 <= chunk_count <= 3
+        ), "Should only include 1-3 chunks with small token limit"
 
         # Truncate with larger limit (should fit all chunks)
-        large_context = truncate_context_by_tokens(mock_search_results, max_tokens=1000)
+        large_context = truncate_context_by_tokens(
+            mock_search_results, max_tokens=1000
+        )
         large_chunk_count = large_context.count("search result")
-        assert large_chunk_count == 5, "Should include all 5 chunks with large token limit"
+        assert (
+            large_chunk_count == 5
+        ), "Should include all 5 chunks with large token limit"
 
     def test_score_threshold_truncation(self, mock_search_results):
         """Test truncating context based on relevance score threshold."""
+
         # Function to truncate context based on minimum score
         def truncate_context_by_score(search_results, min_score=0.7):
             context_items = []
@@ -897,24 +1094,38 @@ class TestRAGContextTruncation:
             return "\n\n".join(context_items)
 
         # Truncate with high score threshold (should only include top results)
-        high_threshold_context = truncate_context_by_score(mock_search_results, min_score=0.85)
+        high_threshold_context = truncate_context_by_score(
+            mock_search_results, min_score=0.85
+        )
 
         # Check truncation
         high_chunk_count = high_threshold_context.count("search result")
-        assert high_chunk_count <= 3, "Should only include top chunks with high score threshold"
+        assert (
+            high_chunk_count <= 3
+        ), "Should only include top chunks with high score threshold"
 
         # Truncate with low score threshold (should include most or all chunks)
-        low_threshold_context = truncate_context_by_score(mock_search_results, min_score=0.7)
+        low_threshold_context = truncate_context_by_score(
+            mock_search_results, min_score=0.7
+        )
         low_chunk_count = low_threshold_context.count("search result")
-        assert low_chunk_count >= 4, "Should include most chunks with low score threshold"
+        assert (
+            low_chunk_count >= 4
+        ), "Should include most chunks with low score threshold"
 
     def test_mixed_truncation_strategy(self, mock_search_results):
         """Test mixed truncation strategy combining token count and score."""
+
         # Function implementing mixed truncation strategy
-        def mixed_truncation_strategy(search_results, max_tokens=1000, min_score=0.7):
+        def mixed_truncation_strategy(
+            search_results, max_tokens=1000, min_score=0.7
+        ):
             # First filter by score
-            filtered_results = [r for r in search_results["chunk_search_results"]
-                               if r.get("score", 0) >= min_score]
+            filtered_results = [
+                r
+                for r in search_results["chunk_search_results"]
+                if r.get("score", 0) >= min_score
+            ]
 
             # Then truncate by tokens
             def estimate_tokens(text):
@@ -937,14 +1148,14 @@ class TestRAGContextTruncation:
 
         # Test the mixed strategy
         context = mixed_truncation_strategy(
-            mock_search_results,
-            max_tokens=50,
-            min_score=0.8
+            mock_search_results, max_tokens=50, min_score=0.8
         )
 
         # Check result
         chunk_count = context.count("search result")
-        assert 1 <= chunk_count <= 3, "Mixed strategy should limit results appropriately"
+        assert (
+            1 <= chunk_count <= 3
+        ), "Mixed strategy should limit results appropriately"
 
 
 class TestAdvancedCitationHandling:
@@ -962,9 +1173,11 @@ class TestAdvancedCitationHandling:
                     "metadata": {
                         "source": f"source-{i}",
                         "title": f"Document {i//2}",
-                        "page": i+1,
+                        "page": i + 1,
                         "citation_id": f"cite{i}",
-                        "authors": ["Author A", "Author B"] if i % 2 == 0 else ["Author C"]
+                        "authors": ["Author A", "Author B"]
+                        if i % 2 == 0
+                        else ["Author C"],
                     },
                     "score": 0.95 - (i * 0.05),
                 }
@@ -975,6 +1188,7 @@ class TestAdvancedCitationHandling:
 
     def test_structured_citation_formatting(self, mock_citation_results):
         """Test formatting structured citations with academic format."""
+
         # Function to format structured citations
         def format_structured_citations(search_results):
             citations = {}
@@ -997,8 +1211,10 @@ class TestAdvancedCitationHandling:
                 page = metadata.get("page", None)
 
                 # Format citation in academic style
-                author_text = ", ".join(authors) if authors else "Unknown author"
-                citation_text = f"{author_text}. \"{title}\". {source}"
+                author_text = (
+                    ", ".join(authors) if authors else "Unknown author"
+                )
+                citation_text = f'{author_text}. "{title}". {source}'
                 if page:
                     citation_text += f", p. {page}"
 
@@ -1006,7 +1222,7 @@ class TestAdvancedCitationHandling:
                 citations[citation_id] = {
                     "text": citation_text,
                     "document_id": result.get("document_id"),
-                    "chunk_id": result.get("chunk_id")
+                    "chunk_id": result.get("chunk_id"),
                 }
 
             return citations
@@ -1016,13 +1232,22 @@ class TestAdvancedCitationHandling:
 
         # Check formatting
         assert len(citations) == 5, "Should have 5 unique citations"
-        assert "Author A, Author B" in citations["cite0"]["text"], "Should include authors"
-        assert "Document 0" in citations["cite0"]["text"], "Should include title"
-        assert "source-0" in citations["cite0"]["text"], "Should include source"
-        assert "p. 1" in citations["cite0"]["text"], "Should include page number"
+        assert (
+            "Author A, Author B" in citations["cite0"]["text"]
+        ), "Should include authors"
+        assert (
+            "Document 0" in citations["cite0"]["text"]
+        ), "Should include title"
+        assert (
+            "source-0" in citations["cite0"]["text"]
+        ), "Should include source"
+        assert (
+            "p. 1" in citations["cite0"]["text"]
+        ), "Should include page number"
 
     def test_inline_citation_replacement(self, mock_citation_results):
         """Test replacing citation placeholders with actual citations."""
+
         # First format the context with citation placeholders
         def format_context_with_citations(search_results):
             context_items = []
@@ -1052,15 +1277,16 @@ class TestAdvancedCitationHandling:
                 return match.group(0)  # Keep original if not found
 
             # Replace [citeX] format
-            pattern = r'\[(cite\d+)\]'
+            pattern = r"\[(cite\d+)\]"
             return re.sub(pattern, citation_replacement, response_text)
 
         # Create mock citation metadata
         citation_metadata = {
             f"cite{i}": {
-                "authors": [f"Author {chr(65+i)}"] + (["et al."] if i % 2 == 0 else []),
+                "authors": [f"Author {chr(65+i)}"]
+                + (["et al."] if i % 2 == 0 else []),
                 "year": 2020 + i,
-                "title": f"Document {i//2}"
+                "title": f"Document {i//2}",
             }
             for i in range(5)
         }
@@ -1073,18 +1299,33 @@ class TestAdvancedCitationHandling:
         )
 
         # Replace placeholders
-        final_response = replace_citation_placeholders(response_with_placeholders, citation_metadata)
+        final_response = replace_citation_placeholders(
+            response_with_placeholders, citation_metadata
+        )
 
         # Check formatting
-        assert "(Author A et al., 2020)" in final_response, "Author A citation should be in the response"
-        assert "(Author C" in final_response, "Author C citation should be in the response"
-        assert "(Author E" in final_response, "Author E citation should be in the response"
-        assert "[cite0]" not in final_response, "Citation placeholder [cite0] should be replaced"
-        assert "[cite2]" not in final_response, "Citation placeholder [cite2] should be replaced"
-        assert "[cite4]" not in final_response, "Citation placeholder [cite4] should be replaced"
+        assert (
+            "(Author A et al., 2020)" in final_response
+        ), "Author A citation should be in the response"
+        assert (
+            "(Author C" in final_response
+        ), "Author C citation should be in the response"
+        assert (
+            "(Author E" in final_response
+        ), "Author E citation should be in the response"
+        assert (
+            "[cite0]" not in final_response
+        ), "Citation placeholder [cite0] should be replaced"
+        assert (
+            "[cite2]" not in final_response
+        ), "Citation placeholder [cite2] should be replaced"
+        assert (
+            "[cite4]" not in final_response
+        ), "Citation placeholder [cite4] should be replaced"
 
     def test_hybrid_citation_strategy(self, mock_citation_results):
         """Test hybrid citation strategy with footnotes and bibliography."""
+
         # Function to process text with hybrid citation strategy
         def process_with_hybrid_citations(response_text, citation_metadata):
             import re
@@ -1105,7 +1346,7 @@ class TestAdvancedCitationHandling:
                     authors = citation.get("authors", ["Unknown author"])
                     author_text = ", ".join(authors)
 
-                    footnote = f"{footnote_index}. {author_text}. \"{title}\". {source}."
+                    footnote = f'{footnote_index}. {author_text}. "{title}". {source}.'
                     footnotes.append(footnote)
 
                     # Return footnote reference in text
@@ -1116,8 +1357,10 @@ class TestAdvancedCitationHandling:
                 return match.group(0)  # Keep original if not found
 
             # Replace [citeX] format with footnote numbers
-            pattern = r'\[(cite\d+)\]'
-            processed_text = re.sub(pattern, footnote_replacement, response_text)
+            pattern = r"\[(cite\d+)\]"
+            processed_text = re.sub(
+                pattern, footnote_replacement, response_text
+            )
 
             # Step 2: Add footnotes at the end
             if footnotes:
@@ -1126,7 +1369,10 @@ class TestAdvancedCitationHandling:
             # Step 3: Add bibliography
             bibliography = []
             for citation_id, citation in citation_metadata.items():
-                if any(f"[{citation_id}]" in response_text for citation_id in citation_metadata):
+                if any(
+                    f"[{citation_id}]" in response_text
+                    for citation_id in citation_metadata
+                ):
                     source = citation.get("source", "Unknown source")
                     title = citation.get("title", "Untitled")
                     authors = citation.get("authors", ["Unknown author"])
@@ -1136,17 +1382,20 @@ class TestAdvancedCitationHandling:
                     bibliography.append(bib_entry)
 
             if bibliography:
-                processed_text += "\n\nBibliography:\n" + "\n".join(bibliography)
+                processed_text += "\n\nBibliography:\n" + "\n".join(
+                    bibliography
+                )
 
             return processed_text
 
         # Create mock citation metadata
         citation_metadata = {
             f"cite{i}": {
-                "authors": [f"Author {chr(65+i)}"] + (["et al."] if i % 2 == 0 else []),
+                "authors": [f"Author {chr(65+i)}"]
+                + (["et al."] if i % 2 == 0 else []),
                 "year": 2020 + i,
                 "title": f"Document {i//2}",
-                "source": f"Journal of Philosophy, Volume {i+1}"
+                "source": f"Journal of Philosophy, Volume {i+1}",
             }
             for i in range(5)
         }
@@ -1159,7 +1408,9 @@ class TestAdvancedCitationHandling:
         )
 
         # Apply hybrid citation processing
-        final_response = process_with_hybrid_citations(response_with_placeholders, citation_metadata)
+        final_response = process_with_hybrid_citations(
+            response_with_placeholders, citation_metadata
+        )
 
         # Check formatting
         assert "[1]" in final_response
@@ -1215,9 +1466,10 @@ class TestRAGRetrievalStrategies:
 
             # Combine and deduplicate results
             combined_results = {
-                "chunk_search_results":
-                    keyword_results_copy["chunk_search_results"][:2] +
-                    semantic_results_copy["chunk_search_results"][:2]
+                "chunk_search_results": keyword_results_copy[
+                    "chunk_search_results"
+                ][:2]
+                + semantic_results_copy["chunk_search_results"][:2]
             }
 
             return combined_results
@@ -1230,22 +1482,35 @@ class TestRAGRetrievalStrategies:
                 self.prompt_builder = MagicMock()
 
                 # Configure the prompt builder to actually include the search results in the prompt
-                async def build_prompt_with_content(query, search_results, **kwargs):
+                async def build_prompt_with_content(
+                    query, search_results, **kwargs
+                ):
                     context = ""
-                    for result in search_results.get("chunk_search_results", []):
+                    for result in search_results.get(
+                        "chunk_search_results", []
+                    ):
                         context += f"{result.get('text', '')}\n\n"
 
                     return [
-                        {"role": "system", "content": f"System prompt with hybrid context:\n\n{context}"},
-                        {"role": "user", "content": query}
+                        {
+                            "role": "system",
+                            "content": f"System prompt with hybrid context:\n\n{context}",
+                        },
+                        {"role": "user", "content": query},
                     ]
 
-                self.prompt_builder.build_prompt = AsyncMock(side_effect=build_prompt_with_content)
+                self.prompt_builder.build_prompt = AsyncMock(
+                    side_effect=build_prompt_with_content
+                )
 
                 # Configure LLM to return a valid response
-                self.providers.llm.aget_completion = AsyncMock(return_value={
-                    "choices": [{"message": {"content": "LLM generated response"}}]
-                })
+                self.providers.llm.aget_completion = AsyncMock(
+                    return_value={
+                        "choices": [
+                            {"message": {"content": "LLM generated response"}}
+                        ]
+                    }
+                )
 
             async def generate_with_hybrid_search(self, query):
                 # Perform hybrid search
@@ -1253,12 +1518,13 @@ class TestRAGRetrievalStrategies:
 
                 # Build prompt with combined results
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=search_results
+                    query=query, search_results=search_results
                 )
 
                 # Generate response
-                response = await self.providers.llm.aget_completion(messages=messages)
+                response = await self.providers.llm.aget_completion(
+                    messages=messages
+                )
                 return response["choices"][0]["message"]["content"]
 
         # Create processor and generate response
@@ -1272,18 +1538,29 @@ class TestRAGRetrievalStrategies:
         messages = call_args["messages"]
 
         # Find the system message
-        system_message = next((m for m in messages if m["role"] == "system"), None)
+        system_message = next(
+            (m for m in messages if m["role"] == "system"), None
+        )
 
         # Verify both result types are in the context
-        assert "Keyword match" in system_message["content"], "System message should include keyword matches"
-        assert "Semantic match" in system_message["content"], "System message should include semantic matches"
+        assert (
+            "Keyword match" in system_message["content"]
+        ), "System message should include keyword matches"
+        assert (
+            "Semantic match" in system_message["content"]
+        ), "System message should include semantic matches"
 
         # Check the final response
-        assert response == "LLM generated response", "Should return the mocked LLM response"
+        assert (
+            response == "LLM generated response"
+        ), "Should return the mocked LLM response"
 
     @pytest.mark.asyncio
-    async def test_reranking_strategy(self, mock_providers, mock_search_results):
+    async def test_reranking_strategy(
+        self, mock_providers, mock_search_results
+    ):
         """Test reranking search results before including in RAG context."""
+
         # Define a reranker function
         def rerank_results(search_results, query):
             # This would use a model in real implementation
@@ -1299,18 +1576,22 @@ class TestRAGRetrievalStrategies:
 
                 # Adjust score based on whether it contains keywords from query
                 keywords = ["ethics", "aristotle", "philosophy"]
-                score_adjustment = sum(0.1 for keyword in keywords
-                                      if keyword.lower() in new_result["text"].lower())
+                score_adjustment = sum(
+                    0.1
+                    for keyword in keywords
+                    if keyword.lower() in new_result["text"].lower()
+                )
 
-                new_result["score"] = min(0.99, result.get("score", 0.5) + score_adjustment)
+                new_result["score"] = min(
+                    0.99, result.get("score", 0.5) + score_adjustment
+                )
                 new_result["reranked"] = True
 
                 reranked_results["chunk_search_results"].append(new_result)
 
             # Sort by adjusted score
             reranked_results["chunk_search_results"].sort(
-                key=lambda x: x.get("score", 0),
-                reverse=True
+                key=lambda x: x.get("score", 0), reverse=True
             )
 
             return reranked_results
@@ -1322,8 +1603,14 @@ class TestRAGRetrievalStrategies:
                 self.prompt_builder = MagicMock()
                 self.prompt_builder.build_prompt = AsyncMock(
                     return_value=[
-                        {"role": "system", "content": "System prompt with reranked context"},
-                        {"role": "user", "content": "What did Aristotle say about ethics?"}
+                        {
+                            "role": "system",
+                            "content": "System prompt with reranked context",
+                        },
+                        {
+                            "role": "user",
+                            "content": "What did Aristotle say about ethics?",
+                        },
                     ]
                 )
 
@@ -1333,12 +1620,13 @@ class TestRAGRetrievalStrategies:
 
                 # Build prompt with reranked results
                 messages = await self.prompt_builder.build_prompt(
-                    query=query,
-                    search_results=reranked_results
+                    query=query, search_results=reranked_results
                 )
 
                 # Generate response
-                response = await self.providers.llm.aget_completion(messages=messages)
+                response = await self.providers.llm.aget_completion(
+                    messages=messages
+                )
                 return response["choices"][0]["message"]["content"]
 
         # Create processor
@@ -1346,7 +1634,9 @@ class TestRAGRetrievalStrategies:
 
         # Generate response with reranking
         query = "What did Aristotle say about ethics?"
-        response = await processor.generate_with_reranking(query, mock_search_results)
+        response = await processor.generate_with_reranking(
+            query, mock_search_results
+        )
 
         # Verify the LLM was called
         mock_providers.llm.aget_completion.assert_called_once()

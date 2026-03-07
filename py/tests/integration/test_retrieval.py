@@ -8,7 +8,6 @@ from r2r import R2RClient, R2RException
 
 @pytest.fixture(scope="session")
 def config():
-
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -26,8 +25,9 @@ def client(config):
 
 
 def test_search_basic_mode(client: R2RClient):
-    results = client.retrieval.search(query="Aristotle",
-                                      search_mode="basic").results
+    results = client.retrieval.search(
+        query="Aristotle", search_mode="basic"
+    ).results
     assert results is not None, "No results field in search response"
 
 
@@ -36,10 +36,7 @@ def test_search_advanced_mode_with_filters(client: R2RClient):
     results = client.retrieval.search(
         query="Philosophy",
         search_mode="advanced",
-        search_settings={
-            "filters": filters,
-            "limit": 5
-        },
+        search_settings={"filters": filters, "limit": 5},
     ).results
     assert results is not None, "No results in advanced mode search"
 
@@ -48,10 +45,7 @@ def test_search_custom_mode(client: R2RClient):
     results = client.retrieval.search(
         query="Greek philosophers",
         search_mode="custom",
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        search_settings={"use_semantic_search": True, "limit": 3},
     ).results
     assert results is not None, "No results in custom mode search"
 
@@ -59,14 +53,8 @@ def test_search_custom_mode(client: R2RClient):
 def test_rag_query(client: R2RClient):
     results = client.retrieval.rag(
         query="Summarize Aristotle's contributions to logic",
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={"use_semantic_search": True, "limit": 3},
     ).results
     assert results.completion is not None, "RAG response missing 'completion'"
 
@@ -76,22 +64,14 @@ def test_rag_with_filter(client: R2RClient):
     # generate a random string
     suffix = str(uuid.uuid4())
     client.documents.create(
-        raw_text=
-        f"Aristotle was a Greek philosopher, contributions to philosophy were in logic, {suffix}.",
+        raw_text=f"Aristotle was a Greek philosopher, contributions to philosophy were in logic, {suffix}.",
         metadata={"tier": "test"},
     )
     results = client.retrieval.rag(
         query="What were aristotle's contributions to philosophy?",
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
         search_settings={
-            "filters": {
-                "metadata.tier": {
-                    "$eq": "test"
-                }
-            },
+            "filters": {"metadata.tier": {"$eq": "test"}},
             "use_semantic_search": True,
             "limit": 3,
         },
@@ -102,14 +82,8 @@ def test_rag_with_filter(client: R2RClient):
 def test_rag_stream_query(client: R2RClient):
     resp = client.retrieval.rag(
         query="Detail the philosophical schools Aristotle influenced",
-        rag_generation_config={
-            "stream": True,
-            "max_tokens": 50
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 2
-        },
+        rag_generation_config={"stream": True, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 2},
     )
 
     # Consume a few chunks from the async generator
@@ -131,14 +105,8 @@ def test_agent_query(client: R2RClient):
     msg = Message(role="user", content="What is Aristotle known for?")
     results = client.retrieval.agent(
         message=msg,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={"use_semantic_search": True, "limit": 3},
     ).results
     assert results is not None, "Agent response missing 'results'"
     assert len(results.messages) > 0, "No messages returned by agent"
@@ -148,14 +116,8 @@ def test_agent_query_stream(client: R2RClient):
     msg = Message(role="user", content="Explain Aristotle's logic in steps.")
     resp = client.retrieval.agent(
         message=msg,
-        rag_generation_config={
-            "stream": True,
-            "max_tokens": 50
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        rag_generation_config={"stream": True, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
     )
 
     def consume_stream():
@@ -172,29 +134,14 @@ def test_agent_query_stream(client: R2RClient):
 
 def test_completion(client: R2RClient):
     messages = [
-        {
-            "role": "system",
-            "content": "You are a helpful assistant."
-        },
-        {
-            "role": "user",
-            "content": "What is the capital of France?"
-        },
-        {
-            "role": "assistant",
-            "content": "The capital of France is Paris."
-        },
-        {
-            "role": "user",
-            "content": "What about Italy?"
-        },
+        {"role": "system", "content": "You are a helpful assistant."},
+        {"role": "user", "content": "What is the capital of France?"},
+        {"role": "assistant", "content": "The capital of France is Paris."},
+        {"role": "user", "content": "What about Italy?"},
     ]
     resp = client.retrieval.completion(
         messages,
-        generation_config={
-            "max_tokens": 50,
-            "model": "openai/gpt-4.1"
-        },
+        generation_config={"max_tokens": 50, "model": "openai/gpt-4.1"},
     )
     assert resp.results is not None, "Completion response missing 'results'"
     assert resp.results.choices is not None, "No choices in completion result"
@@ -231,41 +178,37 @@ def test_no_results_scenario(client: R2RClient):
 
 
 def test_pagination_limit_one(client: R2RClient):
-    client.documents.create(chunks=[
-        "a" + " " + str(uuid.uuid4()),
-        "b" + " " + str(uuid.uuid4()),
-        "c" + " " + str(uuid.uuid4()),
-    ])
-    results = client.retrieval.search(query="Aristotle",
-                                      search_mode="basic",
-                                      search_settings={
-                                          "limit": 1
-                                      }).results
-    assert len(results.chunk_search_results) == 1, (
-        "Expected one result with limit=1")
+    client.documents.create(
+        chunks=[
+            "a" + " " + str(uuid.uuid4()),
+            "b" + " " + str(uuid.uuid4()),
+            "c" + " " + str(uuid.uuid4()),
+        ]
+    )
+    results = client.retrieval.search(
+        query="Aristotle", search_mode="basic", search_settings={"limit": 1}
+    ).results
+    assert (
+        len(results.chunk_search_results) == 1
+    ), "Expected one result with limit=1"
 
 
 def test_pagination_offset(client: R2RClient):
     resp0 = client.retrieval.search(
         query="Aristotle",
         search_mode="basic",
-        search_settings={
-            "limit": 1,
-            "offset": 0
-        },
+        search_settings={"limit": 1, "offset": 0},
     ).results
     resp1 = client.retrieval.search(
         query="Aristotle",
         search_mode="basic",
-        search_settings={
-            "limit": 1,
-            "offset": 1
-        },
+        search_settings={"limit": 1, "offset": 1},
     ).results
 
-    assert (resp0.chunk_search_results[0].text
-            != resp1.chunk_search_results[0].text
-            ), "Offset should return different results"
+    assert (
+        resp0.chunk_search_results[0].text
+        != resp1.chunk_search_results[0].text
+    ), "Offset should return different results"
 
 
 def test_rag_task_prompt(client: R2RClient):
@@ -280,13 +223,14 @@ def test_rag_task_prompt(client: R2RClient):
     """
     results = client.retrieval.rag(
         query="Tell me about Aristotle",
-        rag_generation_config={"stream": False}, # , "max_tokens": 50},
+        rag_generation_config={"stream": False},  # , "max_tokens": 50},
         search_settings={"use_semantic_search": True, "limit": 3},
         task_prompt=custom_prompt,
     ).results
     answer = results.completion
-    assert "[END-TEST-PROMPT]" in answer, (
-        "Custom prompt override not reflected in RAG answer")
+    assert (
+        "[END-TEST-PROMPT]" in answer
+    ), "Custom prompt override not reflected in RAG answer"
 
 
 def test_agent_conversation_id(client: R2RClient):
@@ -294,34 +238,24 @@ def test_agent_conversation_id(client: R2RClient):
     msg = Message(role="user", content="What is Aristotle known for?")
     results = client.retrieval.agent(
         message=msg,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 50
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        rag_generation_config={"stream": False, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
         conversation_id=str(conversation_id),
     ).results
-    assert len(
-        results.messages) > 0, ("No results from agent with conversation_id")
+    assert (
+        len(results.messages) > 0
+    ), "No results from agent with conversation_id"
 
     msg2 = Message(role="user", content="Can you elaborate more?")
     results2 = client.retrieval.agent(
         message=msg2,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 50
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 3
-        },
+        rag_generation_config={"stream": False, "max_tokens": 50},
+        search_settings={"use_semantic_search": True, "limit": 3},
         conversation_id=str(conversation_id),
     ).results
-    assert len(results2.messages) > 0, (
-        "No results from agent in second turn of conversation")
+    assert (
+        len(results2.messages) > 0
+    ), "No results from agent in second turn of conversation"
 
 
 def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
@@ -331,12 +265,8 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     # rating > 5
     # include  owner id and collection ids to make robust against other database interactions from other users
     filters = {
-        "rating": {
-            "$gt": 5
-        },
-        "owner_id": {
-            "$eq": str(user_id)
-        },
+        "rating": {"$gt": 5},
+        "owner_id": {"$eq": str(user_id)},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -344,23 +274,17 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     results = client.retrieval.search(
         query="a",
         search_mode=SearchMode.custom,
-        search_settings={
-            "use_semantic_search": True,
-            "filters": filters
-        },
+        search_settings={"use_semantic_search": True, "filters": filters},
     ).results
     results = results.chunk_search_results
-    assert len(results) == 2, (
-        f"Expected 2 docs with rating > 5, got {len(results)}")
+    assert (
+        len(results) == 2
+    ), f"Expected 2 docs with rating > 5, got {len(results)}"
 
     # category in [ancient, modern]
     filters = {
-        "metadata.category": {
-            "$in": ["ancient", "modern"]
-        },
-        "owner_id": {
-            "$eq": str(user_id)
-        },
+        "metadata.category": {"$in": ["ancient", "modern"]},
+        "owner_id": {"$eq": str(user_id)},
         "collection_ids": {
             "$overlap": [str(test_collection["collection_id"])]
         },
@@ -369,33 +293,19 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     results = client.retrieval.search(
         query="b",
         search_mode=SearchMode.custom,
-        search_settings={
-            "use_semantic_search": True,
-            "filters": filters
-        },
+        search_settings={"use_semantic_search": True, "filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 4, (
-        f"Expected all 4 docs, got {len(chunk_search_results)}")
+    assert (
+        len(chunk_search_results) == 4
+    ), f"Expected all 4 docs, got {len(chunk_search_results)}"
 
     # rating > 5 AND category=modern
     filters = {
         "$and": [
-            {
-                "metadata.rating": {
-                    "$gt": 5
-                }
-            },
-            {
-                "metadata.category": {
-                    "$eq": "modern"
-                }
-            },
-            {
-                "owner_id": {
-                    "$eq": str(user_id)
-                }
-            },
+            {"metadata.rating": {"$gt": 5}},
+            {"metadata.category": {"$eq": "modern"}},
+            {"owner_id": {"$eq": str(user_id)}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
@@ -406,14 +316,12 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
     results = client.retrieval.search(
         query="d",
         search_mode=SearchMode.custom,
-        search_settings={
-            "filters": filters
-        },
+        search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 2, (
-        f"Expected 2 modern docs with rating>5, got {len(chunk_search_results)}"
-    )
+    assert (
+        len(chunk_search_results) == 2
+    ), f"Expected 2 modern docs with rating>5, got {len(chunk_search_results)}"
 
     results = client.retrieval.search(
         query="unique_philosopher",
@@ -422,9 +330,7 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
             "use_fulltext_search": True,
             "use_semantic_search": False,
             "filters": {
-                "owner_id": {
-                    "$eq": str(user_id)
-                },
+                "owner_id": {"$eq": str(user_id)},
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
                 },
@@ -432,9 +338,9 @@ def test_complex_filters_and_fulltext(client: R2RClient, test_collection):
         },
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 1, (
-        f"Expected 1 doc for unique_philosopher, got {len(chunk_search_results)}"
-    )
+    assert (
+        len(chunk_search_results) == 1
+    ), f"Expected 1 doc for unique_philosopher, got {len(chunk_search_results)}"
 
 
 def test_complex_nested_filters(client: R2RClient, test_collection):
@@ -446,28 +352,12 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
         "$and": [
             {
                 "$or": [
-                    {
-                        "metadata.category": {
-                            "$eq": "ancient"
-                        }
-                    },
-                    {
-                        "metadata.rating": {
-                            "$lt": 5
-                        }
-                    },
+                    {"metadata.category": {"$eq": "ancient"}},
+                    {"metadata.rating": {"$lt": 5}},
                 ]
             },
-            {
-                "metadata.tags": {
-                    "$contains": ["philosophy"]
-                }
-            },
-            {
-                "owner_id": {
-                    "$eq": str(client.users.me().results.id)
-                }
-            },
+            {"metadata.tags": {"$contains": ["philosophy"]}},
+            {"owner_id": {"$eq": str(client.users.me().results.id)}},
             {
                 "collection_ids": {
                     "$overlap": [str(test_collection["collection_id"])]
@@ -478,9 +368,7 @@ def test_complex_nested_filters(client: R2RClient, test_collection):
 
     results = client.retrieval.search(
         query="complex",
-        search_settings={
-            "filters": filters
-        },
+        search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
 
@@ -494,13 +382,12 @@ def test_filters_no_match(client: R2RClient):
     results = client.retrieval.search(
         query="noresults",
         search_mode="custom",
-        search_settings={
-            "filters": filters
-        },
+        search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 0, (
-        f"Expected 0 docs, got {len(chunk_search_results)}")
+    assert (
+        len(chunk_search_results) == 0
+    ), f"Expected 0 docs, got {len(chunk_search_results)}"
 
 
 def test_pagination_extremes(client: R2RClient):
@@ -510,15 +397,12 @@ def test_pagination_extremes(client: R2RClient):
     results = client.retrieval.search(
         query="Aristotle",
         search_mode="basic",
-        search_settings={
-            "limit": 10,
-            "offset": offset
-        },
+        search_settings={"limit": 10, "offset": offset},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 0, (
-        f"Expected no results at large offset, got {len(chunk_search_results)}"
-    )
+    assert (
+        len(chunk_search_results) == 0
+    ), f"Expected no results at large offset, got {len(chunk_search_results)}"
 
 
 def test_full_text_stopwords(client: R2RClient):
@@ -531,8 +415,9 @@ def test_full_text_stopwords(client: R2RClient):
             "limit": 5,
         },
     )
-    assert resp.results is not None, (
-        "No results field in stopword query response")
+    assert (
+        resp.results is not None
+    ), "No results field in stopword query response"
 
 
 def test_full_text_non_ascii(client: R2RClient):
@@ -545,8 +430,9 @@ def test_full_text_non_ascii(client: R2RClient):
             "limit": 3,
         },
     )
-    assert resp.results is not None, (
-        "No results field in non-ASCII query response")
+    assert (
+        resp.results is not None
+    ), "No results field in non-ASCII query response"
 
 
 def test_missing_fields(client: R2RClient):
@@ -554,30 +440,23 @@ def test_missing_fields(client: R2RClient):
     results = client.retrieval.search(
         query="missingfield",
         search_mode="custom",
-        search_settings={
-            "filters": filters
-        },
+        search_settings={"filters": filters},
     ).results
     chunk_search_results = results.chunk_search_results
-    assert len(chunk_search_results) == 0, (
-        f"Expected 0 docs for a non-existent field, got {len(chunk_search_results)}"
-    )
+    assert (
+        len(chunk_search_results) == 0
+    ), f"Expected 0 docs for a non-existent field, got {len(chunk_search_results)}"
 
 
 def test_rag_with_large_context(client: R2RClient):
     results = client.retrieval.rag(
         query="Explain the contributions of Kant in detail",
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 200
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 10
-        },
+        rag_generation_config={"stream": False, "max_tokens": 200},
+        search_settings={"use_semantic_search": True, "limit": 10},
     ).results
-    assert results.completion is not None, (
-        "RAG large context missing 'completion'")
+    assert (
+        results.completion is not None
+    ), "RAG large context missing 'completion'"
     completion = results.completion
     assert len(completion) > 0, "RAG large context returned empty answer"
 
@@ -588,65 +467,52 @@ def test_agent_long_conversation(client: R2RClient):
     msg1 = Message(role="user", content="What were Aristotle's main ideas?")
     resp1 = client.retrieval.agent(
         message=msg1,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 5
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert resp1.results is not None, (
-        "No results in first turn of conversation")
+    assert (
+        resp1.results is not None
+    ), "No results in first turn of conversation"
 
-    msg2 = Message(role="user",
-                   content="How did these ideas influence modern philosophy?")
+    msg2 = Message(
+        role="user", content="How did these ideas influence modern philosophy?"
+    )
     resp2 = client.retrieval.agent(
         message=msg2,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 5
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert resp2.results is not None, (
-        "No results in second turn of conversation")
+    assert (
+        resp2.results is not None
+    ), "No results in second turn of conversation"
 
     msg3 = Message(role="user", content="Now tell me about Descartes.")
     resp3 = client.retrieval.agent(
         message=msg3,
-        rag_generation_config={
-            "stream": False,
-            "max_tokens": 100
-        },
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 5
-        },
+        rag_generation_config={"stream": False, "max_tokens": 100},
+        search_settings={"use_semantic_search": True, "limit": 5},
         conversation_id=str(conversation_id),
     )
-    assert resp3.results is not None, (
-        "No results in third turn of conversation")
+    assert (
+        resp3.results is not None
+    ), "No results in third turn of conversation"
 
 
 def test_filter_by_document_type(client: R2RClient):
     random_suffix = str(uuid.uuid4())
-    client.documents.create(chunks=[
-        f"a {random_suffix}",
-        f"b {random_suffix}",
-        f"c {random_suffix}",
-    ])
+    client.documents.create(
+        chunks=[
+            f"a {random_suffix}",
+            f"b {random_suffix}",
+            f"c {random_suffix}",
+        ]
+    )
     filters = {"document_type": {"$eq": "txt"}}
-    results = client.retrieval.search(query="a",
-                                      search_settings={
-                                          "filters": filters
-                                      }).results
+    results = client.retrieval.search(
+        query="a", search_settings={"filters": filters}
+    ).results
     chunk_search_results = results.chunk_search_results
     assert (
         len(chunk_search_results) > 0
@@ -759,6 +625,7 @@ def test_rag_fusion_mode_with_subqueries(client: R2RClient):
     ), "No results returned by RAG-Fusion with subqueries"
     # When fully implemented, you can check if the chunk results are non-empty, etc.
 
+
 def test_collection_id_filters(client: R2RClient):
     """
     Test both collection_id and collection_ids filters to ensure they work properly
@@ -783,31 +650,26 @@ def test_collection_id_filters(client: R2RClient):
     for i in range(3):
         doc_response = client.documents.create(
             raw_text=f"Test document {i} for collection filter test with marker {unique_marker}",
-            metadata={"test_group": "collection_filter_test"}
+            metadata={"test_group": "collection_filter_test"},
         )
         doc_id = doc_response.results.document_id
 
         # Add document to the first collection
-        client.collections.add_document(
-            id=collection_id,
-            document_id=doc_id
-        )
+        client.collections.add_document(id=collection_id, document_id=doc_id)
 
     # Create a document in the second collection
     doc_response = client.documents.create(
         raw_text=f"Test document in second collection with marker {unique_marker}",
-        metadata={"test_group": "collection_filter_test"}
+        metadata={"test_group": "collection_filter_test"},
     )
     doc_id = doc_response.results.document_id
 
     # Add document to the second collection
-    client.collections.add_document(
-        id=other_collection_id,
-        document_id=doc_id
-    )
+    client.collections.add_document(id=other_collection_id, document_id=doc_id)
 
     # Wait for indexing to complete
     import time
+
     time.sleep(2)
 
     # Test 1: Using collection_id filter (singular form)
@@ -817,10 +679,8 @@ def test_collection_id_filters(client: R2RClient):
         search_settings={
             "use_fulltext_search": True,
             "use_semantic_search": False,
-            "filters": {
-                "collection_id": {"$eq": str(collection_id)}
-            }
-        }
+            "filters": {"collection_id": {"$eq": str(collection_id)}},
+        },
     ).results
 
     # Test 2: Using collection_ids filter (plural form)
@@ -830,10 +690,8 @@ def test_collection_id_filters(client: R2RClient):
         search_settings={
             "use_fulltext_search": True,
             "use_semantic_search": False,
-            "filters": {
-                "collection_ids": {"$overlap": [str(collection_id)]}
-            }
-        }
+            "filters": {"collection_ids": {"$overlap": [str(collection_id)]}},
+        },
     ).results
 
     # Test 3: Using $in operator with collection_id
@@ -843,10 +701,8 @@ def test_collection_id_filters(client: R2RClient):
         search_settings={
             "use_fulltext_search": True,
             "use_semantic_search": False,
-            "filters": {
-                "collection_id": {"$in": [str(collection_id)]}
-            }
-        }
+            "filters": {"collection_id": {"$in": [str(collection_id)]}},
+        },
     ).results
 
     # Test 4: Using both collections with $overlap
@@ -857,9 +713,11 @@ def test_collection_id_filters(client: R2RClient):
             "use_fulltext_search": True,
             "use_semantic_search": False,
             "filters": {
-                "collection_ids": {"$overlap": [str(collection_id), str(other_collection_id)]}
-            }
-        }
+                "collection_ids": {
+                    "$overlap": [str(collection_id), str(other_collection_id)]
+                }
+            },
+        },
     ).results
 
     # Test 5: Using a non-existent collection ID
@@ -869,23 +727,31 @@ def test_collection_id_filters(client: R2RClient):
         search_settings={
             "use_fulltext_search": True,
             "use_semantic_search": False,
-            "filters": {
-                "collection_id": {"$eq": str(uuid.uuid4())}
-            }
-        }
+            "filters": {"collection_id": {"$eq": str(uuid.uuid4())}},
+        },
     ).results
 
     # Verify results
     # First three tests should return exactly 3 chunks from the first collection
-    assert len(results1.chunk_search_results) == 3, f"collection_id $eq filter returned {len(results1.chunk_search_results)} results, expected 3"
-    assert len(results2.chunk_search_results) == 3, f"collection_ids $overlap filter returned {len(results2.chunk_search_results)} results, expected 3"
-    assert len(results3.chunk_search_results) == 3, f"collection_id $in filter returned {len(results3.chunk_search_results)} results, expected 3"
+    assert (
+        len(results1.chunk_search_results) == 3
+    ), f"collection_id $eq filter returned {len(results1.chunk_search_results)} results, expected 3"
+    assert (
+        len(results2.chunk_search_results) == 3
+    ), f"collection_ids $overlap filter returned {len(results2.chunk_search_results)} results, expected 3"
+    assert (
+        len(results3.chunk_search_results) == 3
+    ), f"collection_id $in filter returned {len(results3.chunk_search_results)} results, expected 3"
 
     # Test 4 should return all 4 chunks from both collections
-    assert len(results4.chunk_search_results) == 4, f"collection_ids $overlap with multiple IDs returned {len(results4.chunk_search_results)} results, expected 4"
+    assert (
+        len(results4.chunk_search_results) == 4
+    ), f"collection_ids $overlap with multiple IDs returned {len(results4.chunk_search_results)} results, expected 4"
 
     # Test 5 should return no results for non-existent collection
-    assert len(results5.chunk_search_results) == 0, f"Non-existent collection ID filter returned {len(results5.chunk_search_results)} results, expected 0"
+    assert (
+        len(results5.chunk_search_results) == 0
+    ), f"Non-existent collection ID filter returned {len(results5.chunk_search_results)} results, expected 0"
 
     # Clean up
     client.collections.delete(id=collection_id)

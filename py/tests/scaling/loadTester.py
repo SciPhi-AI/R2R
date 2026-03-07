@@ -45,7 +45,6 @@ class Metrics:
 
 
 class LoadTester:
-
     def __init__(self, base_url: str):
         self.base_url = base_url
         self.metrics: list[Metrics] = []
@@ -86,10 +85,11 @@ class LoadTester:
             timeout=LOGIN_TIMEOUT,
             operation_desc=f"login user {user_email}",
         )
-        user = ({
-            "email": user_email,
-            "password": password
-        } if login_result else None)
+        user = (
+            {"email": user_email, "password": password}
+            if login_result
+            else None
+        )
 
         # Ingest documents for user
         files = glob("core/examples/data/*")
@@ -168,7 +168,8 @@ class LoadTester:
                     end_time=end_time,
                     status=status,
                     duration_ms=duration_ms,
-                ))
+                )
+            )
 
             # Wait according to queries per second rate
             await asyncio.sleep(max(0, 1 / QUERIES_PER_SECOND))
@@ -177,7 +178,8 @@ class LoadTester:
         """Calculate and print test statistics."""
         durations = [m.duration_ms for m in self.metrics]
         successful_requests = len(
-            [m for m in self.metrics if m.status == "success"])
+            [m for m in self.metrics if m.status == "success"]
+        )
         failed_requests = len([m for m in self.metrics if m.status == "error"])
 
         print("\nTest Results:")

@@ -617,7 +617,9 @@ class R2RStreamingAgent(R2RAgent):
                                     )
 
                             # Create final answer payload
-                            consolidated_citations = locals().get("consolidated_citations", [])
+                            consolidated_citations = locals().get(
+                                "consolidated_citations", []
+                            )
 
                             final_evt_payload = {
                                 "id": "msg_final",
@@ -662,7 +664,9 @@ class R2RStreamingAgent(R2RAgent):
                     )
 
                     # Create and emit a final answer payload with the summary
-                    consolidated_citations = locals().get("consolidated_citations", [])
+                    consolidated_citations = locals().get(
+                        "consolidated_citations", []
+                    )
 
                     final_evt_payload = {
                         "id": "msg_final",
@@ -1199,7 +1203,9 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                 )
 
                         # Create final answer payload
-                        consolidated_citations = locals().get("consolidated_citations", [])
+                        consolidated_citations = locals().get(
+                            "consolidated_citations", []
+                        )
 
                         final_evt_payload = {
                             "id": "msg_final",
@@ -1243,7 +1249,9 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                     )
 
                     # Create and emit a final answer payload with the summary
-                    consolidated_citations = locals().get("consolidated_citations", [])
+                    consolidated_citations = locals().get(
+                        "consolidated_citations", []
+                    )
 
                     final_evt_payload = {
                         "id": "msg_final",
