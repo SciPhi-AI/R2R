@@ -162,9 +162,7 @@ class CitationTracker:
         Returns:
             Dictionary mapping citation IDs to lists of their (start, end) spans.
         """
-        return {
-            cid: list(spans) for cid, spans in self.processed_spans.items()
-        }
+        return {cid: list(spans) for cid, spans in self.processed_spans.items()}
 
     def reset(self) -> None:
         """
@@ -175,9 +173,7 @@ class CitationTracker:
         self.seen_citation_ids.clear()
 
 
-def find_new_citation_spans(
-    text: str, tracker: CitationTracker
-) -> dict[str, list[Tuple[int, int]]]:
+def find_new_citation_spans(text: str, tracker: CitationTracker) -> dict[str, list[Tuple[int, int]]]:
     """
     Extract citation spans that haven't been processed yet.
 
@@ -200,11 +196,11 @@ def find_new_citation_spans(
     new_spans: dict = {}
 
     for cid, spans in all_spans.items():
-        for span in spans:
-            if tracker.is_new_span(cid, span):
-                if cid not in new_spans:
-                    new_spans[cid] = []
-                new_spans[cid].append(span)
+        if tracker.is_new_citation(cid):
+            new_spans[cid] = spans
+            # Mark all spans as processed for this new citation
+            for span in spans:
+                tracker.is_new_span(cid, span)
 
     return new_spans
 
