@@ -200,11 +200,11 @@ def find_new_citation_spans(
     new_spans: dict = {}
 
     for cid, spans in all_spans.items():
-        if tracker.is_new_citation(cid):
-            new_spans[cid] = spans
-            # Mark all spans as processed for this new citation
-            for span in spans:
-                tracker.is_new_span(cid, span)
+        for span in spans:
+            if tracker.is_new_span(cid, span):
+                if cid not in new_spans:
+                    new_spans[cid] = []
+                new_spans[cid].append(span)
 
     return new_spans
 
