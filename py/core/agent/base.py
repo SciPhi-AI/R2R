@@ -396,6 +396,7 @@ class R2RStreamingAgent(R2RAgent):
             pending_tool_calls = {}
             partial_text_buffer = ""
             iterations_count = 0
+            consolidated_citations = []
 
             try:
                 # Keep streaming until we complete
@@ -616,11 +617,6 @@ class R2RStreamingAgent(R2RAgent):
                                         }
                                     )
 
-                            # Create final answer payload
-                            consolidated_citations = locals().get(
-                                "consolidated_citations", []
-                            )
-
                             final_evt_payload = {
                                 "id": "msg_final",
                                 "object": "agent.final_answer",
@@ -663,10 +659,21 @@ class R2RStreamingAgent(R2RAgent):
                         )
                     )
 
-                    # Create and emit a final answer payload with the summary
-                    consolidated_citations = locals().get(
-                        "consolidated_citations", []
-                    )
+                    consolidated_citations = []
+                    # Group citations by ID with all their spans
+                    for cid, spans in citation_tracker.get_all_spans().items():
+                        if cid in citation_payloads:
+                            consolidated_citations.append(
+                                {
+                                    "id": cid,
+                                    "object": "citation",
+                                    "spans": [
+                                        {"start": s[0], "end": s[1]}
+                                        for s in spans
+                                    ],
+                                    "payload": citation_payloads[cid],
+                                }
+                            )
 
                     final_evt_payload = {
                         "id": "msg_final",
@@ -850,6 +857,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
 
         async def sse_generator() -> AsyncGenerator[str, None]:
             iterations_count = 0
+            consolidated_citations = []
 
             try:
                 # Keep streaming until we complete
@@ -1202,11 +1210,6 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                                     }
                                 )
 
-                        # Create final answer payload
-                        consolidated_citations = locals().get(
-                            "consolidated_citations", []
-                        )
-
                         final_evt_payload = {
                             "id": "msg_final",
                             "object": "agent.final_answer",
@@ -1248,10 +1251,21 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         )
                     )
 
-                    # Create and emit a final answer payload with the summary
-                    consolidated_citations = locals().get(
-                        "consolidated_citations", []
-                    )
+                    consolidated_citations = []
+                    # Group citations by ID with all their spans
+                    for cid, spans in citation_tracker.get_all_spans().items():
+                        if cid in citation_payloads:
+                            consolidated_citations.append(
+                                {
+                                    "id": cid,
+                                    "object": "citation",
+                                    "spans": [
+                                        {"start": s[0], "end": s[1]}
+                                        for s in spans
+                                    ],
+                                    "payload": citation_payloads[cid],
+                                }
+                            )
 
                     final_evt_payload = {
                         "id": "msg_final",
