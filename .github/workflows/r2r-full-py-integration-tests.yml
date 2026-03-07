@@ -9,14 +9,14 @@ jobs:
     timeout-minutes: 30
 
     env:
-      TELEMETRY_ENABLED: 'false'
+      TELEMETRY_ENABLED: "false"
       R2R_PROJECT_NAME: r2r_default
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
       AZURE_API_BASE: ${{ secrets.AZURE_API_BASE }}
       AZURE_API_VERSION: ${{ secrets.AZURE_API_VERSION }}
-      PYTHONUNBUFFERED: '1'
-      PYTEST_ADDOPTS: '--color=yes'
+      PYTHONUNBUFFERED: "1"
+      PYTEST_ADDOPTS: "--color=yes"
 
     steps:
       - name: Checkout code
@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/setup-python-full
         with:
           os: ubuntu-latest
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Setup and start Docker
         uses: ./.github/actions/setup-docker
@@ -37,8 +37,8 @@ jobs:
       - name: Login Docker
         uses: ./.github/actions/login-docker
         with:
-          docker_username: ${{ secrets.RAGTORICHES_DOCKER_UNAME }}
-          docker_password: ${{ secrets.RAGTORICHES_DOCKER_TOKEN }}
+          docker_username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Start R2R Full server
         uses: ./.github/actions/start-r2r-full
