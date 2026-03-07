@@ -396,7 +396,7 @@ class R2RStreamingAgent(R2RAgent):
             pending_tool_calls = {}
             partial_text_buffer = ""
             iterations_count = 0
-            consolidated_citations = []
+            consolidated_citations: list[dict] = []
 
             try:
                 # Keep streaming until we complete
@@ -598,7 +598,7 @@ class R2RStreamingAgent(R2RAgent):
                                 )
 
                             # (a) Prepare final answer with optimized citations
-                            consolidated_citations = []
+                            consolidated_citations: list[dict] = []
                             # Group citations by ID with all their spans
                             for (
                                 cid,
@@ -659,7 +659,7 @@ class R2RStreamingAgent(R2RAgent):
                         )
                     )
 
-                    consolidated_citations = []
+                    consolidated_citations: list[dict] = []
                     # Group citations by ID with all their spans
                     for cid, spans in citation_tracker.get_all_spans().items():
                         if cid in citation_payloads:
@@ -857,7 +857,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
 
         async def sse_generator() -> AsyncGenerator[str, None]:
             iterations_count = 0
-            consolidated_citations = []
+            consolidated_citations: list[dict] = []
 
             try:
                 # Keep streaming until we complete
@@ -1191,7 +1191,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         )
                     else:
                         # (a) Prepare final answer with optimized citations
-                        consolidated_citations = []
+                        consolidated_citations: list[dict] = []
                         # Group citations by ID with all their spans
                         for (
                             cid,
@@ -1251,7 +1251,7 @@ class R2RXMLStreamingAgent(R2RStreamingAgent):
                         )
                     )
 
-                    consolidated_citations = []
+                    consolidated_citations: list[dict] = []
                     # Group citations by ID with all their spans
                     for cid, spans in citation_tracker.get_all_spans().items():
                         if cid in citation_payloads:

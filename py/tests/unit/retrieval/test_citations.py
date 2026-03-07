@@ -958,33 +958,33 @@ class TestCitationUtils:
         text = "This is a text with citation [abc1234]."
         new_spans1 = find_new_citation_spans(text, tracker)
         assert len(new_spans1) == 1, "Should find one new span"
-        assert new_spans1[0][0] == "abc1234", "Citation ID should match"
-        citation_id, start, end = new_spans1[0]
+        assert "abc1234" in new_spans1, "Citation ID should match"
+        assert len(new_spans1["abc1234"]) == 1, "Should have one span"
+
+        start, end = new_spans1["abc1234"][0]
         assert (
-            citation_id in tracker.processed_spans
+            "abc1234" in tracker.processed_spans
         ), "Citation ID should be tracked"
         assert (start, end) in tracker.processed_spans[
-            citation_id
+            "abc1234"
         ], "Span should be tracked"
 
         # Duplicate span in new text
         text2 = text  # Same text with same citation
         new_spans2 = find_new_citation_spans(text2, tracker)
-        assert new_spans2 == [], "Should not find duplicate spans"
+        assert new_spans2 == {}, "Should not find duplicate spans"
 
         # Text with new citation
         text3 = "This is another text with a new citation [def5678]."
         new_spans3 = find_new_citation_spans(text3, tracker)
         assert len(new_spans3) == 1, "Should find one new span"
-        assert new_spans3[0][0] == "def5678", "New citation ID should match"
+        assert "def5678" in new_spans3, "New citation ID should match"
 
         # Text with both old and new citations
         text4 = "Text with both [abc1234] and [ghi9012]."
         new_spans4 = find_new_citation_spans(text4, tracker)
-        assert len(new_spans4) == 1, "Should only find the new span"
-        assert (
-            new_spans4[0][0] == "ghi9012"
-        ), "Only new citation ID should be found"
+        assert len(new_spans4) == 1, "Should only find the new span dict key"
+        assert "ghi9012" in new_spans4, "Only new citation ID should be found"
 
     def test_find_new_citation_spans_edge_cases(self):
         """Test edge cases for finding new citation spans."""
@@ -992,30 +992,29 @@ class TestCitationUtils:
 
         # Empty text
         new_spans1 = find_new_citation_spans("", tracker)
-        assert new_spans1 == [], "Should return empty list for empty text"
+        assert new_spans1 == {}, "Should return empty dict for empty text"
 
         # Text without citations
         new_spans2 = find_new_citation_spans(
             "This text has no citations or brackets.", tracker
         )
         assert (
-            new_spans2 == []
-        ), "Should return empty list for text without citations"
+            new_spans2 == {}
+        ), "Should return empty dict for text without citations"
 
         # None input
         new_spans3 = find_new_citation_spans(None, tracker)
         assert (
-            new_spans3 == []
-        ), "Should handle None input gracefully and return empty list"
+            new_spans3 == {}
+        ), "Should handle None input gracefully and return empty dict"
 
         # Multiple citations in one text
         text = "Text with multiple citations [abc1234] and [def5678] and [ghi9012]."
         new_spans = find_new_citation_spans(text, tracker)
         assert len(new_spans) == 3, "Should find three new spans"
-        citation_ids = [span[0] for span in new_spans]
-        assert "abc1234" in citation_ids, "First citation should be found"
-        assert "def5678" in citation_ids, "Second citation should be found"
-        assert "ghi9012" in citation_ids, "Third citation should be found"
+        assert "abc1234" in new_spans, "First citation should be found"
+        assert "def5678" in new_spans, "Second citation should be found"
+        assert "ghi9012" in new_spans, "Third citation should be found"
 
     def test_performance_with_many_citations(self):
         """Test performance with a large number of citations."""
@@ -1039,10 +1038,11 @@ class TestCitationUtils:
         new_spans = find_new_citation_spans(text, tracker)
         assert len(new_spans) == 100, "Should find all 100 spans as new"
 
-        # Test finding spans in chunks (simulating streaming)
+        # Test finding spans in chunks (simulating streaming as done in base.py)
         chunk_size = len(text) // 10
         tracker2 = CitationTracker()
         total_new_spans = 0
+        partial_text = ""
 
         for i in range(10):
             start = i * chunk_size
@@ -1051,10 +1051,12 @@ class TestCitationUtils:
                 end = len(text)
 
             chunk = text[start:end]
+            partial_text += chunk
             new_spans_in_chunk = find_new_citation_spans(
-                chunk, tracker2, start_offset=start
+                partial_text, tracker2
             )
-            total_new_spans += len(new_spans_in_chunk)
+            for spans in new_spans_in_chunk.values():
+                total_new_spans += len(spans)
 
         # We might not get exactly 100 because citations could be split across chunks
         # But we should get a reasonable number
@@ -1143,7 +1145,7 @@ class TestCitationUtils:
         assert (
             len(new_spans) == 1
         ), "Should only find one new valid citation span"
-        assert new_spans[0][0] == "abc1234", "Valid citation should be found"
+        assert "abc1234" in new_spans, "Valid citation should be found"
         assert (
             len(tracker.processed_spans) == 1
         ), "Should only track the valid citation"

@@ -66,7 +66,9 @@ def file_ingestion(
     try:
         # Verify file exists
         if file_path:
-            assert Path(file_path).exists(), f"Test file not found: {file_path}"
+            assert Path(
+                file_path
+            ).exists(), f"Test file not found: {file_path}"
             # Start ingestion
             ingest_args: dict[str, Any] = {"file_path": file_path}
         else:
@@ -94,18 +96,24 @@ def file_ingestion(
                 try:
                     retrieval_response = client.documents.retrieve(id=doc_id)
 
-                    ingestion_status = retrieval_response.results.ingestion_status
+                    ingestion_status = (
+                        retrieval_response.results.ingestion_status
+                    )
 
                     if ingestion_status == expected_status:
                         break
                     elif ingestion_status == "failed":
-                        raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+                        raise AssertionError(
+                            f"Document ingestion failed: {retrieval_response}"
+                        )
 
                 except R2RException as e:
                     if e.status_code == 404:
                         # Document not yet available, continue polling if within timeout
                         if time.time() - start_time > timeout:
-                            raise TimeoutError(f"Ingestion didn't complete within {timeout} seconds") from None
+                            raise TimeoutError(
+                                f"Ingestion didn't complete within {timeout} seconds"
+                            ) from None
                     else:
                         # Re-raise other errors
                         raise
@@ -176,7 +184,9 @@ def client(config):
         ("xlsx", "core/examples/supported_file_types/xlsx.xlsx"),
     ],
 )
-def test_file_type_ingestion(client: R2RClient, file_type: str, file_path: str):
+def test_file_type_ingestion(
+    client: R2RClient, file_type: str, file_path: str
+):
     """Test ingestion of specific file type."""
 
     try:
@@ -214,7 +224,9 @@ def test_hires_ingestion(client: R2RClient, file_type: str, file_path: str):
             assert result is not None
         except Exception as e:  # Changed from R2RException to Exception
             if "PDF processing requires Poppler to be installed" in str(e):
-                pytest.skip("Skipping PDF test due to missing Poppler dependency")
+                pytest.skip(
+                    "Skipping PDF test due to missing Poppler dependency"
+                )
             raise
     else:
         result = file_ingestion(
@@ -276,7 +288,9 @@ def test_raw_text_ingestion(client: R2RClient):
     """Test ingestion of raw text content."""
     text_content = "This is a test document.\nIt has multiple lines.\nTesting raw text ingestion."
 
-    response = client.documents.create(raw_text=text_content, ingestion_mode="fast")
+    response = client.documents.create(
+        raw_text=text_content, ingestion_mode="fast"
+    )
 
     assert response is not None
     assert response.results is not None
@@ -292,7 +306,9 @@ def test_raw_text_ingestion(client: R2RClient):
                 break
         except R2RException:
             if time.time() - start_time > 600:
-                raise TimeoutError("Ingestion didn't complete within timeout") from None
+                raise TimeoutError(
+                    "Ingestion didn't complete within timeout"
+                ) from None
             time.sleep(2)
 
     client.documents.delete(id=doc_id)
@@ -400,10 +416,14 @@ def test_metadata_title_handling(client: R2RClient):
             if retrieval_response.results.ingestion_status == "success":
                 break
             elif retrieval_response.results.ingestion_status == "failed":
-                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+                raise AssertionError(
+                    f"Document ingestion failed: {retrieval_response}"
+                )
         except R2RException:
             if time.time() - start_time > 600:
-                raise TimeoutError("Ingestion didn't complete within timeout") from None
+                raise TimeoutError(
+                    "Ingestion didn't complete within timeout"
+                ) from None
             time.sleep(2)
 
     # Verify document in list has correct title
@@ -455,15 +475,21 @@ def test_metadata_title_handling(client: R2RClient):
             if retrieval_response.results.ingestion_status == "success":
                 break
             elif retrieval_response.results.ingestion_status == "failed":
-                raise AssertionError(f"Document ingestion failed: {retrieval_response}")
+                raise AssertionError(
+                    f"Document ingestion failed: {retrieval_response}"
+                )
         except R2RException:
             if time.time() - start_time > 600:
-                raise TimeoutError("Ingestion didn't complete within timeout") from None
+                raise TimeoutError(
+                    "Ingestion didn't complete within timeout"
+                ) from None
             time.sleep(2)
 
     # Verify document in list has correct title
     list_response = client.documents.list()
-    chunks_doc = next((doc for doc in list_response.results if doc.id == chunks_doc_id), None)
+    chunks_doc = next(
+        (doc for doc in list_response.results if doc.id == chunks_doc_id), None
+    )
     assert chunks_doc is not None
     assert chunks_doc.title == chunks_title
 

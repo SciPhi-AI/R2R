@@ -115,7 +115,9 @@ async def test_citation_tracker_during_streaming(mock_streaming_agent):
     """Test that CitationTracker correctly tracks processed citations during streaming."""
     # We need to patch the is_new_span method to verify it's being used correctly
     # Use autospec=True to ensure the method signature is preserved
-    with patch("core.utils.CitationTracker.is_new_span", autospec=True) as mock_is_new_span:
+    with patch(
+        "core.utils.CitationTracker.is_new_span", autospec=True
+    ) as mock_is_new_span:
         # Configure the mock to return True so citations will be processed
         mock_is_new_span.return_value = True
 
@@ -126,7 +128,9 @@ async def test_citation_tracker_during_streaming(mock_streaming_agent):
         output = await collect_stream_output(stream)
 
         # Verify that CitationTracker.is_new_span method was called
-        assert mock_is_new_span.call_count > 0, "is_new_span should be called to track citation spans"
+        assert (
+            mock_is_new_span.call_count > 0
+        ), "is_new_span should be called to track citation spans"
 
 
 @pytest.mark.asyncio
@@ -141,7 +145,9 @@ async def test_final_answer_includes_consolidated_citations(
     output = await collect_stream_output(stream)
 
     # Look for final answer event in the output
-    final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+    final_answer_events = [
+        line for line in output if "event: agent.final_answer" in line
+    ]
 
     assert len(final_answer_events) > 0, "Final answer event should be emitted"
 
@@ -151,9 +157,15 @@ async def test_final_answer_includes_consolidated_citations(
         try:
             data = json.loads(data_part)
             if "citations" in data:
-                assert len(data["citations"]) > 0, "Final answer should include citations"
-                citation_ids = [citation.get("id") for citation in data["citations"]]
-                assert "abc1234" in citation_ids or "def5678" in citation_ids, "Known citation IDs should be included"
+                assert (
+                    len(data["citations"]) > 0
+                ), "Final answer should include citations"
+                citation_ids = [
+                    citation.get("id") for citation in data["citations"]
+                ]
+                assert (
+                    "abc1234" in citation_ids or "def5678" in citation_ids
+                ), "Known citation IDs should be included"
         except json.JSONDecodeError:
             continue
 
@@ -180,10 +192,16 @@ async def test_conversation_message_includes_citation_metadata(
             args, kwargs = call
             if args and isinstance(args[0], Message):
                 message = args[0]
-                if message.role == "assistant" and message.metadata and "citations" in message.metadata:
+                if (
+                    message.role == "assistant"
+                    and message.metadata
+                    and "citations" in message.metadata
+                ):
                     citation_calls += 1
 
-        assert citation_calls > 0, "At least one assistant message should include citation metadata"
+        assert (
+            citation_calls > 0
+        ), "At least one assistant message should include citation metadata"
 
 
 @pytest.mark.asyncio
@@ -216,12 +234,12 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
             custom_agent.streaming_citations = []
 
             # Create text with multiple citations to the same source
-            response_content = (
-                "This text has multiple citations to the same source: [abc1234] and again here [abc1234]."
-            )
+            response_content = "This text has multiple citations to the same source: [abc1234] and again here [abc1234]."
 
             # Yield the message event
-            yield custom_agent._format_sse_event("message", {"content": response_content})
+            yield custom_agent._format_sse_event(
+                "message", {"content": response_content}
+            )
 
             # Manually extract and emit citation events
             # This is a simpler approach than the character-by-character approach
@@ -234,13 +252,23 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
                     citation_tracker.is_new_span(cid, span)
 
                     # Look up the source document for this citation
-                    source_doc = custom_agent.search_results_collector.find_by_short_id(cid)
+                    source_doc = (
+                        custom_agent.search_results_collector.find_by_short_id(
+                            cid
+                        )
+                    )
 
                     # Create citation payload
                     citation_payload = {
-                        "document_id": source_doc.get("document_id", f"doc_{cid}"),
-                        "text": source_doc.get("text", f"This is document text for {cid}"),
-                        "metadata": source_doc.get("metadata", {"source": f"source_{cid}"}),
+                        "document_id": source_doc.get(
+                            "document_id", f"doc_{cid}"
+                        ),
+                        "text": source_doc.get(
+                            "text", f"This is document text for {cid}"
+                        ),
+                        "metadata": source_doc.get(
+                            "metadata", {"source": f"source_{cid}"}
+                        ),
                     }
 
                     # Store the payload
@@ -263,7 +291,9 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
                         "payload": citation_payload,
                     }
 
-                    yield custom_agent._format_sse_event("citation", citation_event)
+                    yield custom_agent._format_sse_event(
+                        "citation", citation_event
+                    )
 
             # Add assistant message with citation metadata to conversation
             await custom_agent.conversation.add_message(
@@ -284,7 +314,9 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
                         {
                             "id": cid,
                             "object": "citation",
-                            "spans": [{"start": s[0], "end": s[1]} for s in spans],
+                            "spans": [
+                                {"start": s[0], "end": s[1]} for s in spans
+                            ],
                             "payload": citation_payloads[cid],
                         }
                     )
@@ -297,7 +329,9 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
                 "citations": consolidated_citations,
             }
 
-            yield custom_agent._format_sse_event("agent.final_answer", final_evt_payload)
+            yield custom_agent._format_sse_event(
+                "agent.final_answer", final_evt_payload
+            )
 
             # Signal the end of the SSE stream
             yield "event: done\ndata: {}\n\n"
@@ -311,28 +345,43 @@ async def test_multiple_citations_for_same_source(mock_streaming_agent):
             output = await collect_stream_output(stream)
 
             # Count citation events for abc1234
-            citation_abc_events = [line for line in output if "event: citation" in line and "abc1234" in line]
+            citation_abc_events = [
+                line
+                for line in output
+                if "event: citation" in line and "abc1234" in line
+            ]
 
             # There should be at least 2 citations for abc1234 (the original and our added one)
-            assert len(citation_abc_events) >= 2, "Should emit multiple citation events for the same source"
+            assert (
+                len(citation_abc_events) >= 2
+            ), "Should emit multiple citation events for the same source"
 
             # Check the final answer to ensure spans were consolidated
-            final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+            final_answer_events = [
+                line for line in output if "event: agent.final_answer" in line
+            ]
 
             for event in final_answer_events:
-                data_part = event.split("data: ")[1] if "data: " in event else event
+                data_part = (
+                    event.split("data: ")[1] if "data: " in event else event
+                )
                 try:
                     data = json.loads(data_part)
                     if "citations" in data:
                         # Find the citation for abc1234
                         abc_citation = next(
-                            (citation for citation in data["citations"] if citation.get("id") == "abc1234"),
+                            (
+                                citation
+                                for citation in data["citations"]
+                                if citation.get("id") == "abc1234"
+                            ),
                             None,
                         )
                         if abc_citation:
                             # It should have multiple spans
                             assert (
-                                abc_citation.get("spans") and len(abc_citation["spans"]) >= 2
+                                abc_citation.get("spans")
+                                and len(abc_citation["spans"]) >= 2
                             ), "Citation should have multiple spans consolidated"
                 except json.JSONDecodeError:
                     continue
@@ -363,16 +412,22 @@ async def test_citation_consolidation_logic(mock_streaming_agent):
         output = await collect_stream_output(stream)
 
         # Look for the final answer event
-        final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+        final_answer_events = [
+            line for line in output if "event: agent.final_answer" in line
+        ]
 
         # Verify consolidation in final answer
         for event in final_answer_events:
-            data_part = event.split("data: ")[1] if "data: " in event else event
+            data_part = (
+                event.split("data: ")[1] if "data: " in event else event
+            )
             try:
                 data = json.loads(data_part)
                 if "citations" in data:
                     # There should be at least 2 citations (from our mock agent implementation)
-                    assert len(data["citations"]) >= 2, "Should include multiple citation objects"
+                    assert (
+                        len(data["citations"]) >= 2
+                    ), "Should include multiple citation objects"
 
                     # Check spans for each citation
                     for citation in data["citations"]:
@@ -380,7 +435,9 @@ async def test_citation_consolidation_logic(mock_streaming_agent):
                         if cid == "abc1234":
                             # Spans should be consolidated for abc1234
                             spans = citation.get("spans", [])
-                            assert len(spans) >= 1, f"Citation {cid} should have spans"
+                            assert (
+                                len(spans) >= 1
+                            ), f"Citation {cid} should have spans"
             except json.JSONDecodeError:
                 continue
 
@@ -412,15 +469,23 @@ async def test_citation_event_format(mock_streaming_agent):
 
             # Check required fields
             assert "id" in data, "Citation event should have an 'id'"
-            assert "object" in data and data["object"] == "citation", "Event object should be 'citation'"
+            assert (
+                "object" in data and data["object"] == "citation"
+            ), "Event object should be 'citation'"
             assert "span" in data, "Citation event should have a 'span'"
-            assert "start" in data["span"] and "end" in data["span"], "Span should have 'start' and 'end'"
+            assert (
+                "start" in data["span"] and "end" in data["span"]
+            ), "Span should have 'start' and 'end'"
             assert "payload" in data, "Citation event should have a 'payload'"
 
             # Check payload fields
-            assert "document_id" in data["payload"], "Payload should have 'document_id'"
+            assert (
+                "document_id" in data["payload"]
+            ), "Payload should have 'document_id'"
             assert "text" in data["payload"], "Payload should have 'text'"
-            assert "metadata" in data["payload"], "Payload should have 'metadata'"
+            assert (
+                "metadata" in data["payload"]
+            ), "Payload should have 'metadata'"
 
         except json.JSONDecodeError:
             pytest.fail(f"Citation event data is not valid JSON: {data_part}")
@@ -436,13 +501,17 @@ async def test_final_answer_event_format(mock_streaming_agent):
     output = await collect_stream_output(stream)
 
     # Look for final answer event
-    final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+    final_answer_events = [
+        line for line in output if "event: agent.final_answer" in line
+    ]
 
     assert len(final_answer_events) > 0, "Final answer event should be emitted"
 
     # Check the format of the final answer event
     for event in final_answer_events:
-        assert "event: agent.final_answer" in event, "Event type should be 'agent.final_answer'"
+        assert (
+            "event: agent.final_answer" in event
+        ), "Event type should be 'agent.final_answer'"
         assert "data: " in event, "Event should have data payload"
 
         # Parse the data payload
@@ -455,15 +524,23 @@ async def test_final_answer_event_format(mock_streaming_agent):
             assert (
                 "object" in data and data["object"] == "agent.final_answer"
             ), "Event object should be 'agent.final_answer'"
-            assert "generated_answer" in data, "Final answer event should have a 'generated_answer'"
-            assert "citations" in data, "Final answer event should have 'citations'"
+            assert (
+                "generated_answer" in data
+            ), "Final answer event should have a 'generated_answer'"
+            assert (
+                "citations" in data
+            ), "Final answer event should have 'citations'"
 
             # Check citation fields
             for citation in data["citations"]:
                 assert "id" in citation, "Citation should have an 'id'"
-                assert "object" in citation and citation["object"] == "citation", "Citation object should be 'citation'"
+                assert (
+                    "object" in citation and citation["object"] == "citation"
+                ), "Citation object should be 'citation'"
                 assert "spans" in citation, "Citation should have 'spans'"
-                assert "payload" in citation, "Citation should have a 'payload'"
+                assert (
+                    "payload" in citation
+                ), "Citation should have a 'payload'"
 
                 # Check spans format
                 for span in citation["spans"]:
@@ -471,12 +548,20 @@ async def test_final_answer_event_format(mock_streaming_agent):
                     assert "end" in span, "Span should have 'end'"
 
                 # Check payload fields
-                assert "document_id" in citation["payload"], "Payload should have 'document_id'"
-                assert "text" in citation["payload"], "Payload should have 'text'"
-                assert "metadata" in citation["payload"], "Payload should have 'metadata'"
+                assert (
+                    "document_id" in citation["payload"]
+                ), "Payload should have 'document_id'"
+                assert (
+                    "text" in citation["payload"]
+                ), "Payload should have 'text'"
+                assert (
+                    "metadata" in citation["payload"]
+                ), "Payload should have 'metadata'"
 
         except json.JSONDecodeError:
-            pytest.fail(f"Final answer event data is not valid JSON: {data_part}")
+            pytest.fail(
+                f"Final answer event data is not valid JSON: {data_part}"
+            )
 
 
 @pytest.mark.asyncio
@@ -558,13 +643,19 @@ async def test_overlapping_citation_handling():
                 citation_tracker.is_new_span(cid, span)
 
                 # Look up the source document for this citation
-                source_doc = agent.search_results_collector.find_by_short_id(cid)
+                source_doc = agent.search_results_collector.find_by_short_id(
+                    cid
+                )
 
                 # Create citation payload
                 citation_payload = {
                     "document_id": source_doc.get("document_id", f"doc_{cid}"),
-                    "text": source_doc.get("text", f"This is document text for {cid}"),
-                    "metadata": source_doc.get("metadata", {"source": f"source_{cid}"}),
+                    "text": source_doc.get(
+                        "text", f"This is document text for {cid}"
+                    ),
+                    "metadata": source_doc.get(
+                        "metadata", {"source": f"source_{cid}"}
+                    ),
                 }
 
                 # Store the payload by citation ID
@@ -636,23 +727,41 @@ async def test_overlapping_citation_handling():
         output = await collect_stream_output(stream)
 
         # Check that both citations were emitted
-        citation_abc = any("abc1234" in event for event in output if "event: citation" in event)
-        citation_def = any("def5678" in event for event in output if "event: citation" in event)
+        citation_abc = any(
+            "abc1234" in event
+            for event in output
+            if "event: citation" in event
+        )
+        citation_def = any(
+            "def5678" in event
+            for event in output
+            if "event: citation" in event
+        )
 
         assert citation_abc, "Citation abc1234 should be emitted"
         assert citation_def, "Citation def5678 should be emitted"
 
         # Check the final answer for both citations
-        final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+        final_answer_events = [
+            line for line in output if "event: agent.final_answer" in line
+        ]
 
         for event in final_answer_events:
-            data_part = event.split("data: ")[1] if "data: " in event else event
+            data_part = (
+                event.split("data: ")[1] if "data: " in event else event
+            )
             try:
                 data = json.loads(data_part)
                 if "citations" in data:
-                    citation_ids = [citation.get("id") for citation in data["citations"]]
-                    assert "abc1234" in citation_ids, "abc1234 should be in final answer citations"
-                    assert "def5678" in citation_ids, "def5678 should be in final answer citations"
+                    citation_ids = [
+                        citation.get("id") for citation in data["citations"]
+                    ]
+                    assert (
+                        "abc1234" in citation_ids
+                    ), "abc1234 should be in final answer citations"
+                    assert (
+                        "def5678" in citation_ids
+                    ), "def5678 should be in final answer citations"
             except json.JSONDecodeError:
                 continue
 
@@ -674,7 +783,9 @@ async def test_robustness_against_citation_variations(mock_streaming_agent):
 
     # There should be at least two different citation IDs
     unique_citations = set(citations)
-    assert len(unique_citations) >= 2, "Should extract at least two different citation IDs"
+    assert (
+        len(unique_citations) >= 2
+    ), "Should extract at least two different citation IDs"
     assert "abc1234" in unique_citations, "Should extract abc1234"
     assert "def5678" in unique_citations, "Should extract def5678"
 
@@ -684,8 +795,12 @@ async def test_robustness_against_citation_variations(mock_streaming_agent):
         counts[cid] = counts.get(cid, 0) + 1
 
     # Each citation should be found the correct number of times based on the text
-    assert counts.get("abc1234", 0) >= 2, "abc1234 should appear at least twice"
-    assert counts.get("def5678", 0) >= 2, "def5678 should appear at least twice"
+    assert (
+        counts.get("abc1234", 0) >= 2
+    ), "abc1234 should appear at least twice"
+    assert (
+        counts.get("def5678", 0) >= 2
+    ), "def5678 should appear at least twice"
 
 
 class TestCitationEdgeCases:
@@ -738,12 +853,16 @@ class TestCitationEdgeCases:
         actual = extract_citations(text)
 
         # Check count
-        assert len(actual) == len(expected), f"Expected {len(expected)} citations, got {len(actual)}"
+        assert len(actual) == len(
+            expected
+        ), f"Expected {len(expected)} citations, got {len(actual)}"
 
         # Check content (allowing for different orders)
         if expected:
             for expected_citation in expected:
-                assert expected_citation in actual, f"Expected citation {expected_citation} not found"
+                assert (
+                    expected_citation in actual
+                ), f"Expected citation {expected_citation} not found"
 
 
 @pytest.mark.asyncio
@@ -774,13 +893,17 @@ async def test_citation_handling_with_empty_response():
             response_content = "This is a response with no citations."
 
             # Yield an initial message event with the start of the text
-            yield self._format_sse_event("message", {"content": response_content})
+            yield self._format_sse_event(
+                "message", {"content": response_content}
+            )
 
             # No citation spans to extract
             citation_spans = extract_citation_spans(response_content)
 
             # Should be empty
-            assert len(citation_spans) == 0, "No citation spans should be found"
+            assert (
+                len(citation_spans) == 0
+            ), "No citation spans should be found"
 
             # Add assistant message to conversation (with no citation metadata)
             await self.conversation.add_message(
@@ -799,14 +922,18 @@ async def test_citation_handling_with_empty_response():
                 "citations": [],
             }
 
-            yield self._format_sse_event("agent.final_answer", final_evt_payload)
+            yield self._format_sse_event(
+                "agent.final_answer", final_evt_payload
+            )
             yield "event: done\ndata: {}\n\n"
 
     # Create the agent with empty citation response
     config = MagicMock()
     config.stream = True
 
-    llm_provider = MockLLMProvider(response_content="This is a response with no citations.", citations=[])
+    llm_provider = MockLLMProvider(
+        response_content="This is a response with no citations.", citations=[]
+    )
 
     db_provider = MockDatabaseProvider()
 
@@ -830,18 +957,28 @@ async def test_citation_handling_with_empty_response():
     assert len(citation_events) == 0, "No citation events should be emitted"
 
     # Parse the final answer event to check citations
-    final_answer_events = [line for line in output if "event: agent.final_answer" in line]
+    final_answer_events = [
+        line for line in output if "event: agent.final_answer" in line
+    ]
     assert len(final_answer_events) > 0, "Final answer event should be emitted"
 
-    data_part = final_answer_events[0].split("data: ")[1] if "data: " in final_answer_events[0] else ""
+    data_part = (
+        final_answer_events[0].split("data: ")[1]
+        if "data: " in final_answer_events[0]
+        else ""
+    )
 
     # Parse final answer data
     try:
         data = json.loads(data_part)
-        assert "citations" in data, "Final answer event should include citations field"
+        assert (
+            "citations" in data
+        ), "Final answer event should include citations field"
         assert len(data["citations"]) == 0, "Citations list should be empty"
     except json.JSONDecodeError:
-        raise AssertionError("Final answer event data should be valid JSON") from None
+        raise AssertionError(
+            "Final answer event data should be valid JSON"
+        ) from None
 
 
 @pytest.mark.asyncio
@@ -849,7 +986,9 @@ async def test_citation_sanitization():
     """Test that citation IDs are properly sanitized before processing."""
     # Since extract_citations uses a strict regex pattern [A-Za-z0-9]{7,8},
     # we should test with valid citation formats
-    text = "Citation with surrounding text[abc1234]and [def5678]with no spaces."
+    text = (
+        "Citation with surrounding text[abc1234]and [def5678]with no spaces."
+    )
 
     # Extract citations
     citations = extract_citations(text)
@@ -864,7 +1003,8 @@ async def test_citation_sanitization():
 
     # The current implementation doesn't extract citations with spaces inside the brackets
     assert (
-        len(citations_with_spaces) == 0 or "abc1234" not in citations_with_spaces
+        len(citations_with_spaces) == 0
+        or "abc1234" not in citations_with_spaces
     ), "Citations with spaces should not be extracted with current implementation"
 
 
@@ -888,7 +1028,9 @@ async def test_citation_tracking_state_persistence():
 
     # Check if the new span was added
     all_spans = tracker.get_all_spans()
-    assert len(all_spans["abc1234"]) == 2, "Citation abc1234 should have 2 spans"
+    assert (
+        len(all_spans["abc1234"]) == 2
+    ), "Citation abc1234 should have 2 spans"
     assert (50, 58) in all_spans["abc1234"], "New span should be added"
 
 
@@ -900,18 +1042,26 @@ def test_citation_span_uniqueness():
     tracker.is_new_span("abc1234", (10, 18))
 
     # Check if the same span is recognized as not new
-    assert not tracker.is_new_span("abc1234", (10, 18)), "Duplicate span should not be considered new"
+    assert not tracker.is_new_span(
+        "abc1234", (10, 18)
+    ), "Duplicate span should not be considered new"
 
     # Check if different span for same citation is recognized as new
-    assert tracker.is_new_span("abc1234", (20, 28)), "Different span should be considered new"
+    assert tracker.is_new_span(
+        "abc1234", (20, 28)
+    ), "Different span should be considered new"
 
     # Check if same span for different citation is recognized as new
-    assert tracker.is_new_span("def5678", (10, 18)), "Same span for different citation should be considered new"
+    assert tracker.is_new_span(
+        "def5678", (10, 18)
+    ), "Same span for different citation should be considered new"
 
 
 def test_citation_with_punctuation():
     """Test extraction of citations with surrounding punctuation."""
-    text = "Citations with punctuation: ([abc1234]), [def5678]!, and [ghi9012]."
+    text = (
+        "Citations with punctuation: ([abc1234]), [def5678]!, and [ghi9012]."
+    )
 
     # Extract citations
     citations = extract_citations(text)
@@ -931,7 +1081,15 @@ def test_citation_extraction_with_invalid_formats():
 
     # Check that only valid citations are extracted
     assert len(citations) == 1, "Only one valid citation should be extracted"
-    assert "abc1234" in citations, "Only valid citation abc1234 should be extracted"
-    assert "123" not in citations, "Invalid citation [123] should not be extracted"
-    assert "abcdef" not in citations, "Invalid citation [abcdef] should not be extracted"
-    assert "abc123456789" not in citations, "Invalid citation [abc123456789] should not be extracted"
+    assert (
+        "abc1234" in citations
+    ), "Only valid citation abc1234 should be extracted"
+    assert (
+        "123" not in citations
+    ), "Invalid citation [123] should not be extracted"
+    assert (
+        "abcdef" not in citations
+    ), "Invalid citation [abcdef] should not be extracted"
+    assert (
+        "abc123456789" not in citations
+    ), "Invalid citation [abc123456789] should not be extracted"

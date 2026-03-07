@@ -59,7 +59,9 @@ class LoadTester:
         try:
             return await asyncio.wait_for(coro, timeout=timeout)
         except asyncio.TimeoutError:
-            print(f"[TIMEOUT] {operation_desc} took longer than {timeout} seconds")
+            print(
+                f"[TIMEOUT] {operation_desc} took longer than {timeout} seconds"
+            )
         except Exception as e:
             print(f"[ERROR] Exception during {operation_desc}: {e}")
         return None
@@ -73,7 +75,9 @@ class LoadTester:
             operation_desc=f"register user {user_email}",
         )
         if reg_result is None:
-            print(f"Registration may have failed or user {user_email} already exists.")
+            print(
+                f"Registration may have failed or user {user_email} already exists."
+            )
 
         # Login user
         login_result = await self.safe_call(
@@ -81,7 +85,11 @@ class LoadTester:
             timeout=LOGIN_TIMEOUT,
             operation_desc=f"login user {user_email}",
         )
-        user = {"email": user_email, "password": password} if login_result else None
+        user = (
+            {"email": user_email, "password": password}
+            if login_result
+            else None
+        )
 
         # Ingest documents for user
         files = glob("core/examples/data/*")
@@ -169,7 +177,9 @@ class LoadTester:
     def calculate_statistics(self):
         """Calculate and print test statistics."""
         durations = [m.duration_ms for m in self.metrics]
-        successful_requests = len([m for m in self.metrics if m.status == "success"])
+        successful_requests = len(
+            [m for m in self.metrics if m.status == "success"]
+        )
         failed_requests = len([m for m in self.metrics if m.status == "error"])
 
         print("\nTest Results:")
@@ -184,11 +194,15 @@ class LoadTester:
             print(f"Mean: {statistics.mean(durations) / 1000.0:.2f}")
             print(f"Median: {statistics.median(durations) / 1000.0:.2f}")
             try:
-                print(f"95th Percentile: {statistics.quantiles(durations, n=20)[-1] / 1000.0:.2f}")
+                print(
+                    f"95th Percentile: {statistics.quantiles(durations, n=20)[-1] / 1000.0:.2f}"
+                )
             except Exception:
                 pass
 
-        print(f"\nRequests per second: {len(self.metrics) / TEST_DURATION_SECONDS:.2f}")
+        print(
+            f"\nRequests per second: {len(self.metrics) / TEST_DURATION_SECONDS:.2f}"
+        )
 
     async def run_load_test(self):
         """Main load test execution."""
@@ -203,7 +217,10 @@ class LoadTester:
         print(f"Steady state: {STEADY_STATE_SECONDS}s")
         print(f"Ramp down: {RAMP_DOWN_SECONDS}s")
 
-        tasks = [asyncio.create_task(self.run_user_queries(user)) for user in self.users]
+        tasks = [
+            asyncio.create_task(self.run_user_queries(user))
+            for user in self.users
+        ]
 
         # Run for specified duration
         await asyncio.sleep(TEST_DURATION_SECONDS)
@@ -213,7 +230,9 @@ class LoadTester:
         try:
             await asyncio.wait_for(asyncio.gather(*tasks), timeout=20)
         except asyncio.TimeoutError:
-            print("[WARNING] Not all tasks finished promptly after stopping. Cancelling tasks.")
+            print(
+                "[WARNING] Not all tasks finished promptly after stopping. Cancelling tasks."
+            )
             for t in tasks:
                 if not t.done():
                     t.cancel()
