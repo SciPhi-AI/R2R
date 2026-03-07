@@ -2,14 +2,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from core.base import Document, DocumentChunk
+
 # Skip all tests in this file for now as they need to be updated
 # to match the current Document and DocumentChunk implementations
 pytestmark = pytest.mark.skip(
     "Document processing tests need to be updated to match current implementation"
 )
-
-# Import necessary classes
-from core.base import Document, DocumentChunk
 
 
 @pytest.fixture

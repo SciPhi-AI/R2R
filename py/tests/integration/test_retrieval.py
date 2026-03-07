@@ -90,7 +90,7 @@ def test_rag_stream_query(client: R2RClient):
 
     def consume_stream():
         count = 0
-        for chunk in resp:
+        for _chunk in resp:
             count += 1
             if count > 1:
                 break
@@ -122,7 +122,7 @@ def test_agent_query_stream(client: R2RClient):
 
     def consume_stream():
         count = 0
-        for chunk in resp:
+        for _chunk in resp:
             count += 1
             if count > 1:
                 break

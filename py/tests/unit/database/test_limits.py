@@ -108,7 +108,7 @@ async def test_global_limit(limits_handler):
         print("Initial global check passed (no requests)")
 
         # Log 10 requests (hits the limit)
-        for i in range(11):
+        for _i in range(11):
             await limits_handler.log_request(user_id, route)
 
         # Debug counts
@@ -157,7 +157,7 @@ async def test_monthly_limit(limits_handler):
         print("Initial monthly check passed (no requests)")
 
         # Log 20 requests (hits the monthly limit)
-        for i in range(21):
+        for _i in range(21):
             await limits_handler.log_request(user_id, route)
 
         # Get current month's count

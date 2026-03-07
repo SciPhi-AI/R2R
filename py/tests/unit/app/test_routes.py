@@ -187,4 +187,5 @@ def test_all_routes_have_rate_limiting(router):
             warnings.warn(
                 f"Route {route.path} missing rate limiting - this will be required in the future",
                 UserWarning,
+                stacklevel=2,
             )

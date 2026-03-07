@@ -1,9 +1,22 @@
 # tests/conftest.py
+import json
 import os
+import re
+from typing import AsyncGenerator
+from unittest.mock import MagicMock
 
 import pytest
 
-from core.base import AppConfig, DatabaseConfig, VectorQuantizationType
+from core.agent.base import R2RStreamingAgent
+from core.base import (
+    AppConfig,
+    DatabaseConfig,
+    GenerationConfig,
+    LLMChatCompletion,
+    LLMChatCompletionChunk,
+    Message,
+    VectorQuantizationType,
+)
 from core.providers import NaClCryptoConfig, NaClCryptoProvider
 from core.providers.database.postgres import (
     PostgresChunksHandler,
@@ -18,6 +31,7 @@ from core.providers.database.postgres import (
 from core.providers.database.users import (  # Make sure this import is correct
     PostgresUserHandler,
 )
+from core.utils import CitationTracker, extract_citation_spans
 
 TEST_DB_CONNECTION_STRING = os.environ.get(
     "TEST_DB_CONNECTION_STRING",
@@ -116,26 +130,6 @@ async def documents_handler(db_provider):
 
 
 @pytest.fixture
-async def graphs_handler(db_provider):
-    project_name = db_provider.project_name
-    connection_manager = db_provider.connection_manager
-    dimension = db_provider.dimension
-    quantization_type = db_provider.quantization_type
-
-    # If collections_handler is needed, you can depend on the collections_handler fixture
-    # or pass None if it's optional.
-    handler = PostgresGraphsHandler(
-        project_name=project_name,
-        connection_manager=connection_manager,
-        dimension=dimension,
-        quantization_type=quantization_type,
-        collections_handler=None,  # if needed, or await collections_handler fixture
-    )
-    await handler.create_tables()
-    return handler
-
-
-@pytest.fixture
 async def limits_handler(db_provider):
     project_name = db_provider.project_name
     connection_manager = db_provider.connection_manager
@@ -220,22 +214,6 @@ async def graphs_handler(db_provider):
     )
     await handler.create_tables()
     return handler
-
-
-# Citation testing fixtures and utilities
-import json
-import re
-from typing import AsyncGenerator
-from unittest.mock import MagicMock
-
-from core.agent.base import R2RStreamingAgent
-from core.base import (
-    GenerationConfig,
-    LLMChatCompletion,
-    LLMChatCompletionChunk,
-    Message,
-)
-from core.utils import CitationTracker
 
 
 class MockLLMProvider:
@@ -521,6 +499,3 @@ async def collect_stream_output(stream):
     async for event in stream:
         output.append(event)
     return output
-
-
-from core.utils import extract_citation_spans

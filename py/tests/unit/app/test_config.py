@@ -245,7 +245,7 @@ def test_serialization_roundtrip(merged_config):
 
 def test_all_merged_configs(base_config, all_merged_configs):
     """Test that every override file properly merges with the base config."""
-    for config_name, merged_data in all_merged_configs.items():
+    for _config_name, merged_data in all_merged_configs.items():
         config = R2RConfig(merged_data)
         assert config is not None
 
@@ -257,6 +257,6 @@ def test_all_merged_configs(base_config, all_merged_configs):
 
 def test_all_config_overrides(all_configs):
     """Test that all configuration files can be loaded independently."""
-    for config_name, config_data in all_configs.items():
+    for _config_name, config_data in all_configs.items():
         config = R2RConfig(config_data)
         assert config is not None

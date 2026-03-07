@@ -1251,7 +1251,9 @@ class TestAdvancedCitationHandling:
         # First format the context with citation placeholders
         def format_context_with_citations(search_results):
             context_items = []
-            for i, result in enumerate(search_results["chunk_search_results"]):
+            for _i, result in enumerate(
+                search_results["chunk_search_results"]
+            ):
                 citation_id = result.get("metadata", {}).get("citation_id")
                 text = result["text"]
 

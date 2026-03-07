@@ -221,7 +221,7 @@ class TestChunks:
             # Cleanup
             try:
                 await test_client.delete_document(doc_id)
-            except:
+            except Exception:
                 pass
             await test_client.logout_user()
 
@@ -268,7 +268,7 @@ class TestChunks:
             if doc_id:
                 try:
                     await test_client.delete_document(doc_id)
-                except:
+                except Exception:
                     pass
             await test_client.logout_user()
 
@@ -310,7 +310,7 @@ class TestChunks:
             for doc_id in doc_ids:
                 try:
                     await test_client.delete_document(doc_id)
-                except:
+                except Exception:
                     pass
             await test_client.logout_user()
 

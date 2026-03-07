@@ -196,7 +196,9 @@ async def test_agent_event_format():
         data = json.loads(data_part)
         assert "content" in data, "Message event should include content"
     except json.JSONDecodeError:
-        assert False, "Message event data should be valid JSON"
+        raise AssertionError(
+            "Message event data should be valid JSON"
+        ) from None
 
     # Check final answer event format
     final_answer_events = [
@@ -219,7 +221,9 @@ async def test_agent_event_format():
             "generated_answer" in data
         ), "Final answer event should include generated answer"
     except json.JSONDecodeError:
-        assert False, "Final answer event data should be valid JSON"
+        raise AssertionError(
+            "Final answer event data should be valid JSON"
+        ) from None
 
 
 @pytest.mark.asyncio
@@ -280,7 +284,9 @@ async def test_final_answer_event_format():
             "citations" in data
         ), "Final answer should include citations field"
     except json.JSONDecodeError:
-        assert False, "Final answer event data should be valid JSON"
+        raise AssertionError(
+            "Final answer event data should be valid JSON"
+        ) from None
 
 
 @pytest.mark.asyncio

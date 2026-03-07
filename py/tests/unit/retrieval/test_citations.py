@@ -1078,7 +1078,7 @@ class TestCitationUtils:
         all_text = ""
         total_spans_found = 0
 
-        for i, chunk in enumerate(chunks):
+        for _i, chunk in enumerate(chunks):
             chunk_start = len(all_text)
             all_text += chunk
 
@@ -1147,30 +1147,3 @@ class TestCitationUtils:
         assert (
             len(tracker.processed_spans) == 1
         ), "Should only track the valid citation"
-
-
-def find_new_citation_spans(text, tracker, start_offset=0):
-    """Find new citation spans in text that haven't been processed yet."""
-    if text is None or text == "":
-        return []
-
-    new_spans = []
-    pattern = r"\[([\w]{7,8})\]"
-
-    # Get citation IDs that have already been processed
-    previously_seen_ids = set(tracker.processed_spans.keys())
-
-    # Find all citations in the text
-    for match in re.finditer(pattern, text):
-        citation_id = match.group(1)
-        start = match.start() + start_offset
-        end = match.end() + start_offset
-
-        # Filter out citation IDs we've seen before
-        # For this test, we only want to return entirely new citation IDs
-        if citation_id not in previously_seen_ids:
-            # Check if this specific span is new
-            if tracker.is_new_span(citation_id, (start, end)):
-                new_spans.append((citation_id, start, end))
-
-    return new_spans

@@ -41,7 +41,8 @@ def test_agent_conversation_memory(client, test_collection):
         "contributions" in response2.results.messages[-1].content.lower()
     ), "Agent should address follow-up question"
     assert (
-        "who was aristotle" not in response2.results.messages[-1].content.lower()
+        "who was aristotle"
+        not in response2.results.messages[-1].content.lower()
     ), "Agent shouldn't repeat context explanation"
 
 
