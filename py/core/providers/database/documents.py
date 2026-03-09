@@ -142,11 +142,12 @@ class PostgresDocumentsHandler(Handler):
             parsed_schema = "public"
             parsed_table_name = table_full_name
             if "." in table_full_name:
-                parts = table_full_name.split(".", maxsplit=1)
-                parsed_schema = parts[0].replace('"', "").strip()
-                parsed_table_name = parts[1].replace('"', "").strip()
+                parts = table_full_name.split(".", 1)
+                parsed_schema = str(parts[0]).replace('"', "").strip()
+                parsed_table_name = str(parts[1]).replace('"', "").strip()
             else:
-                parsed_table_name = parsed_table_name.replace('"', "").strip()
+                parsed_schema = "public"
+                parsed_table_name = str(table_full_name).replace('"', "").strip()
 
             # 3) Check columns
             column_check_query = f"""
