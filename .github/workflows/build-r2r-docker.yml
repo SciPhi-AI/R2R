@@ -36,7 +36,7 @@ jobs:
       - name: Set matrix
         id: set-matrix
         run: |
-          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"},{\"platform\":\"arm64\",\"runner\":\"arm64\"}]}" >> $GITHUB_OUTPUT
+          echo "matrix={\"include\":[{\"platform\":\"amd64\",\"runner\":\"ubuntu-latest\"}]}" >> $GITHUB_OUTPUT
 
   build:
     needs: prepare
@@ -89,12 +89,10 @@ jobs:
       - name: Create and push multi-arch manifest
         run: |
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }} \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64
 
           docker buildx imagetools create -t ${{ env.REGISTRY_IMAGE }}:latest \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64 \
-            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-arm64
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.prepare.outputs.release_version }}-amd64
 
       - name: Verify manifests
         run: |
