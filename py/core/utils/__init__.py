@@ -200,6 +200,9 @@ def find_new_citation_spans(
     new_spans: dict = {}
 
     for cid, spans in all_spans.items():
+        # Skip citation IDs that have already been processed in previous texts
+        if cid in tracker.processed_spans:
+            continue
         for span in spans:
             if tracker.is_new_span(cid, span):
                 if cid not in new_spans:
