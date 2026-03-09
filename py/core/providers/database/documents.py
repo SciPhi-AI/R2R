@@ -147,7 +147,9 @@ class PostgresDocumentsHandler(Handler):
                 parsed_table_name = str(parts[1]).replace('"', "").strip()
             else:
                 parsed_schema = "public"
-                parsed_table_name = str(table_full_name).replace('"', "").strip()
+                parsed_table_name = (
+                    str(table_full_name).replace('"', "").strip()
+                )
 
             # 3) Check columns
             column_check_query = f"""
