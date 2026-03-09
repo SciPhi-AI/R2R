@@ -15,7 +15,7 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN pip install --no-cache-dir unstructured "unstructured[all-docs]"
+RUN pip install --no-cache-dir unstructured "unstructured[all-docs]" nltk
 
 
 ENV NLTK_DATA=/usr/share/nltk_data
