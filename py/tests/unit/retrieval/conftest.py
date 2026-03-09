@@ -1,19 +1,31 @@
 """
 Common test fixtures for retrieval tests.
 """
+
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Any, Optional
 
 
 class MockSearchSettings:
     """Mock class for SearchSettings to avoid dependency issues."""
+
     def __init__(self, **kwargs):
         self.__dict__.update(kwargs)
         # Set defaults for commonly used attributes
-        for attr in ['use_semantic_search', 'use_hybrid_search', 'use_full_text_search',
-                    'use_graph_search', 'filters', 'limit', 'offset', 'search_strategy',
-                    'num_sub_queries', 'use_citation_search', 'hybrid_settings']:
+        for attr in [
+            "use_semantic_search",
+            "use_hybrid_search",
+            "use_full_text_search",
+            "use_graph_search",
+            "filters",
+            "limit",
+            "offset",
+            "search_strategy",
+            "num_sub_queries",
+            "use_citation_search",
+            "hybrid_settings",
+        ]:
             if not hasattr(self, attr):
                 setattr(self, attr, None)
 
@@ -31,12 +43,13 @@ class MockSearchSettings:
         if self.hybrid_settings is None:
             self.hybrid_settings = {
                 "semantic_weight": 0.5,
-                "full_text_weight": 0.5
+                "full_text_weight": 0.5,
             }
 
 
 class MockDocument:
     """Mock Document class for testing."""
+
     def __init__(self, document_id, raw_text, metadata=None, chunks=None):
         self.document_id = document_id
         self.raw_text = raw_text
@@ -46,6 +59,7 @@ class MockDocument:
 
 class MockChunk:
     """Mock Chunk class for testing."""
+
     def __init__(self, chunk_id, document_id, text, metadata=None):
         self.chunk_id = chunk_id
         self.document_id = document_id
@@ -56,6 +70,7 @@ class MockChunk:
 
 class MockCitation:
     """Mock Citation class for testing."""
+
     def __init__(self, citation_id, text, metadata=None, source=None):
         self.citation_id = citation_id
         self.text = text
@@ -66,6 +81,7 @@ class MockCitation:
 @pytest.fixture
 def mock_providers():
     """Return a mocked providers object for testing."""
+
     class MockProviders:
         def __init__(self):
             # Mock the embedding provider
@@ -117,15 +133,17 @@ def mock_providers():
             # Mock graphs handler
             self.database.graphs_handler = AsyncMock()
             self.database.graphs_handler.graph_search = AsyncMock(
-                return_value=iter([
-                    {
-                        "node_id": f"node-{i}",
-                        "document_id": f"doc-{i}",
-                        "text": f"Graph search result {i}.",
-                        "score": 0.85 - (i * 0.05),
-                    }
-                    for i in range(3)
-                ])
+                return_value=iter(
+                    [
+                        {
+                            "node_id": f"node-{i}",
+                            "document_id": f"doc-{i}",
+                            "text": f"Graph search result {i}.",
+                            "score": 0.85 - (i * 0.05),
+                        }
+                        for i in range(3)
+                    ]
+                )
             )
 
             # Mock citation handler
@@ -136,7 +154,7 @@ def mock_providers():
                         citation_id=f"cite-{i}",
                         text=f"Citation {i} from an important source.",
                         metadata={"author": f"Author {i}", "year": 2020 + i},
-                        source=f"Book {i}"
+                        source=f"Book {i}",
                     )
                     for i in range(3)
                 ]
@@ -145,15 +163,25 @@ def mock_providers():
             # Mock LLM
             self.llm = AsyncMock()
             self.llm.aget_completion = AsyncMock(
-                return_value={"choices": [{"message": {"content": "LLM generated response about philosophy"}}]}
+                return_value={
+                    "choices": [
+                        {
+                            "message": {
+                                "content": "LLM generated response about philosophy"
+                            }
+                        }
+                    ]
+                }
             )
             self.llm.aget_completion_stream = AsyncMock(
-                return_value=iter([
-                    {"choices": [{"delta": {"content": "Streamed "}}]},
-                    {"choices": [{"delta": {"content": "response "}}]},
-                    {"choices": [{"delta": {"content": "about "}}]},
-                    {"choices": [{"delta": {"content": "philosophy"}}]}
-                ])
+                return_value=iter(
+                    [
+                        {"choices": [{"delta": {"content": "Streamed "}}]},
+                        {"choices": [{"delta": {"content": "response "}}]},
+                        {"choices": [{"delta": {"content": "about "}}]},
+                        {"choices": [{"delta": {"content": "philosophy"}}]},
+                    ]
+                )
             )
 
             # Mock prompts handler
@@ -167,14 +195,16 @@ def mock_providers():
                 "default": "Answer based on the following context: {{context}}\n\nQuery: {{query}}",
                 "hyde_template": "Generate a hypothetical document about: {{query}}",
                 "rag_fusion": "Generate {num_queries} search queries related to: {{query}}",
-                "citation_format": "Format citation for {{source}}: {{text}}"
+                "citation_format": "Format citation for {{source}}: {{text}}",
             }
 
             # Update get_cached_prompt to use different templates
             async def get_cached_prompt(prompt_id):
                 return self.prompts.get(prompt_id, self.prompts["default"])
 
-            self.database.prompts_handler.get_cached_prompt.side_effect = get_cached_prompt
+            self.database.prompts_handler.get_cached_prompt.side_effect = (
+                get_cached_prompt
+            )
 
     return MockProviders()
 
@@ -201,8 +231,11 @@ def sample_documents():
         MockDocument(
             document_id=f"doc-{i}",
             raw_text=f"This is document {i} about philosophy with multiple paragraphs.\n\n"
-                    f"It contains information from various sources and perspectives.",
-            metadata={"title": f"Philosophy Text {i}", "author": f"Author {i}"}
+            f"It contains information from various sources and perspectives.",
+            metadata={
+                "title": f"Philosophy Text {i}",
+                "author": f"Author {i}",
+            },
         )
         for i in range(3)
     ]

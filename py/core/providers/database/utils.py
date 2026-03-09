@@ -9,4 +9,4 @@ def psql_quote_literal(value: str) -> str:
     This is a simple implementation - in production, you should use proper parameterization
     or your database driver's quoting functions.
     """
-    return "'" + value.replace("'", "''") + "'"
+    return "'" + str(value).replace("'", "''") + "'"

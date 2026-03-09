@@ -94,8 +94,6 @@ def retrieval_service(mock_providers):
 #     ), "Expected exactly 1 graph search call in basic mode"
 
 
-
-
 # @pytest.mark.asyncio
 # async def test_hyde_search_fans_out_correctly(retrieval_service):
 #     """

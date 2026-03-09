@@ -198,7 +198,7 @@ export class RetrievalClient {
       ...(options.taskPrompt && {
         task_prompt: options.taskPrompt,
       }),
-      ...(typeof options.includeTitleIfAvailable && {
+      ...(options.includeTitleIfAvailable !== undefined && {
         include_title_if_available: options.includeTitleIfAvailable,
       }),
       ...(options.conversationId && {
@@ -216,14 +216,14 @@ export class RetrievalClient {
       ...(options.researchTools && {
         research_tools: options.researchTools,
       }),
-      ...(typeof options.useSystemContext !== undefined && {
+      ...(options.useSystemContext !== undefined && {
         use_system_context: options.useSystemContext,
       }),
       ...(options.mode && {
         mode: options.mode,
       }),
       ...(options.needsInitialConversationName && {
-        needsInitialConversationName: options.needsInitialConversationName,
+        needs_initial_conversation_name: options.needsInitialConversationName,
       }),
     };
 
@@ -324,7 +324,7 @@ export class RetrievalClient {
     text: string;
   }): Promise<WrappedEmbeddingResponse> {
     return await this.client.makeRequest("POST", "retrieval/embedding", {
-      data: options.text,
+      data: { text: options.text },
     });
   }
 }

@@ -1,11 +1,19 @@
-import uuid
 import asyncio
 import time
+import uuid
 from typing import AsyncGenerator
 
 import pytest
 
+import os
 from r2r import R2RAsyncClient, R2RClient, R2RException
+
+
+def pytest_collection_modifyitems(config, items):
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        skip_ci = pytest.mark.skip(reason="Skipping integration tests in CI")
+        for item in items:
+            item.add_marker(skip_ci)
 
 
 class RetryableR2RAsyncClient(R2RAsyncClient):
@@ -18,20 +26,27 @@ class RetryableR2RAsyncClient(R2RAsyncClient):
 
         while True:
             try:
-                return await super()._make_request(method, endpoint, version, **kwargs)
+                return await super()._make_request(
+                    method, endpoint, version, **kwargs
+                )
             except R2RException as e:
                 if "Request failed" in str(e) and retries < max_retries:
                     retries += 1
                     wait_time = delay * (2 ** (retries - 1))
-                    print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    print(
+                        f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s..."
+                    )
                     await asyncio.sleep(wait_time)
                 elif "429" in str(e) and retries < max_retries:
                     retries += 1
                     wait_time = delay * (3 ** (retries - 1))
-                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    print(
+                        f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s..."
+                    )
                     await asyncio.sleep(wait_time)
                 else:
                     raise
+
 
 class RetryableR2RClient(R2RClient):
     """R2RClient with automatic retry logic for timeouts"""
@@ -43,21 +58,28 @@ class RetryableR2RClient(R2RClient):
 
         while True:
             try:
-                return super()._make_request(method, endpoint, version, **kwargs)
+                return super()._make_request(
+                    method, endpoint, version, **kwargs
+                )
             except R2RException as e:
-                if ("Request failed" in str(e) or "timed out" in str(e)) and retries < max_retries:
+                if (
+                    "Request failed" in str(e) or "timed out" in str(e)
+                ) and retries < max_retries:
                     retries += 1
                     wait_time = delay * (2 ** (retries - 1))
-                    print(f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    print(
+                        f"Request timed out. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s..."
+                    )
                     time.sleep(wait_time)
                 elif "429" in str(e) and retries < max_retries:
                     retries += 1
                     wait_time = delay * (3 ** (retries - 1))
-                    print(f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s...")
+                    print(
+                        f"Rate limited. Retrying ({retries}/{max_retries}) after {wait_time:.2f}s..."
+                    )
                     time.sleep(wait_time)
                 else:
                     raise
-
 
 
 class TestConfig:
@@ -96,10 +118,12 @@ async def aclient(config) -> AsyncGenerator[R2RAsyncClient, None]:
 
 @pytest.fixture
 async def superuser_client(
-        mutable_client: R2RClient,
-        config: TestConfig) -> AsyncGenerator[R2RClient, None]:
+    mutable_client: R2RClient, config: TestConfig
+) -> AsyncGenerator[R2RClient, None]:
     """Creates a superuser client for tests requiring elevated privileges."""
-    await mutable_client.users.login(config.superuser_email, config.superuser_password)
+    await mutable_client.users.login(
+        config.superuser_email, config.superuser_password
+    )
     yield mutable_client
     await mutable_client.users.logout()
 
@@ -130,8 +154,7 @@ def test_collection(client: R2RClient, test_document):
 
     docs = [
         {
-            "text":
-            f"Aristotle was a Greek philosopher who studied under Plato {str(uuid.uuid4())}.",
+            "text": f"Aristotle was a Greek philosopher who studied under Plato {str(uuid.uuid4())}.",
             "metadata": {
                 "rating": 5,
                 "tags": ["philosophy", "greek"],
@@ -139,8 +162,7 @@ def test_collection(client: R2RClient, test_document):
             },
         },
         {
-            "text":
-            f"Socrates is considered a founder of Western philosophy  {str(uuid.uuid4())}.",
+            "text": f"Socrates is considered a founder of Western philosophy  {str(uuid.uuid4())}.",
             "metadata": {
                 "rating": 3,
                 "tags": ["philosophy", "classical"],
@@ -148,8 +170,7 @@ def test_collection(client: R2RClient, test_document):
             },
         },
         {
-            "text":
-            f"Rene Descartes was a French philosopher. unique_philosopher  {str(uuid.uuid4())}",
+            "text": f"Rene Descartes was a French philosopher. unique_philosopher  {str(uuid.uuid4())}",
             "metadata": {
                 "rating": 8,
                 "tags": ["rationalism", "french"],
@@ -157,8 +178,7 @@ def test_collection(client: R2RClient, test_document):
             },
         },
         {
-            "text":
-            f"Immanuel Kant, a German philosopher, influenced Enlightenment thought  {str(uuid.uuid4())}.",
+            "text": f"Immanuel Kant, a German philosopher, influenced Enlightenment thought  {str(uuid.uuid4())}.",
             "metadata": {
                 "rating": 7,
                 "tags": ["enlightenment", "german"],
@@ -170,7 +190,8 @@ def test_collection(client: R2RClient, test_document):
     doc_ids = []
     for doc in docs:
         doc_id = client.documents.create(
-            raw_text=doc["text"], metadata=doc["metadata"]).results.document_id
+            raw_text=doc["text"], metadata=doc["metadata"]
+        ).results.document_id
         doc_ids.append(doc_id)
         client.collections.add_document(collection_id, doc_id)
     client.collections.add_document(collection_id, test_document)

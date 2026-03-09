@@ -11,32 +11,29 @@ def test_semantic_search_with_near_duplicates(client: R2RClient):
     random_2 = str(uuid.uuid4())
     # Create two similar but distinct documents
     doc1 = client.documents.create(
-        raw_text=
-        f"Aristotle was a Greek philosopher who studied logic {random_1}."
+        raw_text=f"Aristotle was a Greek philosopher who studied logic {random_1}."
     ).results.document_id
     doc2 = client.documents.create(
-        raw_text=
-        f"Aristotle, the Greek philosopher, studied formal logic {random_2}."
+        raw_text=f"Aristotle, the Greek philosopher, studied formal logic {random_2}."
     ).results.document_id
 
     resp = client.retrieval.search(
         query="Tell me about Aristotle's work in logic",
         search_mode="custom",
-        search_settings={
-            "use_semantic_search": True,
-            "limit": 25
-        },
+        search_settings={"use_semantic_search": True, "limit": 25},
     )
     results = resp.results.chunk_search_results
 
     # Both documents should be returned but with different scores
     scores = [
-        r.score for r in results
+        r.score
+        for r in results
         if str(r.document_id) in [str(doc1), str(doc2)]
     ]
     assert len(scores) == 2, "Expected both similar documents"
-    assert len(
-        set(scores)) == 2, ("Expected different scores for similar documents")
+    assert (
+        len(set(scores)) == 2
+    ), "Expected different scores for similar documents"
 
 
 def test_semantic_search_multilingual(client: R2RClient):
@@ -53,10 +50,9 @@ def test_semantic_search_multilingual(client: R2RClient):
     ]
     doc_ids = []
     for text, lang in docs:
-        doc_id = client.documents.create(raw_text=text,
-                                         metadata={
-                                             "language": lang
-                                         }).results.document_id
+        doc_id = client.documents.create(
+            raw_text=text, metadata={"language": lang}
+        ).results.document_id
         doc_ids.append(doc_id)
 
     # Query in different languages
@@ -123,22 +119,21 @@ def test_rag_context_window_limits(client: R2RClient):
     """Test RAG handles documents at or near context window limits."""
     # Create a document that approaches the context window limit
     random_1 = str(uuid.uuid4())
-    large_text = ("Aristotle " * 1000
-                  )  # Adjust multiplier based on your context window
+    large_text = (
+        "Aristotle " * 1000
+    )  # Adjust multiplier based on your context window
     doc_id = client.documents.create(
-        raw_text=f"{large_text} {random_1}").results.document_id
+        raw_text=f"{large_text} {random_1}"
+    ).results.document_id
 
     resp = client.retrieval.rag(
         query="Summarize this text about Aristotle",
-        search_settings={"filters": {
-            "document_id": {
-                "$eq": str(doc_id)
-            }
-        }},
+        search_settings={"filters": {"document_id": {"$eq": str(doc_id)}}},
         rag_generation_config={"max_tokens": 100},
     )
-    assert resp.results is not None, (
-        "RAG should handle large context gracefully")
+    assert (
+        resp.results is not None
+    ), "RAG should handle large context gracefully"
 
 
 # UNCOMMENT LATER

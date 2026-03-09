@@ -540,7 +540,7 @@ class DocumentsRouter(BaseRouterV3):
                 metadata=workflow_input["metadata"],
                 version=workflow_input["version"],
             )
-            
+
             # Update workflow input with the document's collection_ids
             document_info = ingest_result["info"]
             workflow_input["collection_ids"] = (
@@ -1018,7 +1018,9 @@ class DocumentsRouter(BaseRouterV3):
                 requesting_user_id = [auth_user.id]
                 filter_collection_ids = auth_user.collection_ids
 
-            document_uuids = [UUID(document_id) for document_id in ids] if ids else None
+            document_uuids = (
+                [UUID(document_id) for document_id in ids] if ids else None
+            )
             documents_overview_response = (
                 await self.services.management.documents_overview(
                     user_ids=requesting_user_id,

@@ -20,6 +20,8 @@ jobs:
           os: ubuntu-latest
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
+        with:
+          config-name: r2r_ci_mock
       - name: Use Node.js
         uses: actions/setup-node@v2
         with:

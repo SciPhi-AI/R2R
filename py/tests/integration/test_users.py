@@ -7,7 +7,6 @@ from r2r import R2RClient, R2RException
 
 @pytest.fixture(scope="session")
 def config():
-
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -31,8 +30,9 @@ def superuser_login(client: R2RClient, config):
     # client.users.logout()
 
 
-def register_and_return_user_id(client: R2RClient, email: str,
-                                password: str) -> str:
+def register_and_return_user_id(
+    client: R2RClient, email: str, password: str
+) -> str:
     return client.users.create(email, password).results.id
 
 
@@ -52,8 +52,9 @@ def test_user_refresh_token(client: R2RClient):
     old_access_token = client.access_token
 
     new_access_token = client.users.refresh_token().results.access_token.token
-    assert new_access_token != old_access_token, (
-        "Refresh token did not provide a new access token.")
+    assert (
+        new_access_token != old_access_token
+    ), "Refresh token did not provide a new access token."
 
 
 def test_change_password(client: R2RClient):
@@ -62,16 +63,18 @@ def test_change_password(client: R2RClient):
     new_password = "new_password456"
     register_and_return_user_id(client, random_email, old_password)
     client.users.login(random_email, old_password)
-    change_resp = client.users.change_password(old_password,
-                                               new_password).results
+    change_resp = client.users.change_password(
+        old_password, new_password
+    ).results
     assert change_resp.message is not None, "Change password failed."
 
     # Check old password no longer works
     client.users.logout()
     with pytest.raises(R2RException) as exc_info:
         client.users.login(random_email, old_password)
-    assert exc_info.value.status_code == 401, (
-        "Old password should not work anymore.")
+    assert (
+        exc_info.value.status_code == 401
+    ), "Old password should not work anymore."
 
     # New password should work
     client.users.login(random_email, new_password)
@@ -79,8 +82,7 @@ def test_change_password(client: R2RClient):
 
 
 @pytest.mark.skip(
-    reason=
-    "Requires a real or mocked reset token retrieval if verification is implemented."
+    reason="Requires a real or mocked reset token retrieval if verification is implemented."
 )
 def test_request_and_reset_password(client: R2RClient):
     # This test scenario assumes you can obtain a valid reset token somehow.
@@ -153,32 +155,36 @@ def test_user_collections(client: R2RClient, superuser_login, config):
     client.users.logout()
 
 
-def test_add_remove_user_from_collection(client: R2RClient, superuser_login,
-                                         config):
+def test_add_remove_user_from_collection(
+    client: R2RClient, superuser_login, config
+):
     random_email = f"{uuid.uuid4()}@example.com"
     password = "somepassword"
     user_id = register_and_return_user_id(client, random_email, password)
 
     # Add user to known collection
     add_resp = client.users.add_to_collection(
-        user_id, config.known_collection_id).results
+        user_id, config.known_collection_id
+    ).results
     assert add_resp.success, "Failed to add user to collection."
 
     # Verify
     collections = client.users.list_collections(user_id).results
     assert any(
-        str(col.id) == str(config.known_collection_id)
-        for col in collections), "User not in collection after add."
+        str(col.id) == str(config.known_collection_id) for col in collections
+    ), "User not in collection after add."
 
     # Remove user from collection
     remove_resp = client.users.remove_from_collection(
-        user_id, config.known_collection_id).results
+        user_id, config.known_collection_id
+    ).results
     assert remove_resp.success, "Failed to remove user from collection."
 
     collections_after = client.users.list_collections(user_id).results
     assert not any(
-        str(col.id) == str(config.known_collection_id) for col in
-        collections_after), "User still in collection after removal."
+        str(col.id) == str(config.known_collection_id)
+        for col in collections_after
+    ), "User still in collection after removal."
     client.users.logout()
 
 
@@ -198,21 +204,25 @@ def test_delete_user(client: R2RClient):
     with pytest.raises(R2RException) as exc_info:
         client.users.login(random_email, password)
 
-    assert exc_info.value.status_code == 404, (
-        "User still exists after deletion.")
+    assert (
+        exc_info.value.status_code == 404
+    ), "User still exists after deletion."
 
 
-def test_superuser_downgrade_permissions(client: R2RClient, superuser_login,
-                                         config):
+def test_superuser_downgrade_permissions(
+    client: R2RClient, superuser_login, config
+):
     user_email = f"test_super_{uuid.uuid4()}@test.com"
     user_password = "securepass"
-    new_user_id = register_and_return_user_id(client, user_email,
-                                              user_password)
+    new_user_id = register_and_return_user_id(
+        client, user_email, user_password
+    )
 
     # Upgrade user to superuser
     upgraded_user = client.users.update(new_user_id, is_superuser=True).results
-    assert upgraded_user.is_superuser == True, (
-        "User not upgraded to superuser.")
+    assert (
+        upgraded_user.is_superuser is True
+    ), "User not upgraded to superuser."
 
     # Logout admin, login as new superuser
     client.users.logout()
@@ -223,17 +233,19 @@ def test_superuser_downgrade_permissions(client: R2RClient, superuser_login,
     # Downgrade back to normal (re-login as original admin)
     client.users.logout()
     client.users.login(config.superuser_email, config.superuser_password)
-    downgraded_user = client.users.update(new_user_id,
-                                          is_superuser=False).results
-    assert downgraded_user.is_superuser == False, "User not downgraded."
+    downgraded_user = client.users.update(
+        new_user_id, is_superuser=False
+    ).results
+    assert downgraded_user.is_superuser is False, "User not downgraded."
 
     # Now login as downgraded user and verify no superuser access
     client.users.logout()
     client.users.login(user_email, user_password)
     with pytest.raises(R2RException) as exc_info:
         client.users.list()
-    assert exc_info.value.status_code == 403, (
-        "Downgraded user still has superuser privileges.")
+    assert (
+        exc_info.value.status_code == 403
+    ), "Downgraded user still has superuser privileges."
     client.users.logout()
 
 
@@ -263,8 +275,9 @@ def test_non_owner_delete_collection(client: R2RClient):
     client.users.login(non_owner_email, non_owner_password)
     with pytest.raises(R2RException) as exc_info:
         result = client.collections.delete(coll_id)
-    assert exc_info.value.status_code == 403, (
-        "Wrong error code for non-owner deletion attempt")
+    assert (
+        exc_info.value.status_code == 403
+    ), "Wrong error code for non-owner deletion attempt"
 
     # Cleanup
     client.users.logout()
@@ -340,8 +353,9 @@ def test_login_with_incorrect_password(client: R2RClient):
     # Try incorrect password
     with pytest.raises(R2RException) as exc_info:
         client.users.login(email, "wrongpass")
-    assert exc_info.value.status_code == 401, (
-        "Expected 401 when logging in with incorrect password.")
+    assert (
+        exc_info.value.status_code == 401
+    ), "Expected 401 when logging in with incorrect password."
     client.users.logout()
 
 
@@ -375,7 +389,8 @@ def test_verification_with_invalid_code(client: R2RClient):
 
 
 @pytest.mark.skip(
-    reason="Verification and token logic depends on implementation.")
+    reason="Verification and token logic depends on implementation."
+)
 def test_password_reset_with_invalid_token(client: R2RClient):
     email = f"{uuid.uuid4()}@example.com"
     password = "initialpass"
@@ -411,7 +426,7 @@ def user_with_api_key(client: R2RClient):
     # Cleanup
     try:
         client.users.delete_api_key(user_id, key_id)
-    except:
+    except Exception:
         pass
     client.users.logout()
 
@@ -436,8 +451,9 @@ def test_api_key_lifecycle(client: R2RClient):
     # List API keys
     list_resp = client.users.list_api_keys(user_id).results
     assert len(list_resp) > 0, "No API keys found after creation"
-    assert list_resp[0].key_id == key_id, (
-        "Listed key ID doesn't match created key")
+    assert (
+        list_resp[0].key_id == key_id
+    ), "Listed key ID doesn't match created key"
     assert list_resp[0].updated_at is not None, "Updated timestamp missing"
     assert list_resp[0].public_key is not None, "Public key missing in list"
 
@@ -448,8 +464,8 @@ def test_api_key_lifecycle(client: R2RClient):
     # Verify deletion
     list_resp_after = client.users.list_api_keys(user_id).results
     assert not any(
-        k.key_id == key_id
-        for k in list_resp_after), ("API key still exists after deletion")
+        k.key_id == key_id for k in list_resp_after
+    ), "API key still exists after deletion"
 
     client.users.logout()
 
@@ -478,8 +494,9 @@ def test_api_key_permissions(client: R2RClient, user_with_api_key):
     # Should not be able to list all users (superuser only)
     with pytest.raises(R2RException) as exc_info:
         api_client.users.list()
-    assert exc_info.value.status_code == 403, (
-        "Non-superuser API key shouldn't list users")
+    assert (
+        exc_info.value.status_code == 403
+    ), "Non-superuser API key shouldn't list users"
 
 
 def test_invalid_api_key(client: R2RClient):
@@ -489,8 +506,9 @@ def test_invalid_api_key(client: R2RClient):
 
     with pytest.raises(R2RException) as exc_info:
         api_client.users.me()
-    assert exc_info.value.status_code == 401, (
-        "Expected 401 for invalid API key")
+    assert (
+        exc_info.value.status_code == 401
+    ), "Expected 401 for invalid API key"
 
 
 def test_multiple_api_keys(client: R2RClient):
@@ -502,7 +520,7 @@ def test_multiple_api_keys(client: R2RClient):
 
     # Create multiple API keys
     key_ids = []
-    for i in range(3):
+    for _i in range(3):
         key_resp = client.users.create_api_key(user_id).results
         key_ids.append(key_resp.key_id)
 
@@ -514,8 +532,9 @@ def test_multiple_api_keys(client: R2RClient):
     for key_id in key_ids:
         client.users.delete_api_key(user_id, key_id)
         current_keys = client.users.list_api_keys(user_id).results
-        assert not any(k.key_id == key_id for k in current_keys), (
-            f"Key {key_id} still exists after deletion")
+        assert not any(
+            k.key_id == key_id for k in current_keys
+        ), f"Key {key_id} still exists after deletion"
 
     client.users.logout()
 
@@ -537,9 +556,7 @@ def test_update_user_limits_overrides(client: R2RClient):
         "global_per_min": 10,
         "monthly_limit": 3000,
         "route_overrides": {
-            "/some-route": {
-                "route_per_min": 5
-            },
+            "/some-route": {"route_per_min": 5},
         },
     }
     client.users.update(id=fetched_user.id, limits_overrides=overrides)
@@ -549,8 +566,13 @@ def test_update_user_limits_overrides(client: R2RClient):
     updated_user = client.users.me().results
     assert len(updated_user.limits_overrides) != 0
     assert updated_user.limits_overrides["global_per_min"] == 10
-    assert (updated_user.limits_overrides["route_overrides"]["/some-route"]
-            ["route_per_min"] == 5)
+    assert (
+        updated_user.limits_overrides["route_overrides"]["/some-route"][
+            "route_per_min"
+        ]
+        == 5
+    )
+
 
 def test_collection_ownership_filtering(client: R2RClient):
     """Test the ownerOnly filter parameter in collections list endpoint."""
@@ -567,14 +589,18 @@ def test_collection_ownership_filtering(client: R2RClient):
     # Login as user1 and create a collection
     client.users.login(user1_email, user1_password)
     user1_id = client.users.me().results.id
-    user1_collection = client.collections.create(name="User1 Collection").results
+    user1_collection = client.collections.create(
+        name="User1 Collection"
+    ).results
     user1_collection_id = user1_collection.id
 
     # Login as user2 and create a collection
     client.users.logout()
     client.users.login(user2_email, user2_password)
     user2_id = client.users.me().results.id
-    user2_collection = client.collections.create(name="User2 Collection").results
+    user2_collection = client.collections.create(
+        name="User2 Collection"
+    ).results
     user2_collection_id = user2_collection.id
 
     # User2 adds user1 to their collection
@@ -589,20 +615,28 @@ def test_collection_ownership_filtering(client: R2RClient):
     all_collection_ids = [str(col.id) for col in all_collections]
 
     # Verify user1 can see their own collection
-    assert str(user1_collection_id) in all_collection_ids, "User1 can't see their own collection"
+    assert (
+        str(user1_collection_id) in all_collection_ids
+    ), "User1 can't see their own collection"
 
     # Verify user1 can see user2's shared collection
-    assert str(user2_collection_id) in all_collection_ids, "User1 can't see shared collection"
+    assert (
+        str(user2_collection_id) in all_collection_ids
+    ), "User1 can't see shared collection"
 
     # List only owned collections
     owned_collections = client.collections.list(owner_only=True).results
     owned_collection_ids = [str(col.id) for col in owned_collections]
 
     # Verify user1's collection is in the owned list
-    assert str(user1_collection_id) in owned_collection_ids, "User1's collection not in owned list"
+    assert (
+        str(user1_collection_id) in owned_collection_ids
+    ), "User1's collection not in owned list"
 
     # Verify user2's collection is NOT in the owned list
-    assert str(user2_collection_id) not in owned_collection_ids, "Shared collection should not be in owned list"
+    assert (
+        str(user2_collection_id) not in owned_collection_ids
+    ), "Shared collection should not be in owned list"
 
     # User1 adds user2 to their collection
     client.collections.add_user(user1_collection_id, user2_id)
@@ -616,25 +650,36 @@ def test_collection_ownership_filtering(client: R2RClient):
     all_collection_ids = [str(col.id) for col in all_collections]
 
     # Verify user2 can see their own collection
-    assert str(user2_collection_id) in all_collection_ids, "User2 can't see their own collection"
+    assert (
+        str(user2_collection_id) in all_collection_ids
+    ), "User2 can't see their own collection"
 
     # Verify user2 can see user1's shared collection
-    assert str(user1_collection_id) in all_collection_ids, "User2 can't see shared collection"
+    assert (
+        str(user1_collection_id) in all_collection_ids
+    ), "User2 can't see shared collection"
 
     # List only owned collections
     owned_collections = client.collections.list(owner_only=True).results
     owned_collection_ids = [str(col.id) for col in owned_collections]
 
     # Verify user2's collection is in the owned list
-    assert str(user2_collection_id) in owned_collection_ids, "User2's collection not in owned list"
+    assert (
+        str(user2_collection_id) in owned_collection_ids
+    ), "User2's collection not in owned list"
 
     # Verify user1's collection is NOT in the owned list
-    assert str(user1_collection_id) not in owned_collection_ids, "Shared collection should not be in owned list"
+    assert (
+        str(user1_collection_id) not in owned_collection_ids
+    ), "Shared collection should not be in owned list"
 
     # Cleanup
     client.users.logout()
 
-def test_superuser_collection_ownership_filtering(client: R2RClient, superuser_login, config):
+
+def test_superuser_collection_ownership_filtering(
+    client: R2RClient, superuser_login, config
+):
     """Test the ownerOnly filter for superusers."""
     # Create a regular user
     user_email = f"regular_{uuid.uuid4()}@test.com"
@@ -642,7 +687,9 @@ def test_superuser_collection_ownership_filtering(client: R2RClient, superuser_l
     client.users.create(user_email, user_password)
 
     # Create a collection as superuser
-    superuser_collection = client.collections.create(name="Superuser Collection").results
+    superuser_collection = client.collections.create(
+        name="Superuser Collection"
+    ).results
     superuser_id = client.users.me().results.id
 
     # List all collections as superuser (without filter)
@@ -653,15 +700,20 @@ def test_superuser_collection_ownership_filtering(client: R2RClient, superuser_l
     owned_collections = client.collections.list(owner_only=True).results
     owned_count = len(owned_collections)
     assert owned_count > 0, "Superuser should see owned collections"
-    assert owned_count < all_collections_count, "Filtered list should be smaller than all collections"
+    assert (
+        owned_count < all_collections_count
+    ), "Filtered list should be smaller than all collections"
 
     # Verify the superuser collection is in the owned list
-    assert any(str(col.id) == str(superuser_collection.id) for col in owned_collections), \
-        "Superuser collection should be in the owned list"
+    assert any(
+        str(col.id) == str(superuser_collection.id)
+        for col in owned_collections
+    ), "Superuser collection should be in the owned list"
 
     # Cleanup
     client.collections.delete(superuser_collection.id)
     client.users.logout()
+
 
 def test_collection_filter_invalid_parameters(client: R2RClient):
     """Test error handling for invalid filter parameters."""
@@ -674,8 +726,10 @@ def test_collection_filter_invalid_parameters(client: R2RClient):
     # Test with invalid owner_only parameter type (should be bool, not string)
     with pytest.raises(R2RException) as exc_info:
         client.collections.list(owner_only="not-a-bool")
-    assert exc_info.value.status_code in [400, 422], \
-        "Expected validation error for invalid owner_only parameter"
+    assert exc_info.value.status_code in [
+        400,
+        422,
+    ], "Expected validation error for invalid owner_only parameter"
 
     client.users.logout()
 
@@ -695,29 +749,34 @@ def test_document_ownership_filtering(client: R2RClient):
     # Login as user1 and create a document and collection
     client.users.login(user1_email, user1_password)
     user1_id = client.users.me().results.id
-    user1_collection = client.collections.create(name="User1 Doc Collection").results
+    user1_collection = client.collections.create(
+        name="User1 Doc Collection"
+    ).results
     user1_collection_id = user1_collection.id
 
     user1_document = client.documents.create(
         raw_text="User 1 document content",
-        metadata={"title": "User 1 Document"}
+        metadata={"title": "User 1 Document"},
     ).results
     user1_document_id = user1_document.document_id
 
     # Wait for processing
     import time
+
     time.sleep(5)
 
     # Login as user2 and create a document and collection
     client.users.logout()
     client.users.login(user2_email, user2_password)
     user2_id = client.users.me().results.id
-    user2_collection = client.collections.create(name="User2 Doc Collection").results
+    user2_collection = client.collections.create(
+        name="User2 Doc Collection"
+    ).results
     user2_collection_id = user2_collection.id
 
     user2_document = client.documents.create(
         raw_text="User 2 document content",
-        metadata={"title": "User 2 Document"}
+        metadata={"title": "User 2 Document"},
     ).results
     user2_document_id = user2_document.document_id
 
@@ -736,14 +795,18 @@ def test_document_ownership_filtering(client: R2RClient):
     all_document_ids = [str(doc.id) for doc in all_documents]
 
     # Verify user1 can see their own document
-    assert str(user1_document_id) in all_document_ids, "User1 can't see their own document"
+    assert (
+        str(user1_document_id) in all_document_ids
+    ), "User1 can't see their own document"
 
     # List only owned documents
     owned_documents = client.documents.list(owner_only=True).results
     owned_document_ids = [str(doc.id) for doc in owned_documents]
 
     # Verify user1's document is in the owned list
-    assert str(user1_document_id) in owned_document_ids, "User1's document not in owned list"
+    assert (
+        str(user1_document_id) in owned_document_ids
+    ), "User1's document not in owned list"
 
     # Add user2's document to user1's collection
     client.collections.add_document(user1_collection_id, user2_document_id)
@@ -757,20 +820,28 @@ def test_document_ownership_filtering(client: R2RClient):
     all_document_ids = [str(doc.id) for doc in all_documents]
 
     # Verify user2 can see their own document
-    assert str(user2_document_id) in all_document_ids, "User2 can't see their own document"
+    assert (
+        str(user2_document_id) in all_document_ids
+    ), "User2 can't see their own document"
 
     # Verify user2 can see user1's shared document
-    assert str(user1_document_id) in all_document_ids, "User2 can't see shared document"
+    assert (
+        str(user1_document_id) in all_document_ids
+    ), "User2 can't see shared document"
 
     # List only owned documents
     owned_documents = client.documents.list(owner_only=True).results
     owned_document_ids = [str(doc.id) for doc in owned_documents]
 
     # Verify user2's document is in the owned list
-    assert str(user2_document_id) in owned_document_ids, "User2's document not in owned list"
+    assert (
+        str(user2_document_id) in owned_document_ids
+    ), "User2's document not in owned list"
 
     # Verify user1's document is NOT in the owned list
-    assert str(user1_document_id) not in owned_document_ids, "Shared document should not be in owned list"
+    assert (
+        str(user1_document_id) not in owned_document_ids
+    ), "Shared document should not be in owned list"
 
     # Cleanup - login as the right user first
     client.users.logout()
@@ -801,7 +872,9 @@ def test_document_filter_invalid_parameters(client: R2RClient):
     # Test with invalid owner_only parameter type (should be bool, not string)
     with pytest.raises(R2RException) as exc_info:
         client.documents.list(owner_only="not-a-bool")
-    assert exc_info.value.status_code in [400, 422], \
-        "Expected validation error for invalid owner_only parameter"
+    assert exc_info.value.status_code in [
+        400,
+        422,
+    ], "Expected validation error for invalid owner_only parameter"
 
     client.users.logout()

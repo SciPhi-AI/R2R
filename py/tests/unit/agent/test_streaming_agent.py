@@ -1,17 +1,23 @@
 """
 Unit tests for the R2RStreamingAgent functionality.
 """
-import pytest
+
 import re
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Dict, List, Any, Optional, AsyncIterator
+from unittest.mock import AsyncMock
+
+import pytest
 
 
 class MockLLMProvider:
     """Mock LLM provider for testing."""
-    def __init__(self, response_content="LLM generated response about Aristotle"):
+
+    def __init__(
+        self, response_content="LLM generated response about Aristotle"
+    ):
         self.aget_completion = AsyncMock(
-            return_value={"choices": [{"message": {"content": response_content}}]}
+            return_value={
+                "choices": [{"message": {"content": response_content}}]
+            }
         )
         self.response_chunks = []
         self.completion_config = {}
@@ -28,6 +34,7 @@ class MockLLMProvider:
 
 class CitationTracker:
     """Simple citation tracker for testing."""
+
     def __init__(self):
         self.seen_spans = set()
 
@@ -42,9 +49,10 @@ class CitationTracker:
 
 class MockR2RStreamingAgent:
     """Mock R2RStreamingAgent for testing."""
+
     def __init__(self, llm_provider=None, response_chunks=None):
         self.llm_provider = llm_provider or MockLLMProvider()
-        self.citation_pattern = r'\[([\w\d]+)\]'
+        self.citation_pattern = r"\[([\w\d]+)\]"
         self.citation_tracker = CitationTracker()
         self.events = []
 
@@ -77,21 +85,28 @@ class MockR2RStreamingAgent:
             adjusted_end = end + offset
 
             # Check if this span is new
-            if self.citation_tracker.is_new_span(citation_id, adjusted_start, adjusted_end):
+            if self.citation_tracker.is_new_span(
+                citation_id, adjusted_start, adjusted_end
+            ):
                 # In a real implementation, we would fetch citation metadata
                 # For testing, we'll just create a simple metadata object
-                metadata = {"source": f"source-{citation_id}", "title": f"Document {citation_id}"}
+                metadata = {
+                    "source": f"source-{citation_id}",
+                    "title": f"Document {citation_id}",
+                }
 
                 # Emit the citation event
-                self.emit_event({
-                    "type": "citation",
-                    "data": {
-                        "citation_id": citation_id,
-                        "start": adjusted_start,
-                        "end": adjusted_end,
-                        "metadata": metadata
+                self.emit_event(
+                    {
+                        "type": "citation",
+                        "data": {
+                            "citation_id": citation_id,
+                            "start": adjusted_start,
+                            "end": adjusted_end,
+                            "metadata": metadata,
+                        },
                     }
-                })
+                )
 
     async def process_streamed_response(self, messages, system_prompt=None):
         """Process a streamed response and emit events."""
@@ -99,20 +114,18 @@ class MockR2RStreamingAgent:
         # For testing, we'll use our mocked stream
         full_text = ""
         async for chunk in self.llm_provider.aget_completion_stream(
-            messages=messages,
-            system_prompt=system_prompt
+            messages=messages, system_prompt=system_prompt
         ):
             chunk_text = chunk["choices"][0]["delta"]["content"]
             full_text += chunk_text
 
             # Extract and emit citation events
-            await self.emit_citation_events(chunk_text, full_text[:-len(chunk_text)])
+            await self.emit_citation_events(
+                chunk_text, full_text[: -len(chunk_text)]
+            )
 
             # Emit the chunk event
-            self.emit_event({
-                "type": "chunk",
-                "data": {"text": chunk_text}
-            })
+            self.emit_event({"type": "chunk", "data": {"text": chunk_text}})
 
         return full_text
 
@@ -140,7 +153,9 @@ class TestStreamingAgent:
         mock_agent.llm_provider.setup_stream(response_chunks)
 
         # Process the streamed response
-        messages = [{"role": "user", "content": "Tell me about Aristotle's ethics"}]
+        messages = [
+            {"role": "user", "content": "Tell me about Aristotle's ethics"}
+        ]
         result = await mock_agent.process_streamed_response(messages)
 
         # Verify the full response
@@ -160,7 +175,7 @@ class TestStreamingAgent:
             "with citation ",
             "[abc123] ",
             "and another ",
-            "citation [def456]."
+            "citation [def456].",
         ]
         mock_agent.llm_provider.setup_stream(response_chunks)
 
@@ -169,10 +184,15 @@ class TestStreamingAgent:
         result = await mock_agent.process_streamed_response(messages)
 
         # Verify the full response
-        assert result == "Response with citation [abc123] and another citation [def456]."
+        assert (
+            result
+            == "Response with citation [abc123] and another citation [def456]."
+        )
 
         # Verify citation events
-        citation_events = [e for e in mock_agent.events if e["type"] == "citation"]
+        citation_events = [
+            e for e in mock_agent.events if e["type"] == "citation"
+        ]
         assert len(citation_events) == 2
 
         # Check first citation event - update values to match actual positions
@@ -182,8 +202,12 @@ class TestStreamingAgent:
 
         # Check second citation event - update values to match actual positions
         assert citation_events[1]["data"]["citation_id"] == "def456"
-        assert citation_events[1]["data"]["start"] == 53  # Updated to actual position
-        assert citation_events[1]["data"]["end"] == 61  # Updated to actual position
+        assert (
+            citation_events[1]["data"]["start"] == 53
+        )  # Updated to actual position
+        assert (
+            citation_events[1]["data"]["end"] == 61
+        )  # Updated to actual position
 
     @pytest.mark.asyncio
     async def test_citation_tracking(self, mock_agent):
@@ -193,7 +217,7 @@ class TestStreamingAgent:
             "The citation ",
             "[abc123] ",
             "appears twice: ",
-            "[abc123]."
+            "[abc123].",
         ]
         mock_agent.llm_provider.setup_stream(response_chunks)
 
@@ -205,20 +229,38 @@ class TestStreamingAgent:
         assert result == "The citation [abc123] appears twice: [abc123]."
 
         # Verify citation events - should be two events despite the same ID
-        citation_events = [e for e in mock_agent.events if e["type"] == "citation"]
+        citation_events = [
+            e for e in mock_agent.events if e["type"] == "citation"
+        ]
         assert len(citation_events) == 2
 
         # The spans should be different
-        assert citation_events[0]["data"]["start"] != citation_events[1]["data"]["start"]
-        assert citation_events[0]["data"]["end"] != citation_events[1]["data"]["end"]
+        assert (
+            citation_events[0]["data"]["start"]
+            != citation_events[1]["data"]["start"]
+        )
+        assert (
+            citation_events[0]["data"]["end"]
+            != citation_events[1]["data"]["end"]
+        )
 
     @pytest.mark.asyncio
     async def test_citation_sanitization(self, mock_agent):
         """Test that citation IDs are properly sanitized."""
         # Create sanitized citations manually for testing
         sanitized_citations = [
-            {"citation_id": "abc123", "original": "abc-123", "start": 9, "end": 18},
-            {"citation_id": "def456", "original": "def.456", "start": 23, "end": 32}
+            {
+                "citation_id": "abc123",
+                "original": "abc-123",
+                "start": 9,
+                "end": 18,
+            },
+            {
+                "citation_id": "def456",
+                "original": "def.456",
+                "start": 23,
+                "end": 32,
+            },
         ]
 
         # Create a test specific emit_citation_events method
@@ -235,34 +277,38 @@ class TestStreamingAgent:
                 end = match.end() + offset
 
                 # Sanitize by removing non-alphanumeric chars
-                sanitized_id = re.sub(r'[^a-zA-Z0-9]', '', original_id)
+                sanitized_id = re.sub(r"[^a-zA-Z0-9]", "", original_id)
 
                 # Check if this span is new
-                if mock_agent.citation_tracker.is_new_span(sanitized_id, start, end):
+                if mock_agent.citation_tracker.is_new_span(
+                    sanitized_id, start, end
+                ):
                     # Emit sanitized citation event
-                    mock_agent.emit_event({
-                        "type": "citation",
-                        "data": {
-                            "citation_id": sanitized_id,
-                            "start": start,
-                            "end": end,
-                            "metadata": {"source": f"source-{sanitized_id}"}
+                    mock_agent.emit_event(
+                        {
+                            "type": "citation",
+                            "data": {
+                                "citation_id": sanitized_id,
+                                "start": start,
+                                "end": end,
+                                "metadata": {
+                                    "source": f"source-{sanitized_id}"
+                                },
+                            },
                         }
-                    })
+                    )
 
         # Replace the emit method
         mock_agent.emit_citation_events = emit_with_sanitization
 
         # Set up a response with citations containing non-alphanumeric characters
-        response_chunks = [
-            "Citation ",
-            "[abc-123] ",
-            "and [def.456]."
-        ]
+        response_chunks = ["Citation ", "[abc-123] ", "and [def.456]."]
         mock_agent.llm_provider.setup_stream(response_chunks)
 
         # Process the streamed response
-        messages = [{"role": "user", "content": "Show me citations with special chars"}]
+        messages = [
+            {"role": "user", "content": "Show me citations with special chars"}
+        ]
         result = await mock_agent.process_streamed_response(messages)
 
         # Restore original method
@@ -270,33 +316,42 @@ class TestStreamingAgent:
 
         # Manually emit sanitized citation events for testing
         for citation in sanitized_citations:
-            mock_agent.emit_event({
-                "type": "citation",
-                "data": {
-                    "citation_id": citation["citation_id"],
-                    "start": citation["start"],
-                    "end": citation["end"],
-                    "metadata": {"source": f"source-{citation['citation_id']}"}
+            mock_agent.emit_event(
+                {
+                    "type": "citation",
+                    "data": {
+                        "citation_id": citation["citation_id"],
+                        "start": citation["start"],
+                        "end": citation["end"],
+                        "metadata": {
+                            "source": f"source-{citation['citation_id']}"
+                        },
+                    },
                 }
-            })
+            )
 
         # Verify citation events have sanitized IDs
-        citation_events = [e for e in mock_agent.events if e["type"] == "citation"]
+        citation_events = [
+            e for e in mock_agent.events if e["type"] == "citation"
+        ]
 
         # Debug output
         print(f"Citation events: {citation_events}")
 
         # Verify the sanitized IDs
-        assert len(citation_events) >= 2, "Not enough citation events were generated"
+        assert (
+            len(citation_events) >= 2
+        ), "Not enough citation events were generated"
         assert citation_events[-2]["data"]["citation_id"] == "abc123"
         assert citation_events[-1]["data"]["citation_id"] == "def456"
 
     def test_consolidate_citations(self):
         """Test consolidating citation spans in the final answer."""
+
         # Create a function to consolidate citations
         def consolidate_citations(text, citation_tracker):
             # Extract all citations
-            pattern = r'\[([\w\d]+)\]'
+            pattern = r"\[([\w\d]+)\]"
             citations_map = {}
 
             for match in re.finditer(pattern, text):
@@ -313,7 +368,9 @@ class TestStreamingAgent:
             return citations_map
 
         # Test text with multiple citations, some repeated
-        text = "This text has [cite1] citation repeated [cite1] and also [cite2]."
+        text = (
+            "This text has [cite1] citation repeated [cite1] and also [cite2]."
+        )
 
         # Consolidate citations
         consolidated = consolidate_citations(text, CitationTracker())

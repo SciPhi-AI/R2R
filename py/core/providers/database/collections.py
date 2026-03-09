@@ -84,11 +84,11 @@ class PostgresCollectionsHandler(Handler):
             schema_with_quotes, table_with_quotes = qualified_table.split(
                 ".", 1
             )
-            schema = schema_with_quotes.replace('"', "")
-            table = table_with_quotes.replace('"', "")
+            schema = str(schema_with_quotes).replace('"', "")
+            table = str(table_with_quotes).replace('"', "")
         else:
             schema = "public"
-            table = qualified_table.replace('"', "")
+            table = str(qualified_table).replace('"', "")
 
         # 4. Add the unique constraint if it does not already exist.
         alter_table_constraint = f"""

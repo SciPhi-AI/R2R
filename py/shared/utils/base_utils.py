@@ -145,9 +145,9 @@ def generate_id(label: Optional[str] = None) -> UUID:
     )
 
 
-def generate_document_id(filename: str, user_id: UUID) -> UUID:
+def generate_document_id(filename: str | UUID, user_id: UUID) -> UUID:
     """Generates a unique document id from a given filename and user id."""
-    safe_filename = filename.replace("/", "_")
+    safe_filename = str(filename).replace("/", "_")
     return _generate_id_from_label(f"{safe_filename}-{str(user_id)}")
 
 

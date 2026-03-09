@@ -7,7 +7,6 @@ from r2r import R2RClient, R2RException
 
 @pytest.fixture(scope="session")
 def config():
-
     class TestConfig:
         base_url = "http://localhost:7272"
         superuser_email = "admin@example.com"
@@ -56,19 +55,21 @@ def test_update_graph(client: R2RClient, test_collection):
     new_name = "Updated Test Graph Name"
     new_description = "Updated test description"
 
-    resp = client.graphs.update(collection_id=collection_id,
-                                name=new_name,
-                                description=new_description).results
+    resp = client.graphs.update(
+        collection_id=collection_id, name=new_name, description=new_description
+    ).results
 
     assert resp.name == new_name, "Name not updated correctly"
-    assert resp.description == new_description, (
-        "Description not updated correctly")
+    assert (
+        resp.description == new_description
+    ), "Description not updated correctly"
 
 
 def test_list_entities(client: R2RClient, test_collection):
     collection_id = test_collection
-    resp = client.graphs.list_entities(collection_id=collection_id,
-                                       limit=5).results
+    resp = client.graphs.list_entities(
+        collection_id=collection_id, limit=5
+    ).results
     assert isinstance(resp, list), "No results array in entities response"
 
 
@@ -84,15 +85,17 @@ def test_create_and_get_entity(client: R2RClient, test_collection):
     ).results
     entity_id = str(create_resp.id)
 
-    resp = client.graphs.get_entity(collection_id=collection_id,
-                                    entity_id=entity_id).results
+    resp = client.graphs.get_entity(
+        collection_id=collection_id, entity_id=entity_id
+    ).results
     assert resp.name == entity_name, "Entity name mismatch"
 
 
 def test_list_relationships(client: R2RClient, test_collection):
     collection_id = test_collection
-    resp = client.graphs.list_relationships(collection_id=collection_id,
-                                            limit=5).results
+    resp = client.graphs.list_relationships(
+        collection_id=collection_id, limit=5
+    ).results
     assert isinstance(resp, list), "No results array in relationships response"
 
 
@@ -125,7 +128,8 @@ def test_create_and_get_relationship(client: R2RClient, test_collection):
 
     # Get relationship
     resp = client.graphs.get_relationship(
-        collection_id=collection_id, relationship_id=relationship_id).results
+        collection_id=collection_id, relationship_id=relationship_id
+    ).results
     assert resp.predicate == "related_to", "Relationship predicate mismatch"
 
 
@@ -173,8 +177,9 @@ def test_create_and_get_relationship(client: R2RClient, test_collection):
 
 def test_list_communities(client: R2RClient, test_collection):
     collection_id = test_collection
-    resp = client.graphs.list_communities(collection_id=collection_id,
-                                          limit=5).results
+    resp = client.graphs.list_communities(
+        collection_id=collection_id, limit=5
+    ).results
     assert isinstance(resp, list), "No results array in communities response"
 
 
@@ -192,8 +197,9 @@ def test_create_and_get_community(client: R2RClient, test_collection):
     ).results
     community_id = str(create_resp.id)
 
-    resp = client.graphs.get_community(collection_id=collection_id,
-                                       community_id=community_id).results
+    resp = client.graphs.get_community(
+        collection_id=collection_id, community_id=community_id
+    ).results
     assert resp.name == community_name, "Community name mismatch"
 
 

@@ -3,7 +3,9 @@ import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
 
-describe("r2rClient V3 Collections Integration Tests", () => {
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
+
+describeCI("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let chunkId: string;

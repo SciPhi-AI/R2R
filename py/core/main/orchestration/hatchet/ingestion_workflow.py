@@ -176,7 +176,11 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id_str in collection_ids:
-                        collection_id = UUID(collection_id_str)
+                        collection_id = (
+                            UUID(collection_id_str)
+                            if isinstance(collection_id_str, str)
+                            else collection_id_str
+                        )
                         try:
                             name = document_info.title or "N/A"
                             description = ""
@@ -453,7 +457,11 @@ def hatchet_ingestion_factory(
                     )
                 else:
                     for collection_id_str in collection_ids:
-                        collection_id = UUID(collection_id_str)
+                        collection_id = (
+                            UUID(collection_id_str)
+                            if isinstance(collection_id_str, str)
+                            else collection_id_str
+                        )
                         try:
                             name = document_info.title or "N/A"
                             description = ""

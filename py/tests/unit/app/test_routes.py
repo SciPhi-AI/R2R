@@ -25,9 +25,9 @@ from core.providers.embeddings import OpenAIEmbeddingProvider
 from core.providers.file import PostgresFileProvider
 from core.providers.ingestion import R2RIngestionProvider
 from core.providers.llm import OpenAICompletionProvider
+from core.providers.ocr import MistralOCRProvider
 from core.providers.orchestration import SimpleOrchestrationProvider
 from core.providers.scheduler import APSchedulerProvider
-from core.providers.ocr import MistralOCRProvider
 
 ROUTERS = [
     UsersRouter,
@@ -104,18 +104,10 @@ def mock_services():
 def mock_config():
     config_data = {
         "app": {},  # AppConfig needs minimal data
-        "auth": {
-            "provider": "mock"
-        },
-        "completion": {
-            "provider": "mock"
-        },
-        "crypto": {
-            "provider": "mock"
-        },
-        "database": {
-            "provider": "mock"
-        },
+        "auth": {"provider": "mock"},
+        "completion": {"provider": "mock"},
+        "crypto": {"provider": "mock"},
+        "database": {"provider": "mock"},
         "embedding": {
             "provider": "mock",
             "base_model": "test",
@@ -128,18 +120,10 @@ def mock_config():
             "base_dimension": 1024,
             "batch_size": 10,
         },
-        "email": {
-            "provider": "mock"
-        },
-        "ingestion": {
-            "provider": "mock"
-        },
-        "agent": {
-            "generation_config": {}
-        },
-        "orchestration": {
-            "provider": "mock"
-        },
+        "email": {"provider": "mock"},
+        "ingestion": {"provider": "mock"},
+        "agent": {"generation_config": {}},
+        "orchestration": {"provider": "mock"},
     }
     return R2RConfig(config_data)
 
@@ -152,35 +136,40 @@ def router(request, mock_providers, mock_services, mock_config):
 
 def test_all_routes_have_base_endpoint_decorator(router):
     for route in router.router.routes:
-        if (route.path.endswith("/stream") or route.path.endswith("/viewer")
-                or "websocket" in str(type(route)).lower()):
+        if (
+            route.path.endswith("/stream")
+            or route.path.endswith("/viewer")
+            or "websocket" in str(type(route)).lower()
+        ):
             continue
 
         endpoint = route.endpoint
-        assert hasattr(endpoint, "_is_base_endpoint"), (
-            f"Route {route.path} missing @base_endpoint decorator")
+        assert hasattr(
+            endpoint, "_is_base_endpoint"
+        ), f"Route {route.path} missing @base_endpoint decorator"
 
 
 def test_all_routes_have_proper_return_type_hints(router):
     for route in router.router.routes:
-        if (route.path.endswith("/stream")
-                or "websocket" in str(type(route)).lower()):
+        if (
+            route.path.endswith("/stream")
+            or "websocket" in str(type(route)).lower()
+        ):
             continue
 
         endpoint = route.endpoint
         return_type = inspect.signature(endpoint).return_annotation
 
         # Check if the type is an R2RResults by name
-        is_valid = isinstance(
-            return_type, type) and ("R2RResults" in str(return_type)
-                                    or "PaginatedR2RResult" in str(return_type)
-                                    or return_type == FileResponse
-                                    or return_type == StreamingResponse
-                                    or return_type == _TemplateResponse)
-
-        assert is_valid, (
-            f"Route {route.path} has invalid return type: {return_type}, expected R2RResults[...]"
+        is_valid = isinstance(return_type, type) and (
+            "R2RResults" in str(return_type)
+            or "PaginatedR2RResult" in str(return_type)
+            or return_type == FileResponse
+            or return_type == StreamingResponse
+            or return_type == _TemplateResponse
         )
+
+        assert is_valid, f"Route {route.path} has invalid return type: {return_type}, expected R2RResults[...]"
 
 
 def test_all_routes_have_rate_limiting(router):
@@ -189,11 +178,14 @@ def test_all_routes_have_rate_limiting(router):
     for route in router.router.routes:
         print(f"Checking route: {route.path}")
         print(f"Dependencies: {route.dependencies}")
-        has_rate_limit = any(dep.dependency == router.rate_limit_dependency
-                             for dep in route.dependencies)
+        has_rate_limit = any(
+            dep.dependency == router.rate_limit_dependency
+            for dep in route.dependencies
+        )
         if not has_rate_limit:
             # We should require this in the future, but for now just warn
             warnings.warn(
                 f"Route {route.path} missing rate limiting - this will be required in the future",
                 UserWarning,
+                stacklevel=2,
             )

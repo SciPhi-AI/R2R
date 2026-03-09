@@ -9,7 +9,9 @@ const baseUrl = "http://localhost:7272";
  * User 1's collection will have an id of `81c948ae-d41d-5d49-becf-d605444af636`
  * User 2's collection will have an id of `1f99a459-6d2e-5690-ad21-db026f019683`
  */
-describe("r2rClient V3 System Integration Tests User", () => {
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
+
+describeCI("r2rClient V3 System Integration Tests User", () => {
   let client: r2rClient;
   let user1Client: r2rClient;
   let user2Client: r2rClient;

@@ -173,4 +173,8 @@ __all__ = [
     "UnstructuredIngestionProvider",
     "R2RIngestionProvider",
     "ChunkingStrategy",
+    "CitationTracker",
+    "find_new_citation_spans",
+    "extract_citations",
+    "extract_citation_spans",
 ]

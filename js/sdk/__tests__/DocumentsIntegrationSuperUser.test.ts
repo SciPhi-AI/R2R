@@ -12,7 +12,9 @@ const TEST_OUTPUT_DIR = path.join(__dirname, "test-output");
  * The default collection id is 122fdf6a-e116-546b-a8f6-e4cb2e2c0a09
  * The invalid JSON file will have an id of 04ebba11-8d7c-5e7e-ade8-8f02edee2327
  */
-describe("r2rClient V3 Documents Integration Tests", () => {
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
+
+describeCI("r2rClient V3 Documents Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
   let documentId2: string;

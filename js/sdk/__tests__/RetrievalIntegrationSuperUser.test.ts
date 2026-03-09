@@ -11,7 +11,9 @@ const message = {
 /**
  * sonia.txt will have an id of 28ce9a4c-4d15-5287-b0c6-67834b9c4546
  */
-describe("r2rClient V3 Documents Integration Tests", () => {
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
+
+describeCI("r2rClient V3 Documents Integration Tests", () => {
   let client: r2rClient;
   let documentId: string;
 

@@ -1,0 +1,30 @@
+[app]
+fast_llm = "openai/mock-llm-model"
+quality_llm = "openai/mock-llm-model"
+vlm = "openai/mock-llm-model"
+audio_lm = "openai/mock-llm-model"
+reasoning_llm = "openai/mock-llm-model"
+planning_llm = "openai/mock-llm-model"
+
+[embedding]
+provider = "litellm"
+base_model = "openai/mock-llm-model"
+base_dimension = 1536
+api_key = "sk-mock"
+
+[completion_embedding]
+provider = "litellm"
+base_model = "openai/mock-llm-model"
+base_dimension = 1536
+api_key = "sk-mock"
+
+[database]
+  [database.limits]
+  global_per_min = 1000
+  monthly_limit = 10000
+
+[ingestion]
+provider = "r2r"
+chunking_strategy = "recursive"
+chunk_size = 512
+chunk_overlap = 20

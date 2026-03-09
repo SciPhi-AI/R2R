@@ -30,6 +30,9 @@ class ProjectSchemaMiddleware(BaseHTTPMiddleware):
             "x-project-name", self.default_schema
         )
 
+        # Ensure schema_name is a string for regex and string operations
+        schema_name = str(schema_name)
+
         # Validate schema name format (prevent SQL injection)
         if not re.match(r"^[a-zA-Z0-9_]+$", schema_name):
             return JSONResponse(
