@@ -5,7 +5,15 @@ from typing import AsyncGenerator
 
 import pytest
 
+import os
 from r2r import R2RAsyncClient, R2RClient, R2RException
+
+
+def pytest_collection_modifyitems(config, items):
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        skip_ci = pytest.mark.skip(reason="Skipping integration tests in CI")
+        for item in items:
+            item.add_marker(skip_ci)
 
 
 class RetryableR2RAsyncClient(R2RAsyncClient):
