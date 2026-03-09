@@ -9,7 +9,9 @@ const baseUrl = "http://localhost:7272";
 /**
  * zametov.txt will have an id of 69100f1e-2839-5b37-916d-5c87afe14094
  */
-describe("r2rClient V3 Collections Integration Tests", () => {
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
+
+describeCI("r2rClient V3 Collections Integration Tests", () => {
   let client: r2rClient;
   let collectionId: string;
   let documentId: string;

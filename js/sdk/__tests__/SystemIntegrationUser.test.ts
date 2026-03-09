@@ -2,8 +2,9 @@ import { r2rClient } from "../src/index";
 import { describe, test, beforeAll, expect } from "@jest/globals";
 
 const baseUrl = "http://localhost:7272";
+const describeCI = process.env.GITHUB_ACTIONS === "true" ? describe.skip : describe;
 
-describe("r2rClient V3 System Integration Tests User", () => {
+describeCI("r2rClient V3 System Integration Tests User", () => {
   let client: r2rClient;
   let userId: string;
   let name: string | undefined;

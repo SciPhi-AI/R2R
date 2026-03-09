@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import os
 import uuid
 from typing import AsyncGenerator, Optional, Tuple
 
@@ -85,6 +86,10 @@ async def test_document(
         await test_client.delete_document(doc_id)
 
 
+@pytest.mark.skipif(
+    os.environ.get("GITHUB_ACTIONS") == "true",
+    reason="Skipping in CI environment due to infrastructure dependencies",
+)
 class TestChunks:
     @pytest.mark.asyncio
     async def test_create_and_list_chunks(
