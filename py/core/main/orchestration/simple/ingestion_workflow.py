@@ -303,7 +303,14 @@ def simple_ingestion_factory(service: IngestionService):
             collection_ids = document_info.collection_ids or []
             if isinstance(collection_ids, str):
                 collection_ids = [collection_ids]
-            collection_ids = [UUID(id_str) for id_str in collection_ids]
+            
+            collection_ids_uuid = []
+            for cid in collection_ids:
+                if isinstance(cid, str):
+                    collection_ids_uuid.append(UUID(cid))
+                elif isinstance(cid, UUID):
+                    collection_ids_uuid.append(cid)
+            collection_ids = collection_ids_uuid
 
             extractions = [
                 DocumentChunk(
