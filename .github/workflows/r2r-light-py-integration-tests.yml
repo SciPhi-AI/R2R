@@ -100,6 +100,8 @@ jobs:
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
         id: start-server
+        with:
+          config-name: r2r_ci_mock
 
       - name: Wait for server to be ready
         run: |
@@ -181,7 +183,7 @@ jobs:
         uses: ./.github/actions/start-r2r-light
         id: start-server
         with:
-          config-name: gemini
+          config-name: r2r_ci_mock
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
@@ -297,6 +299,8 @@ jobs:
       - name: Start R2R Light server
         uses: ./.github/actions/start-r2r-light
         id: start-server
+        with:
+          config-name: r2r_ci_mock
 
       - name: Wait for server to be ready
         run: |
