@@ -60,6 +60,11 @@ pip install r2r
 export OPENAI_API_KEY=sk-...
 python -m r2r.serve
 
+# Or run with MiniMax as the LLM provider
+# export MINIMAX_API_KEY=your-key
+# export R2R_CONFIG_NAME=minimax
+# python -m r2r.serve
+
 # Or run in full mode with Docker
 # git clone git@github.com:SciPhi-AI/R2R.git && cd R2R
 # export R2R_CONFIG_NAME=full OPENAI_API_KEY=sk-...

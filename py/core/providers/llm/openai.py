@@ -25,6 +25,8 @@ class OpenAICompletionProvider(CompletionProvider):
         self.async_ollama_client = None
         self.lmstudio_client = None
         self.async_lmstudio_client = None
+        self.minimax_client = None
+        self.async_minimax_client = None
         # NEW: Azure Foundry clients using the Azure Inference API
         self.azure_foundry_client = None
         self.async_azure_foundry_client = None
@@ -101,6 +103,22 @@ class OpenAICompletionProvider(CompletionProvider):
             )
             logger.debug("LMStudio OpenAI clients initialized successfully")
 
+        # Initialize MiniMax clients if credentials exist
+        minimax_api_key = os.getenv("MINIMAX_API_KEY")
+        minimax_api_base = os.getenv(
+            "MINIMAX_API_BASE", "https://api.minimax.io/v1"
+        )
+        if minimax_api_key:
+            self.minimax_client = OpenAI(
+                api_key=minimax_api_key,
+                base_url=minimax_api_base,
+            )
+            self.async_minimax_client = AsyncOpenAI(
+                api_key=minimax_api_key,
+                base_url=minimax_api_base,
+            )
+            logger.debug("MiniMax clients initialized successfully")
+
         # Initialize Azure Foundry clients if credentials exist.
         # These use the Azure Inference API (currently pasted into this handler).
         azure_foundry_api_key = os.getenv("AZURE_FOUNDRY_API_KEY")
@@ -136,13 +154,15 @@ class OpenAICompletionProvider(CompletionProvider):
                 self.azure_client,
                 self.ollama_client,
                 self.lmstudio_client,
+                self.minimax_client,
                 self.azure_foundry_client,
             ]
         ):
             raise ValueError(
                 "No valid client credentials found. Please set either OPENAI_API_KEY, "
                 "both AZURE_API_KEY and AZURE_API_BASE environment variables, "
-                "OLLAMA_API_BASE, LMSTUDIO_API_BASE, or AZURE_FOUNDRY_API_KEY and AZURE_FOUNDRY_API_ENDPOINT."
+                "OLLAMA_API_BASE, LMSTUDIO_API_BASE, MINIMAX_API_KEY, "
+                "or AZURE_FOUNDRY_API_KEY and AZURE_FOUNDRY_API_ENDPOINT."
             )
 
     def _get_client_and_model(self, model: str):
@@ -178,6 +198,12 @@ class OpenAICompletionProvider(CompletionProvider):
                     "LMStudio credentials not configured but lmstudio/ model prefix used"
                 )
             return self.lmstudio_client, model[9:]  # Strip 'lmstudio/' prefix
+        elif model.startswith("minimax/"):
+            if not self.minimax_client:
+                raise ValueError(
+                    "MiniMax credentials not configured but minimax/ model prefix used"
+                )
+            return self.minimax_client, model[8:]  # Strip 'minimax/' prefix
         elif model.startswith("azure-foundry/"):
             if not self.azure_foundry_client:
                 raise ValueError(
@@ -197,6 +223,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 return self.ollama_client, model
             elif self.lmstudio_client:
                 return self.lmstudio_client, model
+            elif self.minimax_client:
+                return self.minimax_client, model
             elif self.azure_foundry_client:
                 return self.azure_foundry_client, model
             else:
@@ -234,6 +262,12 @@ class OpenAICompletionProvider(CompletionProvider):
                     "LMStudio credentials not configured but lmstudio/ model prefix used"
                 )
             return self.async_lmstudio_client, model[9:]
+        elif model.startswith("minimax/"):
+            if not self.async_minimax_client:
+                raise ValueError(
+                    "MiniMax credentials not configured but minimax/ model prefix used"
+                )
+            return self.async_minimax_client, model[8:]
         elif model.startswith("azure-foundry/"):
             if not self.async_azure_foundry_client:
                 raise ValueError(
@@ -249,6 +283,8 @@ class OpenAICompletionProvider(CompletionProvider):
                 return self.async_ollama_client, model
             elif self.async_lmstudio_client:
                 return self.async_lmstudio_client, model
+            elif self.async_minimax_client:
+                return self.async_minimax_client, model
             elif self.async_azure_foundry_client:
                 return self.async_azure_foundry_client, model
             else:
@@ -398,6 +434,7 @@ class OpenAICompletionProvider(CompletionProvider):
         }
 
         model_str = generation_config.model or ""
+        is_minimax = model_str.startswith("minimax/")
 
         if any(
             model_prefix in model_str.lower()
@@ -409,7 +446,11 @@ class OpenAICompletionProvider(CompletionProvider):
 
         else:
             args["max_tokens"] = generation_config.max_tokens_to_sample
-            args["temperature"] = generation_config.temperature
+            temperature = generation_config.temperature
+            # MiniMax API requires temperature in [0, 1]
+            if is_minimax:
+                temperature = max(0.0, min(1.0, temperature))
+            args["temperature"] = temperature
             args["top_p"] = generation_config.top_p
 
         if generation_config.reasoning_effort is not None:

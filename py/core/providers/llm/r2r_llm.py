@@ -66,6 +66,7 @@ class R2RCompletionProvider(CompletionProvider):
             "deepseek/",
             "ollama/",
             "lmstudio/",
+            "minimax/",
         ]
         if (
             any(

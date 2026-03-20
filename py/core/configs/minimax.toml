@@ -1,0 +1,17 @@
+[app]
+# MiniMax models via OpenAI-compatible API (https://api.minimax.io/v1)
+# Requires MINIMAX_API_KEY environment variable
+fast_llm = "minimax/MiniMax-M2.5-highspeed"
+quality_llm = "minimax/MiniMax-M2.7"
+vlm = "minimax/MiniMax-M2.7"
+audio_lm = "minimax/MiniMax-M2.7"
+
+[completion]
+provider = "openai"
+concurrent_request_limit = 256
+
+  [completion.generation_config]
+  temperature = 0.1
+  top_p = 1
+  max_tokens_to_sample = 4096
+  stream = false
