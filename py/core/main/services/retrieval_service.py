@@ -1821,6 +1821,7 @@ class RetrievalService(Service):
     async def _build_documents_context(
         self,
         filter_user_id: Optional[UUID] = None,
+        filter_collection_ids: Optional[list[UUID]] = None,
         max_summary_length: int = 128,
         limit: int = 25,
         reverse_order: bool = True,
@@ -1834,6 +1835,7 @@ class RetrievalService(Service):
             offset=0,
             limit=limit,
             filter_user_ids=[filter_user_id] if filter_user_id else None,
+            filter_collection_ids=filter_collection_ids if filter_collection_ids else None,
             include_summary_embedding=False,
             sort_order="DESC" if reverse_order else "ASC",
         )
@@ -1910,6 +1912,7 @@ class RetrievalService(Service):
         if use_system_context:
             doc_context_str = await self._build_documents_context(
                 filter_user_id=filter_user_id,
+                filter_collection_ids=filter_collection_ids,
             )
             logger.debug(f"Loading prompt {prompt_name}")
             # Now fetch the prompt from the database prompts handler
