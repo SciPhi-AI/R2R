@@ -61,10 +61,22 @@ class GetFileContentTool(Tool):
 
         try:
             doc_uuid = UUID(document_id)
-            filters = {"id": {"$eq": doc_uuid}}
+            doc_id_filter = {"id": {"$eq": doc_uuid}}
         except ValueError:
             logger.error(f"Invalid document_id format received: {document_id}")
             return AggregateSearchResult(document_search_results=[])
+
+        # Merge search_settings filters (e.g., collection_ids) with the
+        # document_id filter so that collection-scoped queries are respected.
+        search_filters = (
+            getattr(context.search_settings, "filters", None)
+            if hasattr(context, "search_settings")
+            else None
+        )
+        if search_filters:
+            filters: dict[str, Any] = {"$and": [doc_id_filter, search_filters]}
+        else:
+            filters = doc_id_filter
 
         options = options or {}
 
