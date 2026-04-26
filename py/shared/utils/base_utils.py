@@ -696,9 +696,14 @@ class SSEFormatter:
             Formatted SSE event lines
         """
 
-        # Include the full payload only for new citations
-        if not citation_data.get("is_new") or "payload" not in citation_data:
+        if not citation_data.get("is_new"):
+            # Repeated citation: set payload to None (client already has it)
             citation_data["payload"] = None
+        elif "payload" not in citation_data:
+            # New citation but no matching source found (hallucinated citation
+            # ID). Suppress the event to avoid confusing clients with a
+            # null payload on a supposedly new citation.
+            return
 
         # Yield the event
         async for line in yield_sse_event("citation", citation_data):
