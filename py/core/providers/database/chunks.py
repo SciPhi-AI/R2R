@@ -26,7 +26,9 @@ from core.base.utils import _decorate_vector_type
 
 from .base import PostgresConnectionManager
 from .filters import apply_filters
-from .utils import psql_quote_literal
+from .utils import psql_quote_identifier, psql_quote_literal
+
+import re
 
 logger = logging.getLogger()
 
@@ -813,8 +815,17 @@ class PostgresChunksHandler(Handler):
         """
 
         if table_name == VectorTableName.CHUNKS:
-            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"  # TODO - Fix bug in vector table naming convention
+            table_name_base = str(VectorTableName.CHUNKS)
             if index_column:
+                # Whitelist allowed columns to prevent SQL injection
+                allowed_columns = {
+                    "vec",
+                    "vec_binary",
+                    "description_embedding",
+                    "embedding",
+                }
+                if index_column not in allowed_columns:
+                    raise ValueError(f"Invalid index_column: {index_column}")
                 col_name = index_column
             else:
                 col_name = (
@@ -826,19 +837,13 @@ class PostgresChunksHandler(Handler):
                     else "vec_binary"
                 )
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
-            )
+            table_name_base = str(VectorTableName.ENTITIES_DOCUMENT)
             col_name = "description_embedding"
         elif table_name == VectorTableName.GRAPHS_ENTITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
-            )
+            table_name_base = str(VectorTableName.GRAPHS_ENTITIES)
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
-            )
+            table_name_base = str(VectorTableName.COMMUNITIES)
             col_name = "embedding"
         else:
             raise ValueError("invalid table name")
@@ -881,17 +886,31 @@ class PostgresChunksHandler(Handler):
         if ops is None:
             raise ValueError("Unknown index measure")
 
+        # Validate project_name (schema)
+        if not re.match(r"^[A-Za-z0-9_]+$", self.project_name):
+            raise ValueError(f"Invalid project_name (schema): {self.project_name}")
+
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
 
-        index_name = (
-            index_name
-            or f"ix_{ops}_{index_method}__{col_name}_{time.strftime('%Y%m%d%H%M%S')}"
-        )
+        if index_name:
+            if not re.match(r"^[A-Za-z0-9_]+$", index_name):
+                raise ValueError(f"Invalid index_name: {index_name}")
+            if len(index_name) > 63:
+                raise ValueError("index_name exceeds maximum length of 63")
+            quoted_index_name = psql_quote_identifier(index_name)
+        else:
+            # Generate a safe default name
+            raw_index_name = f"ix_{ops}_{index_method}__{col_name}_{time.strftime('%Y%m%d%H%M%S')}"
+            quoted_index_name = psql_quote_identifier(raw_index_name)
+
+        quoted_schema = psql_quote_identifier(self.project_name)
+        quoted_table = psql_quote_identifier(table_name_base)
+        quoted_col = psql_quote_identifier(col_name)
 
         create_index_sql = f"""
-        CREATE INDEX {concurrently_sql} {index_name}
-        ON {table_name_str}
-        USING {index_method} ({col_name} {ops}) {self._get_index_options(index_method, index_arguments)};
+        CREATE INDEX {concurrently_sql} {quoted_index_name}
+        ON {quoted_schema}.{quoted_table}
+        USING {index_method} ({quoted_col} {ops}) {self._get_index_options(index_method, index_arguments)};
         """
 
         try:
@@ -1015,28 +1034,25 @@ class PostgresChunksHandler(Handler):
         """
         # Validate table name and get column name
         if table_name == VectorTableName.CHUNKS:
-            table_name_str = f"{self.project_name}.{VectorTableName.CHUNKS}"
+            table_name_base = str(VectorTableName.CHUNKS)
             col_name = "vec"
         elif table_name == VectorTableName.ENTITIES_DOCUMENT:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.ENTITIES_DOCUMENT}"
-            )
+            table_name_base = str(VectorTableName.ENTITIES_DOCUMENT)
             col_name = "description_embedding"
         elif table_name == VectorTableName.GRAPHS_ENTITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.GRAPHS_ENTITIES}"
-            )
+            table_name_base = str(VectorTableName.GRAPHS_ENTITIES)
             col_name = "description_embedding"
         elif table_name == VectorTableName.COMMUNITIES:
-            table_name_str = (
-                f"{self.project_name}.{VectorTableName.COMMUNITIES}"
-            )
+            table_name_base = str(VectorTableName.COMMUNITIES)
             col_name = "description_embedding"
         else:
             raise ValueError("invalid table name")
 
-        # Extract schema and base table name
-        schema_name, base_table_name = table_name_str.split(".")
+        # Validate project_name and index_name
+        if not re.match(r"^[A-Za-z0-9_]+$", self.project_name):
+            raise ValueError(f"Invalid project_name (schema): {self.project_name}")
+        if not re.match(r"^[A-Za-z0-9_]+$", index_name):
+            raise ValueError(f"Invalid index_name: {index_name}")
 
         # Verify index exists and is a vector index
         query = """
@@ -1049,18 +1065,21 @@ class PostgresChunksHandler(Handler):
         """
 
         result = await self.connection_manager.fetchrow_query(
-            query, (index_name, schema_name, base_table_name, f"%({col_name}%")
+            query, (index_name, self.project_name, table_name_base, f"%({col_name}%")
         )
 
         if not result:
             raise ValueError(
-                f"Vector index '{index_name}' does not exist on table {table_name_str}"
+                f"Vector index '{index_name}' does not exist on table {self.project_name}.{table_name_base}"
             )
 
         # Drop the index
         concurrently_sql = "CONCURRENTLY" if concurrently else ""
+        quoted_index = psql_quote_identifier(index_name)
+        quoted_schema = psql_quote_identifier(self.project_name)
+
         drop_query = (
-            f"DROP INDEX {concurrently_sql} {schema_name}.{index_name}"
+            f"DROP INDEX {concurrently_sql} {quoted_schema}.{quoted_index}"
         )
 
         try:
