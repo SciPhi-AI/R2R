@@ -184,6 +184,13 @@ max_backoff = 64.0
     quantization_type = "FP32"
     # (Additional quantization parameters can be added here)
 
+# To embed with TwelveLabs Marengo instead (512-dim multimodal embeddings,
+# set TWELVELABS_API_KEY in the environment):
+# [embedding]
+# provider = "twelvelabs"
+# base_model = "marengo3.0"
+# base_dimension = 512
+
 ################################################################################
 # Completion Embedding Settings
 # (Usually mirrors the embedding settings; override if needed.)
