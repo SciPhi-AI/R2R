@@ -21,6 +21,7 @@ from .embeddings import (
     LiteLLMEmbeddingProvider,
     OllamaEmbeddingProvider,
     OpenAIEmbeddingProvider,
+    TwelveLabsEmbeddingProvider,
 )
 from .file import (
     PostgresFileProvider,
@@ -71,6 +72,7 @@ __all__ = [
     "LiteLLMEmbeddingProvider",
     "OllamaEmbeddingProvider",
     "OpenAIEmbeddingProvider",
+    "TwelveLabsEmbeddingProvider",
     # Email
     "AsyncSMTPEmailProvider",
     "ConsoleMockEmailProvider",

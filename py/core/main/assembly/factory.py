@@ -45,6 +45,7 @@ from core.providers import (
     SendGridEmailProvider,
     SimpleOrchestrationProvider,
     SupabaseAuthProvider,
+    TwelveLabsEmbeddingProvider,
     UnstructuredIngestionConfig,
     UnstructuredIngestionProvider,
 )
@@ -255,6 +256,7 @@ class R2RProviderFactory:
         LiteLLMEmbeddingProvider
         | OllamaEmbeddingProvider
         | OpenAIEmbeddingProvider
+        | TwelveLabsEmbeddingProvider
     ):
         embedding_provider: Optional[EmbeddingProvider] = None
 
@@ -276,6 +278,16 @@ class R2RProviderFactory:
             from core.providers import OllamaEmbeddingProvider
 
             embedding_provider = OllamaEmbeddingProvider(embedding)
+
+        elif embedding.provider == "twelvelabs":
+            if not (embedding.api_key or os.getenv("TWELVELABS_API_KEY")):
+                raise ValueError(
+                    "Must set TWELVELABS_API_KEY in order to initialize "
+                    "TwelveLabsEmbeddingProvider."
+                )
+            from core.providers import TwelveLabsEmbeddingProvider
+
+            embedding_provider = TwelveLabsEmbeddingProvider(embedding)
 
         else:
             raise ValueError(
