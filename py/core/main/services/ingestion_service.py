@@ -30,6 +30,7 @@ from core.base.abstractions import (
     VectorTableName,
 )
 from core.base.api.models import User
+from core.utils.chunk_prefix import apply_chunk_prefix, strip_chunk_prefix
 from shared.abstractions import PDFParsingError, PopplerNotFoundError
 
 from ..abstractions import R2RProviders
@@ -343,6 +344,10 @@ class IngestionService:
         """Inline replacement for the old embedding_pipe.run(...).
 
         Batches the embedding calls and yields VectorEntry objects.
+
+        If chunk metadata includes ``chunk_prefix``, that string is prepended
+        to each chunk before embedding and storage (see
+        ``core.utils.chunk_prefix``). Pass it on document create via metadata.
         """
         if not chunked_documents:
             return
@@ -356,22 +361,25 @@ class IngestionService:
         async def process_batch(
             batch: list[DocumentChunk],
         ) -> list[VectorEntry]:
-            # All text from the batch
-            texts = [
-                (
+            texts: list[str] = []
+            metadatas: list[dict] = []
+            for ex in batch:
+                raw = (
                     ex.data.decode("utf-8")
                     if isinstance(ex.data, bytes)
-                    else ex.data
+                    else str(ex.data)
                 )
-                for ex in batch
-            ]
-            # Retrieve embeddings in bulk
+                text, meta = apply_chunk_prefix(raw, ex.metadata)
+                texts.append(text)
+                metadatas.append(meta)
+
             vectors = await self.providers.embedding.async_get_embeddings(
-                texts,  # list of strings
+                texts,
             )
-            # Zip them back together
             results = []
-            for raw_vector, extraction in zip(vectors, batch, strict=False):
+            for raw_vector, extraction, text, meta in zip(
+                vectors, batch, texts, metadatas, strict=False
+            ):
                 results.append(
                     VectorEntry(
                         id=extraction.id,
@@ -379,12 +387,8 @@ class IngestionService:
                         owner_id=extraction.owner_id,
                         collection_ids=extraction.collection_ids,
                         vector=Vector(data=raw_vector, type=VectorType.FIXED),
-                        text=(
-                            extraction.data.decode("utf-8")
-                            if isinstance(extraction.data, bytes)
-                            else str(extraction.data)
-                        ),
-                        metadata={**extraction.metadata},
+                        text=text,
+                        metadata=meta,
                     )
                 )
             return results
@@ -715,15 +719,20 @@ class IngestionService:
 
         Leverages an LLM to rewrite or expand chunk text, then re-embeds it.
         """
+        # Use unprefixed bodies for LLM context so enrichment does not
+        # treat/re-emit the prefix as part of the chunk content.
+        def _body(c: dict) -> str:
+            return strip_chunk_prefix(c["text"], c.get("metadata"))
+
         preceding_chunks = [
-            list_document_chunks[idx]["text"]
+            _body(list_document_chunks[idx])
             for idx in range(
                 max(0, chunk_idx - chunk_enrichment_settings.n_chunks),
                 chunk_idx,
             )
         ]
         succeeding_chunks = [
-            list_document_chunks[idx]["text"]
+            _body(list_document_chunks[idx])
             for idx in range(
                 chunk_idx + 1,
                 min(
@@ -732,6 +741,7 @@ class IngestionService:
                 ),
             )
         ]
+        chunk_body = _body(chunk)
         try:
             # Obtain the updated text from the LLM
             updated_chunk_text = (
@@ -741,7 +751,7 @@ class IngestionService:
                             task_prompt_name=chunk_enrichment_settings.chunk_enrichment_prompt,
                             task_inputs={
                                 "document_summary": document_summary or "None",
-                                "chunk": chunk["text"],
+                                "chunk": chunk_body,
                                 "preceding_chunks": (
                                     "\n".join(preceding_chunks)
                                     if preceding_chunks
@@ -764,7 +774,7 @@ class IngestionService:
                 .message.content
             )
         except Exception:
-            updated_chunk_text = chunk["text"]
+            updated_chunk_text = chunk_body
             chunk["metadata"]["chunk_enrichment_status"] = "failed"
         else:
             chunk["metadata"]["chunk_enrichment_status"] = (
@@ -772,14 +782,16 @@ class IngestionService:
             )
 
         if not updated_chunk_text or not isinstance(updated_chunk_text, str):
-            updated_chunk_text = str(chunk["text"])
+            updated_chunk_text = chunk_body
             chunk["metadata"]["chunk_enrichment_status"] = "failed"
 
-        # Re-embed
-        data = await self.providers.embedding.async_get_embedding(
-            updated_chunk_text
+        # Re-apply prefix (Plan B: embed + store the same prefixed string)
+        text_for_store, meta = apply_chunk_prefix(
+            updated_chunk_text, chunk.get("metadata")
         )
-        chunk["metadata"]["original_text"] = chunk["text"]
+        data = await self.providers.embedding.async_get_embedding(
+            text_for_store
+        )
 
         return VectorEntry(
             id=generate_id(str(chunk["id"])),
@@ -787,8 +799,8 @@ class IngestionService:
             document_id=document_id,
             owner_id=chunk["owner_id"],
             collection_ids=chunk["collection_ids"],
-            text=updated_chunk_text,
-            metadata=chunk["metadata"],
+            text=text_for_store,
+            metadata=meta,
         )
 
     async def chunk_enrichment(

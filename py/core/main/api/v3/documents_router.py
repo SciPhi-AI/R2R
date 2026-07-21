@@ -256,7 +256,11 @@ class DocumentsRouter(BaseRouterV3):
             ),
             metadata: Optional[Json[dict]] = Form(
                 None,
-                description="Metadata to associate with the document, such as title, description, or custom fields.",
+                description=(
+                    "Metadata to associate with the document, such as title, description, or custom fields. "
+                    "Optional `chunk_prefix` (string): prepended to every chunk before embedding and storage "
+                    "so vectors and stored text both include the prefix."
+                ),
             ),
             ingestion_mode: IngestionMode = Form(
                 default=IngestionMode.custom,
