@@ -211,6 +211,7 @@ class PostgresConversationsHandler(Handler):
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
         max_image_size_bytes: int = 5 * 1024 * 1024,  # 5MB default
+        filter_user_ids: Optional[list[UUID]] = None,
     ) -> MessageResponse:
         # Validate image size
         try:
@@ -226,12 +227,18 @@ class PostgresConversationsHandler(Handler):
             ) from e
 
         # 1) Validate that conversation and parent exist (existing code)
+        conditions = ["id = $1"]
+        params: list[Any] = [conversation_id]
+        if filter_user_ids:
+            conditions.append("user_id = ANY($2)")
+            params.append(filter_user_ids)
+
         conv_check_query = f"""
             SELECT 1 FROM {self._get_table_name("conversations")}
-            WHERE id = $1
+            WHERE {" AND ".join(conditions)}
         """
         conv_row = await self.connection_manager.fetchrow_query(
-            conv_check_query, [conversation_id]
+            conv_check_query, params
         )
         if not conv_row:
             raise R2RException(
@@ -298,14 +305,28 @@ class PostgresConversationsHandler(Handler):
         message_id: UUID,
         new_content: str | None = None,
         additional_metadata: dict | None = None,
+        conversation_id: UUID | None = None,
+        filter_user_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Any]:
         # Get the original message
+        conditions = ["m.id = $1"]
+        params: list[Any] = [message_id]
+        if conversation_id:
+            conditions.append(f"m.conversation_id = ${len(params) + 1}")
+            params.append(conversation_id)
+        if filter_user_ids:
+            conditions.append(f"c.user_id = ANY(${len(params) + 1})")
+            params.append(filter_user_ids)
+
         query = f"""
-            SELECT conversation_id, parent_id, content, metadata, created_at
-            FROM {self._get_table_name("messages")}
-            WHERE id = $1
+            SELECT m.conversation_id, m.parent_id, m.content, m.metadata,
+                   m.created_at
+            FROM {self._get_table_name("messages")} m
+            JOIN {self._get_table_name("conversations")} c
+              ON c.id = m.conversation_id
+            WHERE {" AND ".join(conditions)}
         """
-        row = await self.connection_manager.fetchrow_query(query, [message_id])
+        row = await self.connection_manager.fetchrow_query(query, params)
         if not row:
             raise R2RException(
                 status_code=404,
@@ -487,13 +508,25 @@ class PostgresConversationsHandler(Handler):
         return response_messages
 
     async def update_conversation(
-        self, conversation_id: UUID, name: str
+        self,
+        conversation_id: UUID,
+        name: str,
+        filter_user_ids: Optional[list[UUID]] = None,
     ) -> ConversationResponse:
         try:
             # Check if conversation exists
-            conv_query = f"SELECT 1 FROM {self._get_table_name('conversations')} WHERE id = $1"
+            conditions = ["id = $1"]
+            params: list[Any] = [conversation_id]
+            if filter_user_ids:
+                conditions.append("user_id = ANY($2)")
+                params.append(filter_user_ids)
+
+            conv_query = f"""
+                SELECT 1 FROM {self._get_table_name("conversations")}
+                WHERE {" AND ".join(conditions)}
+            """
             conv_row = await self.connection_manager.fetchrow_query(
-                conv_query, [conversation_id]
+                conv_query, params
             )
             if not conv_row:
                 raise R2RException(
@@ -515,6 +548,8 @@ class PostgresConversationsHandler(Handler):
                 user_id=updated_row["user_id"] or None,
                 name=name,
             )
+        except R2RException:
+            raise
         except Exception as e:
             raise HTTPException(
                 status_code=500,

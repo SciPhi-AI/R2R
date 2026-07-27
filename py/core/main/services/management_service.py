@@ -800,12 +800,14 @@ class ManagementService(Service):
         content: Message,
         parent_id: Optional[UUID] = None,
         metadata: Optional[dict] = None,
+        user_ids: Optional[list[UUID]] = None,
     ) -> MessageResponse:
         return await self.providers.database.conversations_handler.add_message(
             conversation_id=conversation_id,
             content=content,
             parent_id=parent_id,
             metadata=metadata,
+            filter_user_ids=user_ids,
         )
 
     async def edit_message(
@@ -813,20 +815,29 @@ class ManagementService(Service):
         message_id: UUID,
         new_content: Optional[str] = None,
         additional_metadata: Optional[dict] = None,
+        conversation_id: Optional[UUID] = None,
+        user_ids: Optional[list[UUID]] = None,
     ) -> dict[str, Any]:
         return (
             await self.providers.database.conversations_handler.edit_message(
                 message_id=message_id,
                 new_content=new_content,
                 additional_metadata=additional_metadata or {},
+                conversation_id=conversation_id,
+                filter_user_ids=user_ids,
             )
         )
 
     async def update_conversation(
-        self, conversation_id: UUID, name: str
+        self,
+        conversation_id: UUID,
+        name: str,
+        user_ids: Optional[list[UUID]] = None,
     ) -> ConversationResponse:
         return await self.providers.database.conversations_handler.update_conversation(
-            conversation_id=conversation_id, name=name
+            conversation_id=conversation_id,
+            name=name,
+            filter_user_ids=user_ids,
         )
 
     async def delete_conversation(
