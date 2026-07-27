@@ -499,9 +499,14 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint updates the name of an existing conversation
             identified by its UUID.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             return await self.services.management.update_conversation(  # type: ignore
                 conversation_id=id,
                 name=name,
+                user_ids=requesting_user_id,
             )
 
         @self.router.delete(
@@ -651,11 +656,16 @@ class ConversationsRouter(BaseRouterV3):
             if role not in ["user", "assistant", "system"]:
                 raise R2RException("Invalid role", status_code=400)
             message = Message(role=role, content=content)
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             return await self.services.management.add_message(  # type: ignore
                 conversation_id=id,
                 content=message,
                 parent_id=parent_id,
                 metadata=metadata,
+                user_ids=requesting_user_id,
             )
 
         @self.router.post(
@@ -730,8 +740,14 @@ class ConversationsRouter(BaseRouterV3):
             This endpoint updates the content of an existing message in a
             conversation.
             """
+            requesting_user_id = (
+                None if auth_user.is_superuser else [auth_user.id]
+            )
+
             return await self.services.management.edit_message(  # type: ignore
+                conversation_id=id,
                 message_id=message_id,
                 new_content=content,
                 additional_metadata=metadata,
+                user_ids=requesting_user_id,
             )
