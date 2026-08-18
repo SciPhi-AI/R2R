@@ -68,6 +68,35 @@ python -m r2r.serve
 
 For detailed self-hosting instructions, see the [self-hosting docs](https://r2r-docs.sciphi.ai/self-hosting/installation/overview).
 
+
+## Environment Variables
+
+
+
+R2R supports the following environment variables for configuration:
+
+
+
+### Core
+
+- `OPENAI_API_KEY`: OpenAI API key for LLM and embedding services
+
+- `R2R_CONFIG_NAME`: Configuration name (e.g., `full`, `light`)
+
+
+
+### Self-hosted Search & Scraping
+
+- `SEARXNG_BASE_URL`: URL of your SearxNG instance (e.g., `http://localhost:8888`)
+
+- `FIRECRAWL_API_URL`: URL of your self-hosted Firecrawl instance (optional, for self-hosted)
+
+- `FIRECRAWL_API_KEY`: API key for Firecrawl (required for cloud, optional for self-hosted)
+
+
+
+For more details, see the [self-hosting docs](https://r2r-docs.sciphi.ai/self-hosting/installation/overview).
+
 ## Demo
 https://github.com/user-attachments/assets/173f7a1f-7c0b-4055-b667-e2cdcf70128b
 
