@@ -209,18 +209,20 @@ class GenerationConfig(R2RSerializable):
     )
     response_format: Optional[dict | BaseModel] = None
     extended_thinking: bool = Field(
-        default=False,
+        default_factory=lambda: GenerationConfig._defaults[
+            "extended_thinking"
+        ],
         description="Flag to enable extended thinking mode (for Anthropic providers)",
     )
     thinking_budget: Optional[int] = Field(
-        default=None,
+        default_factory=lambda: GenerationConfig._defaults["thinking_budget"],
         description=(
             "Token budget for internal reasoning when extended thinking mode is enabled. "
             "Must be less than max_tokens_to_sample."
         ),
     )
     reasoning_effort: Optional[str] = Field(
-        default=None,
+        default_factory=lambda: GenerationConfig._defaults["reasoning_effort"],
         description=(
             "Effort level for internal reasoning when extended thinking mode is enabled, `low`, `medium`, or `high`."
             "Only applicable to OpenAI providers."
