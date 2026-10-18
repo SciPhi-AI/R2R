@@ -3,8 +3,7 @@ from shared.abstractions.tool import Tool
 
 class WebSearchTool(Tool):
     """
-    A web search tool that uses Serper to perform Google searches and returns
-    the most relevant results.
+    Web search with Parallel MCP, or Serper when configured.
     """
 
     def __init__(self):
@@ -33,6 +32,7 @@ class WebSearchTool(Tool):
         Implementation of web search functionality.
         """
         import asyncio
+        import os
 
         from core.base.abstractions import (
             AggregateSearchResult,
@@ -42,12 +42,23 @@ class WebSearchTool(Tool):
 
         context = self.context
 
-        serper_client = SerperClient()
+        provider = os.getenv("R2R_WEB_SEARCH_PROVIDER", "auto").lower()
+        if provider == "auto":
+            provider = "serper" if os.getenv("SERPER_API_KEY") else "parallel"
+        if provider == "parallel":
+            from core.utils.parallel_search import search_parallel
 
-        raw_results = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: serper_client.get_raw(query),
-        )
+            raw_results = await search_parallel(query)
+        elif provider == "serper":
+            serper_client = SerperClient()
+            raw_results = await asyncio.get_event_loop().run_in_executor(
+                None,
+                lambda: serper_client.get_raw(query),
+            )
+        else:
+            raise ValueError(
+                "R2R_WEB_SEARCH_PROVIDER must be auto, parallel, or serper"
+            )
 
         web_response = await asyncio.get_event_loop().run_in_executor(
             None, lambda: WebSearchResult.from_serper_results(raw_results)
@@ -59,6 +70,13 @@ class WebSearchTool(Tool):
 
         # Add to results collector if context is provided
         if context and hasattr(context, "search_results_collector"):
-            context.search_results_collector.add_aggregate_result(result)
+            if provider == "parallel":
+                # Citation lookup needs each page's ID, rather than the wrapper.
+                for page in web_response.organic_results:
+                    context.search_results_collector.add_result(
+                        page, source_type="web"
+                    )
+            else:
+                context.search_results_collector.add_aggregate_result(result)
 
         return result

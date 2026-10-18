@@ -57,8 +57,14 @@ The agent can use the following tools in RAG mode:
 | `search_file_knowledge` | Semantic/hybrid search on your ingested documents using R2R's search capabilities | None |
 | `search_file_descriptions` | Search over file-level metadata (titles, doc-level descriptions) | None |
 | `get_file_content` | Fetch entire documents or chunk structures for deeper analysis | None |
-| `web_search` | Query external search APIs for up-to-date information | Requires `SERPER_API_KEY` environment variable ([serper.dev](https://serper.dev/)) |
+| `web_search` | Query external search APIs for up-to-date information | Uses anonymous [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) without a key, or Serper when `SERPER_API_KEY` is set |
 | `web_scrape` | Scrape and extract content from specific web pages | Requires `FIRECRAWL_API_KEY` environment variable ([firecrawl.dev](https://www.firecrawl.dev/)) |
+
+Web tools are disabled by default. Add `web_search` to `rag_tools` to enable web
+search. On the server, `R2R_WEB_SEARCH_PROVIDER` accepts `auto` (default), `parallel`,
+or `serper`. `auto` preserves a configured Serper key and otherwise uses Parallel's
+free anonymous Fast search. Explicit selections never fall back to another provider
+on errors. Parallel searches have a 30-second timeout and free-tier usage limits.
 
 ### Research Tools
 

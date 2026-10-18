@@ -68,6 +68,30 @@ python -m r2r.serve
 
 For detailed self-hosting instructions, see the [self-hosting docs](https://r2r-docs.sciphi.ai/self-hosting/installation/overview).
 
+### Agent web search
+
+Enable `web_search` in your agent's `rag_tools` to retrieve current web sources.
+Without `SERPER_API_KEY`, it uses [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp)
+at `https://search.parallel.ai/mcp`: free anonymous search powered by Fast mode,
+with no account or API key required. Web tools remain disabled by default.
+
+```python
+response = client.retrieval.agent(
+    message={"role": "user", "content": "Find recent research on retrieval agents"},
+    rag_tools=["search_file_knowledge", "web_search"],
+)
+```
+
+On the R2R server, `R2R_WEB_SEARCH_PROVIDER=auto` (the default) keeps using Serper
+when `SERPER_API_KEY` is configured. Set `R2R_WEB_SEARCH_PROVIDER=parallel` to
+choose Parallel explicitly, or `R2R_WEB_SEARCH_PROVIDER=serper` to require Serper.
+Provider failures are reported to the agent without switching providers. Parallel
+requests time out after 30 seconds and are subject to the service's free-tier limits.
+Other tools, including `web_scrape` and the Tavily tools, keep their own configuration.
+
+The server's `core` dependencies include the MCP client and Uvicorn 0.31.1, required
+by that client. SDK-only installations do not need MCP.
+
 ## Demo
 https://github.com/user-attachments/assets/173f7a1f-7c0b-4055-b667-e2cdcf70128b
 
