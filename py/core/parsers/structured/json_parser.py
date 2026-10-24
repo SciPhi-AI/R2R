@@ -51,6 +51,8 @@ class JSONParser(AsyncParser[str | bytes]):
 
         chunk_size = kwargs.get("chunk_size")
         if chunk_size and isinstance(chunk_size, int):
+            if chunk_size < 0:
+                raise ValueError("chunk_size must not be negative")
             # If chunk_size is provided and is an integer, yield the formatted text in chunks
             for i in range(0, len(formatted_text), chunk_size):
                 yield formatted_text[i : i + chunk_size]
